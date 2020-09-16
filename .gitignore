@@ -1,12 +1,11 @@
 src/*.mod
 src/*.pyf
 src/*.so
-
 src/__pycache__
 src/*.npy
 src/*.csv
 src/*.txt
-src/Makefile
-src/.python_version
+src/outputs
+src/.python-version
 .vscode
-.python_version
+.python-version

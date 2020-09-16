@@ -151,10 +151,6 @@ contains
             cdec(index) = carbon_decay(q10,tsoil,cs(index),tr_c(index)) * water_modifier
       enddo
 
-      ! print*, "C DECAY", cdec
-      ! print*, "SOIL N:C", snr_in(1:4)
-      ! print*, "SOIL P:C", snr_in(5:8)
-
       !LITTER I
       cs_out(1) = cs(1) - cdec(1)        ! Update Litter Carbon 1
 
@@ -170,10 +166,6 @@ contains
       ! N mineralized by the release of CO2
       n_min_resp_lit = het_resp(1) * snr_in(1)
       p_min_resp_lit = het_resp(1) * snr_in(5)
-
-      ! print *, "HR P1" ,het_resp(1)
-      ! print *, "MINER N: ", n_min_resp_lit
-      ! print *, "MINER P: ", p_min_resp_lit
 
       ! N going to the LITTER II
       n_next_pool = c_next_pool * snr_in(1)

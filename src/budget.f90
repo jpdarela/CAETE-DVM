@@ -147,12 +147,12 @@ contains
       real(r_8) :: carbon_in_storage
       real(r_8) :: testcdef
       real(r_8) :: sr, mr_sto, growth_stoc
-      real(r_8) :: srn
-      real(r_8) :: srp
-      real(r_8) :: mrn
-      real(r_8) :: mrp
-      real(r_8) :: ston2c
-      real(r_8) :: stop2c
+      ! real(r_8) :: srn
+      ! real(r_8) :: srp
+      ! real(r_8) :: mrn
+      ! real(r_8) :: mrp
+      ! real(r_8) :: ston2c
+      ! real(r_8) :: stop2c
 
 
       !     Precipitation
@@ -306,7 +306,7 @@ contains
 
             ! A function like F5
 
-            
+
             !     Carbon/Nitrogen/Phosphorus allocation/deallocation
             !     =====================================================
 

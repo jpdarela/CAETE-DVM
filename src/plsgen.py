@@ -54,7 +54,7 @@ def check_viability(trait_values, wood):
         are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹)
         do not have enough mass of carbon (< 0.01 kg m⁻²) in all CVEG compartments
 
-        trait_values: np.array(shape=(6,), dtype=f32) allocation and residence time combination (possible PLS)
+        trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
         wood: bool  Is this a woody PLS?
     """
 

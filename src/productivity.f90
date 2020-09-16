@@ -93,12 +93,6 @@ contains
     n2cf_resp = dt(12)
     p2cl = dt(13)
 
-! open (unit=12324,file='dt_dentro.txt',status='unknown',&
-!         &form='formatted',position='append', action='write')
-
-! write (12324,*) dt
-
-! close(12324)
 
     n2cl = n2cl * (cl1_prod * 1D3) ! N in leaf g m-2
     p2cl = p2cl * (cl1_prod * 1D3) ! P in leaf g m-2
@@ -148,7 +142,7 @@ contains
 !    |____/___\____| |_____|_____/_/   \_\_|
 !     Leaf area index (m2/m2)
     sla = spec_leaf_area(tleaf)
-    !laia = real(leaf_area_index(cl1_prod, sla), r_4)
+
     laia = 0.2D0 * dexp((2.5D0 * f1a)/1.53D-5)
 
 !     Canopy gross photosynthesis (kgC/m2/yr)

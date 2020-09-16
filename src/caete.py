@@ -42,6 +42,7 @@ mask = np.load('../input/mask/mask_raisg-360-720.npy')
 # Create the semi-random table// of Plant Life Strategies
 # AUX FUNCS
 
+
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=30):
     """FROM Stack Overflow/GIST, THANKS
     Call in a loop to create terminal progress bar
@@ -199,8 +200,6 @@ class grd:
         self.lnc = None
         self.storage_pool = None
         self.lim_status = None
-        # self.mineral_n_pls = None
-        # self.labile_p_pls = None
 
         # WATER POOLS
         self.wfim = None
@@ -274,8 +273,6 @@ class grd:
         self.ls = np.zeros(shape=(n,), order='F')
         self.lim_status = np.zeros(
             shape=(3, npls, n), dtype=np.dtype('int16'), order='F')
-        # self.mineral_n_pls = np.zeros(shape=(npls, n))
-        # self.labile_p_pls = np.zeros(shape=(npls, n))
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -379,8 +376,7 @@ class grd:
         self.storage_pool = None
         self.ls = None
         self.lim_status = None
-        # self.mineral_n_pls = None
-        # self.labile_p_pls = None
+
         return to_pickle
 
     def init_caete_dyn(self, dt1, soil_nu, co2, pls_table, name):
@@ -448,10 +444,6 @@ class grd:
 
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
             0.365242, self.pls_table)
-
-        # print(self.vp_cleaf)
-        # print(self.vp_croot)
-        # print(self.vp_cwood)
 
         self.vp_dcl = np.zeros(shape=(npls,), order='F')
         self.vp_dca = np.zeros(shape=(npls,), order='F')
@@ -550,17 +542,6 @@ class grd:
         count_days = start.dayofyr - 2
         loop = 0
 
-        # print(count_days, year0)
-        p_666 = 0.0
-        n_666 = 0.0
-        uptkn = 0.0
-        uptkp = 0.0
-        nlst = []
-        plst = []
-        pu_lst = []
-        nu_lst = []
-        nmin_lst = []
-        pmin_lst = []
         for s in range(spin):
             self._allocate_output(steps.size)
             for step in range(steps.size):
@@ -581,9 +562,6 @@ class grd:
                         (days - count_days)
 
                 co2 += next_year
-                # print(loop, count_days, year0, co2, next_year, end='--')
-                # print(cftime.num2date(day_indexes[step],
-                #                       self.time_unit, self.calendar))
 
                 # Update soil temperature
                 self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
@@ -638,11 +616,6 @@ class grd:
                 soil_out = catch_out_carbon3(s_out)
                 self.sp_csoil = soil_out['cs']
                 self.sp_snc = soil_out['snc']
-
-                p_666 += soil_out['pmin']
-                n_666 += soil_out['nmin']
-                uptkn += self.nupt[step]
-                uptkp += self.pupt[step]
 
                 if coupled:
                     # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
@@ -819,7 +792,7 @@ class grd:
             self.vp_dcf = daily_output['delta_cveg'][2]
             self.vp_sto = daily_output['stodbg']
             self.vp_ocp = ocp
-    # STORE LITTER C AND NUTIIENTS
+
             wo.append(wm(ocp, daily_output['w2']))
             llo.append(wm(ocp, daily_output['litter_l']))
             cwdo.append(wm(ocp, daily_output['cwd']))
@@ -842,8 +815,6 @@ class grd:
             self.sp_csoil = soil_out['cs']
             self.sp_snc = soil_out['snc']
 
-        # self.sp_available_p = soil_out['pmin']
-        # self.sp_available_n = soil_out['nmin']
         self.sp_in_n = 0.5 * self.soil_dict['tn']
         self.sp_so_n = 0.3 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
