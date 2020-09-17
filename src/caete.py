@@ -23,7 +23,7 @@ import os
 import sys
 import _pickle as cPickle
 import bz2
-import concurrent.futures
+from threading import Thread
 
 import cftime
 import numpy as np
@@ -134,6 +134,7 @@ class grd:
         self.ls = None          # Number of surviving plss//
 
         self.out_dir = "./outputs/gridcell{}/".format(self.xyname)
+        self.sv = None
         self.flush_data = None
 
         # Time attributes
@@ -443,7 +444,7 @@ class grd:
         self.emaxm = []
 
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-            0.365242, self.pls_table)
+            1.0, self.pls_table)
 
         self.vp_dcl = np.zeros(shape=(npls,), order='F')
         self.vp_dca = np.zeros(shape=(npls,), order='F')
@@ -674,10 +675,21 @@ class grd:
                 self.nmin[step] = self.sp_available_n
                 self.pmin[step] = self.sp_available_p
 
+            if s > 0:
+                while True:
+                    if not sv.is_alive():
+                        break
+            else:
+                pass
+
             self.flush_data = self._flush_output(
                 'spin', (start_index, end_index))
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                f = executor.submit(self._save_output, self.flush_data)
+            sv = Thread(target=self._save_output, args=(self.flush_data,))
+            sv.start()
+
+        while True:
+            if not sv.is_alive():
+                break
         return None
 
     def bdg_spinup(self, start_date='19810101', end_date='19821231'):

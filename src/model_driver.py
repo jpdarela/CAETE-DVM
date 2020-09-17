@@ -13,6 +13,8 @@ from caete import grd
 from caete import mask, npls, print_progress
 import plsgen as pls
 
+import bz2
+import _pickle
 os.mkdir('./outputs')
 
 # FUNCTIONAL TRAITS DATA
