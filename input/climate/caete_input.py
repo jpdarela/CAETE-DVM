@@ -1,7 +1,7 @@
 import os
 import glob
 import cftime as cft
-from netCDF4 import num2date, MFDataset
+from netCDF4 import MFDataset
 
 
 class data_in():
@@ -47,9 +47,9 @@ class data_in():
 
         print("Extracting var %s" % self.varname)
         with self._open_dts() as fh:
-            init_date = num2date(
+            init_date = cft.num2date(
                 fh.variables['time'][0], fh.variables['time'].units, fh.variables['time'].calendar)
-            end_date = num2date(
+            end_date = cft.num2date(
                 fh.variables['time'][-1], fh.variables['time'].units, fh.variables['time'].calendar)
             init_index = cft.date2index(init_date, fh.variables['time'])
             end_index = cft.date2index(end_date, fh.variables['time'])

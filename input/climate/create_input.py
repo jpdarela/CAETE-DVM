@@ -9,8 +9,7 @@ rank = comm.Get_rank()
 
 # Location of the input data downloaded from ISIMIP-PIK server via rsync
 files = '/home/jdarela/Desktop/caete/avante_caete/caete-dgvm/input/inputs_daily'
-mask = np.load(
-    "/home/jdarela/Desktop/caete/avante_caete/caete-dgvm/input/mask_raisg-360-720.npy")
+mask = np.load("../mask/mask_raisg-360-720.npy")
 
 
 # INCLUDING ONLY 4 gridcells

@@ -24,6 +24,7 @@ import sys
 import _pickle as cPickle
 import bz2
 from threading import Thread
+from time import sleep
 
 import cftime
 import numpy as np
@@ -677,10 +678,10 @@ class grd:
 
             if s > 0:
                 while True:
-                    if not sv.is_alive():
+                    if sv.is_alive():
+                        sleep(0.5)
+                    else:
                         break
-            else:
-                pass
 
             self.flush_data = self._flush_output(
                 'spin', (start_index, end_index))
@@ -688,7 +689,9 @@ class grd:
             sv.start()
 
         while True:
-            if not sv.is_alive():
+            if sv.is_alive():
+                sleep(0.5)
+            else:
                 break
         return None
 
