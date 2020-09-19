@@ -262,6 +262,7 @@ module alloc
 
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
+      ! Only a very small amount of total nutrients are available in fact
       mult_factor_n  = 0.0045D0
       mult_factor_p  = 0.003D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
@@ -279,6 +280,8 @@ module alloc
       internal_p_wood = internal_p * awood
       internal_p_root = internal_p * aroot
 
+
+      ! Calculate the available nutirents for uptake
       leaf_av_n = (avail_n * aleaf) + internal_n_leaf ! g(N)m⁻²
       leaf_av_p = (avail_p * aleaf) + internal_p_leaf ! g(P)m⁻²
 
