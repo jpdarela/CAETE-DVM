@@ -14,7 +14,12 @@ import plsgen as pls
 
 import bz2
 import _pickle
-os.mkdir('./outputs')
+
+try:
+    os.mkdir('./outputs')
+except:
+    os.rmdir('./outputs')
+    os.mkdir('./outputs')
 
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls)
