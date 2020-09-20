@@ -79,15 +79,6 @@ module photo_par
         p25 = 0.000008D0     ,&          !Maximum gross photosynthesis rate (molCO2/m2/s)
         p26 = 0.50D0         ,&          !light extinction coefficient for IPAR/sun (0.5/sen90)
         p27 = 1.50D0         ,&          !light extinction coefficient for IPAR/shade (0.5/sen20)
-        p28 = 0.500D0        ,&          !Soil moisture at field capacity
-        p29 = 0.205D0        ,&          !Soil moisture at wilting point
-        p30 = 0.015D0        ,&          !Ratio of respiration to Rubisco carboxylation rates
-        p31 = 3.850D0        ,&          !Whole plant to leaf respiration ratio
-        p32 = 2.00D0         ,&
-        p33 = 0.10D0         ,&
-        p34 = 0.30D0         ,&
-        p35 = 0.05D0         ,&          !soil pool carbon turnover rate
-        p36 = 0.25D0         ,&
         alphap = 0.0913D0    ,&          ! 0.0913 parameter for v4m. Hard to explain. See Chen et al. 1994
         vpm25 =  85.0D0      ,&          ! µmol m-2 s-1 PEPcarboxylase CO2 saturated rate of carboxilation at 25°C
         h_vpm = 185075.0D0   ,&          ! Arrhenius eq. constant

@@ -32,6 +32,7 @@ module photo
         canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m) == m s-1
         stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
+        transpiration          ,&
         tetens                 ,& ! (f), Maximum vapor pressure (hPa)
         nrubisco               ,& ! (f), Fraction of N not in lignin (disponible to rubisco)
         m_resp                 ,& ! (f), maintenance respiration (plants)
@@ -246,13 +247,13 @@ contains
       ! endif
 
       D1 = sqrt(vapour_p_d)
-      gs = 0.01D0 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1D6)/ca)
-      rc2_in = real(1.0D0/(gs/41.0D0), r_4)  ! transform µmol m-2 s-1 to s m-1
+      gs = 0.01D0 + 1.6D0 * (1.0D0 + (g1/D1)) * (f1_in/ca) ! mol m-2 s-1
+      gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
+      rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
    end function canopy_resistence
 
    !=================================================================
    !=================================================================
-
 
    function stomatal_conductance(vpd_in,f1_in,g1,ca) result(gs)
     ! return stomatal resistence based on Medlyn et al. 2011a
@@ -281,8 +282,7 @@ contains
     ! endif
 
     D1 = sqrt(vapour_p_d)
-    gs = 0.01 + 1.6 * (1.0 + (g1/D1)) * ((f1_in * 1e6)/ca)
-    ! µmol m-2 s-1
+    gs = 0.01 + 1.6 * (1.0 + (g1/D1)) * (f1_in/ca) !mol m-2 s-1
  end function stomatal_conductance
 
  !=================================================================
@@ -293,14 +293,14 @@ contains
       !implicit none
       real(r_8),intent(in) :: a
       real(r_4),intent(in) :: g, p0, vpd
-      ! a = assimilacao; g = condutancia; p0 = pressao atm; vpd = vpd
+      ! a = assimilacao; g = resistencia; p0 = pressao atm; vpd = vpd
       real(r_4) :: wue
 
       real(r_4) :: g_in, p0_in, e_in
 
-      g_in = (1./g) * 41. ! convertendo a resistencia em condutancia mol m-2 s-1
+      g_in = (1./g) * 40.87 ! convertendo a resistencia (s m-1) em condutancia mol m-2 s-1
       p0_in = p0 /10. ! convertendo pressao atm (mbar/hPa) em kPa
-      e_in = g_in * (vpd/p0_in) ! calculando transpiracao
+      e_in = g_in * (vpd/p0_in) ! calculando transpiracao mol H20 m-2 s-1
 
       if(a .eq. 0 .or. e_in .eq. 0) then
          wue = 0
@@ -308,6 +308,33 @@ contains
          wue = real(a, kind=r_4)/e_in
       endif
    end function water_ue
+
+
+ !=================================================================
+ !=================================================================
+
+   function transpiration(g, p0, vpd, unit) result(e)
+      use types
+      !implicit none
+      real(r_4),intent(in) :: g, p0, vpd
+      integer(i_4), intent(in) :: unit
+      ! g = resistencia estomatica s m-1; p0 = pressao atm (mbar); vpd = vpd
+      real(r_4) :: e
+
+      real(r_4) :: g_in, p0_in, e_in
+
+      g_in = (1./g) * 40.87 ! convertendo a resistencia (s m-1) em condutancia mol m-2 s-1
+      p0_in = p0 /10. ! convertendo pressao atm (mbar/hPa) em kPa
+
+      e_in = g_in * (vpd/p0_in) ! calculando transpiracao mol H20 m-2 s-1
+      if(unit .eq. 1) then
+         e = e_in
+         return
+      else
+         e = 18.0 * e_in * 1e-3    ! Kg m-2 s-1
+      endif
+   end function transpiration
+
 
    !=================================================================
    !=================================================================

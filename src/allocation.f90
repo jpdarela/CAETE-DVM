@@ -612,6 +612,11 @@ module alloc
       nuptk = sum(n_uptake)
       puptk = sum(p_uptake)
 
+      ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (kgC kgN-1)
+      ! cc_active_n = (kn / (avail_n / 1D3)) * (kc / scf1)
+      ! cc_active_p = (kp / (avail_p / 1D3)) * (kcp / scf1)
+
+
 
       ! CARBON AND NUTRIENTS TURNOVER
 
