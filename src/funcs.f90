@@ -324,14 +324,15 @@ contains
       real(r_4) :: g_in, p0_in, e_in
 
       g_in = (1./g) * 40.87 ! convertendo a resistencia (s m-1) em condutancia mol m-2 s-1
-      p0_in = p0 /10. ! convertendo pressao atm (mbar/hPa) em kPa
+      p0_in = p0 / 10. ! convertendo pressao atm (mbar/hPa) em kPa
 
       e_in = g_in * (vpd/p0_in) ! calculando transpiracao mol H20 m-2 s-1
+      
       if(unit .eq. 1) then
          e = e_in
          return
       else
-         e = 18.0 * e_in * 1e-3    ! Kg m-2 s-1
+         e = 18.0 * e_in * 1e-3    ! g m-2 s-1 * 1d-3  == Kg m-2 s-1  == mm s-1
       endif
    end function transpiration
 

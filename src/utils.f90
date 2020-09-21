@@ -120,9 +120,9 @@ module utils
     ! DO NOT USE IN PYTHON ENVIRONMENT
     ! THIS function is used only for testing and debugging
 
-        real(r_4), intent(in) :: from, to
-        real(r_4), intent(out) :: array(:)
-        real(r_4) :: range
+        real(r_8), intent(in) :: from, to
+        real(r_8), intent(out) :: array(:)
+        real(r_8) :: range
         integer :: n, i
         n = size(array)
         range = to - from
