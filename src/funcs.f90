@@ -318,16 +318,16 @@ contains
       !implicit none
       real(r_4),intent(in) :: g, p0, vpd
       integer(i_4), intent(in) :: unit
-      ! g = resistencia estomatica s m-1; p0 = pressao atm (mbar); vpd = vpd
+      ! g = resistencia estomatica s m-1; p0 = pressao atm (mbar == hPa); vpd = vpd (kPa)
       real(r_4) :: e
 
       real(r_4) :: g_in, p0_in, e_in
 
-      g_in = (1./g) * 40.87 ! convertendo a resistencia (s m-1) em condutancia mol m-2 s-1
+      g_in = (1./g) * 44.6 ! convertendo a resistencia (s m-1) (m s-1) em condutancia mol m-2 s-1
       p0_in = p0 / 10. ! convertendo pressao atm (mbar/hPa) em kPa
 
       e_in = g_in * (vpd/p0_in) ! calculando transpiracao mol H20 m-2 s-1
-      
+
       if(unit .eq. 1) then
          e = e_in
          return
