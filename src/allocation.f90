@@ -229,7 +229,7 @@ module alloc
 
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
-         from_sto2npp = 0.5D0 * storage(1)
+         from_sto2npp = 0.75D0 * storage(1)
          npp_pot = npp_pot + from_sto2npp
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
@@ -268,6 +268,7 @@ module alloc
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
 
+      ! NITROGEN FIXATION
 
       ! SUM UP THE STORED NUTRIENTS AND DIVIDE IT AMONG PLANT POOLS
       ! GET THE VALUES OF STORAGE NUTRIENT POOLS for subsequent subtraction of uptk

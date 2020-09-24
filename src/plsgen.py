@@ -226,18 +226,17 @@ def table_gen(NPLS):
     # new traits
     # % of npp
 
-    pmyco = np.random.uniform(0.0001, 0.05, NPLS)
     pdia = np.random.uniform(0.0001, 0.05, NPLS)
-    amp = np.random.uniform(0.0, 1.0, NPLS)
+    amp = np.random.uniform(0.01, 0.99, NPLS)
 
     stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,
              awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c,
-             pmyco, amp, pdia)
+             amp, pdia)
 
     head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
-            'pmyco', 'amp', 'pdia']
+            'amp', 'pdia']
     # # for i,x in enumerate(head):
     # #     print(i + 1, ': ',x)
 

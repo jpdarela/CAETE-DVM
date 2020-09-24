@@ -6,17 +6,20 @@ module carbon_costs
    implicit none
    private
 
-   public :: abrt               ,&
-           & calc_passive_uptk1 ,&
-           & cc_active          ,&
-           & cc_retran          ,&
-           & cc_fix             ,&
-           & passive_uptake     ,&
-           & fixed_n            ,&
-           & retran_nutri_cost  ,&
-           & active_cost        ,&
-           & ap_actvity1        ,&
-           & active_nutri_gain
+   public :: abrt                   ,&
+           & calc_passive_uptk1     ,&
+           & cc_active              ,&
+           & cc_retran              ,&
+           & cc_fix                 ,&
+           & passive_uptake         ,&
+           & fixed_n                ,&
+           & retran_nutri_cost      ,&
+           & active_cost            ,&
+           & ap_actvity1            ,&
+           & ezc_prod               ,&
+           & active_nutri_gain      ,&
+           & n_invest_p             ,&
+           & select_active_strategy
 
    ! real(r_8), dimension(100) :: temps, out
    ! integer :: j
@@ -207,7 +210,7 @@ module carbon_costs
       cc(N,nme) = cc_active(kn, av_n_ecm, kcn, croot)
 
       ! Costs of active Mycorrhizal uptake of Nitrogen
-      cc(N,am) = cc_active(kan, av_n_vam, kanc, croot)
+      cc(N,am) = 1D20! cc_active(kan, av_n_vam, kanc, croot)
       cc(N,em) = cc_active(ken, av_n_ecm, kenc, croot)
 
       !Costs of active Non Mycorrhizal uptake of P
@@ -220,33 +223,68 @@ module carbon_costs
 
    end subroutine active_cost
 
+   subroutine select_active_strategy(amp, av_n, av_p, croot, cc, strategy)
+      real(r_8), intent(in) :: amp
+      real(r_8), intent(in) :: av_n, av_p
+      real(r_8), intent(in) :: croot
+      real(r_8), dimension(2), intent(out) :: cc
+      integer(i_4), dimension(2), intent(out) :: strategy
 
-   subroutine ap_actvity1(c_xm, nut, strat, cc_array, ezc_ap)
-      real(r_8), intent(in) :: c_xm ! g m-2 C expended on Nx uptake
-      integer(i_4), intent(in) :: nut, strat ! index for the active costs array
+      real(r_8), dimension(2,4) :: costs_array
+      integer(i_4), parameter :: N = 1, P = 2
+      integer(i_4), dimension(1) :: minindex
+      real(r_8), dimension(1) :: minvalue
+      ! [Nccnma, Nccnme, Nccam, Nccem]
+      ! [Pccnma, Pccnme, Pccam, Pccem]
+      !
+
+      call active_cost(amp, av_n, av_p, croot, costs_array)
+
+      minvalue = minval(costs_array(N, :))
+      minindex = minloc(costs_array(N, :))
+
+      cc(N) = minvalue(1)
+      strategy(N) = minindex(1)
+
+      minvalue = minval(costs_array(P, :))
+      minindex = minloc(costs_array(P, :))
+
+      cc(P) = minvalue(1)
+      strategy(P) = minindex(1)
+
+   end subroutine select_active_strategy
+
+
+   subroutine ap_actvity1(c_xm, strat, cc_array, ezc_ap)
+      real(r_8), intent(in) :: c_xm ! g m-2 C expended on P uptake
+      integer(i_4), intent(in) :: strat ! index for the active costs array
       real(r_8), dimension(2,4), intent(in) :: cc_array
       real(r_8), intent(out) :: ezc_ap   ! Carbon that will be
                                          ! converted in enzymes
       ! Calculate how much C is allocated to produce
       ! enzime by an strategy given the amount of c_xm(g(C)m-2)
+      integer(i_4), parameter :: P = 2
 
-      ezc_ap = c_xm / cc_array(nut, strat)
+      ezc_ap = c_xm / cc_array(P, strat)
+
    end subroutine ap_actvity1
 
 
-   subroutine ezc_prod(c_ezc, nut, strat, cc_array, enzyme_conc)
+   subroutine ezc_prod(c_ezc, strat, cc_array, enzyme_conc)
 
       ! Calculate the enzyme concentration for
       ! a given nutri for a given strategy.
       ! g m-2
 
       real(r_8), intent(in) :: c_ezc ! g m-2 C expended on Nx uptake
-      integer(i_4), intent(in) :: nut, strat ! index for the active costs array
+      integer(i_4), intent(in) :: strat ! index for the active costs array
       real(r_8), dimension(2,4), intent(in) :: cc_array
       real(r_8), intent(out) :: enzyme_conc
-      real(r_8), parameter :: c_to_enzime = 2.0D0
 
-      enzyme_conc = c_ezc * cc_array(nut, strat) * c_to_enzyme ! g m-2
+      real(r_8), parameter :: c_to_enzyme = 2.0D0
+      integer(i_4), parameter :: P = 2
+
+      enzyme_conc = c_ezc * cc_array(P, strat) * c_to_enzyme ! g m-2
 
    end subroutine ezc_prod
 
@@ -255,7 +293,7 @@ module carbon_costs
       ! Calculate the amount of nutrient that is
       real(r_8), intent(in) :: enzyme_conc
       real(r_8) :: nutri_out
-      real(r_8), parameter :: vcmax = 0.0003D0 ! mol(P) g[enzyme]-1 day-1
+      real(r_8), parameter :: vcmax = 1800.0D0 ! mol(P) g[enzyme]-1 day-1
 
       nutri_out = vcmax * enzyme_conc  ! mol NUtrient/m2/day
 
@@ -268,16 +306,7 @@ module carbon_costs
       real(r_8) :: nmass ! gm -2
       real(r_8), parameter :: n_enzime = 0.16D0
 
-
-
-
-
-
-
-
-
-
-
-
+      nmass = c_ezc * n_enzime
+   end function n_invest_p
 
 end module carbon_costs
