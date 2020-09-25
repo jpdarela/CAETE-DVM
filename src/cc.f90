@@ -49,6 +49,7 @@ module carbon_costs
 
 
    ! CONVERSIONS -- LOOK eq 150 onwards in Reis 2020
+
    ! Calculations of passive uptake
    subroutine calc_passive_uptk1(nsoil, et, sd, uptk)
       ! From Fisher et al. 2010
@@ -61,49 +62,9 @@ module carbon_costs
 
    end subroutine calc_passive_uptk1
 
-
-   function cc_active(k1, d1, k2, d2) result (c_active)
-
-      real(r_8), intent(in) :: k1 ! CONSTANT
-      real(r_8), intent(in) :: d1 ! AVAILABLE NUTRIENT POOL Kg Nutrient m-2
-      real(r_8), intent(in) :: k2 ! CONSTANT
-      real(r_8), intent(in) :: d2 ! CARBON IN ROOTS kg C m-2
-
-      real(r_8) :: c_active   ! g(C) g(Nutrient)⁻¹
-
-      if(d1 .le. 0.0D0) call abrt("division by 0 in cc_acive - d1")
-      if(d2 .le. 0.0D0) call abrt("division by 0 in cc_acive - d2")
-
-      c_active = (k1 / d1) * (k2 / d2)
-
-   end function cc_active
-
-
-   function cc_retran(k1, d1) result(c_retran)
-
-      real(r_8), intent(in) :: k1 ! Constant
-      real(r_8), intent(in) :: d1 ! Nutrient in litter ML-2
-      real(r_8) :: c_retran       ! Carbon cost of nut. resorbed MC MN-1
-
-      if(d1 .le. 0.0D0) call abrt("division by 0 in cc_acive - d1")
-      c_retran = k1/d1
-
-   end function cc_retran
-
-
-   function cc_fix(ts) result (c_fix)
-
-      real(r_8), intent(in) :: ts ! soil temp °C
-      real(r_8) :: c_fix ! C Cost of Nitrogen M(N) M(C)⁻¹
-      c_fix = -6.25D0 * (exp(-3.62D0 + (0.27D0 * ts) &
-      &       * (1.0D0 - (0.5D0 * (ts / 25.15D0)))) - 2.0D0)
-
-   end function cc_fix
-
-
    ! ESTIMATE PASSIVE UPTAKE OF NUTRIENTS
    subroutine passive_uptake (w, av_n, av_p, nupt, pupt,&
-                & e, topay_upt, to_storage)
+      & e, topay_upt, to_storage, passive_upt)
 
 
       real(r_8), intent(in) :: w    ! Water soil depht Kg(H2O) m-2 == (mm)
@@ -113,14 +74,17 @@ module carbon_costs
       real(r_8), intent(in) :: nupt, pupt ! g m-2
       real(r_8), dimension(2), intent(out) :: topay_upt !(N, P)gm⁻² Remaining uptake to be paid if applicable
       real(r_8), dimension(2), intent(out) :: to_storage!(N, P)gm⁻² Passively uptaken nutrient if applicable
-
+      real(r_8), dimension(2), intent(out) :: passive_upt
       real(r_8) :: passive_n,&
-                 & passive_p,&
-                 & ruptn,&
-                 & ruptp
+            & passive_p,&
+            & ruptn,&
+            & ruptp
 
       call calc_passive_uptk1(av_n, e, w, passive_n)
       call calc_passive_uptk1(av_p, e, w, passive_p)
+
+      passive_upt(1) = passive_n
+      passive_upt(2) = passive_p
 
       ruptn = passive_n - nupt
       ruptp = passive_p - pupt
@@ -142,6 +106,95 @@ module carbon_costs
       endif
 
    end subroutine passive_uptake
+
+
+   function cc_active(k1, d1, k2, d2) result (c_active)
+
+      real(r_8), intent(in) :: k1 ! CONSTANT
+      real(r_8), intent(in) :: d1 ! AVAILABLE NUTRIENT POOL Kg Nutrient m-2
+      real(r_8), intent(in) :: k2 ! CONSTANT
+      real(r_8), intent(in) :: d2 ! CARBON IN ROOTS kg C m-2
+
+      real(r_8) :: c_active   ! g(C) g(Nutrient)⁻¹
+
+      if(d1 .le. 0.0D0) call abrt("division by 0 in cc_active - d1")
+      if(d2 .le. 0.0D0) call abrt("division by 0 in cc_active - d2")
+
+      c_active = (k1 / d1) * (k2 / d2)
+
+   end function cc_active
+
+
+   subroutine active_cost(amp, av_n, av_p, croot, cc)
+
+      real(r_8), intent(in) :: amp
+      real(r_8), intent(in) :: av_n, av_p
+      real(r_8), intent(in) :: croot
+      real(r_8), dimension(2,4), intent(out) :: cc ! [Nccnma, Nccnme, Nccam, Nccem]
+                                                   ! [Pccnma, Pccnme, Pccam, Pccem]
+
+      real(r_8), parameter :: kn   = 0.5D0         ,& ! change parameter s to reflect Fisher et al 2010
+                            & kcn  = 1.0D0 / kn    ,& ! assertion that the product of kc and kx == 1
+                            & kp   = 0.7D0         ,&
+                            & kcp  = 1.0D0 / kp    ,& ! PArameters from FUN3.0 source code
+                            & kan  = 1.0D0         ,& ! AkN<-0.0?
+                            & kanc = 1.0D0         ,& ! AkC<-0.025
+                            & ken  = 0.15D0        ,& ! EkN<-0.025
+                            & kenc = 0.75D0 / ken   ,& ! EkC<-0.15
+                            & kap  = 0.8D0        ,& ! AkP<-0.1 #AM cost
+                            & kapc = 1.3D0 / kap   ,& ! AkCp<-0.5 #AM cost
+                            & kep  = 0.3D0         ,& ! EkP<-0.05 #ECM cost
+                            & kepc = 1.15D0 / kep      ! EkCp<-1.0 #ECM cost
+
+      integer(i_4), parameter :: N = 1, P = 2, nma = 1, nme = 2, am = 3, em = 4
+
+      real(r_8) :: ecp, av_n_vam, av_n_ecm, av_p_vam, av_p_ecm
+
+      ecp = 1.0D0 - amp
+
+      av_n_vam = av_n * amp
+      av_n_ecm = av_n * ecp
+      av_p_vam = av_p * amp
+      av_p_ecm = av_p * ecp
+
+      ! Costs of active Non Mycorrhizal uptake of Nitrogen
+      cc(N,nma) = cc_active(kn, av_n_vam, kcn, croot)
+      cc(N,nme) = cc_active(kn, av_n_ecm, kcn, croot)
+
+      ! Costs of active Mycorrhizal uptake of Nitrogen
+      cc(N,am) = cc_active(kan, av_n_vam, kanc, croot)
+      cc(N,em) = cc_active(ken, av_n_ecm, kenc, croot)
+
+      !Costs of active Non Mycorrhizal uptake of P
+      cc(P,nma) = cc_active(kp, av_p_vam, kcp, croot)
+      cc(P,nme) = cc_active(kp, av_p_ecm, kcp, croot)
+
+      !Costs of active Mycorrhizal uptake of P
+      cc(P,am) = cc_active(kap, av_p_vam, kapc, croot)
+      cc(P,em) = cc_active(kep, av_p_ecm, kepc, croot)
+
+   end subroutine active_cost
+
+   function cc_retran(k1, d1) result(c_retran)
+
+      real(r_8), intent(in) :: k1 ! Constant
+      real(r_8), intent(in) :: d1 ! Nutrient in litter ML-2
+      real(r_8) :: c_retran       ! Carbon cost of nut. resorbed MC MN-1
+
+      if(d1 .le. 0.0D0) call abrt("division by 0 in cc_retran - d1")
+      c_retran = k1/d1
+
+   end function cc_retran
+
+
+   function cc_fix(ts) result (c_fix)
+
+      real(r_8), intent(in) :: ts ! soil temp °C
+      real(r_8) :: c_fix ! C Cost of Nitrogen M(N) M(C)⁻¹
+      c_fix = -6.25D0 * (exp(-3.62D0 + (0.27D0 * ts) &
+      &       * (1.0D0 - (0.5D0 * (ts / 25.15D0)))) - 2.0D0)
+
+   end function cc_fix
 
 
    function fixed_n(c, ts) result(fn)
@@ -173,55 +226,56 @@ module carbon_costs
    end function retran_nutri_cost
 
 
-   subroutine active_cost(amp, av_n, av_p, croot, cc)
+   ! subroutine active_cost(amp, av_n, av_p, croot, cc)
 
-      real(r_8), intent(in) :: amp
-      real(r_8), intent(in) :: av_n, av_p
-      real(r_8), intent(in) :: croot
-      real(r_8), dimension(2,4), intent(out) :: cc ! [Nccnma, Nccnme, Nccam, Nccem]
-                                                   ! [Pccnma, Pccnme, Pccam, Pccem]
+   !    real(r_8), intent(in) :: amp
+   !    real(r_8), intent(in) :: av_n, av_p
+   !    real(r_8), intent(in) :: croot
+   !    real(r_8), dimension(2,4), intent(out) :: cc ! [Nccnma, Nccnme, Nccam, Nccem]
+   !                                                 ! [Pccnma, Pccnme, Pccam, Pccem]
 
-      real(r_8), parameter :: kn = 0.15D0    ,&
-                            & kp = 0.08D0    ,&
-                            & kcn = 0.15D0   ,&
-                            & kcp = 0.03D0   ,& ! PArameters from FUN3.0 source code
-                            & kan = 0.0D0    ,& ! AkN<-0.0
-                            & ken = 0.025D0  ,& ! EkN<-0.025
-                            & kanc = 0.025D0 ,& ! AkC<-0.025
-                            & kenc = 0.15D0  ,& ! EkC<-0.15
-                            & kap = 0.1D0    ,& ! AkP<-0.1 #AM cost
-                            & kapc = 0.5D0   ,& ! AkCp<-0.5 #AM cost
-                            & kep = 0.05D0   ,& ! EkP<-0.05 #ECM cost
-                            & kepc = 1.0D0      ! EkCp<-1.0 #ECM cost
+   !    real(r_8), parameter :: kn = 0.15D0    ,&
+   !                          & kcn = 0.15D0   ,&
+   !                          & kp = 0.08D0    ,&
+   !                          & kcp = 0.03D0   ,& ! PArameters from FUN3.0 source code
+   !                          & kan = 0.05D0    ,& ! AkN<-0.0?
+   !                          & kanc = 0.025D0 ,& ! AkC<-0.025
+   !                          & ken = 0.025D0  ,& ! EkN<-0.025
+   !                          & kenc = 0.15D0  ,& ! EkC<-0.15
+   !                          & kap = 0.1D0    ,& ! AkP<-0.1 #AM cost
+   !                          & kapc = 0.5D0   ,& ! AkCp<-0.5 #AM cost
+   !                          & kep = 0.05D0   ,& ! EkP<-0.05 #ECM cost
+   !                          & kepc = 1.0D0      ! EkCp<-1.0 #ECM cost
 
-      integer(i_4), parameter :: N = 1, P = 2, nma = 1, nme = 2, am = 3, em = 4
+   !    integer(i_4), parameter :: N = 1, P = 2, nma = 1, nme = 2, am = 3, em = 4
 
-      real(r_8) :: ecp, av_n_vam, av_n_ecm, av_p_vam, av_p_ecm
+   !    real(r_8) :: ecp, av_n_vam, av_n_ecm, av_p_vam, av_p_ecm
 
-      ecp = 1.0D0 - amp
+   !    ecp = 1.0D0 - amp
 
-      av_n_vam = av_n * amp
-      av_n_ecm = av_n * ecp
-      av_p_vam = av_p * amp
-      av_p_ecm = av_p * ecp
+   !    av_n_vam = av_n * amp
+   !    av_n_ecm = av_n * ecp
+   !    av_p_vam = av_p * amp
+   !    av_p_ecm = av_p * ecp
 
-      ! Costs of active Non Mycorrhizal uptake of Nitrogen
-      cc(N,nma) = cc_active(kn, av_n_vam, kcn, croot)
-      cc(N,nme) = cc_active(kn, av_n_ecm, kcn, croot)
+   !    ! Costs of active Non Mycorrhizal uptake of Nitrogen
+   !    cc(N,nma) = cc_active(kn, av_n_vam, kcn, croot)
+   !    cc(N,nme) = cc_active(kn, av_n_ecm, kcn, croot)
 
-      ! Costs of active Mycorrhizal uptake of Nitrogen
-      cc(N,am) = 1D20! cc_active(kan, av_n_vam, kanc, croot)
-      cc(N,em) = cc_active(ken, av_n_ecm, kenc, croot)
+   !    ! Costs of active Mycorrhizal uptake of Nitrogen
+   !    cc(N,am) = cc_active(kan, av_n_vam, kanc, croot)
+   !    cc(N,em) = cc_active(ken, av_n_ecm, kenc, croot)
 
-      !Costs of active Non Mycorrhizal uptake of P
-      cc(P,nma) = cc_active(kp, av_p_vam, kcp, croot)
-      cc(P,nme) = cc_active(kp, av_p_ecm, kcp, croot)
+   !    !Costs of active Non Mycorrhizal uptake of P
+   !    cc(P,nma) = cc_active(kp, av_p_vam, kcp, croot)
+   !    cc(P,nme) = cc_active(kp, av_p_ecm, kcp, croot)
 
-      !Costs of active Mycorrhizal uptake of P
-      cc(P,am) = cc_active(kap, av_p_vam, kapc, croot)
-      cc(P,em) = cc_active(kep, av_p_ecm, kepc, croot)
+   !    !Costs of active Mycorrhizal uptake of P
+   !    cc(P,am) = cc_active(kap, av_p_vam, kapc, croot)
+   !    cc(P,em) = cc_active(kep, av_p_ecm, kepc, croot)
 
-   end subroutine active_cost
+   ! end subroutine active_cost
+
 
    subroutine select_active_strategy(amp, av_n, av_p, croot, cc, strategy)
       real(r_8), intent(in) :: amp
@@ -293,7 +347,7 @@ module carbon_costs
       ! Calculate the amount of nutrient that is
       real(r_8), intent(in) :: enzyme_conc
       real(r_8) :: nutri_out
-      real(r_8), parameter :: vcmax = 1800.0D0 ! mol(P) g[enzyme]-1 day-1
+      real(r_8), parameter :: vcmax = 0.003D0 ! mol(P) g[enzyme]-1 day-1
 
       nutri_out = vcmax * enzyme_conc  ! mol NUtrient/m2/day
 

@@ -708,7 +708,7 @@ contains
                   exit
                endif
             else
-               if((cfrooti_aux(k)&
+               if((cfrooti_aux(k)&dt
                     &/cfrooti_aux(kk).lt.sensitivity).and.&
                     &(cleafi_aux(k)/cleafi_aux(kk).lt.sensitivity)) then
 

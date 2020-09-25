@@ -272,7 +272,7 @@ module alloc
 
       ! SUM UP THE STORED NUTRIENTS AND DIVIDE IT AMONG PLANT POOLS
       ! GET THE VALUES OF STORAGE NUTRIENT POOLS for subsequent subtraction of uptk
-      internal_n = storage(2)
+      internal_n = storage(2) !+ fixed_n
       internal_n_leaf = internal_n * aleaf
       internal_n_wood = internal_n * awood
       internal_n_root = internal_n * aroot
