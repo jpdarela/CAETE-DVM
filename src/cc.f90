@@ -15,6 +15,8 @@ module carbon_costs
            & fixed_n                ,&
            & retran_nutri_cost      ,&
            & active_cost            ,&
+           & active_costN           ,&
+           & active_costP           ,&
            & ap_actvity1            ,&
            & ezc_prod               ,&
            & active_nutri_gain      ,&
@@ -142,7 +144,7 @@ module carbon_costs
                             & ken  = 0.15D0        ,& ! EkN<-0.025
                             & kenc = 0.75D0 / ken   ,& ! EkC<-0.15
                             & kap  = 0.8D0        ,& ! AkP<-0.1 #AM cost
-                            & kapc = 1.3D0 / kap   ,& ! AkCp<-0.5 #AM cost
+                            & kapc = 1.0D0 / kap   ,& ! AkCp<-0.5 #AM cost
                             & kep  = 0.3D0         ,& ! EkP<-0.05 #ECM cost
                             & kepc = 1.15D0 / kep      ! EkCp<-1.0 #ECM cost
 
@@ -174,6 +176,106 @@ module carbon_costs
       cc(P,em) = cc_active(kep, av_p_ecm, kepc, croot)
 
    end subroutine active_cost
+
+
+   subroutine active_costN(amp, av_n, av_p, croot, cc)
+
+      real(r_8), intent(in) :: amp
+      real(r_8), intent(in) :: av_n, av_p
+      real(r_8), intent(in) :: croot
+      real(r_8), dimension(2,4), intent(out) :: cc ! [Nccnma, Nccnme, Nccam, Nccem]
+                                                   ! [Pccnma, Pccnme, Pccam, Pccem]
+
+      real(r_8), parameter :: kn   = 0.5D0         ,& ! change parameter s to reflect Fisher et al 2010
+                            & kcn  = 1.0D0 / kn    ,& ! assertion that the product of kc and kx == 1
+                            & kp   = 0.7D0         ,&
+                            & kcp  = 1.0D0 / kp    ,& ! PArameters from FUN3.0 source code
+                            & kan  = 1.0D0         ,& ! AkN<-0.0?
+                            & kanc = 1.0D0         ,& ! AkC<-0.025
+                            & ken  = 0.15D0        ,& ! EkN<-0.025
+                            & kenc = 0.75D0 / ken   ,& ! EkC<-0.15
+                            & kap  = 0.8D0        ,& ! AkP<-0.1 #AM cost
+                            & kapc = 1.0D0 / kap   ,& ! AkCp<-0.5 #AM cost
+                            & kep  = 0.3D0         ,& ! EkP<-0.05 #ECM cost
+                            & kepc = 1.15D0 / kep      ! EkCp<-1.0 #ECM cost
+
+      integer(i_4), parameter :: N = 1, P = 2, nma = 1, nme = 2, am = 3, em = 4
+
+      real(r_8) :: ecp, av_n_vam, av_n_ecm, av_p_vam, av_p_ecm
+
+      ecp = 1.0D0 - amp
+
+      av_n_vam = av_n * amp
+      av_n_ecm = av_n * ecp
+      av_p_vam = av_p * amp
+      av_p_ecm = av_p * ecp
+
+      ! Costs of active Non Mycorrhizal uptake of Nitrogen
+      cc(N,nma) = cc_active(kn, av_n_vam, kcn, croot)
+      cc(N,nme) = cc_active(kn, av_n_ecm, kcn, croot)
+
+      ! Costs of active Mycorrhizal uptake of Nitrogen
+      cc(N,am) = cc_active(kan, av_n_vam, kanc, croot)
+      cc(N,em) = cc_active(ken, av_n_ecm, kenc, croot)
+
+      !Costs of active Non Mycorrhizal uptake of P
+      cc(P,nma) = cc_active(kp, av_p_vam, kcp, croot)
+      cc(P,nme) = cc_active(kp, av_p_ecm, kcp, croot)
+
+      !Costs of active Mycorrhizal uptake of P
+      cc(P,am) = cc_active(kap, av_p_vam, kapc, croot)
+      cc(P,em) = cc_active(kep, av_p_ecm, kepc, croot)
+
+   end subroutine active_costN
+
+
+   subroutine active_costP(amp, av_p, sop, op, croot, ccp)
+
+      real(r_8), intent(in) :: amp
+      real(r_8), intent(in) :: av_p, sop, op
+      real(r_8), intent(in) :: croot
+      real(r_8), dimension(8), intent(out) :: ccp
+
+      !['nmam', 'nmem', 'am', 'em', 'ramAP', 'remAP', 'AMAP', 'EM0']
+
+      real(r_8), parameter :: kp   = 0.7D0  ,&
+                            & kcp  = 1.0D0  ,& ! PArameters from FUN3.0 source code
+                            & kap  = 0.8D0  ,& ! AkP<-0.1 #AM cost
+                            & kapc = 1.0D0  ,& ! AkCp<-0.5 #AM cost
+                            & kep  = 0.3D0  ,& ! EkP<-0.05 #ECM cost
+                            & kepc = 1.15D0     ! EkCp<-1.0 #ECM cost
+
+      integer(i_4), parameter :: nma   = 1 ,&
+                              &  nme   = 2 ,&
+                              &  am    = 3 ,&
+                              &  em    = 4 ,&
+                              &  ramAP = 5 ,&
+                              &  remAP = 6 ,&
+                              &  AMAP  = 7 ,&
+                              &  EM0x  = 8
+
+      real(r_8) :: ecm
+
+      ecm = 1.0D0 - amp
+
+      ! Costs of active Non Mycorrhizal uptake of P
+      ccp(nma) = cc_active(kp, amp * av_p, kcp, amp * croot)
+      ccp(nme) = cc_active(kp, ecm * av_p, kcp, ecm * croot)
+
+      ! ! Costs of active Mycorrhizal uptake of P
+      ccp(am) = cc_active(kap, amp * av_p, kapc, amp * croot)
+      ccp(em) = cc_active(kep, ecm * av_p, kepc, ecm * croot)
+
+      ! !Costs of active Non Mycorrhizal AP activity
+      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot)
+      ccp(remAP) = cc_active(kep, ecm * op, kepc, ecm * croot)
+
+      ! !Costs of Mycorrhizal AP/exudates
+      ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot)
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot)
+
+   end subroutine active_costP
+
 
    function cc_retran(k1, d1) result(c_retran)
 
