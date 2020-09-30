@@ -43,6 +43,7 @@ module carbon_costs
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
       uptk = nsoil * (et/sd)      !  !(ML⁻²T⁻¹)
+      if (uptk .gt. nsoil) uptk = nsoil
    end subroutine calc_passive_uptk1
 
    ! ESTIMATE PASSIVE UPTAKE OF NUTRIENTS
@@ -104,6 +105,7 @@ module carbon_costs
 
 
    subroutine active_cost(amp, av_n, av_p, croot, cc)
+      ! Standard Model FUN3.0
       real(r_8), intent(in) :: amp
       real(r_8), intent(in) :: av_n, av_p
       real(r_8), intent(in) :: croot
@@ -153,6 +155,7 @@ module carbon_costs
 
 
    subroutine active_costn(amp, av_n, on, croot, ccn)
+      ! Adapted model - FUN-POOL
       real(r_8), intent(in) :: amp
       real(r_8), intent(in) :: av_n, on
       real(r_8), intent(in) :: croot
@@ -188,6 +191,7 @@ module carbon_costs
 
 
    subroutine active_costp(amp, av_p, sop, op, croot, ccp)
+      ! Adapted model - FUN-POOL
       real(r_8), intent(in) :: amp
       real(r_8), intent(in) :: av_p, sop, op
       real(r_8), intent(in) :: croot

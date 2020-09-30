@@ -16,6 +16,7 @@
 module alloc
 
     use types
+    use carbon_costs, only: fixed_n, passive_uptake
     use global_par, only: ntraits, sapwood
     use photo, only: f_four, spec_leaf_area, realized_npp
 
@@ -34,7 +35,7 @@ module alloc
 !c     Modified 02-08-2017 jp - nutrient cycles implementation
 !c=====================================================================
 
-   subroutine allocation(dt,npp, nmin, plab,scl1,sca1,scf1,storage,&
+   subroutine allocation(dt,npp,ts,nmin, plab,scl1,sca1,scf1,storage,&
     &storage_out_alloc,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
     &nuptk,puptk,litter_nutrient_content, limiting_nutrient)
 
@@ -53,6 +54,7 @@ module alloc
       ! variables I/O
       real(r_8),dimension(ntraits),intent(in) :: dt  ! PLS attributes
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
+      real(r_4),intent(in) :: ts   ! soil temp °C
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8),intent(in) :: scf1 ! previous day carbon content on fine roots compartment (KgC/m2)
@@ -138,6 +140,12 @@ module alloc
       real(r_8) :: n_root, p_root, new_root_n2c, new_root_p2c, root_litter_o
       real(r_8) :: n_wood, p_wood, new_wood_n2c, new_wood_p2c, cwd_o
 
+      ! CC auxiliary
+      real(r_8) :: pdia, amp ! functional traits
+      real(r_8) :: npp_to_fixer, n_fixed
+
+      real(r_8), dimension(2) :: to_pay, to_sto, plant_uptake
+
       ! initialize ALL outputs
       storage_out_alloc            = (/0.0D0, 0.0D0, 0.0D0/)
       litter_nutrient_content = (/0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0/)
@@ -169,6 +177,8 @@ module alloc
       leaf_p2c = dt(13)
       wood_p2c = dt(14)
       root_p2c = dt(15)
+      pdia = dt(16)
+      amp = dt(17)
 
 
       ! If there is not nutrients or NPP then no allocation process
@@ -223,6 +233,9 @@ module alloc
       ! You want: g m-2 day-1
       npp_pot = (real(npp,kind=r_8) * (1000.0D0 / 365.242D0)) ! Transform Kg m-2 Year-1 to g m-2 day
       daily_growth = 0.0D0
+      npp_to_fixer = npp_pot * pdia
+
+
 
       ! START STORAGE_OUT_alloc
       storage_out_alloc(1) = 0.0D0
@@ -230,7 +243,7 @@ module alloc
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
          from_sto2npp = 0.75D0 * storage(1)
-         npp_pot = npp_pot + from_sto2npp
+         npp_pot = npp_pot + from_sto2npp - npp_to_fixer
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
 
@@ -268,11 +281,12 @@ module alloc
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
 
-      ! NITROGEN FIXATION
+      ! NITROGEN FIXATION goes direct to plant use
+      n_fixed = fixed_n(npp_to_fixer, ts)
 
       ! SUM UP THE STORED NUTRIENTS AND DIVIDE IT AMONG PLANT POOLS
       ! GET THE VALUES OF STORAGE NUTRIENT POOLS for subsequent subtraction of uptk
-      internal_n = storage(2) !+ fixed_n
+      internal_n = storage(2) + n_fixed
       internal_n_leaf = internal_n * aleaf
       internal_n_wood = internal_n * awood
       internal_n_root = internal_n * aroot
@@ -280,7 +294,6 @@ module alloc
       internal_p_leaf = internal_p * aleaf
       internal_p_wood = internal_p * awood
       internal_p_root = internal_p * aroot
-
 
       ! Calculate the available nutirents for uptake
       leaf_av_n = (avail_n * aleaf) + internal_n_leaf ! g(N)m⁻²
@@ -613,14 +626,18 @@ module alloc
       nuptk = sum(n_uptake)
       puptk = sum(p_uptake)
 
-      ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (kgC kgN-1)
-      ! cc_active_n = (kn / (avail_n / 1D3)) * (kc / scf1)
-      ! cc_active_p = (kp / (avail_p / 1D3)) * (kcp / scf1)
+      ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC gN-1)
+      ! 1 - if passive uptake < uptk
+      !call passive_uptake
+      ! then  2 - active uptake costs
+      !       3 - select strategy
+      !       4 - calculate efective costs
+      !       5 - prepare outputs (N/P pools subtracted, C & N costs)
 
-
+      ! else: passive uptake is enough - correct storage
+      ! end : goto retranslocation costs
 
       ! CARBON AND NUTRIENTS TURNOVER
-
 294   continue ! Material going to soil + updating veg pools
 
       ! LEAF LITTER FLUX
