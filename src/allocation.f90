@@ -16,7 +16,8 @@
 module alloc
 
     use types
-    use carbon_costs, only: fixed_n, passive_uptake
+    use carbon_costs, only: fixed_n, passive_uptake,&
+                          & active_costn, active_costp
     use global_par, only: ntraits, sapwood
     use photo, only: f_four, spec_leaf_area, realized_npp
 
@@ -35,7 +36,7 @@ module alloc
 !c     Modified 02-08-2017 jp - nutrient cycles implementation
 !c=====================================================================
 
-   subroutine allocation(dt,npp,ts,nmin, plab,scl1,sca1,scf1,storage,&
+   subroutine allocation(dt,npp,npp_costs,ts,wsoil,te,nmin, plab,on,sop,op,scl1,sca1,scf1,storage,&
     &storage_out_alloc,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
     &nuptk,puptk,litter_nutrient_content, limiting_nutrient)
 
@@ -54,12 +55,16 @@ module alloc
       ! variables I/O
       real(r_8),dimension(ntraits),intent(in) :: dt  ! PLS attributes
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
+      real(r_4),intent(in) :: npp_costs ! Carbon costs of Nutrient active uptake and retranslocation
       real(r_4),intent(in) :: ts   ! soil temp °C
+      real(r_8),intent(in) :: wsoil! soil water depth (mm)
+      real(r_8),intent(in) :: te   ! plant transpiration (mm/s)
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8),intent(in) :: scf1 ! previous day carbon content on fine roots compartment (KgC/m2)
-      real(r_4),intent(in) :: nmin ! N in mineral N pool(g m-2)
-      real(r_4),intent(in) :: plab ! P in labile pool (g m-2)
+      real(r_4),intent(in) :: nmin ! N in mineral N pool(g m-2) SOLUTION
+      real(r_4),intent(in) :: plab ! P in labile pool (g m-2)   SOLUTION
+      real(r_8),intent(in) :: on,sop,op ! Organic N, Sorbed P, Organic P
       real(r_8),dimension(3),intent(in) :: storage ! Three element array- storage pool([C,N,P]) g m-2
       ! O
       real(r_8),dimension(3),intent(out) :: storage_out_alloc
@@ -145,6 +150,29 @@ module alloc
       real(r_8) :: npp_to_fixer, n_fixed
 
       real(r_8), dimension(2) :: to_pay, to_sto, plant_uptake
+
+      real(r_8), dimension(6) :: ccn ! Carbon Costs of  N uptake by strategy :
+      real(r_8), dimension(8) :: ccp ! CC of P uptake by strategy
+      ! The Nutrient uptake possible strategies
+      integer(i_4), parameter ::  nma   = 1 ,& ! Active uptake by root AM colonized on Solution N/P pool (costs of)
+                                & nme   = 2 ,& ! Active uptake by root EM colonized on Solution N/P pool
+                                & am    = 3 ,& ! Active uptake by root AM hyphae on Solution N/P pool
+                                & em    = 4 ,& ! Active uptake by root EM hyphae on Solution N/P pool
+                                & ramAP = 5 ,& ! PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
+                                & AM0   = 5 ,& ! NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
+                                & remAP = 6 ,& ! PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
+                                & EM0   = 6 ,& ! NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
+                                & AMAP  = 7 ,& ! PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
+                                & EM0x  = 8    ! Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
+
+      ! Soluble inorg_n_pool = (1, 2, 3, 4)
+      ! Organic N pool = (5, 6)
+      ! Soluble inorg_p_pool = (1, 2, 3, 4)
+      ! Organic P pool = (5, 6, 7)
+      ! Insoluble inorg p pool = (8)
+
+      real(r_8) :: active_nupt_cost, active_pupt_cost
+      integer(i_4) :: naquis_strat, paquis_strat
 
       ! initialize ALL outputs
       storage_out_alloc            = (/0.0D0, 0.0D0, 0.0D0/)
@@ -627,12 +655,39 @@ module alloc
       puptk = sum(p_uptake)
 
       ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC gN-1)
-      ! 1 - if passive uptake < uptk
-      !call passive_uptake
+      ! 1 - if passivpassive_uptakee uptake < uptk
+      call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
+                        & to_pay, to_sto, plant_uptake)
+
       ! then  2 - active uptake costs
+      ccn(:) = 0.0D0
+      active_nupt_cost = 0.0D0
+      naquis_strat = 0
+      if (to_pay(1) .gt. 0.0D0) then
       !       3 - select strategy
       !       4 - calculate efective costs
+         call active_costn(amp, avail_n - plant_uptake(1), on, scf1 * 1D3, ccn)
+         call select_active_strategy(ccn, active_nupt_cost, naquis_strat)
+      endif
+
+      ccp(:) = 0.0D0
+      active_pupt_cost = 0.0D0
+      paquis_strat = 0
+      if(to_pay(2) .gt. 0.0D0) then
+      !       3 - select strategy
+      !       4 - calculate efective costs
+         call active_costp(amp, avail_p - plant_uptake(2), sop, op, scf1 * 1D3, ccp)
+         call select_active_strategy(ccp, active_pupt_cost, paquis_strat)
+      endif
+
+      
       !       5 - prepare outputs (N/P pools subtracted, C & N costs)
+      ! Soluble inorg_n_pool = (1, 2, 3, 4)
+      ! Organic N pool = (5, 6)
+      ! Soluble inorg_p_pool = (1, 2, 3, 4)
+      ! Organic P pool = (5, 6, 7)
+      ! Insoluble inorg p pool = (8)
+
 
       ! else: passive uptake is enough - correct storage
       ! end : goto retranslocation costs

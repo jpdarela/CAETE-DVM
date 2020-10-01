@@ -21,7 +21,9 @@ module carbon_costs
            & ezc_prod               ,&
            & active_nutri_gain      ,&
            & n_invest_p             ,&
-           & select_active_strategy
+           & select_active_strategy ,&
+           & prep_out_n             ,&
+           & prep_out_p
 
    contains
    ! HElPERS
@@ -43,7 +45,7 @@ module carbon_costs
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
       uptk = nsoil * (et/sd)      !  !(ML⁻²T⁻¹)
-      if (uptk .gt. nsoil) uptk = nsoil
+      if (uptk .gt. (0.5D0 * nsoil)) uptk = 0.5D0 * nsoil
    end subroutine calc_passive_uptk1
 
    ! ESTIMATE PASSIVE UPTAKE OF NUTRIENTS
@@ -283,35 +285,87 @@ module carbon_costs
    end function retran_nutri_cost
 
 
-   subroutine select_active_strategy(amp, av_n, av_p, croot, cc, strategy)
-      real(r_8), intent(in) :: amp
-      real(r_8), intent(in) :: av_n, av_p
-      real(r_8), intent(in) :: croot
-      real(r_8), dimension(2), intent(out) :: cc
-      integer(i_4), dimension(2), intent(out) :: strategy
+   subroutine select_active_strategy(cc_array, cc, strategy)
 
-      real(r_8), dimension(2,4) :: costs_array
-      integer(i_4), parameter :: N = 1, P = 2
-      integer(i_4), dimension(1) :: minindex
-      real(r_8), dimension(1) :: minvalue
-      ! [Nccnma, Nccnme, Nccam, Nccem]
-      ! [Pccnma, Pccnme, Pccam, Pccem]
-      !
+      real(r_8), dimension(:),intent(in) :: cc_array
+      real(r_8), intent(out) :: cc
+      integer(i_4), intent(out) :: strategy
+      real(r_8) :: cc_strat
+      integer(i_4) :: cc_size, j
+      logical(l_1) :: test1, test2
+      cc_size = size(cc_array)
+      cc_strat = 1D17
 
-      call active_cost(amp, av_n, av_p, croot, costs_array)
+      do j = cc_size, 1, -1
+         test1 = cc_array(j) .lt. cc_strat
+         if(test1) then
+            cc_strat = cc_array(j)
+            strategy = j
+         endif
 
-      minvalue = minval(costs_array(N, :))
-      minindex = minloc(costs_array(N, :))
+         test2 = abs(cc_array(j) - cc_strat) .lt. 1D-8
+         if(test2) then
+            cc_strat = cc_array(j)
+            strategy = j
+         endif
 
-      cc(N) = minvalue(1)
-      strategy(N) = minindex(1)
-
-      minvalue = minval(costs_array(P, :))
-      minindex = minloc(costs_array(P, :))
-
-      cc(P) = minvalue(1)
-      strategy(P) = minindex(1)
+      enddo
+      cc = cc_strat
    end subroutine select_active_strategy
+
+   subroutine prep_out_n(nut_aqui_strat, to_pay, out_array)
+      integer(i_4),intent(in) :: nut_aqui_strat
+      real(r_8), intent(in) :: to_pay
+      real(r_8), dimension(2), intent(out) :: out_array
+
+      integer(i_4), parameter :: avail_n = 1, on = 2
+
+      select case (nut_aqui_strat)
+         case(1,2,3,4)
+            out_array(avail_n) = to_pay
+            out_array(on) = 0.0D0
+         case(5,6)
+            out_array(avail_n) = 0.0D0
+            out_array(on) = to_pay
+         case default
+            call abrt("Problem in N output case default - cc.f90 325")
+      end select
+      ! Soluble inorg_n_pool = (1, 2, 3, 4)
+      ! Organic N pool = (5, 6)
+      ! Soluble inorg_p_pool = (1, 2, 3, 4)
+      ! Organic P pool = (5, 6, 7)
+      ! Insoluble inorg p pool = (8)
+   end subroutine prep_out_n
+
+
+   subroutine prep_out_p(nut_aqui_strat, to_pay, out_array)
+      integer(i_4),intent(in) :: nut_aqui_strat
+      real(r_8), intent(in) :: to_pay
+      real(r_8), dimension(3), intent(out) :: out_array
+      integer(i_4), parameter :: avail_p = 1, sop = 2, op=3
+
+      select case (nut_aqui_strat)
+         case (1,2,3,4)
+            out_array(avail_p) = to_pay
+            out_array(sop) = 0.0D0
+            out_array(op) = 0.0D0
+         case (5, 6, 7)
+            out_array(avail_p) = 0.0D0
+            out_array(sop) = 0.0D0
+            out_array(op) = to_pay
+         case (8)
+            out_array(avail_p) = 0.0D0
+            out_array(sop) = to_pay
+            out_array(op) = 0.0D0
+         case default
+            call abrt("Problem in P output case default - cc.f90 362")
+      end select
+      ! Soluble inorg_n_pool = (1, 2, 3, 4)
+      ! Organic N pool = (5, 6)
+      ! Soluble inorg_p_pool = (1, 2, 3, 4)
+      ! Organic P pool = (5, 6, 7)
+      ! Insoluble inorg p pool = (8)
+   end subroutine prep_out_p
 
 
    subroutine ap_actvity1(c_xm, strat, cc_array, ezc_ap)

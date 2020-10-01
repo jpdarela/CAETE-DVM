@@ -7,7 +7,7 @@ import plsgen
 
 from cc import carbon_costs as cc
 
-print(cc.active_cost.__doc__)
+# print(cc.active_cost.__doc__)
 
 
 # # Simulation of cc to nutrients uptake for CAETÊ-DVM
@@ -32,8 +32,8 @@ npp = 2.25
 
 
 tsoil = 25.5
-wsoil = 245.0  # mm
-e = 3e-3 * 86400.0   # mm/s to mm/day
+wsoil = 445.0  # mm
+e = 3e-4 * 86400.0   # mm/s to mm/day
 
 
 pls = np.random.randint(0, 999)
@@ -44,11 +44,11 @@ fixed_n = cc.fixed_n(npp * pdia[pls], tsoil)
 # In CAETÊ the fixed N or a fraction of it are available to allocate C
 # I is counted as available N and non used mass remains in storage
 # Nutrients in soil. In this way the N STORAGE will downregulate N uptake
-nmin = 12.2 * 0.0045  # gm-2
-on = 50.0 * 0.0045
-plab = 2.0 * 0.003
-sop = 20.0 * 0.003
-op = 10.0 * 0.003
+nmin = 122.2 * 0.0045  # gm-2
+on = 30.0 * 0.0045
+plab = 4.0 * 0.003
+sop = 3.0 * 0.003
+op = 5.0 * 0.003
 
 # discount c_fix before  allocation
 npp -= npp * pdia[pls]
@@ -59,8 +59,7 @@ litterp = 0.03
 rsp = rs[pls] * litterp
 
 # #Passive uptake
-#    subroutine passive_uptake (w, av_n, av_p, nupt, pupt,&
-#                 & e, topay_upt, to_storage)
+# Estimate passive uptake and subtract from realized uptake
 
 to_pay, to_sto, pu = cc.passive_uptake(
     wsoil, nmin, plab, nupt, pupt, e)
@@ -80,14 +79,44 @@ if pu[1] > plab:
 if a:
     assert False
 
-
 # Calc costs of active uptake
-
 Pargs = (amp[pls], plab, sop, op, croot)
 Nargs = (amp[pls], nmin, on, croot)
+cp = 0.0
+pstrat = 0
+cn = 0.0
+nstrat = 0
+nout = np.zeros(2,)
+pout = np.zeros(3,)
 
-ccp = cc.active_costp(*Pargs)
-ccn = cc.active_costn(*Nargs)
+# calculate the amount of nutrient actively  extracted from the specific pool if necessary
+if to_pay[0] > 0.0:
+    ccn = cc.active_costn(*Nargs)
+    cn, nstrat = cc.select_active_strategy(ccn)
+    nout = cc.prep_out_n(nstrat, to_pay[0])
+
+# calculate the amount of nutrient actively  extracted from the specific pool if necessary
+if to_pay[1] > 0.0:
+    ccp = cc.active_costp(*Pargs)
+    cp, pstrat = cc.select_active_strategy(ccp)
+    pout = cc.prep_out_p(pstrat, to_pay[1])
+
+# Retranslocation costs
+cc_r_n = cc.retran_nutri_cost(littern, rsn, 1)
+cc_r_p = cc.retran_nutri_cost(litterp, rsp, 2)
+
+
+# prints
+print("\nAMP: ", amp[pls])
+print("Fixed N: ", fixed_n, ' npp%: ', pdia[pls])
+print("PASSIVE N uptk: ", pu[0])
+print("PASSIVE P uptk: ", pu[1])
+print("REALIZED ACTIVE N uptk: ", nout)
+print("REALIZED ACTIVE P uptk: ", pout)
+print("ALLOC N uptake: ", nupt)
+print("ALLOC P uptake: ", pupt)
+print('CC: ', cn + cp + cc_r_p + cc_r_n)
+
 
 # ccost, strategy = cc.select_active_strategy(*args)
 
@@ -115,8 +144,8 @@ ccn = cc.active_costn(*Nargs)
 #     n_invest_p = cc.n_invest_p(ezc_ap)
 
 # Estimate resorption costs
-cc_r_n = cc.retran_nutri_cost(littern, rsn, 1)
-cc_r_p = cc.retran_nutri_cost(litterp, rsp, 2)
+# cc_r_n = cc.retran_nutri_cost(littern, rsn, 1)
+# cc_r_p = cc.retran_nutri_cost(litterp, rsp, 2)
 
 # print("\n\nFixed N: ", fixed_n, ' npp%: ', pdia[pls])
 # print("To Pay N | P: ", to_pay)
