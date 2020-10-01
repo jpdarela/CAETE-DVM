@@ -313,19 +313,19 @@ module carbon_costs
       cc = cc_strat
    end subroutine select_active_strategy
 
-   subroutine prep_out_n(nut_aqui_strat, to_pay, out_array)
+   subroutine prep_out_n(nut_aqui_strat, nupt, to_pay, out_array)
       integer(i_4),intent(in) :: nut_aqui_strat
-      real(r_8), intent(in) :: to_pay
+      real(r_8), intent(in) :: to_pay, nupt
       real(r_8), dimension(2), intent(out) :: out_array
 
       integer(i_4), parameter :: avail_n = 1, on = 2
 
       select case (nut_aqui_strat)
          case(1,2,3,4)
-            out_array(avail_n) = to_pay
+            out_array(avail_n) = nupt
             out_array(on) = 0.0D0
          case(5,6)
-            out_array(avail_n) = 0.0D0
+            out_array(avail_n) = nupt - to_pay
             out_array(on) = to_pay
          case default
             call abrt("Problem in N output case default - cc.f90 325")
@@ -338,23 +338,23 @@ module carbon_costs
    end subroutine prep_out_n
 
 
-   subroutine prep_out_p(nut_aqui_strat, to_pay, out_array)
+   subroutine prep_out_p(nut_aqui_strat, pupt, to_pay, out_array)
       integer(i_4),intent(in) :: nut_aqui_strat
-      real(r_8), intent(in) :: to_pay
+      real(r_8), intent(in) :: to_pay, pupt
       real(r_8), dimension(3), intent(out) :: out_array
       integer(i_4), parameter :: avail_p = 1, sop = 2, op=3
 
       select case (nut_aqui_strat)
          case (1,2,3,4)
-            out_array(avail_p) = to_pay
+            out_array(avail_p) = pupt
             out_array(sop) = 0.0D0
             out_array(op) = 0.0D0
          case (5, 6, 7)
-            out_array(avail_p) = 0.0D0
+            out_array(avail_p) = pupt - to_pay
             out_array(sop) = 0.0D0
             out_array(op) = to_pay
          case (8)
-            out_array(avail_p) = 0.0D0
+            out_array(avail_p) = pupt - to_pay
             out_array(sop) = to_pay
             out_array(op) = 0.0D0
          case default

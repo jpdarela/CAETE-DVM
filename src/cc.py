@@ -32,7 +32,7 @@ npp = 2.25
 
 
 tsoil = 25.5
-wsoil = 445.0  # mm
+wsoil = 245.0  # mm
 e = 3e-4 * 86400.0   # mm/s to mm/day
 
 
@@ -46,9 +46,9 @@ fixed_n = cc.fixed_n(npp * pdia[pls], tsoil)
 # Nutrients in soil. In this way the N STORAGE will downregulate N uptake
 nmin = 122.2 * 0.0045  # gm-2
 on = 30.0 * 0.0045
-plab = 4.0 * 0.003
-sop = 3.0 * 0.003
-op = 5.0 * 0.003
+plab = 1.0 * 0.003
+sop = 12.0 * 0.003
+op = 17.0 * 0.003
 
 # discount c_fix before  allocation
 npp -= npp * pdia[pls]
@@ -93,14 +93,18 @@ pout = np.zeros(3,)
 if to_pay[0] > 0.0:
     ccn = cc.active_costn(*Nargs)
     cn, nstrat = cc.select_active_strategy(ccn)
-    nout = cc.prep_out_n(nstrat, to_pay[0])
+    nout = cc.prep_out_n(nstrat, nupt, to_pay[0])
+else:
+    nout[0] = nupt
 
 # calculate the amount of nutrient actively  extracted from the specific pool if necessary
 if to_pay[1] > 0.0:
     ccp = cc.active_costp(*Pargs)
     cp, pstrat = cc.select_active_strategy(ccp)
-    pout = cc.prep_out_p(pstrat, to_pay[1])
-
+    pout = cc.prep_out_p(pstrat, pupt, to_pay[1])
+else:
+    # everthing is passive
+    pout[0] = pupt
 # Retranslocation costs
 cc_r_n = cc.retran_nutri_cost(littern, rsn, 1)
 cc_r_p = cc.retran_nutri_cost(litterp, rsp, 2)
