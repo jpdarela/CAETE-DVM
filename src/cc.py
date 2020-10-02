@@ -44,11 +44,11 @@ fixed_n = cc.fixed_n(npp * pdia[pls], tsoil)
 # In CAETÊ the fixed N or a fraction of it are available to allocate C
 # I is counted as available N and non used mass remains in storage
 # Nutrients in soil. In this way the N STORAGE will downregulate N uptake
-nmin = 122.2 * 0.0045  # gm-2
-on = 30.0 * 0.0045
+nmin = 1.2 * 0.0045  # gm-2
+on = 1.0 * 0.0045
 plab = 1.0 * 0.003
-sop = 12.0 * 0.003
-op = 17.0 * 0.003
+sop = 1.0 * 0.003
+op = 3.0 * 0.003
 
 # discount c_fix before  allocation
 npp -= npp * pdia[pls]
@@ -80,8 +80,8 @@ if a:
     assert False
 
 # Calc costs of active uptake
-Pargs = (amp[pls], plab, sop, op, croot)
-Nargs = (amp[pls], nmin, on, croot)
+Pargs = (amp[pls], plab - pu[1], sop, op, croot)
+Nargs = (amp[pls], nmin - pu[0], on, croot)
 cp = 0.0
 pstrat = 0
 cn = 0.0
