@@ -27,7 +27,7 @@ contains
 
   subroutine prod(dt,light_limit,catm,temp,ts,p0,w,ipar,rh,emax,cl1_prod,&
        & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,ph,ar,&
-       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla)
+       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla, e)
 
     use types
     use global_par
@@ -61,7 +61,7 @@ contains
     real(r_4), intent(out) :: rg
     real(r_4), intent(out) :: wue
     real(r_4), intent(out) :: c_defcit     ! Carbon deficit gm-2 if it is positive, aresp was greater than npp + sto2(1)
-    real(r_8), intent(out) :: sla          !specific leaf area (m2/kg)
+    real(r_8), intent(out) :: sla, e        !specific leaf area (m2/kg)
     real(r_8), intent(out) :: vm_out
 !     Internal
 !     --------
@@ -115,11 +115,15 @@ contains
 
 !Stomatal resistence
 !===================
-    rc = canopy_resistence(vpd, f1a, g1, catm)
+    rc = canopy_resistence(vpd, f1a, g1, catm) !s m-1
 
 ! Novo calculo da WUE
 
     wue = water_ue(f1a, rc, p0, vpd)
+
+!     calcula a transpiração em mm/s
+
+    e = transpiration(rc, p0, vpd, 2)
 
 !     Water stress response modifier (dimensionless)
 !     ----------------------------------------------

@@ -8,7 +8,7 @@ HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
 
-sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 allocation.f90 productivity.f90 budget.f90
+sources = global.f90 utils.f90 cc.f90 funcs.f90 soil_dec.f90 allocation.f90 productivity.f90 budget.f90
 
 interface: $(sources)
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet

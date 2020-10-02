@@ -41,17 +41,17 @@ module carbon_costs
       ! From Fisher et al. 2010
       real(r_8), intent(in) :: nsoil  ! (ML⁻²)
       real(r_8), intent(in) :: et ! Transpiration (ML⁻²T⁻¹)
-      real(r_8), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
+      real(r_4), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
-      uptk = nsoil * (et/sd)      !  !(ML⁻²T⁻¹)
+      uptk = nsoil * ((et * 86400.0D0)/sd)      !  !(ML⁻²T⁻¹)
       if (uptk .gt. (0.5D0 * nsoil)) uptk = 0.5D0 * nsoil
    end subroutine calc_passive_uptk1
 
    ! ESTIMATE PASSIVE UPTAKE OF NUTRIENTS
    subroutine passive_uptake (w, av_n, av_p, nupt, pupt,&
       & e, topay_upt, to_storage, passive_upt)
-      real(r_8), intent(in) :: w    ! Water soil depht Kg(H2O) m-2 == (mm)
+      real(r_4), intent(in) :: w    ! Water soil depht Kg(H2O) m-2 == (mm)
       real(r_8), intent(in) :: av_n ! available N (soluble) g m-2
       real(r_8), intent(in) :: av_p ! available P (i soluble) g m-2
       real(r_8), intent(in) :: e    ! Trannspiration (mm/day) == kg(H2O) m-2 day-1
@@ -99,10 +99,20 @@ module carbon_costs
 
       real(r_8) :: c_active   ! g(C) g(Nutrient)⁻¹
 
-      if(d1 .le. 0.0D0) call abrt("division by 0 in cc_active - d1")
-      if(d2 .le. 0.0D0) call abrt("division by 0 in cc_active - d2")
+      real(r_8) :: d1_in, d2_in
 
-      c_active = (k1 / d1) * (k2 / d2)
+      d1_in = d1
+      d2_in = d2
+      if(d1 .le. 0.0D0) then
+         d1_in = 10.0D0
+      endif
+         ! call abrt("division by 0 in cc_active - d1")
+      if(d2 .le. 0.0D0) then
+         d2_in = 10.0D0
+      endif
+         ! call abrt("division by 0 in cc_active - d2")
+
+      c_active = (k1 / d1_in) * (k2 / d2_in)
    end function cc_active
 
 
@@ -241,7 +251,7 @@ module carbon_costs
 
 
    function cc_fix(ts) result (c_fix)
-      real(r_8), intent(in) :: ts ! soil temp °C
+      real(r_4), intent(in) :: ts ! soil temp °C
       real(r_8) :: c_fix ! C Cost of Nitrogen M(N) M(C)⁻¹
       c_fix = -6.25D0 * (exp(-3.62D0 + (0.27D0 * ts) &
       &       * (1.0D0 - (0.5D0 * (ts / 25.15D0)))) - 2.0D0)
@@ -251,7 +261,7 @@ module carbon_costs
    function fixed_n(c, ts) result(fn)
       ! Given the C available calculate the fixed N
       real(r_8), intent(in) :: c ! g m-2 day-1 % of NPP destinated to diazotroph partners
-      real(r_8), intent(in) :: ts ! soil tem °C
+      real(r_4), intent(in) :: ts ! soil tem °C
       real(r_8) :: fn
 
       fn = c * cc_fix(ts)
@@ -263,8 +273,11 @@ module carbon_costs
       real(r_8), intent(in) :: d1 ! Nutrient in litter ML-2
       real(r_8) :: c_retran       ! Carbon cost of nut. resorbed MC MN-1
 
-      if(d1 .le. 0.0D0) call abrt("division by 0 in cc_retran - d1")
-      c_retran = k1/d1
+      if(d1 .le. 0.0D0) then !call abrt("division by 0 in cc_retran - d1")
+         c_retran = 0.0D0
+      else
+         c_retran = k1/d1
+      endif
    end function cc_retran
 
 
@@ -312,6 +325,7 @@ module carbon_costs
       enddo
       cc = cc_strat
    end subroutine select_active_strategy
+
 
    subroutine prep_out_n(nut_aqui_strat, nupt, to_pay, out_array)
       integer(i_4),intent(in) :: nut_aqui_strat

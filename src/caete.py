@@ -91,12 +91,19 @@ def neighbours_index(pos, matrix):
                 neighbours.append((i, j))
     return neighbours
 
+# daily_budget outputs
+# , w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
+#         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
+#         &, cfrootavg_pft, storage_out_bdgt, ocpavg, wueavg, cueavg, c_defavg&
+#         &, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, npp2pay, lit_nut_content&
+#         &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min)
+
 
 def catch_out_budget(out):
     lst = ["w2", "g2", "s2", "smavg", "ruavg", "evavg", "epavg", "phavg", "aravg", "nppavg",
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
-           "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "lnc", "delta_cveg",
+           "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
            "mineral_n_pls", "labile_p_pls", "limitation_status", "sto_min"]
 
     return dict(zip(lst, out))
@@ -219,6 +226,7 @@ class grd:
         self.sp_csoil = None
         self.sp_snr = None
         self.soil_spinup = None
+        self.sp_uptk_costs = None
 
         # CVEG POOLS
         self.vp_cleaf = None
@@ -265,8 +273,8 @@ class grd:
         self.pmin = np.zeros(shape=(n,), order='F')
         self.vcmax = np.zeros(shape=(n,), order='F')
         self.specific_la = np.zeros(shape=(n,), order='F')
-        self.nupt = np.zeros(shape=(n,), order='F')
-        self.pupt = np.zeros(shape=(n,), order='F')
+        self.nupt = np.zeros(shape=(2, n), order='F')
+        self.pupt = np.zeros(shape=(3, n), order='F')
         self.litter_l = np.zeros(shape=(n,), order='F')
         self.cwd = np.zeros(shape=(n,), order='F')
         self.litter_fr = np.zeros(shape=(n,), order='F')
@@ -464,6 +472,7 @@ class grd:
         self.sp_so_n = 0.3 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
         self.sp_in_p = self.soil_dict['ip']
+        self.sp_uptk_costs = np.zeros(shape=(npls,), order='F')
 
         self.outputs = dict()
         self.filled = True
@@ -568,15 +577,21 @@ class grd:
                 # Update soil temperature
                 self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
 
+                # INPUTS
+                #    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
+                #         &, mineral_n, labile_p, on, sop, op, catm, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+                #         &, droot, uptk_costs
+
                 out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                          self.soil_temp, temp[step], prec[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
+                                         self.sp_snc[:4].sum(
+                                         ), self.sp_so_p, self.sp_snc[4:].sum(),
                                          co2, self.vp_sto, self.vp_cleaf, self.vp_cwood, self.vp_croot,
-                                         self.vp_dcl, self.vp_dca, self.vp_dcf)
+                                         self.vp_dcl, self.vp_dca, self.vp_dcf, self.sp_uptk_costs)
 
                 # Create a dict with the function output
                 daily_output = catch_out_budget(out)
-
                 # UPDATE STATE VARIABLES
                 ocp = daily_output['ocpavg']
                 self.ls[step] = np.sum((ocp > 0.0))
@@ -601,8 +616,8 @@ class grd:
                 self.vp_sto = daily_output['stodbg']
                 self.vp_ocp = ocp
 
-                self.nupt[step] = wm(ocp, daily_output['nupt'])
-                self.pupt[step] = wm(ocp, daily_output['pupt'])
+                self.nupt[:, step] = wm(ocp, daily_output['nupt'])
+                self.pupt[:, step] = wm(ocp, daily_output['pupt'])
 
                 self.litter_l[step] = wm(ocp, daily_output['litter_l'])
                 self.cwd[step] = wm(ocp, daily_output['cwd'])
@@ -621,13 +636,17 @@ class grd:
 
                 if coupled:
                     # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
-
-                    self.sp_available_p -= self.pupt[step]
-                    self.sp_available_n -= self.nupt[step]
+                    self.sp_uptk_costs = daily_output['npp2pay']
+                    if self.pupt[1, step] > 0.0:
+                        self.sp_so_p -= self.pupt[1, step]
+                    self.sp_available_p -= self.pupt[0, step]
+                    self.sp_so_p -= self.pupt[1, step]
+                    self.sp_available_n -= self.nupt[0, step]
                     self.sp_available_p += soil_out['pmin']
-                    self.sp_available_n += soil_out['nmin'] + soil_dec.bnf(2.7)
+                    self.sp_available_n += soil_out['nmin']
 
                     # NUTRIENT DINAMICS
+                    # Inorganic N
                     self.sp_in_n += self.sp_available_n + self.sp_so_n
 
                     self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
@@ -635,12 +654,49 @@ class grd:
                         self.sp_in_n)
                     self.sp_in_n -= self.sp_so_n + self.sp_available_n
 
+                    # Organic N
+                    if self.nupt[1, step] > 0.0:
+                        # fraction of organic N upt extracted of each pool
+                        frs = [0.05, 0.15, 0.35, 0.45]
+                        to_next_pool = 0.0
+                        for N_org_pool in range(4):
+                            # check calcs
+                            to_subtract = (
+                                self.nupt[1, step] * frs[N_org_pool]) + to_next_pool
+                            if to_subtract > self.sp_snc[:4][N_org_pool]:
+                                to_next_pool = to_subtract - \
+                                    self.sp_snc[:4][N_org_pool]
+                                self.sp_snc[:4][N_org_pool] = 0.0
+                            else:
+                                self.sp_snc[:4][N_org_pool] -= to_subtract
+                                to_next_pool = 0.0
+                        if to_next_pool > 0.0:
+                            assert False, "Uptake is bigger than the Organic N pool"
+
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
 
                     self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
                     self.sp_available_p = soil_dec.solution_p_equil(
                         self.sp_in_p)
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
+                    # Organic P
+                    if self.pupt[2, step] > 0.0:
+                        # fraction of organic N upt extracted of each pool
+                        frs = [0.05, 0.15, 0.35, 0.45]
+                        to_next_pool = 0.0
+                        for P_org_pool in range(4):
+                            # check calcs
+                            to_subtract = (
+                                self.pupt[2, step] * frs[P_org_pool]) + to_next_pool
+                            if to_subtract > self.sp_snc[4:][P_org_pool]:
+                                to_next_pool = to_subtract - \
+                                    self.sp_snc[4:][P_org_pool]
+                                self.sp_snc[4:][P_org_pool] = 0.0
+                            else:
+                                self.sp_snc[4:][P_org_pool] -= to_subtract
+                                to_next_pool = 0.0
+                        if to_next_pool > 0.0:
+                            assert False, "Uptake is bigger than the Organic P pool"
 
                 # # # Process (cwm) & store (np.array) outputs
                 self.emaxm.append(daily_output['epavg'])
@@ -750,7 +806,7 @@ class grd:
         co2 = find_co2(year0)
         count_days = start.dayofyr - 2
         loop = 0
-
+        next_year = 0
         wo = []
         llo = []
         cwdo = []
@@ -779,8 +835,10 @@ class grd:
             out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                      self.soil_temp, temp[step], prec[step], p_atm[step],
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
+                                     self.sp_snc[:4].sum(
+                                     ), self.sp_so_p, self.sp_snc[4:].sum(),
                                      co2, self.vp_sto, self.vp_cleaf, self.vp_cwood, self.vp_croot,
-                                     self.vp_dcl, self.vp_dca, self.vp_dcf)
+                                     self.vp_dcl, self.vp_dca, self.vp_dcf, np.zeros(shape=(npls,), order="F"))
 
             # Create a dict with the function output
             daily_output = catch_out_budget(out)

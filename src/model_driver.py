@@ -13,7 +13,7 @@ from caete import mask, npls, print_progress
 import plsgen as pls
 
 import bz2
-import _pickle
+import _pickle as pkl
 
 try:
     os.mkdir('./outputs')

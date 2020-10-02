@@ -422,7 +422,7 @@ contains
       real(r_4), intent(in) :: arg
       real(r_4) :: retval
 
-      retval = arg * ks
+      retval = arg * 0.1
    end function sorbed_p_equil
 
    function solution_p_equil(arg) result(retval)
@@ -430,7 +430,7 @@ contains
       real(r_4), intent(in) :: arg
       real(r_4) :: retval
 
-      retval = arg * 0.02
+      retval = arg * 0.1
    end function solution_p_equil
 
    function sorbed_n_equil(arg) result(retval)

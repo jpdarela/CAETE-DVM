@@ -18,7 +18,8 @@ module alloc
     use types
     use carbon_costs, only: fixed_n, passive_uptake,&
                           & active_costn, active_costp,&
-                          & prep_out_n, prep_out_p
+                          & prep_out_n, prep_out_p,&
+                          & retran_nutri_cost, select_active_strategy
     use global_par, only: ntraits, sapwood
     use photo, only: f_four, spec_leaf_area, realized_npp
 
@@ -57,9 +58,9 @@ module alloc
       ! variables I/O
       real(r_8),dimension(ntraits),intent(in) :: dt  ! PLS attributes
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
-      real(r_4),intent(in) :: npp_costs ! Carbon costs of Nutrient active uptake and retranslocation
+      real(r_8),intent(in) :: npp_costs ! Carbon costs of Nutrient active uptake and retranslocation
       real(r_4),intent(in) :: ts   ! soil temp °C
-      real(r_8),intent(in) :: wsoil! soil water depth (mm)
+      real(r_4),intent(in) :: wsoil! soil water depth (mm)
       real(r_8),intent(in) :: te   ! plant transpiration (mm/s)
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
@@ -76,11 +77,11 @@ module alloc
       real(r_8),intent(out) :: cwd  ! coarse wood debris (to litter)(C) g m-2
       real(r_8),intent(out) :: root_litter ! to litter g(C) m-2
       real(r_8),intent(out) :: leaf_litter ! to litter g(C) m-2
-      real(r_8), dimension(2)intent(out) :: nitrogen_uptake ! N plant uptake g(N) m-2
-      real(r_8), dimension(3)intent(out) :: phosphorus_uptake ! P plant uptake g(P) m-2
+      real(r_8), dimension(2),intent(out) :: nitrogen_uptake ! N plant uptake g(N) m-2
+      real(r_8), dimension(3),intent(out) :: phosphorus_uptake ! P plant uptake g(P) m-2
       real(r_8),dimension(6),intent(out) :: litter_nutrient_content ! [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       integer(i_2), dimension(3), intent(out) :: limiting_nutrient
-      real(r_8),intent(out) :: c_costs_of_uptake
+      real(r_8) :: c_costs_of_uptake
 
       ! Auxiliary variables
       real(r_8) :: nuptk ! N plant uptake g(N) m-2
@@ -179,6 +180,9 @@ module alloc
       integer(i_4) :: naquis_strat, paquis_strat
       real(r_8) :: p_cost_resorpt, n_cost_resorpt
 
+      real(r_8) :: negative_one = 0.0D0
+      real(r_8) :: aux_on, aux_sop, aux_op
+
       ! initialize ALL outputs
       storage_out_alloc            = (/0.0D0, 0.0D0, 0.0D0/)
       litter_nutrient_content = (/0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0/)
@@ -267,18 +271,41 @@ module alloc
       npp_pot = (real(npp,kind=r_8) * (1000.0D0 / 365.242D0)) ! Transform Kg m-2 Year-1 to g m-2 day
       daily_growth = 0.0D0
       npp_to_fixer = npp_pot * pdia
-
-
+      npp_pot = npp_pot - npp_to_fixer - npp_costs
 
       ! START STORAGE_OUT_alloc
       storage_out_alloc(1) = 0.0D0
+      ! If there is not enough npp to pay uptake the you have to pay tomorrow
+      negative_one = 0.0D0
 
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
          from_sto2npp = 0.75D0 * storage(1)
-         npp_pot = npp_pot + from_sto2npp - npp_to_fixer
+         npp_pot = npp_pot + from_sto2npp
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
+
+      if(npp_pot .le. 0.0D0 .and. storage_out_alloc(1) .le. 0.0D0) then
+         daily_growth(wood) = 0.0D0
+         daily_growth(root) = 0.0D0
+         daily_growth(leaf) = 0.0D0
+         nuptk = 0.0D0
+         puptk = 0.0D0
+         storage_out_alloc(1) = storage(1)
+         storage_out_alloc(2) = storage(2)
+         storage_out_alloc(3) = storage(3)
+         if(npp_pot .lt. 0.0D0) negative_one = abs(npp_pot)
+         goto 294
+      else
+         if (npp_pot .gt. 0.0D0) goto 29
+         npp_pot = npp_pot + storage_out_alloc(1)
+         storage_out_alloc(1) = 0.0D0
+         if(npp_pot .lt. 0.0D0)then
+             negative_one = abs(npp_pot) ! amount of nutrient uptk that must be paid
+             goto 294
+         endif
+      endif
+29 continue
 
       ! Potential NPP for each compartment
       ! Partitioning NPP for CVEG pools
@@ -313,6 +340,9 @@ module alloc
       mult_factor_p  = 0.003D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
+      aux_on = on * mult_factor_n
+      aux_sop = sop * mult_factor_p
+      aux_op = op * mult_factor_p
 
       ! NITROGEN FIXATION goes direct to plant use
       n_fixed = fixed_n(npp_to_fixer, ts)
@@ -672,7 +702,7 @@ module alloc
       if (to_pay(1) .gt. 0.0D0) then
       !       3 - select strategy
       !       4 - calculate efective costs
-         call active_costn(amp, avail_n - plant_uptake(1), on, scf1 * 1D3, ccn)
+         call active_costn(amp, avail_n - plant_uptake(1), aux_on, scf1 * 1D3, ccn)
          call select_active_strategy(ccn, active_nupt_cost, naquis_strat)
          call prep_out_n(naquis_strat, nuptk, to_pay(1), nitrogen_uptake)
       else
@@ -689,7 +719,7 @@ module alloc
       if(to_pay(2) .gt. 0.0D0) then
       !       3 - select strategy
       !       4 - calculate efective costs
-         call active_costp(amp, avail_p - plant_uptake(2), sop, op, scf1 * 1D3, ccp)
+         call active_costp(amp, avail_p - plant_uptake(2), aux_sop, aux_op, scf1 * 1D3, ccp)
          call select_active_strategy(ccp, active_pupt_cost, paquis_strat)
          call prep_out_p(paquis_strat, puptk, to_pay(2), phosphorus_uptake)
       else
@@ -697,6 +727,9 @@ module alloc
       endif
       ! else: passive uptake is enough - correct storage
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
+
+      ! TODO calculate enzimatic n costs of enzimatic activity?
+
 
       ! end : next step is retranslocation costs
 
@@ -753,8 +786,8 @@ module alloc
       aux2 = n_root * resorpt_frac   ! g(N) m-2
       if(awood .gt. 0.0D0) aux3 = n_wood * resorpt_frac      ! g(N) m-2
 
-      call retran_nutri_cost((n_leaf + n_root + n_wood),&
-                            &(aux1 + aux2 + aux3), 1, n_cost_resorpt)
+      n_cost_resorpt = retran_nutri_cost((n_leaf + n_root + n_wood),&
+                                        &(aux1 + aux2 + aux3), 1)
       ! NEW LITTER N2C
       new_leaf_n2c = 0.0D0
       new_root_n2c = 0.0D0
@@ -795,8 +828,9 @@ module alloc
       aux1 = p_leaf * resorpt_frac
       aux2 = p_root * resorpt_frac
       if(awood .gt. 0.0D0) aux3 = p_wood * resorpt_frac
-      call retran_nutri_cost((p_leaf + p_root + p_wood),&
-                           & (aux1 + aux2 + aux3), 2, p_cost_resorpt)
+
+      p_cost_resorpt = retran_nutri_cost((p_leaf + p_root + p_wood),&
+                           & (aux1 + aux2 + aux3), 2)
 
       ! NEW LITTER P2C
       new_leaf_p2c = 0.0D0
@@ -830,7 +864,7 @@ module alloc
       endif
 
       c_costs_of_uptake = active_nupt_cost + active_pupt_cost &
-      &                   + n_cost_resorpt + p_cost_resorpt
+      &                   + n_cost_resorpt + p_cost_resorpt + negative_one
       ! END OF CALCULATIONS
 
    contains
