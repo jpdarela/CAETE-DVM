@@ -9,4 +9,3 @@ src/outputs
 src/.python-version
 .vscode
 .python-version
-input/climate/*.pkl
