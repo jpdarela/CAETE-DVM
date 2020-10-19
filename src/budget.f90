@@ -31,7 +31,7 @@ contains
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, npp2pay, lit_nut_content&
-        &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min)
+        &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min, uptk_strat)
 
 
       use types
@@ -108,6 +108,7 @@ contains
       real(r_8),dimension(npls),intent(out) ::  labile_p_pls
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status
       real(r_8), dimension(2, npls), intent(out) :: sto_min
+      integer(i_4), dimension(2, npls), intent(out) :: uptk_strat
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, numprocs
       real(r_8),dimension(ntraits) :: dt1 ! Store pls attributes array (1D)
@@ -258,11 +259,10 @@ contains
 
             dt1 = dt(:,p) ! Pick up the pls functional attributes list
 
-            call prod(dt1,ocp_wood(p),catm, temp,soil_temp, p0,w(p),ipar,rh,emax,cl1_pft(p)&
-               &,ca1_pft(p),cf1_pft(p),dleaf(p),dwood(p),droot(p)&
-               &,ph(p),ar(p),nppa(p),laia(p)&
-               &,f5(p),vpd(p),rm(p),rg(p),rc2(p),wue(p),c_def(p)&
-               &,vcmax(p),specific_la(p),tra(p))
+            call prod(dt1, ocp_wood(p),catm, temp, soil_temp, p0, w(p), ipar, rh, emax&
+                   &, cl1_pft(p), ca1_pft(p), cf1_pft(p), dleaf(p), dwood(p), droot(p)&
+                   &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
+                   &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
 
          ! Check if the carbon deficit can be conpensated by stored carbon
@@ -320,7 +320,7 @@ contains
                &,  mineral_n,labile_p, on, sop, op, cl1_pft(p),ca1_pft(p)&
                &, cf1_pft(p),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
                &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
-               &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p))
+               &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p))
 
             ! Estimate growth of storage C pool
             growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))

@@ -41,7 +41,8 @@ module alloc
    subroutine allocation(dt,npp,npp_costs,ts,wsoil,te,nmin, plab,on,&
       & sop,op,scl1,sca1,scf1,storage,storage_out_alloc,scl2,sca2,scf2,&
       & leaf_litter,cwd,root_litter,nitrogen_uptake, phosphorus_uptake,&
-      & litter_nutrient_content, limiting_nutrient, c_costs_of_uptake)
+      & litter_nutrient_content, limiting_nutrient, c_costs_of_uptake,&
+      & uptk_strategy)
 
 
       ! PARAMETERS
@@ -81,7 +82,9 @@ module alloc
       real(r_8), dimension(3),intent(out) :: phosphorus_uptake ! P plant uptake g(P) m-2
       real(r_8),dimension(6),intent(out) :: litter_nutrient_content ! [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       integer(i_2), dimension(3), intent(out) :: limiting_nutrient
-      real(r_8) :: c_costs_of_uptake
+      real(r_8), intent(out) :: c_costs_of_uptake
+      integer(i_4), dimension(2), intent(out) :: uptk_strategy
+
 
       ! Auxiliary variables
       real(r_8) :: nuptk ! N plant uptake g(N) m-2
@@ -708,10 +711,11 @@ module alloc
       else
          nitrogen_uptake(1) = nuptk
       endif
+      uptk_strategy(1) = naquis_strat
       ! else: passive uptake is enough - correct storage
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
 
-      ! then  2 - active uptake costs N
+      ! then  2 - active uptake costs P
       ccp(:) = 0.0D0
       active_pupt_cost = 0.0D0
       paquis_strat = 0
@@ -725,6 +729,7 @@ module alloc
       else
          phosphorus_uptake(1) = puptk
       endif
+      uptk_strategy(2) = paquis_strat
       ! else: passive uptake is enough - correct storage
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
 

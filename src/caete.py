@@ -96,7 +96,7 @@ def neighbours_index(pos, matrix):
 #         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
 #         &, cfrootavg_pft, storage_out_bdgt, ocpavg, wueavg, cueavg, c_defavg&
 #         &, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, npp2pay, lit_nut_content&
-#         &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min)
+#         &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min, uptk_strat)
 
 
 def catch_out_budget(out):
@@ -104,7 +104,7 @@ def catch_out_budget(out):
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
            "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
-           "mineral_n_pls", "labile_p_pls", "limitation_status", "sto_min"]
+           "mineral_n_pls", "labile_p_pls", "limitation_status", "sto_min", "uptk_strat"]
 
     return dict(zip(lst, out))
 
@@ -209,6 +209,8 @@ class grd:
         self.lnc = None
         self.storage_pool = None
         self.lim_status = None
+        self.uptake_strategy = None
+        self.carbon_costs = None
 
         # WATER POOLS
         self.wfim = None
@@ -225,7 +227,6 @@ class grd:
         self.sp_in_p = None
         self.sp_csoil = None
         self.sp_snr = None
-        self.soil_spinup = None
         self.sp_uptk_costs = None
 
         # CVEG POOLS
@@ -238,6 +239,7 @@ class grd:
         self.vp_ocp = None
         self.vp_wdl = None
         self.vp_sto = None
+        self.vp_lsid = None
 
     def _allocate_output(self, n):
         """allocate space for the outputs
@@ -283,6 +285,10 @@ class grd:
         self.ls = np.zeros(shape=(n,), order='F')
         self.lim_status = np.zeros(
             shape=(3, npls, n), dtype=np.dtype('int16'), order='F')
+        self.uptake_strategy = np.zeros(
+            shape=(2, npls, n), dtype=np.dtype('int16'), order='F')
+        self.carbon_costs = np.zeros(
+            shape=(2, npls, n), dtype=np.dtype('float64'), order='F')
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -338,6 +344,8 @@ class grd:
                      'lnc': self.lnc,
                      'ls': self.ls,
                      'lim_status': self.lim_status,
+                     'c_cost': self.carbon_costs,
+                     'u_strat': self.uptake_strategy,
                      # 'n_pls': self.mineral_n_pls,
                      # 'p_pls': self.labile_p_pls,
                      'storage_pool': self.storage_pool,
@@ -385,7 +393,10 @@ class grd:
         self.lnc = None
         self.storage_pool = None
         self.ls = None
+        self.ls_id = None
         self.lim_status = None
+        self.carbon_costs = None,
+        self.uptake_strategy = None
 
         return to_pickle
 
@@ -463,7 +474,6 @@ class grd:
 
         # # # SOIL SPINUP
         # TODO  Prepare soil nutrient data
-        self.soil_spinup = False
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 1.0
         self.sp_snc = np.zeros(shape=(8,), order='F')
         self.sp_available_p = self.soil_dict['ap']
@@ -552,6 +562,7 @@ class grd:
         co2 = find_co2(year0)
         count_days = start.dayofyr - 2
         loop = 0
+        next_year = 0.0
 
         for s in range(spin):
             self._allocate_output(steps.size)
@@ -594,6 +605,7 @@ class grd:
                 daily_output = catch_out_budget(out)
                 # UPDATE STATE VARIABLES
                 ocp = daily_output['ocpavg']
+                self.vp_lsid = [i for i, strat in enumerate(ocp) if strat > 0.0]
                 self.ls[step] = np.sum((ocp > 0.0))
 
                 # WATER
@@ -699,6 +711,9 @@ class grd:
                             assert False, "Uptake is bigger than the Organic P pool"
 
                 # # # Process (cwm) & store (np.array) outputs
+                self.uptake_strategy[:, :, step] = daily_output['uptk_strat']
+                self.carbon_costs[:, :, step] = self.sp_uptk_costs
+
                 self.emaxm.append(daily_output['epavg'])
                 self.tsoil.append(self.soil_temp)
                 self.photo[step] = wm(ocp, daily_output['phavg'])

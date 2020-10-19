@@ -264,7 +264,7 @@ module carbon_costs
       real(r_4), intent(in) :: ts ! soil tem °C
       real(r_8) :: fn
 
-      fn = c * cc_fix(ts)
+      fn = c / cc_fix(ts)
    end function fixed_n
 
 
