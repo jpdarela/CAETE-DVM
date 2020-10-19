@@ -13,7 +13,7 @@ from caete import mask, npls, print_progress
 import plsgen as pls
 
 import bz2
-import _pickle
+import _pickle as pkl
 
 try:
     os.mkdir('./outputs')
@@ -75,8 +75,13 @@ def apply_spin(grid):
     return grid
 
 
+# def apply_spinup(grid):
+#     grid.run_spinup('19710101', '19811231', spinup=30, coupled=False)
+#     return grid
+
+
 def apply_fun(grid):
-    grid.run_spinup('19810101', '20101231', spinup=30, coupled=True)
+    grid.run_spinup('19810101', '20101231', spinup=20, coupled=True)
     return grid
 
 
@@ -99,8 +104,12 @@ del co2_data
 
 if __name__ == "__main__":
     print("SPINUP...")
-    with mp.Pool(processes=2, maxtasksperchild=4) as p:
+    with mp.Pool(processes=1) as p:
         result = p.map(apply_spin, grid_mn)
+
+    # with mp.Pool(processes=2) as p:
+    #     result1 = p.map(apply_spin, result)
+
     print("MODEL EXEC")
-    with mp.Pool(processes=2, maxtasksperchild=4) as p:
+    with mp.Pool(processes=1) as p:
         result1 = p.map(apply_fun, result)

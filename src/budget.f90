@@ -26,12 +26,12 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-        &, mineral_n, labile_p, catm, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
-        &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
+        &, mineral_n, labile_p, on, sop, op, catm, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+        &, droot, uptk_costs, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt, ocpavg, wueavg, cueavg, c_defavg&
-        &, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, lit_nut_content&
-        &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min)
+        &, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, npp2pay, lit_nut_content&
+        &, delta_cveg, mineral_n_pls, labile_p_pls, limitation_status, sto_min, uptk_strat)
 
 
       use types
@@ -54,18 +54,20 @@ contains
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
       real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
-      real(r_4),intent(in) :: mineral_n
-      real(r_4),intent(in) :: labile_p
-      real(r_8),intent(in) :: catm
+      real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
+      real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
+      real(r_8),intent(in) :: on, sop, op          ! Organic N, isoluble inorganic P, Organic P g m-2
+      real(r_8),intent(in) :: catm                 ! ATM CO2 concentration ppm
 
 
-      real(r_8),dimension(3,npls),intent(in)  :: sto_budg ! Rapid Storage Pool (C,N,P)
-      real(r_8),dimension(npls),intent(in) :: cl1_pft  ! initial BIOMASS cleaf compartment
+      real(r_8),dimension(3,npls),intent(in)  :: sto_budg ! Rapid Storage Pool (C,N,P)  g m-2
+      real(r_8),dimension(npls),intent(in) :: cl1_pft  ! initial BIOMASS cleaf compartment kgm-2
       real(r_8),dimension(npls),intent(in) :: cf1_pft  !                 froot
       real(r_8),dimension(npls),intent(in) :: ca1_pft  !                 cawood
       real(r_8),dimension(npls),intent(in) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
-      real(r_8),dimension(npls),intent(in) :: droot
-      real(r_8),dimension(npls),intent(in) :: dwood
+      real(r_8),dimension(npls),intent(in) :: droot  ! k gm-2
+      real(r_8),dimension(npls),intent(in) :: dwood  ! k gm-2
+      real(r_8),dimension(npls),intent(in) :: uptk_costs ! g m-2
 
 
       !     ----------------------------OUTPUTS------------------------------
@@ -92,18 +94,21 @@ contains
       real(r_8),dimension(npls),intent(out) :: c_defavg       ! kg(C) m-2
       real(r_8),dimension(npls),intent(out) :: vcmax          ! µmol m-2 s-1
       real(r_8),dimension(npls),intent(out) :: specific_la    ! m2 g(C)-1
-      real(r_8),dimension(npls),intent(out) :: nupt           ! g m-2
-      real(r_8),dimension(npls),intent(out) :: pupt           ! g m-2
+      real(r_8),dimension(2,npls),intent(out) :: nupt         ! g m-2 (1) from Soluble (2) from organic
+      real(r_8),dimension(3,npls),intent(out) :: pupt         ! g m-2
       real(r_8),dimension(npls),intent(out) :: litter_l       ! g m-2
       real(r_8),dimension(npls),intent(out) :: cwd            ! g m-2
       real(r_8),dimension(npls),intent(out) :: litter_fr      ! g m-2
+      real(r_8),dimension(npls),intent(out) :: npp2pay
       ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(6,npls),intent(out) :: lit_nut_content          ! g(Nutrient)m-2
       real(r_8),dimension(3,npls),intent(out) :: delta_cveg
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt
-      real(r_8),dimension(npls),intent(out) ::  mineral_n_pls, labile_p_pls
+      real(r_8),dimension(npls),intent(out) ::  mineral_n_pls
+      real(r_8),dimension(npls),intent(out) ::  labile_p_pls
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status
       real(r_8), dimension(2, npls), intent(out) :: sto_min
+      integer(i_4), dimension(2, npls), intent(out) :: uptk_strat
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, numprocs
       real(r_8),dimension(ntraits) :: dt1 ! Store pls attributes array (1D)
@@ -141,12 +146,17 @@ contains
       real(r_4),dimension(npls) ::  rm             !maintenance & growth a.resp
       real(r_4),dimension(npls) ::  rg
       real(r_4),dimension(npls) ::  wue, cue, c_def
-      real(r_8),dimension(npls) ::  cl1_int, cf1_int, ca1_int
+      real(r_8),dimension(npls) ::  cl1_int, cf1_int, ca1_int, tra
       real(r_8),dimension(npls) ::  cl2,cf2,ca2 ! carbon pos-allocation
       real(r_8),dimension(3,npls) :: day_storage   ! g m-2
       real(r_8) :: carbon_in_storage
       real(r_8) :: testcdef
       real(r_8) :: sr, mr_sto, growth_stoc
+
+      real(r_4),parameter :: tsnow = -1.0
+      real(r_4),parameter :: tice  = -2.5
+
+      real(r_4) :: soil_temp
       ! real(r_8) :: srn
       ! real(r_8) :: srp
       ! real(r_8) :: mrn
@@ -154,23 +164,13 @@ contains
       ! real(r_8) :: ston2c
       ! real(r_8) :: stop2c
 
-
-      !     Precipitation
-      !     =============
-      psnow = 0.0
-      prain = 0.0
-      if (temp.lt.tsnow) then
-         psnow = prec
-      else
-         prain = prec
-      endif
-
       !     Initialization
       !     --------------
       epavg   = 0.0
       w       = w1     ! hidrological pools state vars
       g       = g1
       s       = s1
+      soil_temp = ts
       smavg   = 0.0D0    !  plss vectors (outputs)
       w2(:) = 0.0
       g2(:) = 0.0
@@ -198,14 +198,15 @@ contains
       c_defavg(:) = 0.0D0
       vcmax(:) = 0.0D0
       specific_la(:) = 0.0D0
-      nupt(:) = 0.0D0
-      pupt(:) = 0.0D0
+      nupt(:, :) = 0.0D0
+      pupt(:, :) = 0.0D0
       litter_l(:) = 0.0D0
       cwd(:) = 0.0D0
       litter_fr(:) = 0.0D0
       lit_nut_content(:, :) = 0.0D0
       delta_cveg(:, :) = 0.0D0
       storage_out_bdgt(:, :) = 0.0D0
+      tra(:) = 0.0D0
 
       nppa(:) = 0.0
       ph(:) = 0.0
@@ -220,6 +221,7 @@ contains
       wue(:) = 0.0
       cue(:) = 0.0
       rc2(:) = 0.0
+
 
 
       !     Grid cell area fraction (%) ocp_coeffs(pft(1), pft(2), ...,pft(p))
@@ -257,11 +259,10 @@ contains
 
             dt1 = dt(:,p) ! Pick up the pls functional attributes list
 
-            call prod(dt1,ocp_wood(p),catm, temp,ts,p0,w(p),ipar,rh,emax,cl1_pft(p)&
-               &,ca1_pft(p),cf1_pft(p),dleaf(p),dwood(p),droot(p)&
-               &,ph(p),ar(p),nppa(p),laia(p)&
-               &,f5(p),vpd(p),rm(p),rg(p),rc2(p),wue(p),c_def(p)&
-               &,vcmax(p),specific_la(p))
+            call prod(dt1, ocp_wood(p),catm, temp, soil_temp, p0, w(p), ipar, rh, emax&
+                   &, cl1_pft(p), ca1_pft(p), cf1_pft(p), dleaf(p), dwood(p), droot(p)&
+                   &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
+                   &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
 
          ! Check if the carbon deficit can be conpensated by stored carbon
@@ -310,10 +311,16 @@ contains
             !     Carbon/Nitrogen/Phosphorus allocation/deallocation
             !     =====================================================
 
-            call allocation (dt1,nppa(p),mineral_n,labile_p,cl1_pft(p),ca1_pft(p)&
+   ! subroutine allocation(dt,npp,npp_costs,ts,wsoil,te,nmin, plab,on,&
+      ! & sop,op,scl1,sca1,scf1,storage,storage_out_alloc,scl2,sca2,scf2,&
+      ! & leaf_litter,cwd,root_litter,nitrogen_uptake, phosphorus_uptake,&
+      ! & litter_nutrient_content, limiting_nutrient, c_costs_of_uptake)
+
+            call allocation (dt1,nppa(p),uptk_costs(p), soil_temp, w(p), tra(p)&
+               &,  mineral_n,labile_p, on, sop, op, cl1_pft(p),ca1_pft(p)&
                &, cf1_pft(p),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
-               &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(p),pupt(p)&
-               &, lit_nut_content(:,p), limitation_status(:,p))
+               &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
+               &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p))
 
             ! Estimate growth of storage C pool
             growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
@@ -328,8 +335,8 @@ contains
             storage_out_bdgt(:,p) = day_storage(:,p)
 
             ! SAVE OUTPUT
-            mineral_n_pls(p) = mineral_n - nupt(p)
-            labile_p_pls(p) = labile_p - pupt(p)
+            mineral_n_pls(p) = mineral_n - nupt(1, p)
+            labile_p_pls(p) = labile_p - pupt(1, p)
 
             ! Calculate storage GROWTH  respiration
             sr = 0.75D0 * growth_stoc ! g m-2
@@ -370,6 +377,16 @@ contains
 
             delta_cveg(3,p) = cf2(p) - cf1_pft(p)
 
+
+            !     Precipitation
+            !     =============
+            psnow = 0.0
+            prain = 0.0
+            if (temp.lt.tsnow) then
+               psnow = prec
+            else
+               prain = prec
+            endif
             !     Snow budget
             !     ===========
             smelt(p) = 2.63 + 2.55*temp + 0.0912*temp*prain !Snowmelt (mm/day)
@@ -380,7 +397,7 @@ contains
 
             !     Water budget
             !     ============
-            if (ts.le.tice) then !Frozen soil
+            if (soil_temp .le. tice) then !Frozen soil
                g(p) = g(p) + w(p) !Soil moisture freezes
                w(p) = 0.0
                roff(p) = smelt(p) + prain !mm/day

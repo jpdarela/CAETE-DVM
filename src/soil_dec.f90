@@ -28,8 +28,8 @@ module soil_dec
    public :: solution_p_equil
    public :: sorbed_n_equil   ! Fucntion that caculates the equilibrium between Mineralized N and Sorbed P
    public :: solution_n_equil
-   public :: bnf              ! Biological Nitrogen Fixation
    public :: leaching
+   public :: add_pool
    ! TODO
    ! public :: am_acivity       ! Arbuscular Micorrizal activity (Generate an output)
    ! public :: ptase_activity   ! Acivity of PTASE mediated by plant inputs of C
@@ -40,8 +40,8 @@ contains
                     &        root_litter, lnc, cs, snc_in,&
                     &        cs_out, snc, hr, nmin, pmin)
 
-      real(r_8),parameter :: clit_atm = 0.63D0
-      real(r_8),parameter :: cwd_atm = 0.15D0
+      real(r_8),parameter :: clit_atm = 0.7D0
+      real(r_8),parameter :: cwd_atm = 0.22D0
 
       ! POOLS OF LITTER AND SOIL
 
@@ -89,10 +89,10 @@ contains
       ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
       real(r_8), dimension(4) :: tr_c
 
-      tr_c(1) = 15.0D0
+      tr_c(1) = 25.0D0
       tr_c(2) = 250.0D0
       tr_c(3) = 2000.0D0
-      tr_c(4) = 3000.0D0
+      tr_c(4) = 5000.0D0
 
       snc(:) = 0.0D0
       cs_out(:) = 0.0D0
@@ -101,7 +101,7 @@ contains
       pmin = 0.0D0
 
 
-      frac1 = 0.75D0
+      frac1 = 0.55D0
       frac2 = 1.0D0 - frac1
 
 
@@ -425,13 +425,15 @@ contains
       retval = arg * ks
    end function sorbed_p_equil
 
+
    function solution_p_equil(arg) result(retval)
 
       real(r_4), intent(in) :: arg
       real(r_4) :: retval
 
-      retval = arg * 0.02
+      retval = arg * 0.03
    end function solution_p_equil
+
 
    function sorbed_n_equil(arg) result(retval)
       ! Linear equilibrium between inorganic N and available P pool
@@ -439,8 +441,9 @@ contains
       real(r_4), intent(in) :: arg
       real(r_4) :: retval
 
-      retval = arg * 0.55
+      retval = arg * ks
    end function sorbed_n_equil
+
 
    function solution_n_equil(arg) result(retval)
 
@@ -450,14 +453,6 @@ contains
       retval = arg * 0.1
    end function solution_n_equil
 
-   function bnf(c_amount) result(n_amount)
-
-      real(r_4), intent(in) :: c_amount
-      real(r_4) :: n_amount
-
-      n_amount = c_amount * (1.0/30.0)
-
-   end function bnf
 
    function leaching(n_amount, w) result(leached)
 
@@ -467,6 +462,7 @@ contains
       leached = n_amount/w ! DO SOME ALGEBRA * w)
 
    end function leaching
+
 
    function add_pool(a1, a2) result(new_amount)
 

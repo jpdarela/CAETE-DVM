@@ -34,7 +34,7 @@ grassy_allocations_file = "gallo.npy"
 
 def vec_ranging(values, new_min, new_max):
     """ Ranges the vector (1D) values(np.array) to min max
-        - Normalize values
+        - Normalize values - preserves the distance
     """
 
     output = []
@@ -128,8 +128,8 @@ def table_gen(NPLS):
         if pool == 'leaf' or pool == 'root':
             pass
         else:
-            pool_n2c = np.linspace(0.002, 0.09, 500) / 3.0
-            pool_p2c = np.linspace(0.0002, 0.009, 500) / 3.0
+            pool_n2c = np.linspace(0.002, 0.09, 500) / 10.0
+            pool_p2c = np.linspace(0.0002, 0.009, 500) / 10.0
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
             (a / b) >= 3.0) and ((a / b) <= 50.0)]
@@ -223,12 +223,21 @@ def table_gen(NPLS):
     froot_n2c = root[:, 0]
     froot_p2c = root[:, 1]
 
+    # new traits
+    # % of npp
+
+    pdia = np.random.uniform(0.0001, 0.02, NPLS)
+    amp = np.random.uniform(0.001, 0.999, NPLS)
+
     stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,
-             awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c)
+             awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c,
+             amp, pdia)
 
     head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
-            'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c']
+            'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
+            'amp', 'pdia']
+            
     # # for i,x in enumerate(head):
     # #     print(i + 1, ': ',x)
 
