@@ -547,7 +547,7 @@ class grd:
         lb, hb = find_index(start_index, end_index)
         steps = np.arange(lb, hb + 1)
         day_indexes = np.arange(start_index, end_index + 1)
-        spin = spinup
+        spin = 1 if spinup == 0 else spinup
 
         # Catch climatic input and make conversions
         temp = self.tas[lb: hb + 1] - 273.15  # ! K to °C
