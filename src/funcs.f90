@@ -247,7 +247,7 @@ contains
       ! endif
 
       D1 = sqrt(vapour_p_d)
-      gs = 0.01D0 + 1.6D0 * (1.0D0 + (g1/D1)) * (f1_in/ca) ! mol m-2 s-1
+      gs = 1.6D0 * (1.0D0 + (g1/D1)) * (f1_in/ca) ! mol m-2 s-1
       gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
       rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
    end function canopy_resistence
@@ -282,7 +282,7 @@ contains
     ! endif
 
     D1 = sqrt(vapour_p_d)
-    gs = 0.01 + 1.6 * (1.0 + (g1/D1)) * (f1_in/ca) !mol m-2 s-1
+    gs = 1.6 * (1.0 + (g1/D1)) * (f1_in/ca) !mol m-2 s-1
  end function stomatal_conductance
 
  !=================================================================

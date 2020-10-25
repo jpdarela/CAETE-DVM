@@ -403,12 +403,8 @@ module alloc
       !WOOD!     NPP          !       NPP     !
       !ROOT!     NPP          !       NPP     !
 
-      do i = 1, 3
-         do j = 1, 2
-            real_npp(i, j) = 0.0D0
-            is_limited(i, j) = .false.
-         end do
-      enddo
+      real_npp(:,:) = 0.0D0
+      is_limited(:,:) = .false.
 
       ! FIND REALIZED NPP
       !----------------------NITROGEN-------------------------
@@ -771,6 +767,18 @@ module alloc
 
 
       ! Nutrient resorption
+      ! ___  _   _ _  __   __  _____ ___  ____    _     _____    _    _____
+      ! / _ \| \ | | | \ \ / / |  ___/ _ \|  _ \  | |   | ____|  / \  |  ___|
+   !   | | | |  \| | |  \ V /  | |_ | | | | |_) | | |   |  _|   / _ \ | |_
+   !   | |_| | |\  | |___| |   |  _|| |_| |  _ <  | |___| |___ / ___ \|  _|
+      ! \___/|_| \_|_____|_|   |_|   \___/|_| \_\ |_____|_____/_/   \_\_|
+
+      ! ____   ___   ___  _
+   !   |  _ \ / _ \ / _ \| |
+   !   | |_) | | | | | | | |
+   !   |  __/| |_| | |_| | |___
+   !   |_|    \___/ \___/|_____|
+
       !  _   _ ___ _____ ____   ___   ____ _____ _   _
       ! | \ | |_ _|_   _|  _ \ / _ \ / ___| ____| \ | |
       ! |  \| || |  | | | |_) | | | | |  _|  _| |  \| |
@@ -778,38 +786,37 @@ module alloc
       ! |_| \_|___| |_| |_| \_\\___/ \____|_____|_| \_|
 
       aux1 = 0.0D0
-      aux2 = 0.0D0
-      aux3 = 0.0D0
+!      aux2 = 0.0D0
+!      aux3 = 0.0D0
 
       ! Nutrient N in litter
       n_leaf = leaf_litter * leaf_n2c
-      n_root = root_litter * root_n2c
-      n_wood = 0.0D0
-      if(awood .gt. 0.0D0) n_wood = cwd  * wood_n2c
+!      n_root = root_litter * root_n2c
+!      n_wood = 0.0D0
+!      if(awood .gt. 0.0D0) n_wood = cwd  * wood_n2c
       ! resorbed_nutrient (N)
       aux1 = n_leaf * resorpt_frac   ! g(N) m-2
-      aux2 = n_root * resorpt_frac   ! g(N) m-2
-      if(awood .gt. 0.0D0) aux3 = n_wood * resorpt_frac      ! g(N) m-2
+!      aux2 = n_root * resorpt_frac   ! g(N) m-2
+!      if(awood .gt. 0.0D0) aux3 = n_wood * resorpt_frac      ! g(N) m-2
 
-      n_cost_resorpt = retran_nutri_cost((n_leaf + n_root + n_wood),&
-                                        &(aux1 + aux2 + aux3), 1)
+      n_cost_resorpt = retran_nutri_cost(n_leaf, aux1, 1)
       ! NEW LITTER N2C
       new_leaf_n2c = 0.0D0
-      new_root_n2c = 0.0D0
-      new_wood_n2c = 0.0D0
+!      new_root_n2c = 0.0D0
+!      new_wood_n2c = 0.0D0
       ! NEW_VALUE = TOTAL_C_POOL / new_aount of Nutrients
       new_leaf_n2c = (n_leaf - aux1) / leaf_litter
-      new_root_n2c = (n_root - aux2) / root_litter
-      if(awood .gt. 0.0D0) new_wood_n2c  = (n_wood - aux3) / cwd
+!      new_root_n2c = (n_root - aux2) / root_litter
+!      if(awood .gt. 0.0D0) new_wood_n2c  = (n_wood - aux3) / cwd
 
       ! N resorbed goes to storage pool
-      storage_out_alloc(2) = add_pool(storage_out_alloc(2), (aux1 + aux2 + aux3))     ! g(N) m-2
+      storage_out_alloc(2) = add_pool(storage_out_alloc(2), aux1)     ! g(N) m-2
 
       ! CALCULATE THE NUTRIENT N IN LITTER FLUX
       litter_nutrient_content(1) = leaf_litter_o * new_leaf_n2c            ! g(N)m-2
-      litter_nutrient_content(2) = root_litter_o * new_root_n2c
+      litter_nutrient_content(2) = root_litter_o * root_n2c
       if(awood .gt. 0.0D0) then
-         litter_nutrient_content(3) = cwd_o * new_wood_n2c
+         litter_nutrient_content(3) = cwd_o * wood_n2c
       else
          litter_nutrient_content(3) = 0.0D0
       endif
@@ -822,38 +829,37 @@ module alloc
 
 
       aux1 = 0.0D0
-      aux2 = 0.0D0
-      aux3 = 0.0D0
-      ! P in Litter flux
+      ! aux2 = 0.0D0
+      ! aux3 = 0.0D0
+      ! ! P in Litter flux
       p_leaf = leaf_litter * leaf_p2c
-      p_root = root_litter * root_p2c
-      p_wood = 0.0D0
-      if(awood .gt. 0.0D0) p_wood = cwd  * wood_p2c
+      ! p_root = root_litter * root_p2c
+      ! p_wood = 0.0D0
+      ! if(awood .gt. 0.0D0) p_wood = cwd  * wood_p2c
       ! Resorbed P
       aux1 = p_leaf * resorpt_frac
-      aux2 = p_root * resorpt_frac
-      if(awood .gt. 0.0D0) aux3 = p_wood * resorpt_frac
+      ! aux2 = p_root * resorpt_frac
+      ! if(awood .gt. 0.0D0) aux3 = p_wood * resorpt_frac
 
-      p_cost_resorpt = retran_nutri_cost((p_leaf + p_root + p_wood),&
-                           & (aux1 + aux2 + aux3), 2)
+      p_cost_resorpt = retran_nutri_cost(p_leaf, aux1, 2)
 
       ! NEW LITTER P2C
       new_leaf_p2c = 0.0D0
-      new_root_p2c = 0.0D0
-      new_wood_p2c = 0.0D0
+      ! new_root_p2c = 0.0D0
+      ! new_wood_p2c = 0.0D0
       ! NEW_VALUE = TOTAL_C_POOL / new_aount of Nutrients
       new_leaf_p2c = (p_leaf - aux1) / leaf_litter
-      new_root_p2c = (p_root - aux2) / root_litter
-      if(awood .gt. 0.0D0) new_wood_p2c  = (p_wood - aux3) / cwd
+      ! new_root_p2c = (p_root - aux2) / root_litter
+      ! if(awood .gt. 0.0D0) new_wood_p2c  = (p_wood - aux3) / cwd
 
 
-      storage_out_alloc(3) = add_pool(storage_out_alloc(3) , (aux1 + aux2 + aux3))
+      storage_out_alloc(3) = add_pool(storage_out_alloc(3) , aux1)
 
       ! CALCULATE THE NUTRIENT N IN LITTER FLUX
       litter_nutrient_content(4) = leaf_litter_o * new_leaf_p2c            ! g(N)m-2
-      litter_nutrient_content(5) = root_litter_o * new_root_p2c
+      litter_nutrient_content(5) = root_litter_o * root_p2c
       if(awood .gt. 0.0D0) then
-         litter_nutrient_content(6) = cwd_o * new_wood_p2c
+         litter_nutrient_content(6) = cwd_o * wood_p2c
       else
          litter_nutrient_content(6) = 0.0D0
       endif
