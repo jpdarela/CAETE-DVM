@@ -3,25 +3,21 @@
 #     | |     / _ \ |  _|   | | |  _|
 #     | |___ / ___ \| |___  | | | |___
 #      \____/_/   \_\_____| |_| |_____|
-import os
 import pickle as pk
 import multiprocessing as mp
 from shutil import rmtree
-
+from os import mkdir
 import numpy as np
 
 from caete import grd
 from caete import mask, npls, print_progress
 import plsgen as pls
 
-import bz2
-import _pickle as pkl
-
 try:
-    os.mkdir('./outputs')
+    mkdir('./outputs')
 except:
-    os.rmtree('./outputs')
-    os.mkdir('./outputs')
+    rmtree('./outputs')
+    mkdir('./outputs')
 
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls)
