@@ -410,7 +410,7 @@ class grd:
 
         assert self.filled == False, "already done"
 
-        os.mkdir(self.out_dir)
+        os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = 0
 
         pr, ps, rsds, tas, rhs = dt1
@@ -605,7 +605,8 @@ class grd:
                 daily_output = catch_out_budget(out)
                 # UPDATE STATE VARIABLES
                 ocp = daily_output['ocpavg']
-                self.vp_lsid = [i for i, strat in enumerate(ocp) if strat > 0.0]
+                self.vp_lsid = [
+                    i for i, strat in enumerate(ocp) if strat > 0.0]
                 self.ls[step] = np.sum((ocp > 0.0))
 
                 # WATER
