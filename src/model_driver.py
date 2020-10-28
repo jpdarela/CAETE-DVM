@@ -5,19 +5,14 @@
 #      \____/_/   \_\_____| |_| |_____|
 import pickle as pk
 import multiprocessing as mp
-from shutil import rmtree
 from os import mkdir
+from pathlib import Path
 import numpy as np
 
 from caete import grd
 from caete import mask, npls, print_progress
 import plsgen as pls
 
-try:
-    mkdir('./outputs')
-except:
-    rmtree('./outputs')
-    mkdir('./outputs')
 
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls)
@@ -67,15 +62,11 @@ for i, g in enumerate(grid_mn):
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
 
+# APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
 def apply_spin(grid):
     w, ll, cwd, rl, lnc = grid.bdg_spinup()
     grid.sdc_spinup(w, ll, cwd, rl, lnc)
     return grid
-
-
-# def apply_spinup(grid):
-#     grid.run_spinup('19710101', '19811231', spinup=30, coupled=False)
-#     return grid
 
 
 def apply_fun(grid):
@@ -101,13 +92,19 @@ del nut
 del co2_data
 
 if __name__ == "__main__":
+
+    n_proc = 2
+    output_path = Path("./outputs")
+
+    if output_path.exists():
+        pass
+    else:
+        mkdir(output_path)
+
     print("SPINUP...")
-    with mp.Pool(processes=1) as p:
+    with mp.Pool(processes=n_proc) as p:
         result = p.map(apply_spin, grid_mn)
 
-    # with mp.Pool(processes=2) as p:
-    #     result1 = p.map(apply_spin, result)
-
     print("MODEL EXEC")
-    with mp.Pool(processes=1) as p:
+    with mp.Pool(processes=n_proc) as p:
         result1 = p.map(apply_fun, result)

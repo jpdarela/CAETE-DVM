@@ -25,6 +25,7 @@ import _pickle as cPickle
 import bz2
 from threading import Thread
 from time import sleep
+from pathlib import Path
 
 import cftime
 import numpy as np
@@ -141,7 +142,7 @@ class grd:
         self.neighbours = None
         self.ls = None          # Number of surviving plss//
 
-        self.out_dir = "./outputs/gridcell{}/".format(self.xyname)
+        self.out_dir = Path("./outputs/gridcell{}/".format(self.xyname))
         self.sv = None
         self.flush_data = None
 
