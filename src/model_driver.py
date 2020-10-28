@@ -6,6 +6,8 @@
 import os
 import pickle as pk
 import multiprocessing as mp
+from shutil import rmtree
+
 import numpy as np
 
 from caete import grd
@@ -18,7 +20,7 @@ import _pickle as pkl
 try:
     os.mkdir('./outputs')
 except:
-    os.rmdir('./outputs')
+    os.rmtree('./outputs')
     os.mkdir('./outputs')
 
 # FUNCTIONAL TRAITS DATA
