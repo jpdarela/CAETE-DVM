@@ -24,7 +24,7 @@ Make sure you have them properly installed before running the code.
 
 # Running and Developing CAETÊ
 ~This section suposses you have a working python environment and an installed fortran compiler.
-If you need help setting up your invornment, check the [development environment section](#development-Environment)
+If you need help setting up your environment, check the [development environment section](#development-Environment)
 
 CAETÊ uses both Python and Fortran and uses `f2py` module to create an interface between them. This means that the Fortran code must be compiled before you can run Python code.
 
@@ -49,7 +49,7 @@ python model_driver.py
 You can also run it interactively inside `ipython` to have direct access to the variables or you can also run it directly from the vscode debug environment.
 
 # Development Environment
-If you need help configuring your development environment, installing python, installing CAETÊ dependencies or setting up a debug enviornment in vscode, check the [CAETÊ starting packtutorial](https://github.com/fmammoli/CAETE-Tutorials)
+If you need help configuring your development environment, installing python, installing CAETÊ dependencies or setting up a debug enviornment in vscode, check the [CAETÊ starting pack tutorial](https://github.com/fmammoli/CAETE-Tutorials)
 
 ## __AUTHORS__:
 
