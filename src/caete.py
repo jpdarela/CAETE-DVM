@@ -305,7 +305,7 @@ class grd:
         else:
             spiname = run_descr + str(self.run_counter) + ".pbz2"
 
-        self.outputs[spiname] = self.out_dir + spiname
+        self.outputs[spiname] = os.path.join(self.out_dir, spiname)
         to_pickle = {'emaxm': np.array(self.emaxm),
                      "tsoil": np.array(self.tsoil),
                      "photo": self.photo,
