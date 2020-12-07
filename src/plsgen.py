@@ -226,7 +226,7 @@ def table_gen(NPLS):
     # new traits
     # % of npp
 
-    pdia = np.random.uniform(0.0001, 0.02, NPLS)
+    pdia = np.random.uniform(0.0, 0.08, NPLS)
     amp = np.random.uniform(0.001, 0.999, NPLS)
 
     stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
@@ -237,7 +237,7 @@ def table_gen(NPLS):
     head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
-            
+
     # # for i,x in enumerate(head):
     # #     print(i + 1, ': ',x)
 
