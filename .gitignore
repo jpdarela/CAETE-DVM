@@ -1,5 +1,6 @@
 input/ISIMIP-HISTORICAL/*.nc4
 input/ISIMIP-HISTORICAL/*.tar.gz
+src/*.o
 src/*.mod
 src/*.pyf
 src/*.so
@@ -9,5 +10,6 @@ src/*.csv
 src/*.txt
 src/outputs
 src/.python-version
+run_debug
 .vscode
 .python-version
