@@ -12,7 +12,7 @@ Do it for all arquives. You can also use another program to extract the climate 
 
 You will need the MPI library and the python module mpi4py to be installed in your system.
 
-With all files in place run:
+With all files in place goto the [CAETE-DVM/input/climate](https://github.com/jpdarela/CAETE-DVM/tree/master/input/climate), open a terminal and run:
 
 `$ mpiexec -n 5 python3.x create_input.py`
 
