@@ -1,3 +1,5 @@
+input/ISIMIP-HISTORICAL/*.nc4
+input/ISIMIP-HISTORICAL/*.tar.gz
 src/*.mod
 src/*.pyf
 src/*.so

@@ -12,12 +12,10 @@ class data_in():
 
         self.varname = varname
         self.root_dir = os.getcwd()
-        self.files = sorted(glob.glob1(inputs_folder, self.varname))
         self.inputs_folder = inputs_folder
         self.celldata = {}
         self.varnames = ['tas', 'ps', 'pr', 'rsds', 'hurs']
 
-#        self.varmask = [True, True, True, True, True, True, True, False, False]
         return None
 
     def _open_dts(self):
@@ -25,7 +23,7 @@ class data_in():
 
         # TODO Implement this mechanism without changing directory
         #     e.g. use os.path module
-        assert self.varname in self.varnames, 'Unknown Variable: %s' % varname
+        assert self.varname in self.varnames, 'Unknown Variable: %s' % self.varname
         # Insert this block in a try/except to catch IO errors and return to the correct dir
         os.chdir(self.inputs_folder)
         fpath = self.varname + '_' + '*' + '.nc4'

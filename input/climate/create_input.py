@@ -8,7 +8,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 # Location of the input data downloaded from ISIMIP-PIK server via rsync
-files = '/home/jdarela/Desktop/caete/avante_caete/caete-dgvm/input/inputs_daily'
+files = "../ISIMIP-HISTORICAL/"
 mask = np.load("../mask/mask_raisg-360-720.npy")
 
 
@@ -51,29 +51,3 @@ else:
     p0 = ps.data_dict(mask=mask)
     with open("ps.pkl", 'wb') as fh5:
         pkl.dump(p0, fh5)
-
-
-# ## Use with a mask (creates a bunch og gridcells)
-    # #data_in = data_in.data_dict(mask=ct.mask)
-
-    # # OR
-
-# ## Update a existent instance of data_in
-# with open("data_in-instance.pkl", 'rb') as fh:
-#     data_in = pkl.load(fh)
-
-# # Apply data_dict creation method:
-
-# grid_points = [(239, 183),
-#                (219, 184),
-#                (404, 186),
-#                (440, 61),
-#                (572, 55)]
-
-
-# for x, y in grid_points:
-#     for var in data_in.varnames:
-#         data_in.data_dict(varname=var, nx=x, ny=y)
-
-# with open("data_in-instance.pkl", 'wb') as fh:
-#     pkl.dump(data_in, fh)

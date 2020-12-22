@@ -689,11 +689,10 @@ module alloc
       puptk = sum(p_uptake)
 
       ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC gN-1)
-      ! 1 - if passive_uptake < uptk
+      ! 1 - Check Passve uptake
       call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
                         & to_pay, to_sto, plant_uptake)
-
-      ! then  2 - active uptake costs N
+      ! N
       ccn(:) = 0.0D0
       active_nupt_cost = 0.0D0
       naquis_strat = 0
@@ -708,10 +707,9 @@ module alloc
          nitrogen_uptake(1) = nuptk
       endif
       uptk_strategy(1) = naquis_strat
-      ! else: passive uptake is enough - correct storage
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
 
-      ! then  2 - active uptake costs P
+      !  P
       ccp(:) = 0.0D0
       active_pupt_cost = 0.0D0
       paquis_strat = 0
@@ -726,13 +724,10 @@ module alloc
          phosphorus_uptake(1) = puptk
       endif
       uptk_strategy(2) = paquis_strat
-      ! else: passive uptake is enough - correct storage
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
 
       ! TODO calculate enzimatic n costs of enzimatic activity?
 
-
-      ! end : next step is retranslocation costs
 
       ! CARBON AND NUTRIENTS TURNOVER
 294   continue ! Material going to soil + updating veg pools
