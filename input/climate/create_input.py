@@ -8,16 +8,16 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
 # Location of the input data downloaded from ISIMIP-PIK server via rsync
-files = "../ISIMIP-HISTORICAL/"
+files = "//home/amazonfaceme/shared_data/"
 mask = np.load("../mask/mask_raisg-360-720.npy")
 
 
 # INCLUDING ONLY 4 gridcells
-mask[mask == False] = True
-mask[183, 238] = False
-mask[184, 238] = False
-mask[185, 238] = False
-mask[186, 238] = False
+#mask[mask == False] = True
+#mask[183, 238] = False
+#mask[184, 238] = False
+#mask[185, 238] = False
+#mask[186, 238] = False
 
 # INstantiate our input data object
 hurs = data_in("hurs", files)
