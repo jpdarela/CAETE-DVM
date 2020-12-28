@@ -17,29 +17,6 @@ import plsgen as pls
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls)
 
-# Open historical CLIMATE data
-with open('../input/climate/pr.pkl', 'rb') as fpr,\
-        open('../input/climate/ps.pkl', 'rb') as fps,\
-        open('../input/climate/rsds.pkl', 'rb') as frsds,\
-        open('../input/climate/tas.pkl', 'rb') as ftas,\
-        open('../input/climate/hurs.pkl', 'rb') as fhurs:
-    pr = pk.load(fpr)
-    ps = pk.load(fps)
-    rsds = pk.load(frsds)
-    tas = pk.load(ftas)
-    hurs = pk.load(fhurs)
-
-dt1 = pr, ps, rsds, tas, hurs
-
-# Open soil Stuff
-tn = np.load('../input/soil/total_n_PA.npy')
-tp = np.load('../input/soil/total_p.npy')
-ap = np.load('../input/soil/avail_p.npy')
-ip = np.load('../input/soil/inorg_p.npy')
-op = np.load('../input/soil/org_p.npy')
-
-nut = tn, tp, ap, ip, op
-
 # open co2 data
 with open("../input/co2/historical_CO2_annual_1765_2018.txt") as fh:
     co2_data = fh.readlines()
