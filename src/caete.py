@@ -21,7 +21,8 @@ Copyright 2017- LabTerra
 
 import os
 import sys
-import _pickle as cPickle
+import copy
+import _pickle as pkl
 import bz2
 from threading import Thread
 from time import sleep
@@ -133,7 +134,9 @@ class grd:
         self.x = x                            # Grid point x coordinate
         self.y = y                            # Grid point y coordinate
         self.xyname = str(y) + '-' + str(x)   # IDENTIFIES GRIDCELLS
-        self.name = None                      # identifies gridcells started together
+        self.input_fname = f"input_data_{self.xyname}.pbz2"
+        self.input_fpath = None
+        self.data = None
         self.pos = (int(self.x), int(self.y))
         self.pls_table = None   # will receive the np.array with functional traits data
         self.outputs = {}       # dict, store filepaths of output data
@@ -401,29 +404,28 @@ class grd:
 
         return to_pickle
 
-    def init_caete_dyn(self, dt1, soil_nu, co2, pls_table, name):
+    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table):
         """
-            dt1: tuple of np.ndarrays with climatic input data look line 440
-            soil_nu: tuple of np.ndarrays with soil nutrient contents
+            input_fpath: Files with climate and soil data
             co2: (list) a alist (association list) with yearly cCO2 ATM data
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
             name: str a name for the gridcell group"""
 
         assert self.filled == False, "already done"
+        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
+        assert self.input_fpath.exists()
+
+        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+            self.data = pkl.load(fh)
 
         os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = 0
 
-        pr, ps, rsds, tas, rhs = dt1
-        nx = str(self.x)
-        ny = str(self.y)
-        self.name = name
-
-        self.pr = pr['pr_' + ny + '-' + nx]['var_data'][:]
-        self.ps = ps['ps_' + ny + '-' + nx]['var_data'][:]
-        self.rsds = rsds['rsds_' + ny + '-' + nx]['var_data'][:]
-        self.tas = tas['tas_' + ny + '-' + nx]['var_data'][:]
-        self.rhs = rhs['hurs_' + ny + '-' + nx]['var_data'][:]
+        self.pr = self.data['pr']
+        self.ps = self.data['ps']
+        self.rsds = self.data['rsds']
+        self.tas = self.data['tas']
+        self.rhs = self.data['hurs']
 
         assert self.pr.size == self.ps.size, 'ps is different from pr'
         assert self.pr.size == self.rsds.size, 'rsds is different from pr'
@@ -433,15 +435,16 @@ class grd:
         # SOIL AND NUTRIENTS
         self.input_nut = []
         self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
-        for nut in soil_nu:
-            self.input_nut.append(nut[self.y, self.x])
+        for nut in self.nutlist:
+            self.input_nut.append(self.data[nut])
         self.soil_dict = dict(zip(self.nutlist, self.input_nut))
 
         # TIME
-        self.calendar = pr['metadata']['calendar']
-        self.time_index = pr['metadata']['time_data']
-        self.time_unit = pr['metadata']['time_unit']
-        self.ssize = pr['metadata']['len']
+        self.stime = copy.deepcopy(stime_i)
+        self.calendar = self.stime['calendar']
+        self.time_index = self.stime['time_index']
+        self.time_unit = self.stime['units']
+        self.ssize = self.time_index.size
         self.sind = int(self.time_index[0])
         self.eind = int(self.time_index[-1])
         self.start_date = cftime.num2date(
@@ -450,12 +453,12 @@ class grd:
             self.time_index[-1], self.time_unit, calendar=self.calendar)
 
         # OTHER INPUTS
-        self.pls_table = pls_table
+        self.pls_table = pls_table.copy()
         self.neighbours = neighbours_index(self.pos, mask)
         self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
 
         # Prepare co2 inputs (we have annually means)
-        self.co2_data = co2
+        self.co2_data = copy.deepcopy(co2)
 
         # STATE
         self.wfim = np.zeros(shape=(npls,), order='F') + 0.01
@@ -498,7 +501,7 @@ class grd:
         else:
             fpath = "spin{}.pbz2".format(self.run_counter)
         with bz2.BZ2File(self.outputs[fpath], 'w') as fh:
-            cPickle.dump(data_obj, fh)
+            pkl.dump(data_obj, fh)
         self.flush_data = 0
 
     def run_spinup(self, start_date, end_date, spinup, coupled=False):
