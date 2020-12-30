@@ -74,9 +74,11 @@ if sombrero:
                 grid_mn.append(grd(X, Y))
 
 else:
-    grid_mn = [grd(238, 183), grd(238, 184), grd(238, 185), grd(238, 186)]
-    assert len(grid_mn) < 5, "To many gridcells to run in your PC, Change" \
-        "the code in the source file to erase this assertion"
+    grid_mn = []
+    for Y in range(168, 173):
+        for X in range(225, 228):
+            if not mask[Y, X]:
+                grid_mn.append(grd(X, Y))
 
 
 def apply_init(grid):
@@ -122,33 +124,51 @@ del stime
 
 if __name__ == "__main__":
 
-    if sombrero:
-        n_proc = 64
-    else:
-        n_proc = 2
+    import time
 
-    output_path = Path("./outputs")
+    n_proc = mp.cpu_count() // 2
+    fh = open('logfile.log', mode='w')
+    output_path = Path("../outputs").resolve()
 
     if output_path.exists():
         pass
     else:
         mkdir(output_path)
 
+    fh.writelines(time.ctime(),)
+    fh.writelines("\n\n",)
+    fh.writelines("SPINUP...",)
+    start = time.time()
     print("SPINUP...")
     with mp.Pool(processes=n_proc) as p:
         result = p.map(apply_spin, grid_mn)
+    end_spinup = time.time() - start
+    fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
 
+    fh.writelines("MODEL EXEC - spinup deco",)
     print("MODEL EXEC - spinup deco")
     with mp.Pool(processes=n_proc) as p:
         result1 = p.map(apply_fun, result)
+    end_spinup = time.time() - start
+    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
     del result
 
+    fh.writelines("MODEL EXEC - spinup coup",)
     print("MODEL EXEC - spinup coup")
     with mp.Pool(processes=n_proc) as p:
         result2 = p.map(apply_fun1, result1)
-        del result1
+    end_spinup = time.time() - start
+    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+    del result1
 
-        print("MODEL EXEC- RUN")
+    fh.writelines("MODEL EXEC - RUN",)
+    print("MODEL EXEC- RUN")
+    start1 = time.time()
     with mp.Pool(processes=n_proc) as p:
         result3 = p.map(apply_fun2, result2)
         del result2
+    end_spinup = time.time() - start
+    end_run = time.time() - start1
+    fh.writelines(f"MODEL EXEC - RUN time (s){end_run}\n",)
+    fh.writelines(f"MODEL EXEC - TIME elapsed (s){end_spinup}\n",)
+    fh.close()

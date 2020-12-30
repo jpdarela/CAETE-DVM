@@ -5,9 +5,10 @@ import bz2
 import numpy as np
 from netCDF4 import MFDataset
 
+__wat__ = "Pre-processing of input data to feed CAETÊ"
 __author__ = "jpdarela"
 __date__ = "Mon Dec 28 18:08:27 -03 2020"
-__descr__ = """ This script works in the folowing manner: Given a directory (hist_raw_data) with
+__descr__ = """ This script works in the folowing manner: Given a directory (raw_data) with
                 input climatic data in the form of netCDF files the script opens these files as
                 MFDataset objects. THen the metadata of the climatic data is compiled from the source
                 files and writen to a file in the output folder (clim_data). This folder will store
@@ -21,8 +22,8 @@ __descr__ = """ This script works in the folowing manner: Given a directory (his
 # FOLDER IN THE SERVER WHERE ALL data IS stored FOR ALL USERS
 shared_data = Path("/home/amazonfaceme/shared_data/")
 
-# INPUT NETCDF FILES WITH CLIMATIC DATA
-hist_raw_data = Path(os.path.join(
+# INPUT NETCDF FILES WITH historical CLIMATIC DATA
+raw_data = Path(os.path.join(
     shared_data, Path("historical_ISIMIP-v3")))
 
 # INPUT FILES WITH SOIL DATA (NUTRIENTS)
@@ -153,35 +154,35 @@ class input_data:
 def read_clim_data(var):
 
     if var == 'hurs':
-        ds_hurs = MFDataset(os.path.join(hist_raw_data, "hurs_*.nc4"))
+        ds_hurs = MFDataset(os.path.join(raw_data, "hurs_*.nc4"))
         dt = ds_hurs.variables['hurs'][:]
         no_data = ds_hurs.variables['hurs'].missing_value
         ds_hurs.close()
         return dt, no_data
 
     elif var == 'tas':
-        ds_tas = MFDataset(os.path.join(hist_raw_data, "tas_*.nc4"))
+        ds_tas = MFDataset(os.path.join(raw_data, "tas_*.nc4"))
         dt = ds_tas.variables['tas'][:]
         no_data = ds_tas.variables['tas'].missing_value
         ds_tas.close()
         return dt, no_data
 
     elif var == 'pr':
-        ds_pr = MFDataset(os.path.join(hist_raw_data, "pr_*.nc4"))
+        ds_pr = MFDataset(os.path.join(raw_data, "pr_*.nc4"))
         dt = ds_pr.variables['pr'][:]
         no_data = ds_pr.variables['pr'].missing_value
         ds_pr.close()
         return dt, no_data
 
     elif var == 'ps':
-        ds_ps = MFDataset(os.path.join(hist_raw_data, "ps_*.nc4"))
+        ds_ps = MFDataset(os.path.join(raw_data, "ps_*.nc4"))
         dt = ds_ps.variables['ps'][:]
         no_data = ds_ps.variables['ps'].missing_value
         ds_ps.close()
         return dt, no_data
 
     elif var == 'rsds':
-        ds_rsds = MFDataset(os.path.join(hist_raw_data, "rsds_*.nc4"))
+        ds_rsds = MFDataset(os.path.join(raw_data, "rsds_*.nc4"))
         dt = ds_rsds.variables['rsds'][:]
         no_data = ds_rsds.variables['rsds'].missing_value
         ds_rsds.close()
@@ -205,11 +206,11 @@ def read_soil_data(var):
 
 def main():
     # SAVE METADATA
-    dss = (MFDataset(os.path.join(hist_raw_data, "hurs_*.nc4")),
-           MFDataset(os.path.join(hist_raw_data, "tas_*.nc4")),
-           MFDataset(os.path.join(hist_raw_data, "pr_*.nc4")),
-           MFDataset(os.path.join(hist_raw_data, "ps_*.nc4")),
-           MFDataset(os.path.join(hist_raw_data, "rsds_*.nc4")))
+    dss = (MFDataset(os.path.join(raw_data, "hurs_*.nc4")),
+           MFDataset(os.path.join(raw_data, "tas_*.nc4")),
+           MFDataset(os.path.join(raw_data, "pr_*.nc4")),
+           MFDataset(os.path.join(raw_data, "ps_*.nc4")),
+           MFDataset(os.path.join(raw_data, "rsds_*.nc4")))
 
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])

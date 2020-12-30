@@ -86,29 +86,27 @@ def turnover_combinations(verbose=False):
     # constrained distributions (must sum up to 1.)
 
     if os.path.exists(grassy_allocations_file):
-
         plsa_grass = np.load(grassy_allocations_file)
 
     else:
-        aleafg = np.arange(25., 76.0, 0.5, dtype=np.float64)
-        arootg = np.arange(25., 76.0, 0.5, dtype=np.float64)
+        aleafg = np.arange(20., 80.1, 0.0125e1, dtype=np.float64)
+        arootg = np.arange(20., 80.1, 0.0125e1, dtype=np.float64)
 
-        plsa_grass = [[a / 100.0, 0.0, c / 100.0] for a in aleafg
-                      for c in arootg if abs((a + c) - 100.0) < 1e-16]
-        np.save(grassy_allocations_file, plsa_grass)
+        plsa_grass = [[a, 0.0, c]
+                      for a in aleafg for c in arootg if (a + c) == 100]
+        np.save(grassy_allocations_file, np.array(plsa_grass))
 
     if os.path.exists(woody_allocations_file):
-
         plsa_wood = np.load(woody_allocations_file)
 
     else:
-        aleafw = np.arange(25., 76.0, 0.5, dtype=np.float64)
-        arootw = np.arange(25., 76.0, 0.5, dtype=np.float64)
-        awood = np.arange(25., 76.0, 0.5, dtype=np.float64)
+        aleafw = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)
+        arootw = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)
+        awood = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)
 
-        plsa_wood = [[a / 100.0, b / 100.0, c / 100.0] for a in aleafw for b in awood
-                     for c in arootw if abs((a + b + c) - 100.) < 1e-16]
-        np.save(woody_allocations_file, plsa_wood)
+        plsa_wood = [[a, b, c] for a in aleafw for b in awood
+                     for c in arootw if (a + b + c) == 100]
+        np.save(woody_allocations_file, np.array(plsa_wood))
 
     if verbose:
         print('Number of combinations = %d' %

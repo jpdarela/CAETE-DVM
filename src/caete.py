@@ -145,7 +145,7 @@ class grd:
         self.neighbours = None
         self.ls = None          # Number of surviving plss//
 
-        self.out_dir = Path("./outputs/gridcell{}/".format(self.xyname))
+        self.out_dir = Path("../outputs/gridcell{}/".format(self.xyname))
         self.sv = None
         self.flush_data = None
 

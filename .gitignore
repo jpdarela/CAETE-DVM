@@ -6,9 +6,8 @@ src/__pycache__
 src/*.npy
 src/*.csv
 src/*.txt
-src/outputs
+outputs/*
 src/.python-version
-input/caete_input/*
 input/.python-version
 run_debug
 .vscode
