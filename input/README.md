@@ -18,6 +18,5 @@ You can find a sample of input data to run CAETÊ (Pan Amazon region) [here](htt
 .........data = pkl.load(fh)`
 
 This will create a dictionary called data containig input data for the gridcell(y,x).
-The model is not prepared to run yet
 
 You can download a sample of the raw  global historical data in the form of netCDF4 for the variables tas, pr, ps, rsds & hurs for the time interval 1971-2010 [here](https://1drv.ms/u/s!AsquOP_PotMWgeM-nhGf3GkxV1Wq0g?e=525apd). This is the raw data and is not prepared to run the model.
