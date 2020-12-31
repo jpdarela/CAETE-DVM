@@ -126,7 +126,8 @@ if __name__ == "__main__":
 
     import time
 
-    n_proc = mp.cpu_count() // 2
+    n_proc = mp.cpu_count() // 2 if not sombrero else 100
+
     fh = open('logfile.log', mode='w')
     output_path = Path("../outputs").resolve()
 

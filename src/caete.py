@@ -735,7 +735,7 @@ class grd:
                 self.cleaf[step] = wm(ocp, daily_output['cleafavg_pft'])
                 self.cawood[step] = wm(ocp, daily_output['cawoodavg_pft'])
                 self.cfroot[step] = wm(ocp, daily_output['cfrootavg_pft'])
-                self.area[:, step] = ocp
+                self.area[:, step] = ocp # TODO MAKE MASKED ARRAY
                 self.wue[step] = wm(ocp, daily_output['wueavg'])
                 self.cue[step] = wm(ocp, daily_output['cueavg'])
                 self.cdef[step] = wm(ocp, daily_output['c_defavg'])

@@ -76,3 +76,7 @@ clean:
 	rm -rf test *.mod *.s *.o pls_ex.txt outputs __pycache__
 	$(CLEAN_DIR)
 	clear
+
+clean_plsgen:
+	rm -rf wallo.npy
+	rm -rf gallo.npy
