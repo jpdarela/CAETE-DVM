@@ -101,18 +101,18 @@ def apply_spin(grid):
     return grid
 
 
-def apply_fun(grid):
-    grid.run_spinup('19010101', '19301231', spinup=5, coupled=False)
-    return grid
+# def apply_fun(grid):
+#     grid.run_spinup('19010101', '19301231', spinup=5, coupled=False)
+#     return grid
 
 
 def apply_fun1(grid):
-    grid.run_spinup('19010101', '19301231', spinup=10, coupled=True)
+    grid.run_spinup('19750101', '19951231', spinup=5, coupled=True)
     return grid
 
 
 def apply_fun2(grid):
-    grid.run_spinup('19010101', '20151231', spinup=1, coupled=True)
+    grid.run_spinup('19950101', '20101231', spinup=1, coupled=True)
     return grid
 
 
@@ -146,28 +146,29 @@ if __name__ == "__main__":
     end_spinup = time.time() - start
     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
 
-    fh.writelines("MODEL EXEC - spinup deco",)
-    print("MODEL EXEC - spinup deco")
-    with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-        result1 = p.map(apply_fun, result)
-    end_spinup = time.time() - start
-    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
-    del result
+    # fh.writelines("MODEL EXEC - spinup deco",)
+    # print("MODEL EXEC - spinup deco")
+    # with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
+    #     result1 = p.map(apply_fun, result)
+    # end_spinup = time.time() - start
+    # fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+    # del result
 
     fh.writelines("MODEL EXEC - spinup coup",)
     print("MODEL EXEC - spinup coup")
     with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-        result2 = p.map(apply_fun1, result1)
+        result2 = p.map(apply_fun1, result)
     end_spinup = time.time() - start
     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-    del result1
+    del result
 
     fh.writelines("MODEL EXEC - RUN",)
     print("MODEL EXEC- RUN")
     start1 = time.time()
     with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
         result3 = p.map(apply_fun2, result2)
-        del result2
+
+    del result2
     end_spinup = time.time() - start
     end_run = time.time() - start1
     fh.writelines(f"MODEL EXEC - RUN time (s){end_run}\n",)

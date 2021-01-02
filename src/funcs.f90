@@ -247,7 +247,7 @@ contains
       ! endif
 
       D1 = sqrt(vapour_p_d)
-      gs = 1.6D0 * (1.0D0 + (g1/D1)) * (f1_in/ca) ! mol m-2 s-1
+      gs = 0.003 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0e6)/ca) ! mol m-2 s-1
       gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
       rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
    end function canopy_resistence
@@ -1018,7 +1018,8 @@ contains
 
       real(kind=r_8),dimension(npft),intent( in) :: cleaf1, cfroot1, cawood1, awood
       real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs
-      logical(kind=l_1),dimension(npft),intent(out) :: ocp_wood, run_pls
+      logical(kind=l_1),dimension(npft),intent(out) :: ocp_wood
+      integer(kind=i_4),dimension(npft),intent(out) :: run_pls
       real(kind=r_8), dimension(npls), intent(out) :: c_to_soil
       logical(kind=l_1),dimension(npft) :: is_living
       real(kind=r_8),dimension(npft) :: cleaf, cawood, cfroot
@@ -1083,16 +1084,16 @@ contains
             if(ocp_coeffs(p) .lt. 0.0D0) ocp_coeffs(p) = 0.0D0
 
             if(ocp_coeffs(p) .gt. 0.0D0 .and. is_living(p)) then
-               run_pls(p) = .true.
+               run_pls(p) = 1
             else
-               run_pls(p) = .false.
+               run_pls(p) = 0
             endif
             !if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0
          enddo
       else
          do p = 1,npft
             ocp_coeffs(p) = 0.0D0
-            run_pls(p) = .false.
+            run_pls(p) = 0
          enddo
       endif
 

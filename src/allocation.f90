@@ -54,8 +54,6 @@ module alloc
       integer(i_2), parameter :: wood = 2
       integer(i_2), parameter :: root = 3
 
-      integer(i_2) :: i, j
-
       ! variables I/O
       real(r_8),dimension(ntraits),intent(in) :: dt  ! PLS attributes
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
@@ -110,7 +108,7 @@ module alloc
       real(r_8) :: npp_aux
 
       ! Auxiliary variables to calculate Plant Nutrient Uptake
-      real(r_8) :: aux1, aux2, aux3
+      real(r_8) :: aux1
       real(r_8) :: nscl  ! g(N) m-2
       real(r_8) :: nsca  ! g(N) m-2
       real(r_8) :: nscf  ! g(N) m-2
@@ -150,8 +148,8 @@ module alloc
 
       real(r_8) :: mult_factor_n, mult_factor_p
       real(r_8) :: n_leaf, p_leaf, new_leaf_n2c, new_leaf_p2c, leaf_litter_o
-      real(r_8) :: n_root, p_root, new_root_n2c, new_root_p2c, root_litter_o
-      real(r_8) :: n_wood, p_wood, new_wood_n2c, new_wood_p2c, cwd_o
+      real(r_8) :: root_litter_o
+      real(r_8) :: cwd_o
 
       ! CC auxiliary
       real(r_8) :: pdia, amp ! functional traits
@@ -781,28 +779,15 @@ module alloc
       ! |_| \_|___| |_| |_| \_\\___/ \____|_____|_| \_|
 
       aux1 = 0.0D0
-!      aux2 = 0.0D0
-!      aux3 = 0.0D0
-
       ! Nutrient N in litter
       n_leaf = leaf_litter * leaf_n2c
-!      n_root = root_litter * root_n2c
-!      n_wood = 0.0D0
-!      if(awood .gt. 0.0D0) n_wood = cwd  * wood_n2c
       ! resorbed_nutrient (N)
       aux1 = n_leaf * resorpt_frac   ! g(N) m-2
-!      aux2 = n_root * resorpt_frac   ! g(N) m-2
-!      if(awood .gt. 0.0D0) aux3 = n_wood * resorpt_frac      ! g(N) m-2
 
       n_cost_resorpt = retran_nutri_cost(n_leaf, aux1, 1)
       ! NEW LITTER N2C
       new_leaf_n2c = 0.0D0
-!      new_root_n2c = 0.0D0
-!      new_wood_n2c = 0.0D0
-      ! NEW_VALUE = TOTAL_C_POOL / new_aount of Nutrients
       new_leaf_n2c = (n_leaf - aux1) / leaf_litter
-!      new_root_n2c = (n_root - aux2) / root_litter
-!      if(awood .gt. 0.0D0) new_wood_n2c  = (n_wood - aux3) / cwd
 
       ! N resorbed goes to storage pool
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), aux1)     ! g(N) m-2
@@ -824,29 +809,16 @@ module alloc
 
 
       aux1 = 0.0D0
-      ! aux2 = 0.0D0
-      ! aux3 = 0.0D0
-      ! ! P in Litter flux
+
       p_leaf = leaf_litter * leaf_p2c
-      ! p_root = root_litter * root_p2c
-      ! p_wood = 0.0D0
-      ! if(awood .gt. 0.0D0) p_wood = cwd  * wood_p2c
+
       ! Resorbed P
       aux1 = p_leaf * resorpt_frac
-      ! aux2 = p_root * resorpt_frac
-      ! if(awood .gt. 0.0D0) aux3 = p_wood * resorpt_frac
-
       p_cost_resorpt = retran_nutri_cost(p_leaf, aux1, 2)
 
       ! NEW LITTER P2C
       new_leaf_p2c = 0.0D0
-      ! new_root_p2c = 0.0D0
-      ! new_wood_p2c = 0.0D0
-      ! NEW_VALUE = TOTAL_C_POOL / new_aount of Nutrients
       new_leaf_p2c = (p_leaf - aux1) / leaf_litter
-      ! new_root_p2c = (p_root - aux2) / root_litter
-      ! if(awood .gt. 0.0D0) new_wood_p2c  = (p_wood - aux3) / cwd
-
 
       storage_out_alloc(3) = add_pool(storage_out_alloc(3) , aux1)
 

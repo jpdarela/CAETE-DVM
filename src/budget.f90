@@ -105,22 +105,22 @@ contains
       real(r_8),dimension(6,npls),intent(out)    :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(3,npls),intent(out)    :: delta_cveg_1
       real(r_8),dimension(3,npls),intent(out)    :: storage_out_bdgt_1
-      real(r_8),dimension(npls),intent(out)      ::  mineral_n_pls_1
-      real(r_8),dimension(npls),intent(out)      ::  labile_p_pls_1
+      real(r_8),dimension(npls),intent(out)      :: mineral_n_pls_1          ! TODO take out
+      real(r_8),dimension(npls),intent(out)      :: labile_p_pls_1           ! v
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
-      real(r_8),dimension(2,npls),intent(out)    :: sto_min_1
+      real(r_8),dimension(2,npls),intent(out)    :: sto_min_1                ! TODO take out
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
 
 
       !     -----------------------Internal Variables------------------------
-      integer(i_4) :: p, numprocs, counter, nlen, ri
+      integer(i_4) :: p, counter, nlen, ri
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
       real(r_8) :: carbon_in_storage
       real(r_8) :: testcdef
       real(r_8) :: sr, mr_sto, growth_stoc
-      real(r_8),dimension(npls) :: ocp_mm
-      real(r_8),dimension(npls) :: ocp_coeffs
-      logical(l_1),dimension(npls) :: ocp_wood, run
+      real(r_8),dimension(npls) :: ocp_mm      ! TODO include cabon of dead plssss in the cicle?
+      logical(l_1),dimension(npls) :: ocp_wood
+      integer(i_4),dimension(npls) :: run
 
       real(r_4),parameter :: tsnow = -1.0
       real(r_4),parameter :: tice  = -2.5
@@ -177,13 +177,6 @@ contains
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       real(r_8), dimension(:, :),allocatable    :: sto_min           ! D0=2
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
-
-      ! real(r_8) :: srn
-      ! real(r_8) :: srp
-      ! real(r_8) :: mrn
-      ! real(r_8) :: mrp
-      ! real(r_8) :: ston2c
-      ! real(r_8) :: stop2c
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs
 
       !     START
@@ -200,9 +193,10 @@ contains
       allocate(s(nlen))
       allocate(lp(nlen))
 
+
       counter = 1
       do p = 1,npls
-         if(run(p)) then
+         if(run(p).eq. 1) then
               w(counter) = w1(p)     ! hidrological pools state vars
               g(counter) = g1(p)
               s(counter) = s1(p)
@@ -214,6 +208,12 @@ contains
       soil_temp = ts
 
       ! INTERNAL - allocate
+      allocate(rimelt(nlen))
+      allocate(smelt(nlen))
+      allocate(ds(nlen))
+      allocate(dw(nlen))
+      allocate(roff(nlen))
+      allocate(evap(nlen))
       allocate(nppa(nlen))
       allocate(ph(nlen))
       allocate(ar(nlen))
@@ -226,7 +226,6 @@ contains
       allocate(rg(nlen))
       allocate(wue(nlen))
       allocate(cue(nlen))
-      allocate(rc2(nlen))
       allocate(c_def(nlen))
       allocate(vcmax(nlen))
       allocate(specific_la(nlen))
@@ -242,6 +241,16 @@ contains
       allocate(npp2pay(nlen))
       allocate(limitation_status(3,nlen))
       allocate(uptk_strat(2,nlen))
+      allocate(cl1_int(nlen))
+      allocate(cf1_int(nlen))
+      allocate(ca1_int(nlen))
+      allocate(cl2(nlen))
+      allocate(cf2(nlen))
+      allocate(ca2(nlen))
+      allocate(day_storage(3,nlen))
+      allocate(mineral_n_pls(nlen))
+      allocate(labile_p_pls(nlen))
+      allocate(sto_min(2,nlen))
 
 
       !     Maximum evapotranspiration   (emax)
@@ -250,7 +259,7 @@ contains
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =================================
-      call OMP_SET_NUM_THREADS(4)
+      call OMP_SET_NUM_THREADS(2)
 
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
@@ -291,7 +300,7 @@ contains
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
-         call allocation (dt1,nppa(p),uptk_costs(ri), ts, w(p), tra(p)&
+         call allocation (dt1,nppa(p),uptk_costs(ri), soil_temp, w(p), tra(p)&
             &,  mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
             &, cf1_pft(ri),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
             &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
@@ -311,8 +320,8 @@ contains
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
 
-         sto_min(1, p) = 0.0D0
-         sto_min(2, p) = 0.0D0
+         sto_min(1, p) = 0.0D0 ! N
+         sto_min(2, p) = 0.0D0 ! P
 
          growth_stoc = 0.0D0
          mr_sto = 0.0D0
@@ -410,78 +419,131 @@ contains
       epavg = emax !mm/day
 
       ! FILL OUTPUT DATA
-      ! w2(p) = w(p)
-      ! g2(p) = g(p)
-      ! s2(p) = s(p)
-      ! smavg(p) = smelt(p)
-      ! ruavg(p) = roff(p)     ! mm day-1
-      ! evavg(p) = evap(p)     ! mm day-1
-      ! phavg(p) = ph(p)       !kgC/m2/day
-      ! aravg(p) = ar(p)       !kgC/m2/year
-      ! nppavg(p) = nppa(p)    !kgC/m2/day
-      ! laiavg(p) = laia(p)
-      ! rcavg(p) = rc2(p)      ! s m -1
-      ! f5avg(p) = f5(p)
-      ! rmavg(p) = rm(p)
-      ! rgavg(p) = rg(p)
+      smavg(:)   = 0.0D0
+      w2(:) = 0.0
+      g2(:) = 0.0
+      s2(:) = 0.0
+      ruavg(:) = 0.0D0
+      evavg(:) = 0.0D0
+      rcavg(:) = 0.0D0
+      f5avg(:) = 0.0D0
+      laiavg(:) = 0.0D0
+      phavg(:) = 0.0D0
+      aravg(:) = 0.0D0
+      nppavg(:) = 0.0D0
+      rmavg(:) = 0.0D0
+      rgavg(:) = 0.0D0
+      wueavg(:) = 0.0D0
+      cueavg(:) = 0.0D0
+      cleafavg_pft(:) = 0.0D0
+      cawoodavg_pft(:) = 0.0D0
+      cfrootavg_pft(:) = 0.0D0
+      c_defavg(:) = 0.0D0
+      vcmax_1(:) = 0.0D0
+      specific_la_1(:) = 0.0D0
+      nupt_1(:, :) = 0.0D0
+      pupt_1(:, :) = 0.0D0
+      litter_l_1(:) = 0.0D0
+      cwd_1(:) = 0.0D0
+      litter_fr_1(:) = 0.0D0
+      npp2pay_1(:) = 0.0
+      lit_nut_content_1(:, :) = 0.0D0
+      delta_cveg_1(:, :) = 0.0D0
+      storage_out_bdgt_1(:, :) = 0.0D0
+      mineral_n_pls_1(:) = 0.0D0
+      labile_p_pls_1(:) = 0.0D0
+      limitation_status_1(:,:) = 0
+      sto_min_1(:,:) = 0.0D0
+      uptk_strat_1(:,:) = 0
 
-      ! wueavg(p) = wue(p)
-      ! cueavg(p) = cue(p)
+      do p = 1, nlen
+         ri = lp(p)
+         ! write output data
+         smavg(ri) = smelt(p)
+         w2(ri) = w(p)
+         g2(ri) = g(p)
+         s2(ri) = s(p)
+         ruavg(ri) = roff(p)
+         evavg(ri) = evap(p)
+         phavg(ri) = ph(p)
+         aravg(ri) = ar(p)
+         nppavg(ri) = nppa(p)
+         laiavg(ri) = laia(p)
+         rcavg(ri) = rc2(p)
+         f5avg(ri) = f5(p)
+         rmavg(ri) = rm(p)
+         rgavg(ri) = rg(p)
+         wueavg(ri) = wue(p)
+         cueavg(ri) = cue(p)
+         c_defavg(ri) = c_def(p) / 2.73791
+         cleafavg_pft(ri)  = cl1_int(p)
+         cawoodavg_pft(ri) = ca1_int(p)
+         cfrootavg_pft(ri) = cf1_int(p)
+         vcmax_1(ri) = vcmax(p)
+         specific_la_1(ri) = specific_la(p)
+         nupt_1(:, ri) = nupt(:,p)
+         pupt_1(:, ri) = pupt(:,p)
+         litter_l_1(ri) = litter_l(p)
+         cwd_1(ri) = cwd(p)
+         litter_fr_1(ri) = litter_fr(p)
+         npp2pay_1(ri) = npp2pay(p)
+         lit_nut_content_1(:,ri) = lit_nut_content(:, p)
+         delta_cveg_1(:,ri) = delta_cveg(:,p)
+         storage_out_bdgt_1(:,ri) = storage_out_bdgt(:,p)
+         mineral_n_pls_1(ri) = mineral_n_pls(p)
+         labile_p_pls_1(ri) = labile_p_pls(p)
+         limitation_status_1(:,ri) = limitation_status(:,p)
+         sto_min_1(:,ri) = sto_min(:,p)
+         uptk_strat_1(:,ri) = uptk_strat(:,p)
+      enddo
 
-      ! c_defavg(p) = c_def(p) / 2.73791
-
-
-
-
-      ! cleafavg_pft(p)  = cl1_int(p)
-      ! cawoodavg_pft(p) = ca1_int(p)
-      ! cfrootavg_pft(p) = cf1_int(p)
-
-      ! INFLATE DATA
-
-      ! if (.not. run(p)) then
-      !    cleafavg_pft(p)  = 0.0D0
-      !    cawoodavg_pft(p) = 0.0D0
-      !    cfrootavg_pft(p) = 0.0D0
-      ! else
-      !       ! INTENT OUT (FULL ARRAYS - Sparse vectors)
-      ! emax  = 0.0D0
-      ! smavg(:)   = 0.0D0    !  plss vectors (outputs)
-      ! w2(:) = 0.0
-      ! g2(:) = 0.0
-      ! s2(:) = 0.0
-      ! ruavg(:) = 0.0D0
-      ! evavg(:) = 0.0D0
-      ! rcavg(:) = 0.0D0
-      ! laiavg(:) = 0.0D0
-      ! phavg(:) = 0.0D0
-      ! aravg(:) = 0.0D0  ! ar
-      ! nppavg(:) = 0.0D0 ! nppa
-      ! rmavg(:) = 0.0D0
-      ! rgavg(:) = 0.0D0
-      ! ocpavg(:) = 0.0D0
-      ! wueavg(:) = 0.0D0
-      ! cueavg(:) = 0.0D0
-      ! ocp_mm(:) = 0.0D0
-      ! cleafavg_pft(:) = 0.0D0
-      ! cawoodavg_pft(:) = 0.0D0
-      ! cfrootavg_pft(:) = 0.0D0
-      ! ocpavg(:) = 0.0D0
-      ! wueavg(:) = 0.0D0
-      ! cueavg(:) = 0.0D0
-      ! c_defavg(:) = 0.0D0
-
-      ! vcmaxavg(:) = 0.0D0
-      ! specific_laavg(:) = 0.0D0
-      ! nuptavg(:, :) = 0.0D0
-      ! puptavg(:, :) = 0.0D0
-      ! litter_lavg(:) = 0.0D0
-      ! cwdavg(:) = 0.0D0
-      ! litter_fravg(:) = 0.0D0
-      ! lit_nut_contentavg(:, :) = 0.0D0
-      ! delta_cvegavg(:, :) = 0.0D0
-      ! storage_out_bdgtavg(:, :) = 0.0D0
-      ! traavg(:) = 0.0D0]
+      deallocate(w)
+      deallocate(g)
+      deallocate(s)
+      deallocate(lp)
+      deallocate(rimelt)
+      deallocate(smelt)
+      deallocate(ds)
+      deallocate(dw)
+      deallocate(roff)
+      deallocate(evap)
+      deallocate(nppa)
+      deallocate(ph)
+      deallocate(ar)
+      deallocate(laia)
+      deallocate(f5)
+      deallocate(f1)
+      deallocate(vpd)
+      deallocate(rc2)
+      deallocate(rm)
+      deallocate(rg)
+      deallocate(wue)
+      deallocate(cue)
+      deallocate(c_def)
+      deallocate(vcmax)
+      deallocate(specific_la)
+      deallocate(storage_out_bdgt)
+      deallocate(tra)
+      deallocate(nupt)
+      deallocate(pupt)
+      deallocate(litter_l)
+      deallocate(cwd)
+      deallocate(litter_fr)
+      deallocate(lit_nut_content)
+      deallocate(delta_cveg)
+      deallocate(npp2pay)
+      deallocate(limitation_status)
+      deallocate(uptk_strat)
+      deallocate(cl1_int)
+      deallocate(cf1_int)
+      deallocate(ca1_int)
+      deallocate(cl2)
+      deallocate(cf2)
+      deallocate(ca2)
+      deallocate(day_storage)
+      deallocate(mineral_n_pls)
+      deallocate(labile_p_pls)
+      deallocate(sto_min)
 
    end subroutine daily_budget
 
