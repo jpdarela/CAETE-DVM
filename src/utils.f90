@@ -27,6 +27,7 @@ module utils
     public :: ascii2bin
     public :: leap
     public :: cwm
+    ! public :: deflt_arr
 
     contains
 
@@ -165,4 +166,36 @@ function process_id() result(ipid)
 
      end function cwm
 
-end module utils
+
+    !  subroutine deflt_arr(vout, vind, vocp)
+    !     use types
+    !     use global_par
+
+    !     real(r_8), intent(in) :: vout(npls)
+    !     integer(i_4), allocatable, dimension(:), intent(out) :: vind
+    !     real(r_8), allocatable, dimension(:), intent(out) :: vocp
+    !     integer(i_4) :: j, c
+
+    !     c = 0
+    !     do j = 1, npls
+    !         if (vout(j) > 0.0e1) c = c + 1
+    !     enddo
+
+    !     allocate(vocp(c))
+    !     allocate(vind(c))
+
+    !     c = 0
+    !     do j = 1, npls
+    !         if (vout(j) > 0.0e1) then
+    !             c = c + 1
+    !             vind(c) = j
+    !             vocp(c) = vout(j)
+    !         endif
+    !     enddo
+
+    !     print*, 'ok'
+
+    !     end subroutine deflt_arr
+
+
+    end module utils

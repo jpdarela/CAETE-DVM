@@ -84,9 +84,12 @@ def turnover_combinations(verbose=False):
     """CREATE the residence time and allocation combinations"""
 
     # constrained distributions (must sum up to 1.)
+    file1 = False
+    file2 = False
 
     if os.path.exists(grassy_allocations_file):
         plsa_grass = np.load(grassy_allocations_file)
+        file1 = True
 
     else:
         aleafg = np.arange(20., 80.1, 0.0125e1, dtype=np.float64)
@@ -98,6 +101,7 @@ def turnover_combinations(verbose=False):
 
     if os.path.exists(woody_allocations_file):
         plsa_wood = np.load(woody_allocations_file)
+        file2 = True
 
     else:
         aleafw = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)
@@ -112,7 +116,16 @@ def turnover_combinations(verbose=False):
         print('Number of combinations = %d' %
               (len(plsa_grass) + len(plsa_wood)))
 
-    return np.array(plsa_wood), np.array(plsa_grass)
+    if file1:
+        a1 = plsa_wood / 100.0
+    else:
+        a1 = np.array(plsa_wood) / 100.0
+    if file2:
+        a2 = plsa_grass / 100.0
+    else:
+        a2 = np.array(plsa_grass) / 100.0
+
+    return a1, a2
 
 
 def table_gen(NPLS):

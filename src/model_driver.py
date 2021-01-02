@@ -75,8 +75,8 @@ if sombrero:
 
 else:
     grid_mn = []
-    for Y in range(168, 173):
-        for X in range(225, 228):
+    for Y in range(168, 170):
+        for X in range(225, 227):
             if not mask[Y, X]:
                 grid_mn.append(grd(X, Y))
 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     import time
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else 100
+    n_proc = mp.cpu_count() // 2 if not sombrero else 64
 
     fh = open('logfile.log', mode='w')
     output_path = Path("../outputs").resolve()
@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     fh.writelines("MODEL EXEC - spinup deco",)
     print("MODEL EXEC - spinup deco")
-    with mp.Pool(processes=n_proc) as p:
+    with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
         result1 = p.map(apply_fun, result)
     end_spinup = time.time() - start
     fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     fh.writelines("MODEL EXEC - spinup coup",)
     print("MODEL EXEC - spinup coup")
-    with mp.Pool(processes=n_proc) as p:
+    with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
         result2 = p.map(apply_fun1, result1)
     end_spinup = time.time() - start
     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     fh.writelines("MODEL EXEC - RUN",)
     print("MODEL EXEC- RUN")
     start1 = time.time()
-    with mp.Pool(processes=n_proc) as p:
+    with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
         result3 = p.map(apply_fun2, result2)
         del result2
     end_spinup = time.time() - start

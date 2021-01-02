@@ -8,6 +8,7 @@ src/*.csv
 src/*.txt
 outputs/*
 src/.python-version
+src/logfile.log
 input/.python-version
 run_debug
 .vscode

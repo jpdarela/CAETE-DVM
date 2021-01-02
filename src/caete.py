@@ -143,10 +143,10 @@ class grd:
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
         self.neighbours = None
+
         self.ls = None          # Number of surviving plss//
 
         self.out_dir = Path("../outputs/gridcell{}/".format(self.xyname))
-        self.sv = None
         self.flush_data = None
 
         # Time attributes
@@ -245,7 +245,7 @@ class grd:
         self.vp_sto = None
         self.vp_lsid = None
 
-    def _allocate_output(self, n):
+    def _allocate_output(self, n, npls=npls):
         """allocate space for the outputs
         n: int NUmber of days being simulated"""
         self.emaxm = []
@@ -292,7 +292,7 @@ class grd:
         self.uptake_strategy = np.zeros(
             shape=(2, npls, n), dtype=np.dtype('int16'), order='F')
         self.carbon_costs = np.zeros(
-            shape=(2, npls, n), dtype=np.dtype('float64'), order='F')
+            shape=(2, npls, n), dtype=np.dtype('float32'), order='F')
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -735,7 +735,6 @@ class grd:
                 self.cleaf[step] = wm(ocp, daily_output['cleafavg_pft'])
                 self.cawood[step] = wm(ocp, daily_output['cawoodavg_pft'])
                 self.cfroot[step] = wm(ocp, daily_output['cfrootavg_pft'])
-                self.area[:, step] = ocp # TODO MAKE MASKED ARRAY
                 self.wue[step] = wm(ocp, daily_output['wueavg'])
                 self.cue[step] = wm(ocp, daily_output['cueavg'])
                 self.cdef[step] = wm(ocp, daily_output['c_defavg'])
@@ -751,6 +750,11 @@ class grd:
                 self.snc[:, step] = soil_out['snc']
                 self.nmin[step] = self.sp_available_n
                 self.pmin[step] = self.sp_available_p
+
+                # DEFLATE BIG ARRAYS
+                self.area[:, step] = ocp # TODO MAKE MASKED ARRAY
+                self.lim_status[:, :, step] = daily_output['limitation_status']
+
 
             if s > 0:
                 while True:

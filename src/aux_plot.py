@@ -3,10 +3,6 @@ import _pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
 
-with open("test_run.pkl", mode='rb') as fh:
-    result = pkl.load(fh)
-
-
 def get_data(grd, var, spin=(1, 5)):
     assert spin[0] > 0 and spin[1] > spin[0] and spin[1] <= 20
 
