@@ -40,8 +40,8 @@ from caete_module import utils as utl
 
 # GLOBAL
 npls = gp.npls
-# Mask for model execution
-mask = np.load('../input/mask/mask_raisg-360-720.npy')
+mask = np.load(
+    "/home/jdarela/Desktop/caete/CAETE-DVM/input/mask/mask_raisg-360-720.npy")
 # Create the semi-random table// of Plant Life Strategies
 # AUX FUNCS
 
@@ -295,7 +295,7 @@ class grd:
         self.uptake_strategy = np.zeros(
             shape=(2, npls, n), dtype=np.dtype('int16'), order='F')
         self.carbon_costs = np.zeros(
-            shape=(2, npls, n), dtype=np.dtype('float32'), order='F')
+            shape=(npls, n), dtype=np.dtype('float32'), order='F')
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -478,7 +478,7 @@ class grd:
         self.vp_dca = np.zeros(shape=(npls,), order='F')
         self.vp_dcf = np.zeros(shape=(npls,), order='F')
         self.vp_ocp = np.zeros(shape=(npls,), order='F')
-        self.vp_sto = np.zeros(shape=(3, npls), order='F')
+        self.vp_sto = None
 
         # # # SOIL START
         # TODO  Prepare soil nutrient data
@@ -490,7 +490,7 @@ class grd:
         self.sp_so_n = 0.3 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
         self.sp_in_p = self.soil_dict['ip']
-        self.sp_uptk_costs = np.zeros(shape=(npls,), order='F')
+        self.sp_uptk_costs = np.zeros(npls, order='F')
 
         self.outputs = dict()
         self.filled = True
@@ -620,14 +620,22 @@ class grd:
                 dcf = np.zeros(npls, order='F')
                 uptk_costs = np.zeros(npls, order='F')
 
-                sto[:, self.vp_lsid] = self.vp_sto[:, :]
-                cleaf[self.vp_lsid] = self.vp_cleaf
-                cwood[self.vp_lsid] = self.vp_cwood
-                croot[self.vp_lsid] = self.vp_croot
-                dcl[self.vp_lsid] = self.vp_dcl
-                dca[self.vp_lsid] = self.vp_dca
-                dcf[self.vp_lsid] = self.vp_dcf
-                uptk_costs[self.vp_lsid] = self.sp_uptk_costs
+                sto[0, self.vp_lsid] = self.vp_sto[0, :]
+                sto[1, self.vp_lsid] = self.vp_sto[1, :]
+                sto[2, self.vp_lsid] = self.vp_sto[2, :]
+                # print(self.vp_lsid.shape)
+                # print(self.vp_cleaf.shape)
+                # assert self.vp_lsid.size == self.vp_cleaf.size, 'different shapes'
+                c = 0
+                for n in self.vp_lsid:
+                    cleaf[n] = self.vp_cleaf[c]
+                    cwood[n] = self.vp_cwood[c]
+                    croot[n] = self.vp_croot[c]
+                    dcl[n] = self.vp_dcl[c]
+                    dca[n] = self.vp_dca[c]
+                    dcf[n] = self.vp_dcf[c]
+                    uptk_costs[n] = self.sp_uptk_costs[c]
+                    c += 1
 
                 out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                          self.soil_temp, temp[step], prec[step], p_atm[step],
@@ -657,22 +665,24 @@ class grd:
                 self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
                 self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
                 self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
-                self.vp_sto[0] = daily_output['stodbg'][0][self.vp_lsid]
-                self.vp_sto[1] = daily_output['stodbg'][1][self.vp_lsid]
-                self.vp_sto[2] = daily_output['stodbg'][2][self.vp_lsid]
+                self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
 
                 self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
 
                 # WATER CWM
-                self.wp_water = self.vp_ocp * daily_output['w2'][self.vp_lsid]
-                self.wp_ice = self.vp_ocp * daily_output['g2'][self.vp_lsid]
-                self.wp_snow = self.vp_ocp * daily_output['s2'][self.vp_lsid]
+                self.wp_water = np.sum(
+                    self.vp_ocp * daily_output['w2'][self.vp_lsid])
+                self.wp_ice = np.sum(
+                    self.vp_ocp * daily_output['g2'][self.vp_lsid])
+                self.wp_snow = np.sum(
+                    self.vp_ocp * daily_output['s2'][self.vp_lsid])
 
                 # Save
                 self.nupt[:, step] = daily_output['nupt'][:]
                 self.pupt[:, step] = daily_output['pupt'][:]
                 for i in range(3):
-                    self.storage_pool[i, step] = self.vp_ocp * self.vp_sto[i]
+                    self.storage_pool[i, step] = np.sum(
+                        self.vp_ocp * self.vp_sto[i])
 
                 # OUTPUTS for SOIL
                 self.litter_l[step] = daily_output['litter_l']
@@ -754,7 +764,7 @@ class grd:
                 # # # Process (cwm) & store (np.array) outputs
                 self.uptake_strategy[:, self.vp_lsid,
                                      step] = daily_output['uptk_strat'][:, self.vp_lsid]
-                self.carbon_costs[:, self.vp_lsid, step] = self.sp_uptk_costs
+                self.carbon_costs[self.vp_lsid, step] = self.sp_uptk_costs
 
                 self.emaxm.append(daily_output['epavg'])
                 self.tsoil.append(self.soil_temp)
@@ -766,7 +776,8 @@ class grd:
                 self.f5[step] = daily_output['f5avg']
                 self.runom[step] = daily_output['ruavg']
                 self.evapm[step] = daily_output['evavg']
-                self.wsoil[step] = daily_output['w2']
+                self.wsoil[step] = np.sum(
+                    self.vp_ocp * daily_output['w2'][self.vp_lsid])
                 self.rm[step] = daily_output['rmavg']
                 self.rg[step] = daily_output['rgavg']
                 self.wue[step] = daily_output['wueavg']
@@ -775,12 +786,12 @@ class grd:
                 self.vcmax[step] = daily_output['vcmax']
                 self.specific_la[step] = daily_output['specific_la']
 
-                self.cleaf[step] = self.vp_ocp * \
-                    daily_output['cleafavg_pft'][self.vp_lsid]
-                self.cawood[step] = self.vp_ocp * \
-                    daily_output['cawoodavg_pft'][self.vp_lsid]
-                self.cfroot[step] = self.vp_ocp * \
-                    daily_output['cfrootavg_pft'][self.vp_lsid]
+                self.cleaf[step] = np.sum(self.vp_ocp *
+                                          daily_output['cleafavg_pft'][self.vp_lsid])
+                self.cawood[step] = np.sum(self.vp_ocp *
+                                           daily_output['cawoodavg_pft'][self.vp_lsid])
+                self.cfroot[step] = np.sum(self.vp_ocp *
+                                           daily_output['cfrootavg_pft'][self.vp_lsid])
 
                 self.lim_status[:, self.vp_lsid,
                                 step] = daily_output['limitation_status'][:, self.vp_lsid]
@@ -898,34 +909,72 @@ class grd:
             co2 += next_year
             self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
 
+            self.wfim = np.zeros(npls, order='F')
+            self.gfim = np.zeros(npls, order='F')
+            self.sfim = np.zeros(npls, order='F')
+            for pls in self.vp_lsid:
+                self.wfim[pls] = self.wp_water
+                self.gfim[pls] = self.wp_ice
+                self.sfim[pls] = self.wp_snow
+
+            sto = np.zeros(shape=(3, npls), order='F')
+            cleaf = np.zeros(npls, order='F')
+            cwood = np.zeros(npls, order='F')
+            croot = np.zeros(npls, order='F')
+            dcl = np.zeros(npls, order='F')
+            dca = np.zeros(npls, order='F')
+            dcf = np.zeros(npls, order='F')
+            uptk_costs = np.zeros(npls, order='F')
+
+            if self.vp_sto is None:
+                pass
+            else:
+                sto[0, self.vp_lsid] = self.vp_sto[0, :]
+                sto[1, self.vp_lsid] = self.vp_sto[1, :]
+                sto[2, self.vp_lsid] = self.vp_sto[2, :]
+
+            c = 0
+            for n in self.vp_lsid:
+                cleaf[n] = self.vp_cleaf[c]
+                cwood[n] = self.vp_cwood[c]
+                croot[n] = self.vp_croot[c]
+                dcl[n] = self.vp_dcl[c]
+                dca[n] = self.vp_dca[c]
+                dcf[n] = self.vp_dcf[c]
+                uptk_costs[n] = self.sp_uptk_costs[c]
+                c += 1
+
             out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                      self.soil_temp, temp[step], prec[step], p_atm[step],
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                      self.sp_snc[:4].sum(
                                      ), self.sp_so_p, self.sp_snc[4:].sum(),
-                                     co2, self.vp_sto, self.vp_cleaf, self.vp_cwood, self.vp_croot,
-                                     self.vp_dcl, self.vp_dca, self.vp_dcf, np.zeros(shape=(npls,), order="F"))
+                                     co2, sto, cleaf, cwood, croot,
+                                     dcl, dca, dcf, np.zeros(shape=(npls,), order="F"))
 
             # Create a dict with the function output
             daily_output = catch_out_budget(out)
-
+            del sto, cleaf, cwood, croot, dcl, dca, dcf
             # UPDATE STATE VARIABLESl
             ocp = daily_output['ocpavg'].copy()
-            self.vp_lsid = np.where(ocp > 0.0)
-            for pls in range(npls):
-                self.wfim[pls] = self.wp_water
-                self.gfim[pls] = self.wp_ice
-                self.sfim[pls] = self.wp_snow
+            self.vp_lsid = np.where(ocp > 0.0)[0]
+            self.vp_ocp = ocp[self.vp_lsid]
+
+            self.wp_water = np.sum(
+                self.vp_ocp * daily_output['w2'][self.vp_lsid])
+            self.wp_ice = np.sum(
+                self.vp_ocp * daily_output['g2'][self.vp_lsid])
+            self.wp_snow = np.sum(
+                self.vp_ocp * daily_output['s2'][self.vp_lsid])
 
             # UPDATE vegetation pools
-            self.vp_cleaf = daily_output['cleafavg_pft']
-            self.vp_cwood = daily_output['cawoodavg_pft']
-            self.vp_croot = daily_output['cfrootavg_pft']
-            self.vp_dcl = daily_output['delta_cveg'][0]
-            self.vp_dca = daily_output['delta_cveg'][1]
-            self.vp_dcf = daily_output['delta_cveg'][2]
-            self.vp_sto = daily_output['stodbg']
-            self.vp_ocp = ocp
+            self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
+            self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
+            self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
+            self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
+            self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
+            self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
+            self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
 
             wo.append(self.wp_water)
             llo.append(daily_output['litter_l'])

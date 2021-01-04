@@ -407,7 +407,6 @@ contains
 
       ! FILL OUTPUT DATA
       smavg   = 0.0D0
-
       ruavg = 0.0D0
       evavg = 0.0D0
       rcavg = 0.0D0

@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 
 from caete import grd
-from caete import mask, npls, print_progress
+from caete import npls, print_progress
 import plsgen as pls
 
 
@@ -124,58 +124,53 @@ del stime
 
 
 if __name__ == "__main__":
-    a = apply_spin(grid_mn[2])
-    b = apply_fun(a)
-    apply_fun1(b)
+    import time
 
+    n_proc = mp.cpu_count() // 2 if not sombrero else 64
 
-#     import time
+    fh = open('logfile.log', mode='w')
+    output_path = Path("../outputs").resolve()
 
-#     n_proc = mp.cpu_count() // 2 if not sombrero else 64
+    if output_path.exists():
+        pass
+    else:
+        mkdir(output_path)
 
-#     fh = open('logfile.log', mode='w')
-#     output_path = Path("../outputs").resolve()
+    fh.writelines(time.ctime(),)
+    fh.writelines("\n\n",)
+    fh.writelines("SPINUP...",)
+    start = time.time()
+    print("SPINUP...")
+    with mp.Pool(processes=n_proc) as p:
+        result = p.map(apply_spin, grid_mn)
+    end_spinup = time.time() - start
+    fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
 
-#     if output_path.exists():
-#         pass
-#     else:
-#         mkdir(output_path)
+    fh.writelines("MODEL EXEC - spinup deco",)
+    print("MODEL EXEC - spinup deco")
+    with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
+        result1 = p.map(apply_fun, result)
+    end_spinup = time.time() - start
+    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+    del result
 
-#     fh.writelines(time.ctime(),)
-#     fh.writelines("\n\n",)
-#     fh.writelines("SPINUP...",)
-#     start = time.time()
-#     print("SPINUP...")
-#     with mp.Pool(processes=n_proc) as p:
-#         result = p.map(apply_spin, grid_mn)
-#     end_spinup = time.time() - start
-#     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
+    fh.writelines("MODEL EXEC - spinup coup",)
+    print("MODEL EXEC - spinup coup")
+    with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
+        result2 = p.map(apply_fun1, result1)
+    end_spinup = time.time() - start
+    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+    del result1
 
-#     fh.writelines("MODEL EXEC - spinup deco",)
-#     print("MODEL EXEC - spinup deco")
-#     with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-#         result1 = p.map(apply_fun, result)
-#     end_spinup = time.time() - start
-#     fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
-#     del result
+    # fh.writelines("MODEL EXEC - RUN",)
+    # print("MODEL EXEC- RUN")
+    # start1 = time.time()
+    # with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
+    #     result3 = p.map(apply_fun2, result2)
 
-#     fh.writelines("MODEL EXEC - spinup coup",)
-#     print("MODEL EXEC - spinup coup")
-#     with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-#         result2 = p.map(apply_fun1, result)
-#     end_spinup = time.time() - start
-#     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-#     del result
-
-#     fh.writelines("MODEL EXEC - RUN",)
-#     print("MODEL EXEC- RUN")
-#     start1 = time.time()
-#     with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-#         result3 = p.map(apply_fun2, result2)
-
-#     del result2
-#     end_spinup = time.time() - start
-#     end_run = time.time() - start1
-#     fh.writelines(f"MODEL EXEC - RUN time (s){end_run}\n",)
-#     fh.writelines(f"MODEL EXEC - TIME elapsed (s){end_spinup}\n",)
-#     fh.close()
+    # del result2
+    end_spinup = time.time() - start
+    end_run = time.time() - start1
+    fh.writelines(f"MODEL EXEC - RUN time (s){end_run}\n",)
+    fh.writelines(f"MODEL EXEC - TIME elapsed (s){end_spinup}\n",)
+    fh.close()
