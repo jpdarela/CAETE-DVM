@@ -31,7 +31,7 @@ contains
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, mineral_n_pls_1, labile_p_pls_1, limitation_status_1, sto_min_1, uptk_strat_1)
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1)
 
 
       use types
@@ -71,45 +71,43 @@ contains
 
 
       !     ----------------------------OUTPUTS------------------------------
-      real(r_4) ,intent(out)                :: epavg          !Maximum evapotranspiration (mm/day)
+      real(r_4),intent(out) :: epavg          !Maximum evapotranspiration (mm/day)
+      real(r_8),intent(out) :: smavg          !Snowmelt Daily average (mm/day)
+      real(r_8),intent(out) :: ruavg          !Runoff Daily average (mm/day)
+      real(r_8),intent(out) :: evavg          !Actual evapotranspiration Daily average (mm/day)
+      real(r_8),intent(out) :: phavg          !Daily photosynthesis (Kg m-2 y-1)
+      real(r_8),intent(out) :: aravg          !Daily autotrophic respiration (Kg m-2 y-1)
+      real(r_8),intent(out) :: nppavg         !Daily NPP (average between PFTs)(Kg m-2 y-1)
+      real(r_8),intent(out) :: laiavg         !Daily leaf area Index m2m-2
+      real(r_8),intent(out) :: rcavg          !Daily canopy resistence s/m
+      real(r_8),intent(out) :: f5avg          !Daily canopy resistence s/m
+      real(r_8),intent(out) :: rmavg          !maintenance/growth respiration (Kg m-2 y-1)
+      real(r_8),intent(out) :: rgavg          !maintenance/growth respiration (Kg m-2 y-1)
+      real(r_8),intent(out) :: wueavg         ! Water use efficiency
+      real(r_8),intent(out) :: cueavg         ! [0-1]
+      real(r_8),intent(out) :: vcmax_1          ! µmol m-2 s-1
+      real(r_8),intent(out) :: specific_la_1    ! m2 g(C)-1
+      real(r_8),intent(out) :: c_defavg       ! kg(C) m-2 Carbon deficit due to negative NPP - i.e. ph < ar
+      real(r_8),intent(out) :: litter_l_1       ! g m-2
+      real(r_8),intent(out) :: cwd_1            ! g m-2
+      real(r_8),intent(out) :: litter_fr_1      ! g m-2
+      real(r_8),dimension(2),intent(out) :: nupt_1         ! g m-2 (1) from Soluble (2) from organic
+      real(r_8),dimension(3),intent(out) :: pupt_1         ! g m-2
+      real(r_8),dimension(6),intent(out) :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
+
+      ! FULL OUTPUT
       real(r_4),dimension(npls),intent(out) :: w2             !Final (last day) soil moisture storage (mm)
       real(r_4),dimension(npls),intent(out) :: g2             !Final soil ice storage (mm)
       real(r_4),dimension(npls),intent(out) :: s2             !Final overland snow storage (mm)
-      real(r_8),dimension(npls),intent(out) :: smavg          !Snowmelt Daily average (mm/day)
-      real(r_8),dimension(npls),intent(out) :: ruavg          !Runoff Daily average (mm/day)
-      real(r_8),dimension(npls),intent(out) :: evavg          !Actual evapotranspiration Daily average (mm/day)
-      real(r_8),dimension(npls),intent(out) :: phavg          !Daily photosynthesis (Kg m-2 y-1)
-      real(r_8),dimension(npls),intent(out) :: aravg          !Daily autotrophic respiration (Kg m-2 y-1)
-      real(r_8),dimension(npls),intent(out) :: nppavg         !Daily NPP (average between PFTs)(Kg m-2 y-1)
-      real(r_8),dimension(npls),intent(out) :: laiavg         !Daily leaf area Index m2m-2
-      real(r_8),dimension(npls),intent(out) :: rcavg          !Daily canopy resistence s/m
-      real(r_8),dimension(npls),intent(out) :: f5avg          !Daily canopy resistence s/m
-      real(r_8),dimension(npls),intent(out) :: rmavg          !maintenance/growth respiration (Kg m-2 y-1)
-      real(r_8),dimension(npls),intent(out) :: rgavg          !maintenance/growth respiration (Kg m-2 y-1)
       real(r_8),dimension(npls),intent(out) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
-      real(r_8),dimension(npls),intent(out) :: wueavg         ! Water use efficiency
-      real(r_8),dimension(npls),intent(out) :: cueavg         ! [0-1]
-      real(r_8),dimension(npls),intent(out) :: c_defavg       ! kg(C) m-2 Carbon deficit due to negative NPP - i.e. ph < ar
-
-      real(r_8),dimension(npls),intent(out)      :: vcmax_1          ! µmol m-2 s-1
-      real(r_8),dimension(npls),intent(out)      :: specific_la_1    ! m2 g(C)-1
-      real(r_8),dimension(2,npls),intent(out)    :: nupt_1         ! g m-2 (1) from Soluble (2) from organic
-      real(r_8),dimension(3,npls),intent(out)    :: pupt_1         ! g m-2
-      real(r_8),dimension(npls),intent(out)      :: litter_l_1       ! g m-2
-      real(r_8),dimension(npls),intent(out)      :: cwd_1            ! g m-2
-      real(r_8),dimension(npls),intent(out)      :: litter_fr_1      ! g m-2
-      real(r_8),dimension(npls),intent(out)      :: npp2pay_1
-      real(r_8),dimension(6,npls),intent(out)    :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
-      real(r_8),dimension(3,npls),intent(out)    :: delta_cveg_1
-      real(r_8),dimension(3,npls),intent(out)    :: storage_out_bdgt_1
-      real(r_8),dimension(npls),intent(out)      :: mineral_n_pls_1          ! TODO take out
-      real(r_8),dimension(npls),intent(out)      :: labile_p_pls_1           ! v
+      real(r_8),dimension(3,npls),intent(out) :: delta_cveg_1
+      real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
-      real(r_8),dimension(2,npls),intent(out)    :: sto_min_1                ! TODO take out
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
+      real(r_8),dimension(npls),intent(out) ::  npp2pay_1
 
 
       !     -----------------------Internal Variables------------------------
@@ -130,6 +128,7 @@ contains
       real(r_4) :: prain                !Rainfall (mm/day)
       real(r_4) :: emax
 
+      real(r_8),dimension(:),allocatable :: ocp_coeffs
       real(r_4),dimension(:),allocatable :: rimelt !Runoff due to soil ice melting
       real(r_4),dimension(:),allocatable :: smelt  !Snowmelt (mm/day)
       real(r_4),dimension(:),allocatable :: w      !Daily soil moisture storage (mm)
@@ -172,10 +171,8 @@ contains
       real(r_8),dimension(:,:),allocatable :: lit_nut_content  ! d0=6 g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
-      real(r_8),dimension(:),allocatable   :: mineral_n_pls
-      real(r_8),dimension(:),allocatable   :: labile_p_pls
+
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
-      real(r_8), dimension(:, :),allocatable    :: sto_min           ! D0=2
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs
 
@@ -192,8 +189,9 @@ contains
       allocate(g(nlen))
       allocate(s(nlen))
       allocate(lp(nlen))
+      allocate(ocp_coeffs(nlen))
 
-
+      ! Get only living PLSs
       counter = 1
       do p = 1,npls
          if(run(p).eq. 1) then
@@ -201,13 +199,13 @@ contains
               g(counter) = g1(p)
               s(counter) = s1(p)
               lp(counter) = p
+              ocp_coeffs(counter) = ocpavg(p)
               counter = counter + 1
          endif
       enddo
 
       soil_temp = ts
 
-      ! INTERNAL - allocate
       allocate(rimelt(nlen))
       allocate(smelt(nlen))
       allocate(ds(nlen))
@@ -248,10 +246,6 @@ contains
       allocate(cf2(nlen))
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
-      allocate(mineral_n_pls(nlen))
-      allocate(labile_p_pls(nlen))
-      allocate(sto_min(2,nlen))
-
 
       !     Maximum evapotranspiration   (emax)
       !     =================================
@@ -311,17 +305,10 @@ contains
 
          storage_out_bdgt(:,p) = day_storage(:,p)
 
-         ! SAVE OUTPUT
-         mineral_n_pls(p) = mineral_n - nupt(1, p)
-         labile_p_pls(p) = labile_p - pupt(1, p)
-
          ! Calculate storage GROWTH respiration
          sr = 0.25D0 * growth_stoc ! g m-2
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
-
-         sto_min(1, p) = 0.0D0 ! N
-         sto_min(2, p) = 0.0D0 ! P
 
          growth_stoc = 0.0D0
          mr_sto = 0.0D0
@@ -419,82 +406,89 @@ contains
       epavg = emax !mm/day
 
       ! FILL OUTPUT DATA
-      smavg(:)   = 0.0D0
+      smavg   = 0.0D0
+
+      ruavg = 0.0D0
+      evavg = 0.0D0
+      rcavg = 0.0D0
+      f5avg = 0.0D0
+      laiavg = 0.0D0
+      phavg = 0.0D0
+      aravg = 0.0D0
+      nppavg = 0.0D0
+      rmavg = 0.0D0
+      rgavg = 0.0D0
+      wueavg = 0.0D0
+      cueavg = 0.0D0
+      litter_l_1 = 0.0D0
+      cwd_1 = 0.0D0
+      litter_fr_1 = 0.0D0
+      c_defavg = 0.0D0
+      vcmax_1 = 0.0D0
+      specific_la_1 = 0.0D0
+      lit_nut_content_1(:) = 0.0D0
+      nupt_1(:) = 0.0D0
+      pupt_1(:) = 0.0D0
       w2(:) = 0.0
       g2(:) = 0.0
       s2(:) = 0.0
-      ruavg(:) = 0.0D0
-      evavg(:) = 0.0D0
-      rcavg(:) = 0.0D0
-      f5avg(:) = 0.0D0
-      laiavg(:) = 0.0D0
-      phavg(:) = 0.0D0
-      aravg(:) = 0.0D0
-      nppavg(:) = 0.0D0
-      rmavg(:) = 0.0D0
-      rgavg(:) = 0.0D0
-      wueavg(:) = 0.0D0
-      cueavg(:) = 0.0D0
       cleafavg_pft(:) = 0.0D0
       cawoodavg_pft(:) = 0.0D0
       cfrootavg_pft(:) = 0.0D0
-      c_defavg(:) = 0.0D0
-      vcmax_1(:) = 0.0D0
-      specific_la_1(:) = 0.0D0
-      nupt_1(:, :) = 0.0D0
-      pupt_1(:, :) = 0.0D0
-      litter_l_1(:) = 0.0D0
-      cwd_1(:) = 0.0D0
-      litter_fr_1(:) = 0.0D0
-      npp2pay_1(:) = 0.0
-      lit_nut_content_1(:, :) = 0.0D0
       delta_cveg_1(:, :) = 0.0D0
       storage_out_bdgt_1(:, :) = 0.0D0
-      mineral_n_pls_1(:) = 0.0D0
-      labile_p_pls_1(:) = 0.0D0
       limitation_status_1(:,:) = 0
-      sto_min_1(:,:) = 0.0D0
       uptk_strat_1(:,:) = 0
+      npp2pay_1(:) = 0.0
+
+      ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
+
+      smavg = sum(real(smelt, kind=r_8) * ocp_coeffs)
+      ruavg = sum(real(roff, kind=r_8) * ocp_coeffs)
+      evavg = sum(real(evap, kind=r_8) * ocp_coeffs)
+      phavg = sum(real(ph, kind=r_8) * ocp_coeffs)
+      aravg = sum(real(ar, kind=r_8) * ocp_coeffs)
+      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs)
+      laiavg = sum(laia * ocp_coeffs)
+      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs)
+      f5avg = sum(f5 * ocp_coeffs)
+      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs)
+      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs)
+      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs)
+      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs)
+      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs) / 2.73791
+      vcmax_1 = sum(vcmax * ocp_coeffs)
+      specific_la_1 = sum(specific_la * ocp_coeffs)
+      litter_l_1 = sum(litter_l * ocp_coeffs)
+      cwd_1 = sum(cwd * ocp_coeffs)
+      litter_fr_1 = sum(litter_fr * ocp_coeffs)
+
+
+      do p = 1,2
+         nupt_1(p) = sum(nupt(p,:) * ocp_coeffs)
+      enddo
+      do p = 1,3
+         pupt_1(p) = sum(pupt(p,:) * ocp_coeffs)
+      enddo
+      do p = 1, 6
+      lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
+      enddo
 
       do p = 1, nlen
          ri = lp(p)
          ! write output data
-         smavg(ri) = smelt(p)
+         ! FULL ARRAYS
          w2(ri) = w(p)
          g2(ri) = g(p)
          s2(ri) = s(p)
-         ruavg(ri) = roff(p)
-         evavg(ri) = evap(p)
-         phavg(ri) = ph(p)
-         aravg(ri) = ar(p)
-         nppavg(ri) = nppa(p)
-         laiavg(ri) = laia(p)
-         rcavg(ri) = rc2(p)
-         f5avg(ri) = f5(p)
-         rmavg(ri) = rm(p)
-         rgavg(ri) = rg(p)
-         wueavg(ri) = wue(p)
-         cueavg(ri) = cue(p)
-         c_defavg(ri) = c_def(p) / 2.73791
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)
-         vcmax_1(ri) = vcmax(p)
-         specific_la_1(ri) = specific_la(p)
-         nupt_1(:, ri) = nupt(:,p)
-         pupt_1(:, ri) = pupt(:,p)
-         litter_l_1(ri) = litter_l(p)
-         cwd_1(ri) = cwd(p)
-         litter_fr_1(ri) = litter_fr(p)
-         npp2pay_1(ri) = npp2pay(p)
-         lit_nut_content_1(:,ri) = lit_nut_content(:, p)
          delta_cveg_1(:,ri) = delta_cveg(:,p)
          storage_out_bdgt_1(:,ri) = storage_out_bdgt(:,p)
-         mineral_n_pls_1(ri) = mineral_n_pls(p)
-         labile_p_pls_1(ri) = labile_p_pls(p)
          limitation_status_1(:,ri) = limitation_status(:,p)
-         sto_min_1(:,ri) = sto_min(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
+         npp2pay_1(ri) = npp2pay(p)
       enddo
 
       deallocate(w)
@@ -541,9 +535,6 @@ contains
       deallocate(cf2)
       deallocate(ca2)
       deallocate(day_storage)
-      deallocate(mineral_n_pls)
-      deallocate(labile_p_pls)
-      deallocate(sto_min)
 
    end subroutine daily_budget
 

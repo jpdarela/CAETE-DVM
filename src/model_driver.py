@@ -27,7 +27,7 @@ def check_start():
             r = False
             break
         else:
-            print("---RUN IN SOMBRERO(y/n):")
+            pass
     return r
 
 
@@ -102,17 +102,17 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_spinup('19010101', '19301231', spinup=5, coupled=False)
+    grid.run_caete('19010101', '19301231', spinup=5, coupled=False)
     return grid
 
 
 def apply_fun1(grid):
-    grid.run_spinup('19750101', '19951231', spinup=5, coupled=True)
+    grid.run_caete('19750101', '19951231', spinup=5, coupled=True)
     return grid
 
 
 def apply_fun2(grid):
-    grid.run_spinup('19950101', '20101231', spinup=1, coupled=True)
+    grid.run_caete('19950101', '20101231', spinup=1, coupled=True)
     return grid
 
 
