@@ -31,7 +31,7 @@ contains
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, limitation_status_1, uptk_strat_1)
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1, wp, cp)
 
 
       use types
@@ -108,7 +108,7 @@ contains
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
       real(r_8),dimension(npls),intent(out) ::  npp2pay_1
-
+      real(r_8),dimension(3),intent(out) :: wp, cp
 
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri
@@ -252,7 +252,7 @@ contains
       emax = evpot2(p0,temp,rh,available_energy(temp))
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
-      !     =================================
+      !     =====================
       call OMP_SET_NUM_THREADS(2)
 
       !$OMP PARALLEL DO &
@@ -431,6 +431,7 @@ contains
       w2(:) = 0.0
       g2(:) = 0.0
       s2(:) = 0.0
+      wp(:) = 0.0D0
       cleafavg_pft(:) = 0.0D0
       cawoodavg_pft(:) = 0.0D0
       cfrootavg_pft(:) = 0.0D0
@@ -461,6 +462,12 @@ contains
       litter_l_1 = sum(litter_l * ocp_coeffs)
       cwd_1 = sum(cwd * ocp_coeffs)
       litter_fr_1 = sum(litter_fr * ocp_coeffs)
+      wp(1) = sum(w * ocp_coeffs)
+      wp(2) = sum(g * ocp_coeffs)
+      wp(3) = sum(s * ocp_coeffs)
+      cp(1) = sum(cl1_int * ocp_coeffs)
+      cp(2) = sum(ca1_int * ocp_coeffs)
+      cp(3) = sum(cf1_int * ocp_coeffs)
 
 
       do p = 1,2

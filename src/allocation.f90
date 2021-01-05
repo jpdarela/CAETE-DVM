@@ -54,6 +54,25 @@ module alloc
       integer(i_2), parameter :: wood = 2
       integer(i_2), parameter :: root = 3
 
+      ! The Nutrient uptake possible strategies
+      ! Soluble inorg_n_pool = (1, 2, 3, 4)
+      ! Organic N pool = (5, 6)
+      ! Soluble inorg_p_pool = (1, 2, 3, 4)
+      ! Organic P pool = (5, 6, 7)
+      ! Insoluble inorg p pool = (8)
+
+      integer(i_4), parameter ::  nma   = 1 ,& ! Active uptake by root AM colonized on Solution N/P pool (costs of)
+                                & nme   = 2 ,& ! Active uptake by root EM colonized on Solution N/P pool
+                                & am    = 3 ,& ! Active uptake by root AM hyphae on Solution N/P pool
+                                & em    = 4 ,& ! Active uptake by root EM hyphae on Solution N/P pool
+                                & ramAP = 5 ,& ! PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
+                                & AM0   = 5 ,& ! NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
+                                & remAP = 6 ,& ! PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
+                                & EM0   = 6 ,& ! NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
+                                & AMAP  = 7 ,& ! PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
+                                & EM0x  = 8    ! Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
+
+
       ! variables I/O
       real(r_8),dimension(ntraits),intent(in) :: dt  ! PLS attributes
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
@@ -76,9 +95,9 @@ module alloc
       real(r_8),intent(out) :: cwd  ! coarse wood debris (to litter)(C) g m-2
       real(r_8),intent(out) :: root_litter ! to litter g(C) m-2
       real(r_8),intent(out) :: leaf_litter ! to litter g(C) m-2
-      real(r_8), dimension(2),intent(out) :: nitrogen_uptake ! N plant uptake g(N) m-2
-      real(r_8), dimension(3),intent(out) :: phosphorus_uptake ! P plant uptake g(P) m-2
-      real(r_8),dimension(6),intent(out) :: litter_nutrient_content ! [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
+      real(r_8), dimension(2),intent(out) :: nitrogen_uptake ! N plant uptake g(N) m-2  INDEX //avail_n = 1, on = 2//
+      real(r_8), dimension(3),intent(out) :: phosphorus_uptake ! P plant uptake g(P) m-2  INDEX //avail_p = 1, sop = 2, op=3//
+      real(r_8),dimension(6),intent(out) :: litter_nutrient_content ! [(lln),(rln),(cwdn),(llp),(rlp),(cwdp)] g m-2
       integer(i_2), dimension(3), intent(out) :: limiting_nutrient
       real(r_8), intent(out) :: c_costs_of_uptake
       integer(i_4), dimension(2), intent(out) :: uptk_strategy
@@ -140,12 +159,9 @@ module alloc
       real(r_8) :: internal_p_leaf
       real(r_8) :: internal_p_wood
       real(r_8) :: internal_p_root
-      ! real(r_8), dimension(3) :: used_nitrogen
-      ! real(r_8), dimension(3) :: used_phosphor
       real(r_8), dimension(3) :: n_uptake, p_uptake, rn_uptake, rp_uptake
       real(r_8), dimension(3) :: n_to_storage, p_to_storage
       real(r_8) :: to_storage_234, from_sto2npp
-
       real(r_8) :: mult_factor_n, mult_factor_p
       real(r_8) :: n_leaf, p_leaf, new_leaf_n2c, new_leaf_p2c, leaf_litter_o
       real(r_8) :: root_litter_o
@@ -154,35 +170,15 @@ module alloc
       ! CC auxiliary
       real(r_8) :: pdia, amp ! functional traits
       real(r_8) :: npp_to_fixer, n_fixed
-
       real(r_8), dimension(2) :: to_pay, to_sto, plant_uptake
-
       real(r_8), dimension(6) :: ccn ! Carbon Costs of  N uptake by strategy :
       real(r_8), dimension(8) :: ccp ! CC of P uptake by strategy
-      ! The Nutrient uptake possible strategies
-      integer(i_4), parameter ::  nma   = 1 ,& ! Active uptake by root AM colonized on Solution N/P pool (costs of)
-                                & nme   = 2 ,& ! Active uptake by root EM colonized on Solution N/P pool
-                                & am    = 3 ,& ! Active uptake by root AM hyphae on Solution N/P pool
-                                & em    = 4 ,& ! Active uptake by root EM hyphae on Solution N/P pool
-                                & ramAP = 5 ,& ! PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
-                                & AM0   = 5 ,& ! NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
-                                & remAP = 6 ,& ! PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
-                                & EM0   = 6 ,& ! NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
-                                & AMAP  = 7 ,& ! PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
-                                & EM0x  = 8    ! Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
-
-      ! Soluble inorg_n_pool = (1, 2, 3, 4)
-      ! Organic N pool = (5, 6)
-      ! Soluble inorg_p_pool = (1, 2, 3, 4)
-      ! Organic P pool = (5, 6, 7)
-      ! Insoluble inorg p pool = (8)
-
       real(r_8) :: active_nupt_cost, active_pupt_cost
       integer(i_4) :: naquis_strat, paquis_strat
       real(r_8) :: p_cost_resorpt, n_cost_resorpt
-
       real(r_8) :: negative_one = 0.0D0
       real(r_8) :: aux_on, aux_sop, aux_op
+
 
       ! initialize ALL outputs
       storage_out_alloc            = (/0.0D0, 0.0D0, 0.0D0/)
@@ -195,7 +191,6 @@ module alloc
       leaf_litter            = 0.0D0
       nuptk                  = 0.0D0
       puptk                  = 0.0D0
-
 
       ! Catch the functional/demographic traits of pls
 
@@ -337,10 +332,11 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.0040D0
-      mult_factor_p  = 0.0025D0
+      mult_factor_n  = 0.045D0
+      mult_factor_p  = 0.035D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
+      ! Auxiliary to calculate Carbon costs of Nutrient uptake/uptake of nutrients
       aux_on = on * mult_factor_n
       aux_sop = sop * mult_factor_p
       aux_op = op * mult_factor_p
@@ -375,8 +371,8 @@ module alloc
       endif
 
       ! START NURTIENT STORAGE FOR OUTPUT  storage of NUTRIENTS
-      storage_out_alloc(2) = 0.0D0
-      storage_out_alloc(3) = 0.0D0
+      storage_out_alloc(2) = 0.0D0 ! N
+      storage_out_alloc(3) = 0.0D0 ! P
 
       !----------END OF POTENTIAL VALUES CALCULATION (in MASS)
 
@@ -472,6 +468,7 @@ module alloc
       ! NPP
       real_npp(wood, phosph) = npp_aux
 
+      ! ROOT
       ! Clean aux
       lim_aux = .false.
       npp_aux = 0.0D0
@@ -686,7 +683,7 @@ module alloc
       nuptk = sum(n_uptake)
       puptk = sum(p_uptake)
 
-      ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC gN-1)
+      ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC g(N/P)-1)
       ! 1 - Check Passve uptake
       call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
                         & to_pay, to_sto, plant_uptake)
@@ -696,8 +693,6 @@ module alloc
       naquis_strat = 0
       nitrogen_uptake(:) = 0.0D0
       if (to_pay(1) .gt. 0.0D0) then
-      !       3 - select strategy
-      !       4 - calculate efective costs
          call active_costn(amp, avail_n - plant_uptake(1), aux_on, scf1 * 1D3, ccn)
          call select_active_strategy(ccn, active_nupt_cost, naquis_strat)
          call prep_out_n(naquis_strat, nuptk, to_pay(1), nitrogen_uptake)
@@ -713,8 +708,6 @@ module alloc
       paquis_strat = 0
       phosphorus_uptake(:) = 0.0D0
       if(to_pay(2) .gt. 0.0D0) then
-      !       3 - select strategy
-      !       4 - calculate efective costs
          call active_costp(amp, avail_p - plant_uptake(2), aux_sop, aux_op, scf1 * 1D3, ccp)
          call select_active_strategy(ccp, active_pupt_cost, paquis_strat)
          call prep_out_p(paquis_strat, puptk, to_pay(2), phosphorus_uptake)
