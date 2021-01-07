@@ -478,7 +478,7 @@ class grd:
         self.vp_dca = np.zeros(shape=(npls,), order='F')
         self.vp_dcf = np.zeros(shape=(npls,), order='F')
         self.vp_ocp = np.zeros(shape=(npls,), order='F')
-        self.vp_sto = None
+        self.vp_sto = np.zeros(shape=(3, npls), order='F')
 
         # # # SOIL START
         # TODO  Prepare soil nutrient data
@@ -644,12 +644,12 @@ class grd:
                 self.sfim = None
                 # Create a dict with the function output
                 daily_output = catch_out_budget(out)
-                del out
+                # del out
                 # OCP coeffs : a sparse vector
                 self.vp_lsid = np.where(daily_output['ocpavg'] > 0.0)[0]
                 self.vp_ocp = daily_output['ocpavg'][self.vp_lsid]
                 self.ls[step] = self.vp_lsid.size
-                daily_output['ocpavg'] = None
+                # daily_output['ocpavg'] = None
 
                 # UPDATE STATE VARIABLES
 
@@ -668,13 +668,6 @@ class grd:
                 self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
                 self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
 
-                # FREE MEMORY
-                daily_output['cleafavg_pft'] = None
-                daily_output['cawoodavg_pft'] = None
-                daily_output['cfrootavg_pft'] = None
-                daily_output['delta_cveg'] = None
-                daily_output['stodbg'] = None
-
                 # OUTPUTS for SOIL CWM
                 self.litter_l[step] = daily_output['litter_l']
                 self.cwd[step] = daily_output['cwd']
@@ -686,7 +679,7 @@ class grd:
                                          self.sp_csoil, self.sp_snc)
 
                 soil_out = catch_out_carbon3(s_out)
-                del s_out
+                # del s_out
                 self.sp_csoil = soil_out['cs']
                 self.sp_snc = soil_out['snc']
 
@@ -773,10 +766,9 @@ class grd:
                 self.cleaf[step] = daily_output['cp'][0]
                 self.cawood[step] = daily_output['cp'][1]
                 self.cfroot[step] = daily_output['cp'][2]
-
+                # TODO
                 self.lim_status[:, self.vp_lsid,
                                 step] = daily_output['limitation_status'][:, self.vp_lsid]
-                daily_output['limitation_status'] = None
                 self.hresp[step] = soil_out['hr']
                 self.csoil[:, step] = soil_out['cs']
                 self.inorg_n[step] = self.sp_in_n
@@ -788,7 +780,6 @@ class grd:
                 self.pmin[step] = self.sp_available_p
 
                 self.area[self.vp_lsid, step] = self.vp_ocp
-                del daily_output, soil_out
 
             if s > 0:
                 while True:
@@ -870,6 +861,16 @@ class grd:
         cwdo = []
         rlo = []
         lnco = []
+
+        sto = self.vp_sto
+        cleaf = self.vp_cleaf
+        cwood = self.vp_cwood
+        croot = self.vp_croot
+        dcl = self.vp_dcl
+        dca = self.vp_dca
+        dcf = self.vp_dcf
+        uptk_costs = np.zeros(npls, order='F')
+
         for step in range(steps.size):
             loop += 1
             count_days += 1
@@ -890,40 +891,9 @@ class grd:
             co2 += next_year
             self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
 
-            self.wfim = np.zeros(npls, order='F')
-            self.gfim = np.zeros(npls, order='F')
-            self.sfim = np.zeros(npls, order='F')
-            for pls in self.vp_lsid:
-                self.wfim[pls] = self.wp_water
-                self.gfim[pls] = self.wp_ice
-                self.sfim[pls] = self.wp_snow
-
-            sto = np.zeros(shape=(3, npls), order='F')
-            cleaf = np.zeros(npls, order='F')
-            cwood = np.zeros(npls, order='F')
-            croot = np.zeros(npls, order='F')
-            dcl = np.zeros(npls, order='F')
-            dca = np.zeros(npls, order='F')
-            dcf = np.zeros(npls, order='F')
-            uptk_costs = np.zeros(npls, order='F')
-
-            if self.vp_sto is None:
-                pass
-            else:
-                sto[0, self.vp_lsid] = self.vp_sto[0, :]
-                sto[1, self.vp_lsid] = self.vp_sto[1, :]
-                sto[2, self.vp_lsid] = self.vp_sto[2, :]
-
-            c = 0
-            for n in self.vp_lsid:
-                cleaf[n] = self.vp_cleaf[c]
-                cwood[n] = self.vp_cwood[c]
-                croot[n] = self.vp_croot[c]
-                dcl[n] = self.vp_dcl[c]
-                dca[n] = self.vp_dca[c]
-                dcf[n] = self.vp_dcf[c]
-                uptk_costs[n] = self.sp_uptk_costs[c]
-                c += 1
+            self.wfim = np.zeros(npls, order='F') + self.wp_water
+            self.gfim = np.zeros(npls, order='F') + self.wp_ice
+            self.sfim = np.zeros(npls, order='F') + self.wp_snow
 
             out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                      self.soil_temp, temp[step], prec[step], p_atm[step],
@@ -931,9 +901,8 @@ class grd:
                                      self.sp_snc[:4].sum(
                                      ), self.sp_so_p, self.sp_snc[4:].sum(),
                                      co2, sto, cleaf, cwood, croot,
-                                     dcl, dca, dcf, np.zeros(shape=(npls,), order="F"))
+                                     dcl, dca, dcf, uptk_costs)
 
-            del sto, cleaf, cwood, croot, dcl, dca, dcf
             self.wfim = None
             self.gfim = None
             self.sfim = None
@@ -941,26 +910,11 @@ class grd:
             # Create a dict with the function output
             daily_output = catch_out_budget(out)
 
-            # UPDATE STATE VARIABLES
-            self.vp_lsid = np.where(daily_output['ocpavg'] > 0.0)[0]
-            self.vp_ocp = daily_output['ocpavg'][self.vp_lsid]
-            daily_output['ocpavg'] = None
-
-            self.wp_water = np.sum(
-                self.vp_ocp * daily_output['w2'][self.vp_lsid])
-            self.wp_ice = np.sum(
-                self.vp_ocp * daily_output['g2'][self.vp_lsid])
-            self.wp_snow = np.sum(
-                self.vp_ocp * daily_output['s2'][self.vp_lsid])
+            self.wp_water = daily_output['wp'][0]
+            self.wp_ice = daily_output['wp'][1]
+            self.wp_snow = daily_output['wp'][2]
 
             # UPDATE vegetation pools
-            self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
-            self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
-            self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
-            self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
-            self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
-            self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
-            self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
 
             wo.append(self.wp_water)
             llo.append(daily_output['litter_l'])
@@ -968,9 +922,9 @@ class grd:
             rlo.append(daily_output['litter_fr'])
             lnco.append(daily_output['lnc'])
 
-        return (np.array(wo[365:])).mean(), (np.array(llo[365:])).mean(),\
-               (np.array(cwdo[365:])).mean(), (np.array(rlo[365:])).mean(),\
-               (np.array(lnco)[:365, :]).mean(axis=0,)
+        f = np.array
+        def x(a): return a * 0.75
+        return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 
     def sdc_spinup(self, water, ll, cwd, rl, lnc):
         """SOIL POOLS SPINUP"""

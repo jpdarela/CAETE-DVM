@@ -59,13 +59,13 @@ def check_viability(trait_values, wood):
     """
 
     assert wood is not None
-    rtur = np.array(model.spinup3(0.000365242, trait_values))
+    rtur = np.array(model.spinup3(1.0, trait_values))
     if wood:
-        if rtur[0] <= 0.0005 or rtur[1] <= 0.001 or rtur[2] <= 0.0005:
+        if rtur[0] <= 0.5 or rtur[1] <= 0.5 or rtur[2] <= 0.5:
             return False
         return True
     else:
-        if rtur[0] <= 0.0005 or rtur[1] <= 0.0005:
+        if rtur[0] <= 0.5 or rtur[1] <= 0.5:
             return False
         return True
 
@@ -140,7 +140,7 @@ def table_gen(NPLS):
             pass
         else:
             pool_n2c = np.linspace(0.002, 0.09, 500) / 10.0
-            pool_p2c = np.linspace(0.0002, 0.009, 500) / 10.0
+            pool_p2c = np.linspace(0.00025, 0.0025, 500) / 10.0
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
             (a / b) >= 3.0) and ((a / b) <= 50.0)]
@@ -153,7 +153,7 @@ def table_gen(NPLS):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 3000
+    r_ceil = 300000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0

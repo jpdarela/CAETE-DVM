@@ -332,8 +332,8 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.045D0
-      mult_factor_p  = 0.035D0
+      mult_factor_n  = 0.015D0
+      mult_factor_p  = 0.005D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
       ! Auxiliary to calculate Carbon costs of Nutrient uptake/uptake of nutrients
@@ -698,6 +698,7 @@ module alloc
          call prep_out_n(naquis_strat, nuptk, to_pay(1), nitrogen_uptake)
       else
          nitrogen_uptake(1) = nuptk
+         nitrogen_uptake(2) = 0.0D0
       endif
       uptk_strategy(1) = naquis_strat
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))

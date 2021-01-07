@@ -31,6 +31,7 @@ contains
 
     use types
     use global_par
+    use photo_par
     use photo
     use water
 
@@ -108,14 +109,22 @@ contains
     call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
          & p2cl,tleaf,f1a,vm_out)
 
+!    _____     ____   _     _____    _    _____
+!    | __ )_ _/ ___| | |   | ____|  / \  |  ___|
+!    |  _ \| | |  _  | |   |  _|   / _ \ | |_
+!    | |_)|| | |_| | | |___| |___ / ___ \|  _|
+!    |____/___\____| |_____|_____/_/   \_\_|
+!     Leaf area index (m2/m2)
+    sla = spec_leaf_area(tleaf)
 
+    laia = 0.2D0 * dexp((2.5D0 * f1a)/p25)
 ! VPD
 !========
     vpd = vapor_p_defcit(temp,rh)
 
 !Stomatal resistence
 !===================
-    rc = canopy_resistence(vpd, f1a, g1, catm) !s m-1
+    rc = canopy_resistence(vpd, f1a, g1, catm) * real(laia, kind=r_4)!s m-1
 
 ! Novo calculo da WUE
 
@@ -139,15 +148,7 @@ contains
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif
 
-!    _____     ____   _     _____    _    _____
-!    | __ )_ _/ ___| | |   | ____|  / \  |  ___|
-!    |  _ \| | |  _  | |   |  _|   / _ \ | |_
-!    | |_)|| | |_| | | |___| |___ / ___ \|  _|
-!    |____/___\____| |_____|_____/_/   \_\_|
-!     Leaf area index (m2/m2)
-    sla = spec_leaf_area(tleaf)
 
-    laia = 0.2D0 * dexp((2.5D0 * f1a)/1.53D-5)
 
 !     Canopy gross photosynthesis (kgC/m2/yr)
 !     =======================================x

@@ -192,8 +192,8 @@ module carbon_costs
                             & kcn  = 1.0D0  ,& !
                             & kan  = 0.9D0  ,& !
                             & kanc = 1.4D0  ,& !
-                            & ken  = 0.15D0 ,& !
-                            & kenc = 0.75D0
+                            & ken  = 0.25D0 ,& !
+                            & kenc = 0.35D0
 
       integer(i_4), parameter :: N = 1
 
@@ -212,7 +212,7 @@ module carbon_costs
       ccn(nme) = cc_active(kn, ecm * av_n, kcn, ecm * croot)
       ccn(am) = cc_active(kan, amp * av_n, kanc, amp * croot)
       ccn(em) = cc_active(ken, ecm * av_n, kenc, ecm * croot)
-      ccn(Am0) = cc_active(kan, amp * on, kenc, amp * croot)
+      ccn(Am0) =  1.0D15 ! cc_active(kan, amp * on, kenc, amp * croot)
       ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot)
    end subroutine active_costn
 
@@ -231,7 +231,7 @@ module carbon_costs
                             & kap  = 0.8D0  ,& ! AkP<-0.1 #AM cost
                             & kapc = 1.2D0  ,& ! AkCp<-0.5 #AM cost
                             & kep  = 0.9D0  ,& ! EkP<-0.05 #ECM cost
-                            & kepc = 1.4D0   ! EkCp<-1.0 #ECM cost
+                            & kepc = 1.4D0     ! EkCp<-1.0 #ECM cost
 
       ! Strategies of P aquisition - ACTIVE UPTAKE
       integer(i_4), parameter :: nma   = 1 ,& ! Non Myco. AM
@@ -256,11 +256,11 @@ module carbon_costs
       ccp(em) = cc_active(kep, ecm * av_p, kepc, ecm * croot)
 
       ! !Costs of active Non Mycorrhizal AP activity
-      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot)
-      ccp(remAP) = cc_active(kep, ecm * op, kepc, ecm * croot)
+      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot) ! OP
+      ccp(remAP) = 1.0D15 ! cc_active(kep, ecm * op, kepc, ecm * croot) ! OP
 
       ! !Costs of Mycorrhizal AP/exudates
-      ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot)
+      ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
       ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot)
    end subroutine active_costp
 

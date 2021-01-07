@@ -107,7 +107,7 @@ def apply_fun(grid):
 
 
 def apply_fun1(grid):
-    grid.run_caete('19750101', '19951231', spinup=5, coupled=True)
+    grid.run_caete('19010101', '19451231', spinup=5, coupled=True)
     return grid
 
 
@@ -126,11 +126,8 @@ del stime
 if __name__ == "__main__":
     a = apply_spin(grid_mn[3])
     b = apply_fun(a)
-    del a
     c = apply_fun1(b)
-    del b
-    d = apply_fun2(c)
-    del c
+    # del c
     # import time
 
     # n_proc = mp.cpu_count() // 2 if not sombrero else 64

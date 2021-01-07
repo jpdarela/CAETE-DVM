@@ -267,7 +267,7 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
-         call prod(dt1, ocp_wood(p),catm, temp, soil_temp, p0, w(p), ipar, rh, emax&
+         call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w(p), ipar, rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
                &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
@@ -279,7 +279,8 @@ contains
          if (c_def(p) .gt. 0.0) then
             testcdef = c_def(p) - carbon_in_storage
             if(testcdef .lt. 0.0) then
-               storage_out_bdgt(1, p) = carbon_in_storage + testcdef ! Testcdef in negative
+               storage_out_bdgt(1, p) = carbon_in_storage - c_def(p)
+               c_def(p) = 0.0D0
             else
                storage_out_bdgt(1, p) = 0.0D0
                c_def(p) = real(testcdef, kind=r_4)       ! testcdef is zero or positive
@@ -330,6 +331,7 @@ contains
          delta_cveg(3,p) = cf2(p) - cf1_pft(ri)
 
          ! Mass Balance
+
          if(c_def(p) .gt. 0.0) then
             if(dt1(7) .gt. 0.0) then
                cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
@@ -351,6 +353,9 @@ contains
                cf1_int(p) = cf2(p)
             endif
          endif
+         if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
+         if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
+         if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
          ! WATER BALANCE - GABRIEL
          !     Precipitation
@@ -469,6 +474,10 @@ contains
       cp(2) = sum(ca1_int * ocp_coeffs)
       cp(3) = sum(cf1_int * ocp_coeffs)
 
+      ! print*, ''
+      ! print*, 'ca', ca1_int
+      ! print*, ''
+
 
       do p = 1,2
          nupt_1(p) = sum(nupt(p,:) * ocp_coeffs)
@@ -496,7 +505,7 @@ contains
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
       enddo
-
+      ! print*, 'ca_out---------->', cawoodavg_pft
       deallocate(w)
       deallocate(g)
       deallocate(s)

@@ -11,3 +11,4 @@ rm -rf pls_attrs.csv
 rm -rf *.mod
 rm -rf pools_din*
 rm -rf log.csv
+rm -rf ../outputs
