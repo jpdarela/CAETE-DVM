@@ -332,8 +332,8 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.015D0
-      mult_factor_p  = 0.005D0
+      mult_factor_n  = 0.0045D0
+      mult_factor_p  = 0.003D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
       ! Auxiliary to calculate Carbon costs of Nutrient uptake/uptake of nutrients
@@ -690,7 +690,7 @@ module alloc
       ! N
       ccn(:) = 0.0D0
       active_nupt_cost = 0.0D0
-      naquis_strat = 0
+      naquis_strat = 0   ! Passive uptake
       nitrogen_uptake(:) = 0.0D0
       if (to_pay(1) .gt. 0.0D0) then
          call active_costn(amp, avail_n - plant_uptake(1), aux_on, scf1 * 1D3, ccn)
@@ -700,8 +700,11 @@ module alloc
          nitrogen_uptake(1) = nuptk
          nitrogen_uptake(2) = 0.0D0
       endif
+      print*,'n', naquis_strat
       uptk_strategy(1) = naquis_strat
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
+
+
 
       !  P
       ccp(:) = 0.0D0
@@ -716,6 +719,7 @@ module alloc
          phosphorus_uptake(1) = puptk
       endif
       uptk_strategy(2) = paquis_strat
+      print*, 'p', paquis_strat
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
 
       ! TODO calculate enzimatic n costs of enzimatic activity?

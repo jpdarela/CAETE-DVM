@@ -133,13 +133,13 @@ def table_gen(NPLS):
 
     def calc_ratios(pool):
 
-        pool_n2c = np.linspace(0.002, 0.09, 500)
-        pool_p2c = np.linspace(0.0002, 0.009, 500)
+        pool_n2c = np.linspace(0.002, 0.025, 500)
+        pool_p2c = np.linspace(0.0002, 0.0025, 500)
 
         if pool == 'leaf' or pool == 'root':
             pass
         else:
-            pool_n2c = np.linspace(0.002, 0.09, 500) / 10.0
+            pool_n2c = np.linspace(0.002, 0.025, 500) / 10.0
             pool_p2c = np.linspace(0.00025, 0.0025, 500) / 10.0
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (

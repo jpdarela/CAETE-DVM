@@ -302,6 +302,7 @@ contains
             &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p))
 
          ! Estimate growth of storage C pool
+         ! print*, uptk_strat(:,p)
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
 
          storage_out_bdgt(:,p) = day_storage(:,p)
@@ -504,6 +505,7 @@ contains
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
+
       enddo
       ! print*, 'ca_out---------->', cawoodavg_pft
       deallocate(w)

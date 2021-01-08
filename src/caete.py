@@ -723,7 +723,7 @@ class grd:
                         total_on = self.sp_snc[:4].sum()
                         frs = [i / total_on for i in self.sp_snc[:4]]
                         assert self.nupt[1,
-                                         step] < total_on, f"N Uptake > organic N pool {step}"
+                                        step] < total_on, f"N Uptake > organic N pool {step} \n {daily_output['uptk_strat']} "
                         total_on -= self.nupt[1, step]
                         for i in range(4):
                             self.sp_snc[i] = frs[i] * total_on
@@ -733,11 +733,12 @@ class grd:
                         total_op = self.sp_snc[4:].sum()
                         frs = [i / total_op for i in self.sp_snc[4:]]
                         assert self.pupt[2,
-                                         step] < total_op, f"P Uptake > organic P pool {step}"
+                                         step] < total_op, f"P Uptake > organic P pool {step} \n {daily_output['uptk_strat']} "
                         total_op -= self.pupt[2, step]
                         for i in range(4, 8):
                             self.sp_snc[i] = frs[i - 4] * total_op
                 # END SOIL NUTRIENT DYNAMICS
+
 
                 # # # Process (cwm) & store (np.array) outputs
                 self.uptake_strategy[:, self.vp_lsid,

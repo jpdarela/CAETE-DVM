@@ -120,7 +120,7 @@ print("REALIZED ACTIVE P uptk: ", pout)
 print("ALLOC N uptake: ", nupt)
 print("ALLOC P uptake: ", pupt)
 print('CC: ', cn + cp + cc_r_p + cc_r_n)
-
+print('N / P strat: ', nstrat, pstrat)
 
 # ccost, strategy = cc.select_active_strategy(*args)
 

@@ -192,8 +192,8 @@ module carbon_costs
                             & kcn  = 1.0D0  ,& !
                             & kan  = 0.9D0  ,& !
                             & kanc = 1.4D0  ,& !
-                            & ken  = 0.25D0 ,& !
-                            & kenc = 0.35D0
+                            & ken  = 0.95D0 ,& !
+                            & kenc = 0.75D0
 
       integer(i_4), parameter :: N = 1
 
@@ -213,7 +213,7 @@ module carbon_costs
       ccn(am) = cc_active(kan, amp * av_n, kanc, amp * croot)
       ccn(em) = cc_active(ken, ecm * av_n, kenc, ecm * croot)
       ccn(Am0) =  1.0D15 ! cc_active(kan, amp * on, kenc, amp * croot)
-      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot)
+      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot) + 0.1
    end subroutine active_costn
 
 
@@ -230,8 +230,8 @@ module carbon_costs
                             & kcp  = 1.0D0  ,& ! PArameters from FUN3.0 source code (modified)
                             & kap  = 0.8D0  ,& ! AkP<-0.1 #AM cost
                             & kapc = 1.2D0  ,& ! AkCp<-0.5 #AM cost
-                            & kep  = 0.9D0  ,& ! EkP<-0.05 #ECM cost
-                            & kepc = 1.4D0     ! EkCp<-1.0 #ECM cost
+                            & kep  = 0.7D0  ,& ! EkP<-0.05 #ECM cost
+                            & kepc = 1.3D0     ! EkCp<-1.0 #ECM cost
 
       ! Strategies of P aquisition - ACTIVE UPTAKE
       integer(i_4), parameter :: nma   = 1 ,& ! Non Myco. AM
@@ -256,12 +256,12 @@ module carbon_costs
       ccp(em) = cc_active(kep, ecm * av_p, kepc, ecm * croot)
 
       ! !Costs of active Non Mycorrhizal AP activity
-      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot) ! OP
+      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot) + 0.5! OP + 0.5
       ccp(remAP) = 1.0D15 ! cc_active(kep, ecm * op, kepc, ecm * croot) ! OP
 
       ! !Costs of Mycorrhizal AP/exudates
       ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
-      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot)
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 0.5
    end subroutine active_costp
 
 
@@ -318,23 +318,35 @@ module carbon_costs
       real(r_8), dimension(:),intent(in) :: cc_array
       real(r_8), intent(out) :: cc
       integer(i_4), intent(out) :: strategy
+
+      real(r_8), dimension(:), allocatable :: cca
       real(r_8) :: cc_strat
       integer(i_4) :: cc_size, j
       logical(l_1) :: test1, test2
+      integer(i_4),dimension(1) :: min_index
       cc_size = size(cc_array)
       cc_strat = 1D17
 
+      allocate(cca(cc_size))
+
+      do j = 1, cc_size
+         if(cc_array(j) .le. 0.0) then
+            cca(j) = cc_strat + 1
+         else
+            cca(j) = cc_array(j)
+         endif
+      enddo
+      min_index = minloc(cca)
+      strategy = min_index(1)
       do j = cc_size, 1, -1
-         test1 = cc_array(j) .lt. cc_strat
+         test1 = cca(j) .lt. cc_strat
          if(test1) then
-            cc_strat = cc_array(j)
-            strategy = j
+            cc_strat = cca(j)
          endif
 
-         test2 = abs(cc_array(j) - cc_strat) .lt. 1D-8
+         test2 = abs(cca(j) - cc_strat) .lt. 1D-8
          if(test2) then
-            cc_strat = cc_array(j)
-            strategy = j
+            cc_strat = cca(j)
          endif
 
       enddo
