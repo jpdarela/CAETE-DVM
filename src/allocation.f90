@@ -332,8 +332,8 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.0045D0
-      mult_factor_p  = 0.003D0
+      mult_factor_n  = 0.065D0
+      mult_factor_p  = 0.005D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
       ! Auxiliary to calculate Carbon costs of Nutrient uptake/uptake of nutrients
@@ -685,6 +685,11 @@ module alloc
 
       ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC g(N/P)-1)
       ! 1 - Check Passve uptake
+      print*, 'puptk', puptk
+      print*, 'nuptk', nuptk
+
+      print*,'wsoil' ,wsoil, '- avn', avail_n, 'avp', avail_p, 'T', te
+
       call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
                         & to_pay, to_sto, plant_uptake)
       ! N

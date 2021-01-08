@@ -369,6 +369,7 @@ module carbon_costs
             out_array(avail_n) = nupt - to_pay
             out_array(on) = to_pay
          case default
+            print*, 'NAQW', nut_aqui_strat
             call abrt("Problem in N output case default - cc.f90 325")
       end select
       ! Soluble inorg_n_pool = (1, 2, 3, 4)
@@ -399,6 +400,7 @@ module carbon_costs
             out_array(sop) = to_pay
             out_array(op) = 0.0D0
          case default
+            print*, 'NAQW', nut_aqui_strat
             call abrt("Problem in P output case default - cc.f90 362")
       end select
       ! Soluble inorg_n_pool = (1, 2, 3, 4)

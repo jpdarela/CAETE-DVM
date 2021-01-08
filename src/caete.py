@@ -293,7 +293,7 @@ class grd:
         self.lim_status = np.zeros(
             shape=(3, npls, n), dtype=np.dtype('int16'), order='F')
         self.uptake_strategy = np.zeros(
-            shape=(2, npls, n), dtype=np.dtype('int16'), order='F')
+            shape=(2, npls, n), dtype=np.dtype('int32'), order='F')
         self.carbon_costs = np.zeros(
             shape=(npls, n), dtype=np.dtype('float32'), order='F')
 
@@ -668,138 +668,138 @@ class grd:
                 self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
                 self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
 
-                # OUTPUTS for SOIL CWM
-                self.litter_l[step] = daily_output['litter_l']
-                self.cwd[step] = daily_output['cwd']
-                self.litter_fr[step] = daily_output['litter_fr']
-                self.lnc[:, step] = daily_output['lnc']
+                print(daily_output)
+                # # OUTPUTS for SOIL CWM
+                # self.litter_l[step] = daily_output['litter_l']
+                # self.cwd[step] = daily_output['cwd']
+                # self.litter_fr[step] = daily_output['litter_fr']
+                # self.lnc[:, step] = daily_output['lnc']
 
-                s_out = soil_dec.carbon3(self.soil_temp, self.wp_water / gp.wmax, self.litter_l[step],
-                                         self.cwd[step], self.litter_fr[step], self.lnc[:, step],
-                                         self.sp_csoil, self.sp_snc)
+                # s_out = soil_dec.carbon3(self.soil_temp, self.wp_water / gp.wmax, self.litter_l[step],
+                #                          self.cwd[step], self.litter_fr[step], self.lnc[:, step],
+                #                          self.sp_csoil, self.sp_snc)
 
-                soil_out = catch_out_carbon3(s_out)
+                # soil_out = catch_out_carbon3(s_out)
+
                 # del s_out
-                self.sp_csoil = soil_out['cs']
-                self.sp_snc = soil_out['snc']
+        #         self.sp_csoil = soil_out['cs']
+        #         self.sp_snc = soil_out['snc']
 
-                # Save
-                self.nupt[:, step] = daily_output['nupt'][:]
-                self.pupt[:, step] = daily_output['pupt'][:]
-                for i in range(3):
-                    self.storage_pool[i, step] = np.sum(
-                        self.vp_ocp * self.vp_sto[i])
+        #         # Save
+        #         self.nupt[:, step] = daily_output['nupt']
+        #         self.pupt[:, step] = daily_output['pupt']
+        #         for i in range(3):
+        #             self.storage_pool[i, step] = np.sum(
+        #                 self.vp_ocp * self.vp_sto[i])
 
-                if coupled:
-                    # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
-                    # Soluble and inorganic pools
-                    self.sp_available_p -= self.pupt[0, step]
-                    self.sp_so_p -= self.pupt[1, step]
-                    self.sp_available_n -= self.nupt[0, step]
-                    # INCLUDE MINERALIZED NUTRIENTS
-                    self.sp_available_p += soil_out['pmin']
-                    self.sp_available_n += soil_out['nmin']
+        #         if coupled:
+        #             # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
+        #             # Soluble and inorganic pools
+        #             self.sp_available_p -= self.pupt[0, step]
+        #             self.sp_so_p -= self.pupt[1, step]
+        #             self.sp_available_n -= self.nupt[0, step]
+        #             # INCLUDE MINERALIZED NUTRIENTS
+        #             self.sp_available_p += soil_out['pmin']
+        #             self.sp_available_n += soil_out['nmin']
 
-                    # NUTRIENT DINAMICS
-                    # Inorganic N
-                    self.sp_in_n += self.sp_available_n + self.sp_so_n
+        #             # NUTRIENT DINAMICS
+        #             # Inorganic N
+        #             self.sp_in_n += self.sp_available_n + self.sp_so_n
 
-                    self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
-                    self.sp_available_n = soil_dec.solution_n_equil(
-                        self.sp_in_n)
-                    self.sp_in_n -= self.sp_so_n + self.sp_available_n
+        #             self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
+        #             self.sp_available_n = soil_dec.solution_n_equil(
+        #                 self.sp_in_n)
+        #             self.sp_in_n -= self.sp_so_n + self.sp_available_n
 
-                    # Inorganic P
-                    self.sp_in_p += self.sp_available_p + self.sp_so_p
+        #             # Inorganic P
+        #             self.sp_in_p += self.sp_available_p + self.sp_so_p
 
-                    self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
-                    self.sp_available_p = soil_dec.solution_p_equil(
-                        self.sp_in_p)
-                    self.sp_in_p -= self.sp_so_p + self.sp_available_p
+        #             self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
+        #             self.sp_available_p = soil_dec.solution_p_equil(
+        #                 self.sp_in_p)
+        #             self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
-                    # Organic N
-                    if self.nupt[1, step] > 0.0:
-                        # Total organic N in Soil
-                        total_on = self.sp_snc[:4].sum()
-                        frs = [i / total_on for i in self.sp_snc[:4]]
-                        assert self.nupt[1,
-                                        step] < total_on, f"N Uptake > organic N pool {step} \n {daily_output['uptk_strat']} "
-                        total_on -= self.nupt[1, step]
-                        for i in range(4):
-                            self.sp_snc[i] = frs[i] * total_on
+        #             # Organic N
+        #             if self.nupt[1, step] > 0.0:
+        #                 # Total organic N in Soil
+        #                 total_on = self.sp_snc[:4].sum()
+        #                 frs = [i / total_on for i in self.sp_snc[:4]]
+        #                 assert self.nupt[1,
+        #                                  step] < total_on, f"N Uptake > organic N pool {step} \n {daily_output['uptk_strat']} "
+        #                 total_on -= self.nupt[1, step]
+        #                 for i in range(4):
+        #                     self.sp_snc[i] = frs[i] * total_on
 
-                    # Organic P
-                    if self.pupt[2, step] > 0.0:
-                        total_op = self.sp_snc[4:].sum()
-                        frs = [i / total_op for i in self.sp_snc[4:]]
-                        assert self.pupt[2,
-                                         step] < total_op, f"P Uptake > organic P pool {step} \n {daily_output['uptk_strat']} "
-                        total_op -= self.pupt[2, step]
-                        for i in range(4, 8):
-                            self.sp_snc[i] = frs[i - 4] * total_op
-                # END SOIL NUTRIENT DYNAMICS
+        #             # Organic P
+        #             if self.pupt[2, step] > 0.0:
+        #                 total_op = self.sp_snc[4:].sum()
+        #                 frs = [i / total_op for i in self.sp_snc[4:]]
+        #                 assert self.pupt[2,
+        #                                  step] < total_op, f"P Uptake > organic P pool {step} \n {daily_output['uptk_strat']} "
+        #                 total_op -= self.pupt[2, step]
+        #                 for i in range(4, 8):
+        #                     self.sp_snc[i] = frs[i - 4] * total_op
+        #         # END SOIL NUTRIENT DYNAMICS
 
+        #         # # # Process (cwm) & store (np.array) outputs
+        #         self.uptake_strategy[:, self.vp_lsid,
+        #                              step] = daily_output['uptk_strat'][:, self.vp_lsid]
+        #         self.carbon_costs[self.vp_lsid, step] = self.sp_uptk_costs
+        #         self.emaxm.append(daily_output['epavg'])
+        #         self.tsoil.append(self.soil_temp)
+        #         self.photo[step] = daily_output['phavg']
+        #         self.aresp[step] = daily_output['aravg']
+        #         self.npp[step] = daily_output['nppavg']
+        #         self.lai[step] = daily_output['laiavg']
+        #         self.rcm[step] = daily_output['rcavg']
+        #         self.f5[step] = daily_output['f5avg']
+        #         self.runom[step] = daily_output['ruavg']
+        #         self.evapm[step] = daily_output['evavg']
+        #         self.wsoil[step] = self.wp_water
+        #         self.rm[step] = daily_output['rmavg']
+        #         self.rg[step] = daily_output['rgavg']
+        #         self.wue[step] = daily_output['wueavg']
+        #         self.cue[step] = daily_output['cueavg']
+        #         self.cdef[step] = daily_output['c_defavg']
+        #         self.vcmax[step] = daily_output['vcmax']
+        #         self.specific_la[step] = daily_output['specific_la']
 
-                # # # Process (cwm) & store (np.array) outputs
-                self.uptake_strategy[:, self.vp_lsid,
-                                     step] = daily_output['uptk_strat'][:, self.vp_lsid]
-                self.carbon_costs[self.vp_lsid, step] = self.sp_uptk_costs
-                daily_output['uptk_strat'] = None
-                self.emaxm.append(daily_output['epavg'])
-                self.tsoil.append(self.soil_temp)
-                self.photo[step] = daily_output['phavg']
-                self.aresp[step] = daily_output['aravg']
-                self.npp[step] = daily_output['nppavg']
-                self.lai[step] = daily_output['laiavg']
-                self.rcm[step] = daily_output['rcavg']
-                self.f5[step] = daily_output['f5avg']
-                self.runom[step] = daily_output['ruavg']
-                self.evapm[step] = daily_output['evavg']
-                self.wsoil[step] = self.wp_water
-                self.rm[step] = daily_output['rmavg']
-                self.rg[step] = daily_output['rgavg']
-                self.wue[step] = daily_output['wueavg']
-                self.cue[step] = daily_output['cueavg']
-                self.cdef[step] = daily_output['c_defavg']
-                self.vcmax[step] = daily_output['vcmax']
-                self.specific_la[step] = daily_output['specific_la']
+        #         self.cleaf[step] = daily_output['cp'][0]
+        #         self.cawood[step] = daily_output['cp'][1]
+        #         self.cfroot[step] = daily_output['cp'][2]
+        #         # TODO
+        #         self.lim_status[:, self.vp_lsid,
+        #                         step] = daily_output['limitation_status'][:, self.vp_lsid]
+        #         self.hresp[step] = soil_out['hr']
+        #         self.csoil[:, step] = soil_out['cs']
+        #         self.inorg_n[step] = self.sp_in_n
+        #         self.inorg_p[step] = self.sp_in_p
+        #         self.sorbed_n[step] = self.sp_so_n
+        #         self.sorbed_p[step] = self.sp_so_p
+        #         self.snc[:, step] = soil_out['snc']
+        #         self.nmin[step] = self.sp_available_n
+        #         self.pmin[step] = self.sp_available_p
 
-                self.cleaf[step] = daily_output['cp'][0]
-                self.cawood[step] = daily_output['cp'][1]
-                self.cfroot[step] = daily_output['cp'][2]
-                # TODO
-                self.lim_status[:, self.vp_lsid,
-                                step] = daily_output['limitation_status'][:, self.vp_lsid]
-                self.hresp[step] = soil_out['hr']
-                self.csoil[:, step] = soil_out['cs']
-                self.inorg_n[step] = self.sp_in_n
-                self.inorg_p[step] = self.sp_in_p
-                self.sorbed_n[step] = self.sp_so_n
-                self.sorbed_p[step] = self.sp_so_p
-                self.snc[:, step] = soil_out['snc']
-                self.nmin[step] = self.sp_available_n
-                self.pmin[step] = self.sp_available_p
+        #         self.area[self.vp_lsid, step] = self.vp_ocp
 
-                self.area[self.vp_lsid, step] = self.vp_ocp
+        #     if s > 0:
+        #         while True:
+        #             if sv.is_alive():
+        #                 sleep(0.5)
+        #             else:
+        #                 break
 
-            if s > 0:
-                while True:
-                    if sv.is_alive():
-                        sleep(0.5)
-                    else:
-                        break
+        #     self.flush_data = self._flush_output(
+        #         'spin', (start_index, end_index))
+        #     sv = Thread(target=self._save_output, args=(self.flush_data,))
+        #     sv.start()
 
-            self.flush_data = self._flush_output(
-                'spin', (start_index, end_index))
-            sv = Thread(target=self._save_output, args=(self.flush_data,))
-            sv.start()
-
-        while True:
-            if sv.is_alive():
-                sleep(0.5)
-            else:
-                break
-        return None
+        # while True:
+        #     if sv.is_alive():
+        #         sleep(0.5)
+        #     else:
+        #         break
+        # return None
 
     def bdg_spinup(self, start_date='19010101', end_date='19030101'):
         """SPINUP VEGETATION"""

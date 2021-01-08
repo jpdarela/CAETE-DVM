@@ -49,4 +49,33 @@ program test_caete
 
    end subroutine test_c3
 
+   subroutine test_budg()
+   
+      ! real(r_8),dimension(ntraits,npls),intent(in) :: dt
+      ! real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous month last day) soil moisture storage (mm)
+      ! real(r_4),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
+      ! real(r_4),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
+      ! real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
+      ! real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
+      ! real(r_4),intent(in) :: prec                 ! Precipitation (mm/day)
+      ! real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
+      ! real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      ! real(r_4),intent(in) :: rh                   ! Relative humidity
+      ! real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
+      ! real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
+      ! real(r_8),intent(in) :: on, sop, op          ! Organic N, isoluble inorganic P, Organic P g m-2
+      ! real(r_8),intent(in) :: catm                 ! ATM CO2 concentration ppm
+
+
+      ! real(r_8),dimension(3,npls),intent(in)  :: sto_budg ! Rapid Storage Pool (C,N,P)  g m-2
+      ! real(r_8),dimension(npls),intent(in) :: cl1_pft  ! initial BIOMASS cleaf compartment kgm-2
+      ! real(r_8),dimension(npls),intent(in) :: cf1_pft  !                 froot
+      ! real(r_8),dimension(npls),intent(in) :: ca1_pft  !                 cawood
+      ! real(r_8),dimension(npls),intent(in) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+      ! real(r_8),dimension(npls),intent(in) :: droot  ! k gm-2
+      ! real(r_8),dimension(npls),intent(in) :: dwood  ! k gm-2
+      ! real(r_8),dimension(npls),intent(in) :: uptk_costs ! g m-2
+
+   end subroutine test_budg
+
 end program test_caete

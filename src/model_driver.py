@@ -102,12 +102,12 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19010101', '19301231', spinup=5, coupled=False)
+    grid.run_caete('19010101', '19051231', spinup=2, coupled=False)
     return grid
 
 
 def apply_fun1(grid):
-    grid.run_caete('19010101', '19451231', spinup=5, coupled=True)
+    grid.run_caete('19010101', '19051231', spinup=2, coupled=True)
     return grid
 
 
@@ -125,8 +125,10 @@ del stime
 
 if __name__ == "__main__":
     a = apply_spin(grid_mn[3])
+    print('A = OK')
     b = apply_fun(a)
-    c = apply_fun1(b)
+    # print('B = OK - DEBUG')
+    # c = apply_fun1(b)
     # del c
     # import time
 

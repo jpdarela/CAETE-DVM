@@ -12,7 +12,6 @@ def get_data(grd, var, spin=(1, 5)):
         dt = pkl.load(fh)
         dt = dt[var]
         dim = dt.shape
-
     if len(dim) == 1:
         output = np.zeros(0, dtype=dt.dtype)
         for fname in k:
