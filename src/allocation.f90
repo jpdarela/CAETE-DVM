@@ -109,7 +109,6 @@ module alloc
       real(r_8) :: scf2_tmp ! Store veg carbon pool in a 64bit fp
       real(r_8) :: sca2_tmp
       real(r_8) :: scl2_tmp
-
       real(r_8) :: leaf_av_n
       real(r_8) :: wood_av_n
       real(r_8) :: root_av_n
@@ -117,7 +116,7 @@ module alloc
       real(r_8) :: wood_av_p
       real(r_8) :: root_av_p
 
-      real(r_8) :: npp_pot  ! potential npp g m-2 day-1
+      real(r_8) :: npp_pot ! potential npp g m-2 day-1
       real(r_8), dimension(3) :: daily_growth ! amount of carbon allocated to leaf/wood/root g m-2 day-1
       real(r_8), dimension(3, 2) :: real_npp
       logical(l_1), dimension(3, 2) :: is_limited
@@ -134,6 +133,7 @@ module alloc
       real(r_8) :: pscl  ! g(P) m-2
       real(r_8) :: psca  ! g(P) m-2
       real(r_8) :: pscf  ! g(P) m-2
+
       ! traits
       real(r_8) :: resorpt_frac
       real(r_8) :: aleaf     ! allocatation to plant compartments
@@ -148,6 +148,8 @@ module alloc
       real(r_8) :: leaf_p2c  ! P:C ratios
       real(r_8) :: wood_p2c
       real(r_8) :: root_p2c
+      real(r_8) :: pdia
+      real(r_8) :: amp
 
       real(r_8) :: avail_n
       real(r_8) :: avail_p
@@ -168,7 +170,6 @@ module alloc
       real(r_8) :: cwd_o
 
       ! CC auxiliary
-      real(r_8) :: pdia, amp ! functional traits
       real(r_8) :: npp_to_fixer, n_fixed
       real(r_8), dimension(2) :: to_pay, to_sto, plant_uptake
       real(r_8), dimension(6) :: ccn ! Carbon Costs of  N uptake by strategy :
@@ -176,7 +177,7 @@ module alloc
       real(r_8) :: active_nupt_cost, active_pupt_cost
       integer(i_4) :: naquis_strat, paquis_strat
       real(r_8) :: p_cost_resorpt, n_cost_resorpt
-      real(r_8) :: negative_one = 0.0D0
+      real(r_8) :: negative_one
       real(r_8) :: aux_on, aux_sop, aux_op
 
 
@@ -189,13 +190,67 @@ module alloc
       cwd                    = 0.0D0
       root_litter            = 0.0D0
       leaf_litter            = 0.0D0
+      c_costs_of_uptake      = 0.0D0
+      nitrogen_uptake(:)     = 0.0D0
+      phosphorus_uptake(:)   = 0.0D0
+      limiting_nutrient(:)   = 0
+      uptk_strategy(:)       = 0
+
+      ! initialize uptake/carbon costs related variables
       nuptk                  = 0.0D0
       puptk                  = 0.0D0
+      avail_n                = 0.0D0
+      avail_p                = 0.0D0
+      internal_n             = 0.0D0
+      internal_n_leaf        = 0.0D0
+      internal_n_wood        = 0.0D0
+      internal_n_root        = 0.0D0
+      internal_p             = 0.0D0
+      internal_p_leaf        = 0.0D0
+      internal_p_wood        = 0.0D0
+      internal_p_root        = 0.0D0
+      n_uptake(:)            = 0.0D0
+      p_uptake(:)            = 0.0D0
+      rn_uptake(:)           = 0.0D0
+      rp_uptake(:)           = 0.0D0
+      scf2_tmp               = 0.0D0
+      sca2_tmp               = 0.0D0
+      scl2_tmp               = 0.0D0
+      leaf_av_n              = 0.0D0
+      wood_av_n              = 0.0D0
+      root_av_n              = 0.0D0
+      leaf_av_p              = 0.0D0
+      wood_av_p              = 0.0D0
+      root_av_p              = 0.0D0
+
+      npp_pot                = 0.0D0
+      daily_growth(:)        = 0.0D0
+      real_npp               = 0.0D0
+
+      ! 0 for passive uptake
+      naquis_strat           = 0
+      paquis_strat           = 0
+
+      pdia                   = 0.0D0
+      amp                    = 0.0D0
+      npp_to_fixer           = 0.0D0
+      n_fixed                = 0.0D0
+
+      p_cost_resorpt         = 0.0D0
+      n_cost_resorpt         = 0.0D0
+      negative_one           = 0.0D0
+      aux_on                 = 0.0D0
+      aux_sop                = 0.0D0
+      aux_op                 = 0.0D0
+      to_pay(:)              = 0.0D0
+      to_sto(:)              = 0.0D0
+      plant_uptake(:)        = 0.0D0
+      ccn(:)                 = 0.0D0
+      ccp(:)                 = 0.0D0
 
       ! Catch the functional/demographic traits of pls
-
-   !  head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
-   !  'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c']
+      !  head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
+      !  'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c', pdia, amp]
       resorpt_frac = dt(2)
       tleaf = dt(3) ! RESIDENCE TIME (years)
       twood = dt(4)
@@ -685,10 +740,10 @@ module alloc
 
       ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC g(N/P)-1)
       ! 1 - Check Passve uptake
-      print*, 'puptk', puptk
-      print*, 'nuptk', nuptk
+      ! print*, 'puptk', puptk
+      ! print*, 'nuptk', nuptk
 
-      print*,'wsoil' ,wsoil, '- avn', avail_n, 'avp', avail_p, 'T', te
+      ! print*,'wsoil' ,wsoil, '- avn', avail_n, 'avp', avail_p, 'T', te
 
       call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
                         & to_pay, to_sto, plant_uptake)
@@ -705,7 +760,7 @@ module alloc
          nitrogen_uptake(1) = nuptk
          nitrogen_uptake(2) = 0.0D0
       endif
-      print*,'n', naquis_strat
+      ! print*,'n', naquis_strat
       uptk_strategy(1) = naquis_strat
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
 
@@ -724,7 +779,7 @@ module alloc
          phosphorus_uptake(1) = puptk
       endif
       uptk_strategy(2) = paquis_strat
-      print*, 'p', paquis_strat
+      ! print*, 'p', paquis_strat
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
 
       ! TODO calculate enzimatic n costs of enzimatic activity?

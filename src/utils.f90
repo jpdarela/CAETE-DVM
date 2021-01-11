@@ -24,7 +24,8 @@ module utils
     public :: process_id
     public :: abort_on_nan
     public :: abort_on_inf
-    public :: ascii2bin
+    public :: ascii2bin32
+    public :: ascii2bin64
     public :: leap
     public :: cwm
     ! public :: deflt_arr
@@ -34,7 +35,7 @@ module utils
      !=================================================================
      !=================================================================
 
-    subroutine ascii2bin(file_in, file_out, nx1, ny1)
+    subroutine ascii2bin32(file_in, file_out, nx1, ny1)
         ! DEPRECATED! Trasnform a matrix (text file) to a binary file
         use types
         !implicit none
@@ -65,7 +66,42 @@ module utils
         close(11)
         close(21)
 
-     end subroutine ascii2bin
+     end subroutine ascii2bin32
+
+     !=================================================================
+     !=================================================================
+     subroutine ascii2bin64(file_in, file_out, nx1, ny1)
+        ! DEPRECATED! Trasnform a matrix (text file) to a binary file
+        use types
+        !implicit none
+
+        character(len=100), intent(in) :: file_in, file_out
+        integer(i_4),intent(in) :: nx1, ny1
+
+        integer(i_4) :: i, j
+
+        real(r_8),allocatable,dimension(:,:) :: arr_in
+
+        allocate(arr_in(nx1,ny1))
+
+        open (unit=11,file=file_in,status='old',form='formatted',access='sequential',&
+             action='read')
+
+
+        open (unit=21,file=file_out,status='unknown',&
+             form='unformatted',access='direct',recl=nx1*ny1*r_8)
+
+
+        do j = 1, ny1 ! for each line do
+           read(11,*) (arr_in(i,j), i=1,nx1) ! read all elements in line j (implicitly looping)
+           !write(*,*) arr_in(:,j)
+        end do
+
+        write(21,rec=1) arr_in
+        close(11)
+        close(21)
+
+     end subroutine ascii2bin64
 
      !=================================================================
      !=================================================================

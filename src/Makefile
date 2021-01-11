@@ -1,5 +1,6 @@
-# Build caete_module
-F2PY = python3.8 -m numpy.f2py
+# Build caete_modul
+PYEXEC = python3.8
+F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
 CLEAN_DIR = ./clean_dir.sh
@@ -12,14 +13,14 @@ OVRTFLAG = --overwrite-signature
 
 # DEBUG MODE
 FC = gfortran
-FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
-FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
+FCFLAGS = -g -lgomp -fopenmp -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
+FLFLAGS = -c -g -lgomp -fopenmp -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 
 # Sources for compilation in run mode (F2PY)
 sources = global.f90 utils.f90 cc.f90 funcs.f90 soil_dec.f90 allocation.f90 productivity.f90 budget.f90
 
 # Objects for compilation in debug mode
-objects = global.o utils.o funcs.o soil_dec.o debug_caete.o
+objects = global.o utils.o funcs.o soil_dec.o cc.o allocation.o productivity.o budget.o debug_caete.o
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
@@ -30,8 +31,8 @@ so: $(sources) interface
 	printf "\n\n%s", %''
 
 # Build objects for DEBUG mode
-
-debug: $(objects)
+debug: $(objects) so
+	$(PYEXEC) create_plsbin.py
 	$(FC) -o run_debug $(FCFLAGS) $(objects)
 
 global.o: global.f90
@@ -67,13 +68,37 @@ soil_dec.o: soil_dec.f90
 soil_dec.mod: soil_dec.o soil_dec.f90
 	$(FC) $(FLFLAGS) soil_dec.f90
 
+cc.o: cc.f90
+	$(FC) $(FLFLAGS) cc.f90
+
+carbon_costs.mod: cc.o cc.f90
+	$(FC) $(FLFLAGS) cc.f90
+
+allocation.o: allocation.f90
+	$(FC) $(FLFLAGS) allocation.f90
+
+alloc.mod: allocation.o allocation.f90
+	$(FC) $(FLFLAGS) allocation.f90
+
+productivity.o: productivity.f90
+	$(FC) $(FLFLAGS) productivity.f90
+
+productivity.mod: productivity.o productivity.f90
+	$(FC) $(FLFLAGS) productivity.f90
+
+budget.o: budget.f90
+	$(FC) $(FLFLAGS) budget.f90
+
+budget.mod: budget.o budget.f90
+	$(FC) $(FLFLAGS) budget.f90
+
 debug_caete.o: debug_caete.f90
 	$(FC) $(FLFLAGS) debug_caete.f90
 
 
 # CLEAN DIR
 clean:
-	rm -rf test *.mod *.s *.o pls_ex.txt outputs __pycache__
+	rm -rf test *.mod *.s *.o pls_ex.txt __pycache__ run_debug
 	$(CLEAN_DIR)
 	clear
 

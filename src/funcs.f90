@@ -172,7 +172,7 @@ contains
 
    function water_stress_modifier(w, cfroot, rc, ep) result(f5)
       use types, only: r_4, r_8
-      use global_par, only: csru, wmax, alfm, gm, rcmin
+      use global_par, only: csru, wmax, alfm, gm, rcmin, rcmax
       !implicit none
 
       real(r_4),intent(in) :: w      !soil water mm
@@ -192,9 +192,10 @@ contains
       rc_aux = real(rc, kind=r_8)
       rcmin_aux = real(rcmin, kind=r_8)
       ep_aux = real(ep, kind=r_8)
+      if (rc .gt. rcmax) rc_aux = real(rcmax, r_8)
 
       pt = csru*(cfroot*1000.0D0) * wa  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
-      if(rc_aux .gt. 0.0D0) then
+      if(rc_aux .gt. rcmin) then
          gc = (1.0D0/(rc_aux * 1.15741D-08))  ! s/m
       else
          gc =  1.0D0/(rcmin_aux * 1.15741D-8) ! BIANCA E HELENA - Mudei este esquema..
@@ -204,7 +205,8 @@ contains
       d = (ep_aux * alfm) / (1.0D0 + (gm/gc))
       if(d .gt. 0.0D0) then
          f5_64 = pt/d
-         f5_64 = exp(-0.1D0 * f5_64)
+         ! print*, f5_64, 'f564'
+         f5_64 = exp((f5_64 * (-0.1D0)))
          f5_64 = 1.0D0 - f5_64
       else
          f5_64 = wa

@@ -136,6 +136,10 @@ contains
 
 !     Water stress response modifier (dimensionless)
 !     ----------------------------------------------
+    ! print*,cf1_prod, 'CF in F5'
+    ! print*, w, 'w'
+    ! print*, rc, 'rc'
+    ! print*, emax, 'emax'
     f5 =  water_stress_modifier(w, cf1_prod, rc, emax)
 
 

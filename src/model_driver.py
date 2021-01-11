@@ -102,17 +102,17 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19010101', '19051231', spinup=2, coupled=False)
+    grid.run_caete('19010101', '19051231', spinup=5, coupled=False)
     return grid
 
 
 def apply_fun1(grid):
-    grid.run_caete('19010101', '19051231', spinup=2, coupled=True)
+    grid.run_caete('19010101', '19051231', spinup=5, coupled=True)
     return grid
 
 
 def apply_fun2(grid):
-    grid.run_caete('19950101', '20101231', spinup=1, coupled=True)
+    grid.run_caete('19010101', '20101231', spinup=1, coupled=True)
     return grid
 
 
@@ -127,9 +127,13 @@ if __name__ == "__main__":
     a = apply_spin(grid_mn[3])
     print('A = OK')
     b = apply_fun(a)
-    # print('B = OK - DEBUG')
-    # c = apply_fun1(b)
-    # del c
+    del a
+    print('B = OK - DEBUG')
+    c = apply_fun1(b)
+    del b
+    d = apply_fun2(c)
+    del c
+
     # import time
 
     # n_proc = mp.cpu_count() // 2 if not sombrero else 64

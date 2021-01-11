@@ -26,8 +26,8 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-        &, mineral_n, labile_p, on, sop, op, catm, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
-        &, droot, uptk_costs, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
+        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, dleaf_in, dwood_in&
+        &, droot_in, uptk_costs_in, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
@@ -60,14 +60,14 @@ contains
       real(r_8),intent(in) :: catm                 ! ATM CO2 concentration ppm
 
 
-      real(r_8),dimension(3,npls),intent(in)  :: sto_budg ! Rapid Storage Pool (C,N,P)  g m-2
-      real(r_8),dimension(npls),intent(in) :: cl1_pft  ! initial BIOMASS cleaf compartment kgm-2
-      real(r_8),dimension(npls),intent(in) :: cf1_pft  !                 froot
-      real(r_8),dimension(npls),intent(in) :: ca1_pft  !                 cawood
-      real(r_8),dimension(npls),intent(in) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
-      real(r_8),dimension(npls),intent(in) :: droot  ! k gm-2
-      real(r_8),dimension(npls),intent(in) :: dwood  ! k gm-2
-      real(r_8),dimension(npls),intent(in) :: uptk_costs ! g m-2
+      real(r_8),dimension(3,npls),intent(in)  :: sto_budg_in ! Rapid Storage Pool (C,N,P)  g m-2
+      real(r_8),dimension(npls),intent(in) :: cl1_in  ! initial BIOMASS cleaf compartment kgm-2
+      real(r_8),dimension(npls),intent(in) :: cf1_in  !                 froot
+      real(r_8),dimension(npls),intent(in) :: ca1_in  !                 cawood
+      real(r_8),dimension(npls),intent(in) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+      real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2
+      real(r_8),dimension(npls),intent(in) :: dwood_in  ! k gm-2
+      real(r_8),dimension(npls),intent(in) :: uptk_costs_in ! g m-2
 
 
       !     ----------------------------OUTPUTS------------------------------
@@ -111,7 +111,7 @@ contains
       real(r_8),dimension(3),intent(out) :: wp, cp
 
       !     -----------------------Internal Variables------------------------
-      integer(i_4) :: p, counter, nlen, ri
+      integer(i_4) :: p, counter, nlen, ri, i, j
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
       real(r_8) :: carbon_in_storage
       real(r_8) :: testcdef
@@ -123,6 +123,7 @@ contains
       real(r_4),parameter :: tsnow = -1.0
       real(r_4),parameter :: tice  = -2.5
 
+      real(r_8),dimension(npls) :: cl1_pft, cf1_pft, ca1_pft
       real(r_4) :: soil_temp
       real(r_4) :: psnow                !Snowfall (mm/day)
       real(r_4) :: prain                !Rainfall (mm/day)
@@ -176,12 +177,31 @@ contains
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs
 
+      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs
+      real(r_8), dimension(3,npls) :: sto_budg
+
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
       !     ============================
 
-      call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, dt(7, :),&
+      ! create copies of some input variables (arrays) - ( they passed by reference by standard)
+      do i = 1,npls
+         awood_aux(i) = dt(7,i)
+         cl1_pft(i) = cl1_in(i)
+         ca1_pft(i) = ca1_in(i)
+         cf1_pft(i) = cf1_in(i)
+         dleaf(i) = dleaf_in(i)
+         dwood(i) = dwood_in(i)
+         droot(i) = droot_in(i)
+         uptk_costs(i) = uptk_costs_in(i)
+         do j = 1,3
+            sto_budg(j,i) = sto_budg_in(j,i)
+         enddo
+
+      enddo
+
+      call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
 
       nlen = sum(run)    ! New length for the arrays in the main loop
@@ -258,9 +278,9 @@ contains
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
-      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc)
+      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, soil_temp)
       do p = 1,nlen
-
+         soil_temp = ts
          carbon_in_storage = 0.0D0
          testcdef = 0.0D0
          sr = 0.0D0
