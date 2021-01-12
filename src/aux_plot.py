@@ -3,8 +3,9 @@ import _pickle as pkl
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def get_data(grd, var, spin=(1, 5)):
-    assert spin[0] > 0 and spin[1] > spin[0] and spin[1] <= 20
+    assert spin[0] > 0 and spin[1] > spin[0] and spin[1] <= 50
 
     k = sorted(list(grd.outputs.keys()))[spin[0] - 1:spin[1]]
     # find var dim

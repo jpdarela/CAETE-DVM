@@ -235,6 +235,10 @@ class grd:
         self.sp_csoil = None
         self.sp_snr = None
         self.sp_uptk_costs = None
+        self.sp_organic_n = None
+        self.sp_sorganic_n = None
+        self.sp_organic_p = None
+        self.sp_sorganic_p = None
 
         # CVEG POOLS
         self.vp_cleaf = None
@@ -481,7 +485,6 @@ class grd:
         self.vp_sto = np.zeros(shape=(3, npls), order='F')
 
         # # # SOIL START
-        # TODO  Prepare soil nutrient data
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 1.0
         self.sp_snc = np.zeros(shape=(8,), order='F')
         self.sp_available_p = self.soil_dict['ap']
@@ -491,6 +494,10 @@ class grd:
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
         self.sp_in_p = self.soil_dict['ip']
         self.sp_uptk_costs = np.zeros(npls, order='F')
+        self.sp_organic_n = 0.01
+        self.sp_sorganic_n = 0.01
+        self.sp_organic_p = 0.01
+        self.sp_sorganic_p = 0.01
 
         self.outputs = dict()
         self.filled = True
@@ -633,9 +640,7 @@ class grd:
                 out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                          self.soil_temp, temp[step], prec[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
-                                         self.sp_snc[:4].sum(),
-                                         self.sp_so_p,
-                                         self.sp_snc[4:].sum(),
+                                         self.sp_organic_n, self.sp_so_p, self.sp_organic_p,
                                          co2, sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs)
 
                 del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
@@ -680,9 +685,13 @@ class grd:
 
                 soil_out = catch_out_carbon3(s_out)
 
-                del s_out
                 self.sp_csoil = soil_out['cs']
                 self.sp_snc = soil_out['snc']
+                # TODO organicP = x  criar copias e não usar os np.arrayz by ref.
+                self.sp_organic_n = self.sp_snc[:2].sum()
+                self.sp_sorganic_n = self.sp_snc[2:4].sum()
+                self.sp_organic_p = self.sp_snc[4:6].sum()
+                self.sp_sorganic_p = self.sp_snc[6:].sum()
 
                 # Save
                 self.nupt[:, step] = daily_output['nupt']
@@ -692,11 +701,7 @@ class grd:
                         self.vp_ocp * self.vp_sto[i])
 
                 if coupled:
-                    # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
-                    # Soluble and inorganic pools
-                    self.sp_available_p -= self.pupt[0, step]
-                    self.sp_so_p -= self.pupt[1, step]
-                    self.sp_available_n -= self.nupt[0, step]
+
                     # INCLUDE MINERALIZED NUTRIENTS
                     self.sp_available_p += soil_out['pmin']
                     self.sp_available_n += soil_out['nmin']
@@ -718,13 +723,20 @@ class grd:
                         self.sp_in_p)
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
+                    imp_uptk = 0.0
+                    if self.pupt[1, step] > 0.0 and self.sp_so_p > self.pupt[1, step]:
+                        self.sp_so_p -= self.pupt[1, step]
+
+                    elif self.sp_so_p < self.pupt[1, step]:
+                        self.sop = 0.0
+                        imp_uptk = self.pupt[1, step] - self.sp_so_p
+
+# TODO revisar esta seção inteira
                     # Organic N
                     if self.nupt[1, step] > 0.0:
                         # Total organic N in Soil
                         total_on = self.sp_snc[:4].sum()
                         frs = [i / total_on for i in self.sp_snc[:4]]
-                        assert self.nupt[1,
-                                         step] < total_on, f"N Uptake > organic N pool {step} \n {daily_output['uptk_strat']} "
                         total_on -= self.nupt[1, step]
                         for i in range(4):
                             self.sp_snc[i] = frs[i] * total_on
@@ -732,12 +744,21 @@ class grd:
                     # Organic P
                     if self.pupt[2, step] > 0.0:
                         total_op = self.sp_snc[4:].sum()
+                        if self.pupt[2, step] > total_op:
+                            imp_uptk += (self.pupt[2, step] - total_op)
+                            uptk_p = total_op
+                        else:
+                            uptk_p = self.pupt[2, step]
+
                         frs = [i / total_op for i in self.sp_snc[4:]]
-                        assert self.pupt[2,
-                                         step] < total_op, f"P Uptake > organic P pool {step} \n {daily_output['uptk_strat']} "
-                        total_op -= self.pupt[2, step]
                         for i in range(4, 8):
-                            self.sp_snc[i] = frs[i - 4] * total_op
+                            self.sp_snc[i] = frs[i - 4] * uptk_p
+
+                    # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
+                    # Soluble and inorganic pools
+                    self.sp_available_p -= (self.pupt[0, step] - imp_uptk)
+                    self.sp_available_n -= self.nupt[0, step]
+
                 # END SOIL NUTRIENT DYNAMICS
 
                 # # # Process (cwm) & store (np.array) outputs
@@ -766,7 +787,6 @@ class grd:
                 self.cleaf[step] = daily_output['cp'][0]
                 self.cawood[step] = daily_output['cp'][1]
                 self.cfroot[step] = daily_output['cp'][2]
-                # TODO
                 self.lim_status[:, self.vp_lsid,
                                 step] = daily_output['limitation_status'][:, self.vp_lsid]
                 self.hresp[step] = soil_out['hr']

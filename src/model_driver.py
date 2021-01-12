@@ -102,7 +102,7 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19010101', '19051231', spinup=5, coupled=False)
+    grid.run_caete('19010101', '19051231', spinup=2, coupled=True)
     return grid
 
 
@@ -124,7 +124,15 @@ del stime
 
 
 if __name__ == "__main__":
-    a = apply_spin(grid_mn[3])
+
+    output_path = Path("../outputs").resolve()
+
+    if output_path.exists():
+        pass
+    else:
+        mkdir(output_path)
+
+    a = apply_spin(grid_mn[0])
     print('A = OK')
     b = apply_fun(a)
     del a
@@ -139,12 +147,6 @@ if __name__ == "__main__":
     # n_proc = mp.cpu_count() // 2 if not sombrero else 64
 
     # fh = open('logfile.log', mode='w')
-    # output_path = Path("../outputs").resolve()
-
-    # if output_path.exists():
-    #     pass
-    # else:
-    #     mkdir(output_path)
 
     # fh.writelines(time.ctime(),)
     # fh.writelines("\n\n",)
@@ -164,23 +166,23 @@ if __name__ == "__main__":
     # fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
     # del result
 
-    # # fh.writelines("MODEL EXEC - spinup coup",)
-    # # print("MODEL EXEC - spinup coup")
-    # # with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-    # #     result2 = p.map(apply_fun1, result1)
-    # # end_spinup = time.time() - start
-    # # fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-    # # del result1
+    # fh.writelines("MODEL EXEC - spinup coup",)
+    # print("MODEL EXEC - spinup coup")
+    # with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
+    #     result2 = p.map(apply_fun1, result1)
+    # end_spinup = time.time() - start
+    # fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+    # del result1
 
-    # # fh.writelines("MODEL EXEC - RUN",)
-    # # print("MODEL EXEC- RUN")
+    # fh.writelines("MODEL EXEC - RUN",)
+    # print("MODEL EXEC- RUN")
     # start1 = time.time()
-    # # with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
-    # #     result3 = p.map(apply_fun2, result2)
+    # with mp.Pool(processes=n_proc, maxtasksperchild=4) as p:
+    #     result3 = p.map(apply_fun2, result2)
 
-    # # del result2
+    # del result2
     # end_spinup = time.time() - start
     # end_run = time.time() - start1
     # fh.writelines(f"MODEL EXEC - RUN time (s){end_run}\n",)
     # fh.writelines(f"MODEL EXEC - TIME elapsed (s){end_spinup}\n",)
-    # fh.close()
+    fh.close()

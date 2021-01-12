@@ -52,15 +52,28 @@ module carbon_costs
    ! CONVERSIONS -- LOOK eq 150 onwards in Reis 2020
 
    ! Calculations of passive uptake
-   subroutine calc_passive_uptk1(nsoil, et, sd, uptk)
+   subroutine calc_passive_uptk1(nsoil, et, sd, mf, uptk)
       ! From Fisher et al. 2010
       real(r_8), intent(in) :: nsoil  ! (ML⁻²)
       real(r_8), intent(in) :: et ! Transpiration (ML⁻²T⁻¹)
       real(r_4), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
+      real(r_8), intent(in) :: mf
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
-      uptk = nsoil * ((et * 86400.0D0)/sd)      !  !(ML⁻²T⁻¹)
-      if (uptk .gt. (0.5D0 * nsoil)) uptk = 0.5D0 * nsoil
+
+      if(et .le. 0.0D0) then
+         uptk = 0.0D0
+         return
+      endif
+
+      if(sd .le. 75.0D0) then
+         uptk = 0.0D0
+         return
+      endif
+
+      uptk = ((nsoil * mf) / sd) * (et * 86400.0D0)      !  !(ML⁻²T⁻¹)
+      uptk = min((nsoil *  mf), uptk)
+
    end subroutine calc_passive_uptk1
 
    ! ESTIMATE PASSIVE UPTAKE OF NUTRIENTS
@@ -79,8 +92,8 @@ module carbon_costs
             & ruptn,&
             & ruptp
 
-      call calc_passive_uptk1(av_n, e, w, passive_n)
-      call calc_passive_uptk1(av_p, e, w, passive_p)
+      call calc_passive_uptk1(av_n, e, w, 0.0010D0, passive_n)
+      call calc_passive_uptk1(av_p, e, w, 0.0003D0, passive_p)
 
       passive_upt(1) = passive_n
       passive_upt(2) = passive_p
@@ -103,6 +116,7 @@ module carbon_costs
          topay_upt(2) = abs(ruptp)
          to_storage(2) = 0.0D0
       endif
+
    end subroutine passive_uptake
 
 
@@ -119,11 +133,11 @@ module carbon_costs
       d1_in = d1
       d2_in = d2
       if(d1 .le. 0.0D0) then
-         d1_in = 10.0D0
+         d1_in = 0.0001D0
       endif
-         ! call abrt("division by 0 in cc_active - d1")
+         ! call abrt("divisio0n by 0 in cc_active - d1")
       if(d2 .le. 0.0D0) then
-         d2_in = 10.0D0
+         d2_in = 0.0001D0
       endif
          ! call abrt("division by 0 in cc_active - d2")
 
@@ -197,6 +211,19 @@ module carbon_costs
 
       integer(i_4), parameter :: N = 1
 
+      ! ------UPTAKE STRATEGIES CODE
+
+      ! integer(i_4), parameter ::  nma   = 1 ,& ! (Nut. = N/P) Active uptake by root AM colonized on Solution N/P pool (costs of)
+      !                           & nme   = 2 ,& ! (Nut. = N/P) Active uptake by root EM colonized on Solution N/P pool
+      !                           & am    = 3 ,& ! (Nut. = N/P) Active uptake by root AM hyphae on Solution N/P pool
+      !                           & em    = 4 ,& ! (Nut. = N/P) Active uptake by root EM hyphae on Solution N/P pool
+      !                           & ramAP = 5 ,& ! (Nut. = P)   PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
+      !                           & AM0   = 5 ,& ! (Nut. = N)   NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & remAP = 6 ,& ! (Nut. = P)   PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
+      !                           & EM0   = 6 ,& ! (Nut. = N)   NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & AMAP  = 7 ,& ! (Nut. = P)   PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
+      !                           & EM0x  = 8    ! (Nut. = P)   Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
+
       integer(i_4), parameter :: nma = 1  ,&  ! ROOT AM  active uptake in N soluble inorganic (NSI)
                                & nme = 2  ,&  ! ROOT EM  active uptake in NSI
                                & am  = 3  ,&  ! AM in NSI - active uptake via hyphae surface
@@ -213,7 +240,7 @@ module carbon_costs
       ccn(am) = cc_active(kan, amp * av_n, kanc, amp * croot)
       ccn(em) = cc_active(ken, ecm * av_n, kenc, ecm * croot)
       ccn(Am0) =  1.0D15 ! cc_active(kan, amp * on, kenc, amp * croot)
-      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot) + 0.1
+      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot)
    end subroutine active_costn
 
 
@@ -224,7 +251,18 @@ module carbon_costs
       real(r_8), intent(in) :: croot
       real(r_8), dimension(8), intent(out) :: ccp
 
-      !['nmam', 'nmem', 'am', 'em', 'ramAP', 'remAP', 'AMAP', 'EM0']
+      ! ------UPTAKE STRATEGIES CODE
+
+      ! integer(i_4), parameter ::  nma   = 1 ,& ! (Nut. = N/P) Active uptake by root AM colonized on Solution N/P pool (costs of)
+      !                           & nme   = 2 ,& ! (Nut. = N/P) Active uptake by root EM colonized on Solution N/P pool
+      !                           & am    = 3 ,& ! (Nut. = N/P) Active uptake by root AM hyphae on Solution N/P pool
+      !                           & em    = 4 ,& ! (Nut. = N/P) Active uptake by root EM hyphae on Solution N/P pool
+      !                           & ramAP = 5 ,& ! (Nut. = P)   PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
+      !                           & AM0   = 5 ,& ! (Nut. = N)   NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & remAP = 6 ,& ! (Nut. = P)   PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
+      !                           & EM0   = 6 ,& ! (Nut. = N)   NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & AMAP  = 7 ,& ! (Nut. = P)   PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
+      !                           & EM0x  = 8    ! (Nut. = P)   Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
 
       real(r_8), parameter :: kp   = 0.7D0  ,&
                             & kcp  = 1.0D0  ,& ! PArameters from FUN3.0 source code (modified)
@@ -256,12 +294,12 @@ module carbon_costs
       ccp(em) = cc_active(kep, ecm * av_p, kepc, ecm * croot)
 
       ! !Costs of active Non Mycorrhizal AP activity
-      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot) + 0.5! OP + 0.5
+      ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot) ! OP + 0.5
       ccp(remAP) = 1.0D15 ! cc_active(kep, ecm * op, kepc, ecm * croot) ! OP
 
       ! !Costs of Mycorrhizal AP/exudates
       ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
-      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 0.5
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot)
    end subroutine active_costp
 
 

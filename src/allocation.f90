@@ -61,16 +61,18 @@ module alloc
       ! Organic P pool = (5, 6, 7)
       ! Insoluble inorg p pool = (8)
 
-      integer(i_4), parameter ::  nma   = 1 ,& ! Active uptake by root AM colonized on Solution N/P pool (costs of)
-                                & nme   = 2 ,& ! Active uptake by root EM colonized on Solution N/P pool
-                                & am    = 3 ,& ! Active uptake by root AM hyphae on Solution N/P pool
-                                & em    = 4 ,& ! Active uptake by root EM hyphae on Solution N/P pool
-                                & ramAP = 5 ,& ! PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
-                                & AM0   = 5 ,& ! NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
-                                & remAP = 6 ,& ! PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
-                                & EM0   = 6 ,& ! NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
-                                & AMAP  = 7 ,& ! PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
-                                & EM0x  = 8    ! Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
+      ! ------UPTAKE STRATEGIES CODE
+
+      ! integer(i_4), parameter ::  nma   = 1 ,& ! (Nut. = N/P) Active uptake by root AM colonized on Solution N/P pool (costs of)
+      !                           & nme   = 2 ,& ! (Nut. = N/P) Active uptake by root EM colonized on Solution N/P pool
+      !                           & am    = 3 ,& ! (Nut. = N/P) Active uptake by root AM hyphae on Solution N/P pool
+      !                           & em    = 4 ,& ! (Nut. = N/P) Active uptake by root EM hyphae on Solution N/P pool
+      !                           & ramAP = 5 ,& ! (Nut. = P)   PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
+      !                           & AM0   = 5 ,& ! (Nut. = N)   NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & remAP = 6 ,& ! (Nut. = P)   PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
+      !                           & EM0   = 6 ,& ! (Nut. = N)   NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & AMAP  = 7 ,& ! (Nut. = P)   PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
+      !                           & EM0x  = 8    ! (Nut. = P)   Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
 
 
       ! variables I/O
@@ -120,7 +122,7 @@ module alloc
       real(r_8), dimension(3) :: daily_growth ! amount of carbon allocated to leaf/wood/root g m-2 day-1
       real(r_8), dimension(3, 2) :: real_npp
       logical(l_1), dimension(3, 2) :: is_limited
-      logical(l_1) :: lim_aux, kappa
+      logical(l_1) :: lim_aux, kappa, test34, test35
 
       real(r_8) :: npp_wood , npp_root , npp_leaf  ! Partitioned npp (g(C) m-2 day-1)
       real(r_8) :: npp_aux
@@ -235,7 +237,8 @@ module alloc
       amp                    = 0.0D0
       npp_to_fixer           = 0.0D0
       n_fixed                = 0.0D0
-
+      active_nupt_cost       = 0.0D0
+      active_pupt_cost       = 0.0D0
       p_cost_resorpt         = 0.0D0
       n_cost_resorpt         = 0.0D0
       negative_one           = 0.0D0
@@ -387,14 +390,27 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.065D0
+      mult_factor_n  = 0.015D0
       mult_factor_p  = 0.005D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
+
       ! Auxiliary to calculate Carbon costs of Nutrient uptake/uptake of nutrients
-      aux_on = on * mult_factor_n
-      aux_sop = sop * mult_factor_p
-      aux_op = op * mult_factor_p
+      if (on .lt. 0.0D0) then
+         aux_on = 0.0D0
+      else
+         aux_on = on * mult_factor_n
+      endif
+      if (op .lt. 0.0D0) then
+         aux_op = 0.0D0
+      else
+         aux_op = op * mult_factor_p
+      endif
+      if (sop .lt. 0.0D0) then
+         aux_sop = 0.0D0
+      else
+         aux_sop = sop * mult_factor_p
+      endif
 
       ! NITROGEN FIXATION goes direct to plant use
       n_fixed = fixed_n(npp_to_fixer, ts)
@@ -760,7 +776,14 @@ module alloc
          nitrogen_uptake(1) = nuptk
          nitrogen_uptake(2) = 0.0D0
       endif
-      ! print*,'n', naquis_strat
+      ! print*,'n', nitrogen_uptake
+      test34 = nitrogen_uptake(2) .gt. on
+      ! if (test34) print *, "on < u", on, '<-- ON', nitrogen_uptake(2),''
+      ! if (test34) then
+      !    nitrogen_uptake(1) = nitrogen_uptake(1) + (nitrogen_uptake(2) - on)
+      !    nitrogen_uptake(2) = on - 0.000001D0
+      ! endif
+
       uptk_strategy(1) = naquis_strat
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
 
@@ -778,9 +801,22 @@ module alloc
       else
          phosphorus_uptake(1) = puptk
       endif
+
+      ! if (test34) then
+      !    phosphorus_uptake(1) = phosphorus_uptake(1) + (phosphorus_uptake(3) - op)
+      !    phosphorus_uptake(3) = op - 0.00001D0
+      ! endif
+      ! if (test35) then
+      !    phosphorus_uptake(1) = phosphorus_uptake(1) + (phosphorus_uptake(2) - sop)
+      !    phosphorus_uptake(2) = sop - 0.00001D0
+      ! endif
+
       uptk_strategy(2) = paquis_strat
-      ! print*, 'p', paquis_strat
+      ! print*, 'p', phosphorus_uptake
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
+
+      test34 = phosphorus_uptake(3) .gt. op
+      test35 = phosphorus_uptake(2) .gt. sop
 
       ! TODO calculate enzimatic n costs of enzimatic activity?
 
@@ -818,23 +854,6 @@ module alloc
 
 
       ! Nutrient resorption
-      ! ___  _   _ _  __   __  _____ ___  ____    _     _____    _    _____
-      ! / _ \| \ | | | \ \ / / |  ___/ _ \|  _ \  | |   | ____|  / \  |  ___|
-   !   | | | |  \| | |  \ V /  | |_ | | | | |_) | | |   |  _|   / _ \ | |_
-   !   | |_| | |\  | |___| |   |  _|| |_| |  _ <  | |___| |___ / ___ \|  _|
-      ! \___/|_| \_|_____|_|   |_|   \___/|_| \_\ |_____|_____/_/   \_\_|
-
-      ! ____   ___   ___  _
-   !   |  _ \ / _ \ / _ \| |
-   !   | |_) | | | | | | | |
-   !   |  __/| |_| | |_| | |___
-   !   |_|    \___/ \___/|_____|
-
-      !  _   _ ___ _____ ____   ___   ____ _____ _   _
-      ! | \ | |_ _|_   _|  _ \ / _ \ / ___| ____| \ | |
-      ! |  \| || |  | | | |_) | | | | |  _|  _| |  \| |
-      ! | |\  || |  | | |  _ <| |_| | |_| | |___| |\  |
-      ! |_| \_|___| |_| |_| \_\\___/ \____|_____|_| \_|
 
       aux1 = 0.0D0
       ! Nutrient N in litter
@@ -859,13 +878,6 @@ module alloc
          litter_nutrient_content(3) = 0.0D0
       endif
 
-      !  ____  _   _  ___  ____   ___  _   _  ___  ____  _   _ ____
-      ! |  _ \| | | |/ _ \/ ___| / _ \| | | |/ _ \|  _ \| | | / ___|
-      ! | |_) | |_| | | | \___ \| | | | |_| | | | | |_) | | | \___ \
-      ! |  __/|  _  | |_| |___) | |_| |  _  | |_| |  _ <| |_| |___) |
-      ! |_|   |_| |_|\___/|____/ \___/|_| |_|\___/|_| \_\\___/|____/
-
-
       aux1 = 0.0D0
 
       p_leaf = leaf_litter * leaf_p2c
@@ -881,7 +893,7 @@ module alloc
       storage_out_alloc(3) = add_pool(storage_out_alloc(3) , aux1)
 
       ! CALCULATE THE NUTRIENT N IN LITTER FLUX
-      litter_nutrient_content(4) = leaf_litter_o * new_leaf_p2c            ! g(N)m-2
+      litter_nutrient_content(4) = leaf_litter_o * new_leaf_p2c            ! g(P)m-2
       litter_nutrient_content(5) = root_litter_o * root_p2c
       if(awood .gt. 0.0D0) then
          litter_nutrient_content(6) = cwd_o * wood_p2c
