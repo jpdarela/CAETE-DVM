@@ -27,6 +27,8 @@ import bz2
 from threading import Thread
 from time import sleep
 from pathlib import Path
+import warnings
+
 
 import cftime
 import numpy as np
@@ -44,6 +46,12 @@ mask = np.load(
     "/home/jdarela/Desktop/caete/CAETE-DVM/input/mask/mask_raisg-360-720.npy")
 # Create the semi-random table// of Plant Life Strategies
 # AUX FUNCS
+
+warnings.simplefilter("ignore")
+
+
+def rwarn(txt='RuntimeWarning'):
+    warnings.warn(f"{txt}", RuntimeWarning)
 
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=30):
@@ -515,7 +523,7 @@ class grd:
             pkl.dump(data_obj, fh)
         self.flush_data = 0
 
-    def run_caete(self, start_date, end_date, spinup, coupled=False):
+    def run_caete(self, start_date, end_date, spinup):
         """ start_date [str] "yyyymmdd" Start model execution
             end_date   [str] "yyyymmdd" End model execution
             spinup     [int] Number of repetitions in spinup. 0 for no spinu
@@ -636,12 +644,13 @@ class grd:
                     dcf[n] = self.vp_dcf[c]
                     uptk_costs[n] = self.sp_uptk_costs[c]
                     c += 1
-
+                ton = self.sp_organic_n + self.sp_sorganic_n
+                top = self.sp_organic_p + self.sp_sorganic_p
                 out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
                                          self.soil_temp, temp[step], prec[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
-                                         self.sp_organic_n, self.sp_so_p, self.sp_organic_p,
-                                         co2, sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs)
+                                         ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
+                                         dcl, dca, dcf, uptk_costs)
 
                 del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
                 self.wfim = None
@@ -673,6 +682,13 @@ class grd:
                 self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
                 self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
 
+                # Plant uptake and Carbon costs of nutrient uptake
+                self.nupt[:, step] = daily_output['nupt']
+                self.pupt[:, step] = daily_output['pupt']
+                for i in range(3):
+                    self.storage_pool[i, step] = np.sum(
+                        self.vp_ocp * self.vp_sto[i])
+
                 # OUTPUTS for SOIL CWM
                 self.litter_l[step] = daily_output['litter_l']
                 self.cwd[step] = daily_output['cwd']
@@ -685,79 +701,99 @@ class grd:
 
                 soil_out = catch_out_carbon3(s_out)
 
+                # Organic C N & P
                 self.sp_csoil = soil_out['cs']
                 self.sp_snc = soil_out['snc']
-                # TODO organicP = x  criar copias e não usar os np.arrayz by ref.
+
+                # INCLUDE MINERALIZED NUTRIENTS
+                self.sp_available_p += soil_out['pmin']
+                self.sp_available_n += soil_out['nmin']
+
+                # NUTRIENT DINAMICS
+                # Inorganic N
+                self.sp_in_n += self.sp_available_n + self.sp_so_n
+                self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
+                self.sp_available_n = soil_dec.solution_n_equil(self.sp_in_n)
+                self.sp_in_n -= self.sp_so_n + self.sp_available_n
+
+                # Inorganic P
+                self.sp_in_p += self.sp_available_p + self.sp_so_p
+                self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
+                self.sp_available_p = soil_dec.solution_p_equil(self.sp_in_p)
+                self.sp_in_p -= self.sp_so_p + self.sp_available_p
+
+                # Sorbed P
+                if self.pupt[1, step] > 0.05:
+                    rwarn(
+                        f"Puptk_SO > soP_max - 727 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                    self.pupt[1, step] = 0.0
+
+                if self.pupt[1, step] > self.sp_so_p:
+                    rwarn(
+                        f"Puptk_SO > soP_pool - 731 | in spin{s}, step{step} - {self.pupt[1, step]}")
+
+                self.sp_so_p -= self.pupt[1, step]
+                # here
+
+                assert np.all(self.sp_snc > 0.0), "SNC is Negative"
+                # ORGANIC nutrients uptake
+
+                # N
+                if self.nupt[1, step] < 0.0:
+                    rwarn(
+                        f"NuptkO < 0 - 742 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                    self.nupt[1, step] = 0.0
+                if self.nupt[1, step] > 0.2:
+                    rwarn(
+                        f"NuptkO  > max - 746 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                    self.nupt[1, step] = 0.0
+
+                total_on = self.sp_snc[:4].sum()
+                frsn = [i / total_on for i in self.sp_snc[:4]]
+                for i, fr in enumerate(frsn):
+                    self.sp_snc[i] -= self.nupt[1, step] * fr
                 self.sp_organic_n = self.sp_snc[:2].sum()
                 self.sp_sorganic_n = self.sp_snc[2:4].sum()
+
+                # P
+                if self.pupt[2, step] < 0.0:
+                    rwarn(
+                        f"PuptkO < 0 - 759 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                    self.pupt[2, step] = 0.0
+                if self.pupt[2, step] > 0.09:
+                    rwarn(
+                        f"PuptkO  < max - 763 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                    self.pupt[2, step] = 0.09
+                total_op = self.sp_snc[4:].sum()
+                frsp = [i / total_op for i in self.sp_snc[4:]]
+                for i, fr in enumerate(frsp):
+                    self.sp_snc[i + 4] -= self.pupt[2, step] * fr
                 self.sp_organic_p = self.sp_snc[4:6].sum()
                 self.sp_sorganic_p = self.sp_snc[6:].sum()
 
-                # Save
-                self.nupt[:, step] = daily_output['nupt']
-                self.pupt[:, step] = daily_output['pupt']
-                for i in range(3):
-                    self.storage_pool[i, step] = np.sum(
-                        self.vp_ocp * self.vp_sto[i])
+                # Raise some warnings
+                if self.sp_organic_n < 0.0:
+                    rwarn(f"ON negative in spin{s}, step{step}")
+                if self.sp_sorganic_n < 0.0:
+                    rwarn(f"SON negative in spin{s}, step{step}")
+                if self.sp_organic_p < 0.0:
+                    rwarn(f"OP negative in spin{s}, step{step}")
+                if self.sp_sorganic_p < 0.0:
+                    rwarn(f"SOP negative in spin{s}, step{step}")
 
-                if coupled:
+                # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
+                # Soluble and inorganic pools
+                if self.pupt[0, step] > 2.5:
+                    rwarn(
+                        f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
+                    self.pupt[0, step] = 0.0
+                self.sp_available_p -= self.pupt[0, step]
 
-                    # INCLUDE MINERALIZED NUTRIENTS
-                    self.sp_available_p += soil_out['pmin']
-                    self.sp_available_n += soil_out['nmin']
-
-                    # NUTRIENT DINAMICS
-                    # Inorganic N
-                    self.sp_in_n += self.sp_available_n + self.sp_so_n
-
-                    self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
-                    self.sp_available_n = soil_dec.solution_n_equil(
-                        self.sp_in_n)
-                    self.sp_in_n -= self.sp_so_n + self.sp_available_n
-
-                    # Inorganic P
-                    self.sp_in_p += self.sp_available_p + self.sp_so_p
-
-                    self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
-                    self.sp_available_p = soil_dec.solution_p_equil(
-                        self.sp_in_p)
-                    self.sp_in_p -= self.sp_so_p + self.sp_available_p
-
-                    imp_uptk = 0.0
-                    if self.pupt[1, step] > 0.0 and self.sp_so_p > self.pupt[1, step]:
-                        self.sp_so_p -= self.pupt[1, step]
-
-                    elif self.sp_so_p < self.pupt[1, step]:
-                        self.sop = 0.0
-                        imp_uptk = self.pupt[1, step] - self.sp_so_p
-
-# TODO revisar esta seção inteira
-                    # Organic N
-                    if self.nupt[1, step] > 0.0:
-                        # Total organic N in Soil
-                        total_on = self.sp_snc[:4].sum()
-                        frs = [i / total_on for i in self.sp_snc[:4]]
-                        total_on -= self.nupt[1, step]
-                        for i in range(4):
-                            self.sp_snc[i] = frs[i] * total_on
-
-                    # Organic P
-                    if self.pupt[2, step] > 0.0:
-                        total_op = self.sp_snc[4:].sum()
-                        if self.pupt[2, step] > total_op:
-                            imp_uptk += (self.pupt[2, step] - total_op)
-                            uptk_p = total_op
-                        else:
-                            uptk_p = self.pupt[2, step]
-
-                        frs = [i / total_op for i in self.sp_snc[4:]]
-                        for i in range(4, 8):
-                            self.sp_snc[i] = frs[i - 4] * uptk_p
-
-                    # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
-                    # Soluble and inorganic pools
-                    self.sp_available_p -= (self.pupt[0, step] - imp_uptk)
-                    self.sp_available_n -= self.nupt[0, step]
+                if self.nupt[0, step] > 2.5:
+                    rwarn(
+                        f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
+                    self.nupt[0, step] = 0.0
+                self.sp_available_n -= self.nupt[0, step]
 
                 # END SOIL NUTRIENT DYNAMICS
 
@@ -957,8 +993,3 @@ class grd:
             soil_out = catch_out_carbon3(s_out)
             self.sp_csoil = soil_out['cs']
             self.sp_snc = soil_out['snc']
-
-        self.sp_in_n = 0.5 * self.soil_dict['tn']
-        self.sp_so_n = 0.3 * self.soil_dict['tn']
-        self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
-        self.sp_in_p = self.soil_dict['ip']

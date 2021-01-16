@@ -295,11 +295,11 @@ module carbon_costs
 
       ! !Costs of active Non Mycorrhizal AP activity
       ccp(ramAP) = cc_active(kap, amp * op, kapc, amp * croot) ! OP + 0.5
-      ccp(remAP) = 1.0D15 ! cc_active(kep, ecm * op, kepc, ecm * croot) ! OP
+      ccp(remAP) = cc_active(kep, ecm * op, kepc, ecm * croot) ! OP
 
       ! !Costs of Mycorrhizal AP/exudates
       ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
-      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot)
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 2.0
    end subroutine active_costp
 
 
