@@ -43,8 +43,8 @@ from caete_module import utils as utl
 # GLOBAL
 out_ext = ".pkz"
 npls = gp.npls
-mask = np.load(
-    "/home/jdarela/Desktop/caete/CAETE-DVM/input/mask/mask_raisg-360-720.npy")
+mask = np.load("../input/mask/mask_raisg-360-720.npy")
+
 # Create the semi-random table// of Plant Life Strategies
 # AUX FUNCS
 
@@ -736,7 +736,9 @@ class grd:
                 self.sp_so_p -= self.pupt[1, step]
                 # here
 
-                assert np.all(self.sp_snc > 0.0), "SNC is Negative"
+                t1 = np.all(self.sp_snc > 0.0)
+                if not t1:
+                    self.snc[np.where(self.snc) < 0] = 0.0
                 # ORGANIC nutrients uptake
 
                 # N

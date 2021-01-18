@@ -102,12 +102,12 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19010101', '19351231', spinup=20)
+    grid.run_caete('19010101', '19351231', spinup=5)
     return grid
 
 
 def apply_fun1(grid):
-    grid.run_caete('19010101', '19551231', spinup=5)
+    grid.run_caete('19010101', '19551231', spinup=1)
     return grid
 
 
