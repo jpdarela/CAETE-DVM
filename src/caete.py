@@ -45,11 +45,10 @@ out_ext = ".pkz"
 npls = gp.npls
 mask = np.load("../input/mask/mask_raisg-360-720.npy")
 
-# Create the semi-random table// of Plant Life Strategies
-# AUX FUNCS
-
 warnings.simplefilter("default")
 
+
+# AUX FUNCS
 
 def rwarn(txt='RuntimeWarning'):
     warnings.warn(f"{txt}", RuntimeWarning)
@@ -102,13 +101,6 @@ def neighbours_index(pos, matrix):
                 neighbours.append((i, j))
     return neighbours
 
-# daily_budget outputs
-# , w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
-#         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
-#         &, cfrootavg_pft, storage_out_bdgt, ocpavg, wueavg, cueavg, c_defavg&
-#         &, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, npp2pay, lit_nut_content&
-#         &, delta_cveg, limitation_status, uptk_strat)
-
 
 def catch_out_budget(out):
     lst = ["w2", "g2", "s2", "smavg", "ruavg", "evavg", "epavg", "phavg", "aravg", "nppavg",
@@ -125,8 +117,8 @@ def catch_out_carbon3(out):
 
     return dict(zip(lst, out))
 
-# MODEL
 
+# MODEL
 
 class grd:
 
@@ -734,13 +726,12 @@ class grd:
                         f"Puptk_SO > soP_pool - 731 | in spin{s}, step{step} - {self.pupt[1, step]}")
 
                 self.sp_so_p -= self.pupt[1, step]
-                # here
+
 
                 t1 = np.all(self.sp_snc > 0.0)
                 if not t1:
-                    self.snc[np.where(self.snc) < 0] = 0.0
+                    self.snc[np.where(self.snc < 0)] = 0.0
                 # ORGANIC nutrients uptake
-
                 # N
                 if self.nupt[1, step] < 0.0:
                     rwarn(
@@ -801,8 +792,6 @@ class grd:
                 # END SOIL NUTRIENT DYNAMICS
 
                 # # # Process (cwm) & store (np.array) outputs
-                self.uptake_strategy[:, self.vp_lsid,
-                                     step] = daily_output['uptk_strat'][:, self.vp_lsid]
                 self.carbon_costs[self.vp_lsid, step] = self.sp_uptk_costs
                 self.emaxm.append(daily_output['epavg'])
                 self.tsoil.append(self.soil_temp)
@@ -822,12 +811,9 @@ class grd:
                 self.cdef[step] = daily_output['c_defavg']
                 self.vcmax[step] = daily_output['vcmax']
                 self.specific_la[step] = daily_output['specific_la']
-
                 self.cleaf[step] = daily_output['cp'][0]
                 self.cawood[step] = daily_output['cp'][1]
                 self.cfroot[step] = daily_output['cp'][2]
-                self.lim_status[:, self.vp_lsid,
-                                step] = daily_output['limitation_status'][:, self.vp_lsid]
                 self.hresp[step] = soil_out['hr']
                 self.csoil[:, step] = soil_out['cs']
                 self.inorg_n[step] = self.sp_in_n
@@ -837,8 +823,11 @@ class grd:
                 self.snc[:, step] = soil_out['snc']
                 self.nmin[step] = self.sp_available_n
                 self.pmin[step] = self.sp_available_p
-
                 self.area[self.vp_lsid, step] = self.vp_ocp
+                self.lim_status[:, self.vp_lsid,
+                                step] = daily_output['limitation_status'][:, self.vp_lsid]
+                self.uptake_strategy[:, self.vp_lsid,
+                                     step] = daily_output['uptk_strat'][:, self.vp_lsid]
 
             if s > 0:
                 while True:

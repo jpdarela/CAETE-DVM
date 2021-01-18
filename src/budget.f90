@@ -532,6 +532,15 @@ contains
       do p = 1,3
          pupt_1(p) = sum(pupt(p,:) * ocp_coeffs)
       enddo
+
+      do p = 1,6
+         do i = 1, nlen
+            if(isnan(lit_nut_content(p, i)) lit_nut_content(p, i) = 0.0D0
+            if (lit_nut_content(p, i) .gt. 0.01D2) lit_nut_content(p, i) = 0.0D0
+            if (lit_nut_content(p, i) .lt. 0.0D0) lit_nut_content(p, i) = 0.0D0
+         enddo
+      enddo
+      
       do p = 1, 6
          lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
       enddo
