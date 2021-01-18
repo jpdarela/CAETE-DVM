@@ -4,7 +4,7 @@
 #     | |___ / ___ \| |___  | | | |___
 #      \____/_/   \_\_____| |_| |_____|
 import os
-import pickle as pkl
+import _pickle as pkl
 import bz2
 import copy
 import multiprocessing as mp
@@ -166,3 +166,4 @@ if __name__ == "__main__":
         result2 = p.map(apply_fun1, result1)
     end_spinup = time.time() - start
     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+    fh.close()

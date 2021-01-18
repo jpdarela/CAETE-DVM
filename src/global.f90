@@ -14,10 +14,11 @@
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module types
+   use iso_fortran_env
    implicit none
 
    ! FOR THE GNU FORTRAN COMPILER
-   integer,parameter,public :: l_1 = 4  ! standart Logical type
+   integer,parameter,public :: l_1 = 2  ! standart Logical type
    integer,parameter,public :: i_2 = 2  ! 16 bits integer
    integer,parameter,public :: i_4 = 4  ! 32 bits integer
    integer,parameter,public :: r_4 = 4  ! 32 bits float

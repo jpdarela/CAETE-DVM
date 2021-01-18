@@ -237,8 +237,8 @@ def table_gen(NPLS):
     # new traits
     # % of npp
 
-    pdia = np.random.uniform(0.0, 0.08, NPLS)
-    amp = np.random.uniform(0.001, 0.999, NPLS)
+    pdia = np.random.uniform(0.001, 0.3, NPLS)
+    amp = np.random.uniform(0.01, 0.999, NPLS)  # For the amazom region
 
     stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,

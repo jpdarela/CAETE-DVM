@@ -312,6 +312,7 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
+         if (isnan(mr_sto)) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
@@ -325,11 +326,13 @@ contains
          ! Estimate growth of storage C pool
          ! print*, uptk_strat(:,p)
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
+         if (isnan(growth_stoc)) growth_stoc = 0.0D0
 
          storage_out_bdgt(:,p) = day_storage(:,p)
 
          ! Calculate storage GROWTH respiration
-         sr = 0.25D0 * growth_stoc ! g m-2
+         sr = 0.45D0 * growth_stoc ! g m-2
+         if(sr .gt. 1.0D2) sr = 0.0D0
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
 
@@ -470,6 +473,12 @@ contains
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
 
+      ! FILTER NaN in ocupation (abundance) coefficients
+      do p = 1, nlen
+         if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
+      enddo
+
+
       smavg = sum(real(smelt, kind=r_8) * ocp_coeffs)
       ruavg = sum(real(roff, kind=r_8) * ocp_coeffs)
       evavg = sum(real(evap, kind=r_8) * ocp_coeffs)
@@ -500,6 +509,22 @@ contains
       ! print*, 'ca', ca1_int
       ! print*, ''
 
+      ! FILTER BAD VALUES
+      do p = 1,2
+         do i = 1, nlen
+            if (isnan(nupt(p, i))) nupt(p, i) = 0.0D0
+            if (nupt(p, i) .gt. 0.01D2) nupt(p, i) = 0.0D0
+            if (nupt(p, i) .lt. 0.0D0) nupt(p, i) = 0.0D0
+         enddo
+      enddo
+
+      do p = 1,3
+         do i = 1, nlen
+            if(isnan(pupt(p, i))) pupt(p, i) = 0.0D0
+            if (pupt(p, i) .gt. 0.01D2) pupt(p, i) = 0.0D0
+            if (pupt(p, i) .lt. 0.0D0) pupt(p, i) = 0.0D0
+         enddo
+      enddo
 
       do p = 1,2
          nupt_1(p) = sum(nupt(p,:) * ocp_coeffs)
@@ -508,7 +533,7 @@ contains
          pupt_1(p) = sum(pupt(p,:) * ocp_coeffs)
       enddo
       do p = 1, 6
-      lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
+         lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
       enddo
 
       do p = 1, nlen

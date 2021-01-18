@@ -23,13 +23,13 @@ import os
 import sys
 import copy
 import _pickle as pkl
-import bz2
 from threading import Thread
 from time import sleep
 from pathlib import Path
 import warnings
+import bz2
 
-
+from joblib import dump
 import cftime
 import numpy as np
 
@@ -41,13 +41,14 @@ from caete_module import soil_dec
 from caete_module import utils as utl
 
 # GLOBAL
+out_ext = ".pkz"
 npls = gp.npls
 mask = np.load(
     "/home/jdarela/Desktop/caete/CAETE-DVM/input/mask/mask_raisg-360-720.npy")
 # Create the semi-random table// of Plant Life Strategies
 # AUX FUNCS
 
-warnings.simplefilter("ignore")
+warnings.simplefilter("default")
 
 
 def rwarn(txt='RuntimeWarning'):
@@ -319,9 +320,9 @@ class grd:
         to_pickle = {}
         self.run_counter += 1
         if self.run_counter < 10:
-            spiname = run_descr + "0" + str(self.run_counter) + ".pbz2"
+            spiname = run_descr + "0" + str(self.run_counter) + out_ext
         else:
-            spiname = run_descr + str(self.run_counter) + ".pbz2"
+            spiname = run_descr + str(self.run_counter) + out_ext
 
         self.outputs[spiname] = os.path.join(self.out_dir, spiname)
         to_pickle = {'emaxm': np.array(self.emaxm),
@@ -516,11 +517,11 @@ class grd:
         """Compress and save output data
         data_object: dict; the dict returned from _flush_output"""
         if self.run_counter < 10:
-            fpath = "spin{}{}.pbz2".format(0, self.run_counter)
+            fpath = "spin{}{}{}".format(0, self.run_counter, out_ext)
         else:
-            fpath = "spin{}.pbz2".format(self.run_counter)
-        with bz2.BZ2File(self.outputs[fpath], 'w') as fh:
-            pkl.dump(data_obj, fh)
+            fpath = "spin{}{}".format(self.run_counter, out_ext)
+        with open(self.outputs[fpath], 'wb') as fh:
+            dump(data_obj, fh, compress=('zlib', 3), protocol=4)
         self.flush_data = 0
 
     def run_caete(self, start_date, end_date, spinup):
@@ -725,7 +726,7 @@ class grd:
                 # Sorbed P
                 if self.pupt[1, step] > 0.05:
                     rwarn(
-                        f"Puptk_SO > soP_max - 727 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                        f"Puptk_SO > soP_max - 729 | in spin{s}, step{step} - {self.pupt[1, step]}")
                     self.pupt[1, step] = 0.0
 
                 if self.pupt[1, step] > self.sp_so_p:
@@ -741,11 +742,11 @@ class grd:
                 # N
                 if self.nupt[1, step] < 0.0:
                     rwarn(
-                        f"NuptkO < 0 - 742 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                        f"NuptkO < 0 - 745 | in spin{s}, step{step} - {self.nupt[1, step]}")
                     self.nupt[1, step] = 0.0
-                if self.nupt[1, step] > 0.2:
+                if self.nupt[1, step] > 0.4:
                     rwarn(
-                        f"NuptkO  > max - 746 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                        f"NuptkO  > max - 749 | in spin{s}, step{step} - {self.nupt[1, step]}")
                     self.nupt[1, step] = 0.0
 
                 total_on = self.sp_snc[:4].sum()
@@ -760,10 +761,10 @@ class grd:
                     rwarn(
                         f"PuptkO < 0 - 759 | in spin{s}, step{step} - {self.pupt[2, step]}")
                     self.pupt[2, step] = 0.0
-                if self.pupt[2, step] > 0.09:
+                if self.pupt[2, step] > 0.1:
                     rwarn(
                         f"PuptkO  < max - 763 | in spin{s}, step{step} - {self.pupt[2, step]}")
-                    self.pupt[2, step] = 0.09
+                    self.pupt[2, step] = 0.0
                 total_op = self.sp_snc[4:].sum()
                 frsp = [i / total_op for i in self.sp_snc[4:]]
                 for i, fr in enumerate(frsp):

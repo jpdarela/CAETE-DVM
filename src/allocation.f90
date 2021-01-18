@@ -22,6 +22,7 @@ module alloc
                           & retran_nutri_cost, select_active_strategy
     use global_par, only: ntraits, sapwood
     use photo, only: f_four, spec_leaf_area, realized_npp
+    use IEEE_ARITHMETIC
 
     implicit none
     private
@@ -334,7 +335,7 @@ module alloc
 
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
-         from_sto2npp = 0.75D0 * storage(1)
+         from_sto2npp = 0.15D0 * storage(1)
          npp_pot = npp_pot + from_sto2npp
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
@@ -756,10 +757,6 @@ module alloc
 
       ! ! CALCULATE CARBON COSTS OF NUTRIENT UPTAKE (gC g(N/P)-1)
       ! 1 - Check Passve uptake
-      ! print*, 'puptk', puptk
-      ! print*, 'nuptk', nuptk
-
-      ! print*,'wsoil' ,wsoil, '- avn', avail_n, 'avp', avail_p, 'T', te
 
       call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
                         & to_pay, to_sto, plant_uptake)
@@ -776,18 +773,9 @@ module alloc
          nitrogen_uptake(1) = nuptk
          nitrogen_uptake(2) = 0.0D0
       endif
-      ! print*,'n', nitrogen_uptake
       test34 = nitrogen_uptake(2) .gt. on
-      ! if (test34) print *, "on < u", on, '<-- ON', nitrogen_uptake(2),''
-      ! if (test34) then
-      !    nitrogen_uptake(1) = nitrogen_uptake(1) + (nitrogen_uptake(2) - on)
-      !    nitrogen_uptake(2) = on - 0.000001D0
-      ! endif
-
       uptk_strategy(1) = naquis_strat
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
-
-
 
       !  P
       ccp(:) = 0.0D0
@@ -801,25 +789,13 @@ module alloc
       else
          phosphorus_uptake(1) = puptk
       endif
-
-      ! if (test34) then
-      !    phosphorus_uptake(1) = phosphorus_uptake(1) + (phosphorus_uptake(3) - op)
-      !    phosphorus_uptake(3) = op - 0.00001D0
-      ! endif
-      ! if (test35) then
-      !    phosphorus_uptake(1) = phosphorus_uptake(1) + (phosphorus_uptake(2) - sop)
-      !    phosphorus_uptake(2) = sop - 0.00001D0
-      ! endif
-
       uptk_strategy(2) = paquis_strat
-      ! print*, 'p', phosphorus_uptake
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
-
       test34 = phosphorus_uptake(3) .gt. op
       test35 = phosphorus_uptake(2) .gt. sop
 
       ! TODO calculate enzimatic n costs of enzimatic activity?
-
+      ! ???????????????????????????????????????????????????????
 
       ! CARBON AND NUTRIENTS TURNOVER
 294   continue ! Material going to soil + updating veg pools
@@ -857,6 +833,7 @@ module alloc
 
       aux1 = 0.0D0
       ! Nutrient N in litter
+      if(ieee_is_nan(leaf_litter)) print *, "HAHAAA"
       n_leaf = leaf_litter * leaf_n2c
       ! resorbed_nutrient (N)
       aux1 = n_leaf * resorpt_frac   ! g(N) m-2

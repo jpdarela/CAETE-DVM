@@ -1,5 +1,5 @@
-import bz2
 import _pickle as pkl
+import joblib
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,15 +9,15 @@ def get_data(grd, var, spin=(1, 5)):
 
     k = sorted(list(grd.outputs.keys()))[spin[0] - 1:spin[1]]
     # find var dim
-    with bz2.BZ2File(grd.outputs[k[-1]]) as fh:
-        dt = pkl.load(fh)
+    with open(grd.outputs[k[-1]], 'rb') as fh:
+        dt = joblib.load(fh)
         dt = dt[var]
         dim = dt.shape
     if len(dim) == 1:
         output = np.zeros(0, dtype=dt.dtype)
         for fname in k:
-            with bz2.BZ2File(grd.outputs[fname], mode='r') as fh:
-                dt1 = pkl.load(fh)
+            with open(grd.outputs[fname], mode='rb') as fh:
+                dt1 = joblib.load(fh)
                 dt1 = dt1[var]
                 output = np.hstack((output, dt1))
     elif len(dim) == 2:
@@ -25,8 +25,8 @@ def get_data(grd, var, spin=(1, 5)):
         s = (dim[0], 0)
         output = np.zeros(s, dtype=dt.dtype)
         for fname in k:
-            with bz2.BZ2File(grd.outputs[fname], mode='r') as fh:
-                dt1 = pkl.load(fh)
+            with open(grd.outputs[fname], mode='rb') as fh:
+                dt1 = joblib.load(fh)
                 dt1 = dt1[var]
                 output = np.hstack((output, dt1))
     else:

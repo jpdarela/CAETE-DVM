@@ -15,7 +15,7 @@ OVRTFLAG = --overwrite-signature
 FC = gfortran
 FCFLAGS = -g -lgomp -fopenmp -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -lgomp -fopenmp -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
-
+EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 # Sources for compilation in run mode (F2PY)
 sources = global.f90 utils.f90 cc.f90 funcs.f90 soil_dec.f90 allocation.f90 productivity.f90 budget.f90
 
@@ -27,7 +27,7 @@ interface: $(sources)
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall -fopenmp " -lgomp
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp
 	printf "\n\n%s", %''
 
 # Build objects for DEBUG mode
