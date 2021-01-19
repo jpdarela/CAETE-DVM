@@ -78,7 +78,7 @@ contains
       real(r_8),intent(out) :: phavg          !Daily photosynthesis (Kg m-2 y-1)
       real(r_8),intent(out) :: aravg          !Daily autotrophic respiration (Kg m-2 y-1)
       real(r_8),intent(out) :: nppavg         !Daily NPP (average between PFTs)(Kg m-2 y-1)
-      real(r_8),intent(out) :: laiavg         !Daily leaf area Index m2m-2
+      real(r_8),intent(out) :: laiavg         !Daily leaf19010101', '19551231 area Index m2m-2
       real(r_8),intent(out) :: rcavg          !Daily canopy resistence s/m
       real(r_8),intent(out) :: f5avg          !Daily canopy resistence s/m
       real(r_8),intent(out) :: rmavg          !maintenance/growth respiration (Kg m-2 y-1)
@@ -535,12 +535,12 @@ contains
 
       do p = 1,6
          do i = 1, nlen
-            if(isnan(lit_nut_content(p, i)) lit_nut_content(p, i) = 0.0D0
+            if(isnan(lit_nut_content(p, i))) lit_nut_content(p, i) = 0.0D0
             if (lit_nut_content(p, i) .gt. 0.01D2) lit_nut_content(p, i) = 0.0D0
             if (lit_nut_content(p, i) .lt. 0.0D0) lit_nut_content(p, i) = 0.0D0
          enddo
       enddo
-      
+
       do p = 1, 6
          lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
       enddo
