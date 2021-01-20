@@ -450,7 +450,7 @@ contains
    !=================================================================
 
    subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,&
-        & leaf_turnover,f1ab,vm)
+        & leaf_turnover,f1ab,vm, amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
@@ -470,6 +470,7 @@ contains
       ! O
       real(r_8),intent(out) :: f1ab ! Gross CO2 Assimilation Rate mol m-2 s-1
       real(r_8),intent(out) :: vm   ! PLS Vcmax mol m-2 s-1
+      real(r_8),intent(out) :: amax ! light saturated PH rate
 
       real(r_8) :: f2,f3            !Michaelis-Menten CO2/O2 constant (Pa)
       real(r_8) :: mgama,vm_in      !Photo-respiration compensation point (Pa)
@@ -540,6 +541,7 @@ contains
             aux_ipar = ipar - (ipar * 0.20)
          endif
          jl = p4*(1.0-p5)*aux_ipar*((ci-mgama)/(ci+(p6*mgama)))
+         amax = jl
 
          ! Transport limited photosynthesis rate (molCO2/m2/s) (RuBP) (re)generation
          ! ---------------------------------------------------
@@ -612,6 +614,7 @@ contains
          ! ! When light or PEP carboxylase is limiting
          ! ! FROM CHEN et al. 1994:
          jcl = ((V4m * cm) / (kp + cm)) * 1e-6   ! molCO2 m-2 s-1 / 1e-6 convets µmol 2 mol
+         amax = jcl
 
          ! When V (RuBP regeneration) is limiting
          je = p7 * vm_in

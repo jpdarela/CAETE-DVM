@@ -77,6 +77,7 @@ contains
     real(r_8) :: n2cf_resp
     real(r_8) :: p2cl
     integer(i_4) :: c4_int
+    real(r_8) :: jl_out
 
     real(r_8) :: f1       !Leaf level gross photosynthesis (molCO2/m2/s)
     real(r_8) :: f1a      !auxiliar_f1
@@ -107,7 +108,9 @@ contains
 ! rate (molCO2/m2/s)
 
     call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
-         & p2cl,tleaf,f1a,vm_out)
+         & p2cl,tleaf,f1a,vm_out,jl_out)
+
+    ! print*, 'jl: ',jl_out, catm
 
 !    _____     ____   _     _____    _    _____
 !    | __ )_ _/ ___| | |   | ____|  / \  |  ___|
