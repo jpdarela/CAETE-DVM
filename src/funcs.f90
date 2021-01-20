@@ -42,9 +42,31 @@ module photo
         spinup3                ,& ! (s), SPINUP function to check the viability of Allocation/residence time combinations
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
         pft_area_frac          ,& ! (s), area fraction by biomass
-        water_ue
+        water_ue               ,&
+        leap
 
 contains
+
+   function leap(year) result(is_leap)
+      ! Why this is here?
+      use types
+      !implicit none
+
+      integer(i_4),intent(in) :: year
+      logical(l_1) :: is_leap
+
+      logical(l_1) :: by4, by100, by400
+
+      by4 = (mod(year,4) .eq. 0)
+      by100 = (mod(year,100) .eq. 0)
+      by400 = (mod(year,400) .eq. 0)
+
+      is_leap = by4 .and. (by400 .or. (.not. by100))
+
+   end function leap
+
+   !=================================================================
+   !=================================================================
 
    function gross_ph(f1,cleaf,sla) result(ph)
       ! Returns gross photosynthesis rate (kgC m-2 y-1) (GPP)
@@ -433,7 +455,6 @@ contains
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
       use types
-      use utils
       use global_par
       use photo_par
       ! implicit none

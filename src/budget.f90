@@ -478,36 +478,32 @@ contains
          if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
       enddo
 
+      smavg = sum(real(smelt, kind=r_8) * ocp_coeffs, mask= .not. isnan(smelt))
+      ruavg = sum(real(roff, kind=r_8) * ocp_coeffs, mask= .not. isnan(roff))
+      evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. isnan(evap))
+      phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. isnan(ph))
+      aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. isnan(ar))
+      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs, mask= .not. isnan(nppa))
+      laiavg = sum(laia * ocp_coeffs, mask= .not. isnan(laia))
+      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs, mask= .not. isnan(rc2))
+      f5avg = sum(f5 * ocp_coeffs, mask= .not. isnan(f5))
+      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs, mask= .not. isnan(rm))
+      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs, mask= .not. isnan(rg))
+      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs, mask= .not. isnan(wue))
+      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs, mask= .not. isnan(cue))
+      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs, mask= .not. isnan(c_def)) / 2.73791
+      vcmax_1 = sum(vcmax * ocp_coeffs, mask= .not. isnan(vcmax))
+      specific_la_1 = sum(specific_la * ocp_coeffs, mask= .not. isnan(specific_la))
+      litter_l_1 = sum(litter_l * ocp_coeffs, mask= .not. isnan(litter_l))
+      cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
+      litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
 
-      smavg = sum(real(smelt, kind=r_8) * ocp_coeffs)
-      ruavg = sum(real(roff, kind=r_8) * ocp_coeffs)
-      evavg = sum(real(evap, kind=r_8) * ocp_coeffs)
-      phavg = sum(real(ph, kind=r_8) * ocp_coeffs)
-      aravg = sum(real(ar, kind=r_8) * ocp_coeffs)
-      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs)
-      laiavg = sum(laia * ocp_coeffs)
-      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs)
-      f5avg = sum(f5 * ocp_coeffs)
-      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs)
-      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs)
-      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs)
-      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs)
-      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs) / 2.73791
-      vcmax_1 = sum(vcmax * ocp_coeffs)
-      specific_la_1 = sum(specific_la * ocp_coeffs)
-      litter_l_1 = sum(litter_l * ocp_coeffs)
-      cwd_1 = sum(cwd * ocp_coeffs)
-      litter_fr_1 = sum(litter_fr * ocp_coeffs)
-      wp(1) = sum(w * ocp_coeffs)
-      wp(2) = sum(g * ocp_coeffs)
-      wp(3) = sum(s * ocp_coeffs)
-      cp(1) = sum(cl1_int * ocp_coeffs)
-      cp(2) = sum(ca1_int * ocp_coeffs)
-      cp(3) = sum(cf1_int * ocp_coeffs)
-
-      ! print*, ''
-      ! print*, 'ca', ca1_int
-      ! print*, ''
+      wp(1) = sum(w * ocp_coeffs, mask= .not. isnan(w))
+      wp(2) = sum(g * ocp_coeffs, mask= .not. isnan(g))
+      wp(3) = sum(s * ocp_coeffs, mask= .not. isnan(s))
+      cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
+      cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
+      cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
 
       ! FILTER BAD VALUES
       do p = 1,2
@@ -541,14 +537,20 @@ contains
          enddo
       enddo
 
+      do p = 1,3
+         do i = 1, nlen
+            if(isnan(storage_out_bdgt(p,i))) storage_out_bdgt(p,i) = 0.0D0
+            if(storage_out_bdgt(p,i) > 0.1D2) storage_out_bdgt(p,i) = 0.0D0
+            if(storage_out_bdgt(p,i) < 0.0D0) storage_out_bdgt(p,i) = 0.0D0
+         enddo
+      enddo
+
       do p = 1, 6
          lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
       enddo
 
       do p = 1, nlen
          ri = lp(p)
-         ! write output data
-         ! FULL ARRAYS
          w2(ri) = w(p)
          g2(ri) = g(p)
          s2(ri) = s(p)
@@ -560,9 +562,8 @@ contains
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
-
       enddo
-      ! print*, 'ca_out---------->', cawoodavg_pft
+
       deallocate(w)
       deallocate(g)
       deallocate(s)

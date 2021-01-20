@@ -38,7 +38,7 @@ from caete_module import budget as model
 from caete_module import water as st
 from caete_module import photo as m
 from caete_module import soil_dec
-from caete_module import utils as utl
+
 
 # GLOBAL
 out_ext = ".pkz"
@@ -174,6 +174,7 @@ class grd:
         self.cwin = None
 
         # OUTPUTS
+        # TODO
         self.soil_temp = None
         self.emaxm = None
         self.tsoil = None
@@ -586,7 +587,7 @@ class grd:
                 loop += 1
                 count_days += 1
                 # CAST CO2 ATM CONCENTRATION
-                days = 366 if utl.leap(year0) == 1 else 365
+                days = 366 if m.leap(year0) == 1 else 365
                 if count_days == days:
                     count_days = 0
                     year0 = cftime.num2date(day_indexes[step],
@@ -923,7 +924,7 @@ class grd:
             loop += 1
             count_days += 1
             # CAST CO2 ATM CONCENTRATION
-            days = 366 if utl.leap(year0) == 1 else 365
+            days = 366 if m.leap(year0) == 1 else 365
             if count_days == days:
                 count_days = 0
                 year0 = cftime.num2date(day_indexes[step],

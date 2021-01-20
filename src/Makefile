@@ -1,9 +1,10 @@
-# Build caete_modul
+# Build caete_module & debug programs
 PYEXEC = python
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
 CLEAN_DIR = ./clean_dir.sh
+DEBUG_PROGRAM = run_debug
 
 # RUN MODE FLAGS
 MFLAG = -m
@@ -16,11 +17,12 @@ FC = gfortran
 FCFLAGS = -g -lgomp -fopenmp -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -lgomp -fopenmp -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+
 # Sources for compilation in run mode (F2PY)
-sources = global.f90 utils.f90 cc.f90 funcs.f90 soil_dec.f90 allocation.f90 productivity.f90 budget.f90
+sources = global.f90 funcs.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.f90
 
 # Objects for compilation in debug mode
-objects = global.o utils.o funcs.o soil_dec.o cc.o allocation.o productivity.o budget.o debug_caete.o
+objects = global.o funcs.o soil_dec.o cc.o allocation.o productivity.o budget.o debug_caete.o
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
@@ -28,12 +30,12 @@ interface: $(sources)
 
 so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp
-	printf "\n\n%s", %''
+	echo
 
 # Build objects for DEBUG mode
 debug: $(objects) so
 	$(PYEXEC) create_plsbin.py
-	$(FC) -o run_debug $(FCFLAGS) $(objects)
+	$(FC) -o $(DEBUG_PROGRAM) $(FCFLAGS) $(objects)
 
 global.o: global.f90
 	$(FC) $(FLFLAGS) global.f90
@@ -46,12 +48,6 @@ global_par.mod: global.o global.f90
 
 photo_par.mod: global.o global.f90
 	$(FC) $(FLFLAGS) global.f90
-
-utils.o: utils.f90
-	$(FC) $(FLFLAGS) utils.f90
-
-utils.mod: utils.o utils.f90
-	$(FC) $(FLFLAGS) utils.f90
 
 funcs.o: funcs.f90
 	$(FC) $(FLFLAGS) funcs.f90

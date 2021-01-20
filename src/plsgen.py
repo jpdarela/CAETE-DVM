@@ -92,6 +92,7 @@ def turnover_combinations(verbose=False):
         file1 = True
 
     else:
+        print("Building grassy allocation combinations: \n")
         aleafg = np.arange(20., 80.1, 0.0125e1, dtype=np.float64)
         arootg = np.arange(20., 80.1, 0.0125e1, dtype=np.float64)
 
@@ -104,6 +105,7 @@ def turnover_combinations(verbose=False):
         file2 = True
 
     else:
+        print("Building woody allocation combinations: \n")
         aleafw = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)
         arootw = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)
         awood = np.arange(10., 80.1, 0.0125e1, dtype=np.float64)

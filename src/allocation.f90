@@ -22,7 +22,6 @@ module alloc
                           & retran_nutri_cost, select_active_strategy
     use global_par, only: ntraits, sapwood
     use photo, only: f_four, spec_leaf_area, realized_npp
-    use IEEE_ARITHMETIC
 
     implicit none
     private
@@ -775,6 +774,9 @@ module alloc
       endif
       test34 = nitrogen_uptake(2) .gt. on
       uptk_strategy(1) = naquis_strat
+      if(isnan(to_sto(1))) to_sto(1) = 0.0D0
+      if(to_sto(1) .gt. 1.0D1) to_sto(1) = 0.0D0
+      if(to_sto(1) .lt. 0.0D0) to_sto(1) = 0.0D0
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
 
       !  P
@@ -790,7 +792,11 @@ module alloc
          phosphorus_uptake(1) = puptk
       endif
       uptk_strategy(2) = paquis_strat
+      if(isnan(to_sto(2))) to_sto(2) = 0.0D0
+      if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
+      if(to_sto(2) .lt. 0.0D0) to_sto(2) = 0.0D0
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
+
       test34 = phosphorus_uptake(3) .gt. op
       test35 = phosphorus_uptake(2) .gt. sop
 
@@ -833,7 +839,6 @@ module alloc
 
       aux1 = 0.0D0
       ! Nutrient N in litter
-      if(ieee_is_nan(leaf_litter)) print *, "HAHAAA"
       n_leaf = leaf_litter * leaf_n2c
       ! resorbed_nutrient (N)
       aux1 = n_leaf * resorpt_frac   ! g(N) m-2

@@ -16,7 +16,6 @@
 module carbon_costs
    use types
    use global_par
-   use utils
 
    implicit none
    private
