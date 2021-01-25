@@ -27,6 +27,8 @@ import csv
 import numpy as np
 from caete_module import photo as model
 
+__author__ = 'JP Darela'
+
 # Cache data of allocation coefficients
 woody_allocations_file = "wallo.npy"
 grassy_allocations_file = "gallo.npy"
@@ -216,8 +218,6 @@ def table_gen(NPLS):
 
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
-    # # ----
-    # leaf_n2c = np.random.uniform(0.025, 0.1, NPLS)
 
     leaf = np.array(sample(calc_ratios('leaf'), int(NPLS)))
     leaf_n2c = leaf[:, 0]
@@ -226,9 +226,8 @@ def table_gen(NPLS):
     wood = np.array(sample(calc_ratios('wood'), int(NPLS)))
     awood_n2c = wood[:, 0]
     awood_p2c = wood[:, 1]
-
     test = alloc[:, 4] == 0.0
-    # print(test)
+
     np.place(awood_n2c, test, 0.0)
     np.place(awood_p2c, test, 0.0)
 
@@ -237,10 +236,8 @@ def table_gen(NPLS):
     froot_p2c = root[:, 1]
 
     # new traits
-    # % of npp
-
-    pdia = np.random.uniform(0.001, 0.3, NPLS)
-    amp = np.random.uniform(0.01, 0.999, NPLS)  # For the amazom region
+    pdia = np.random.uniform(0.001, 0.15, NPLS)
+    amp = np.random.uniform(0.01, 0.999, NPLS)
 
     stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,
@@ -251,12 +248,7 @@ def table_gen(NPLS):
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
 
-    # # for i,x in enumerate(head):
-    # #     print(i + 1, ': ',x)
-
     pls_table = np.vstack(stack)
-    # # pls_table_F = np.empty(shape=(15,n),order='F')
-    # # pls_table_F = pls_table
 
     # # ___side_effects
     with open('pls_attrs.csv', mode='w') as fh:

@@ -80,17 +80,6 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
     sys.stdout.flush()
 
 
-def wm(weight, data):
-    shp = data.shape
-    if len(shp) < 2:
-        return np.sum(weight * data)
-    else:
-        out = np.zeros(shape=(shp[0],))
-        for i in range(shp[0]):
-            out[i] = np.sum(weight * data[i, :])
-        return out
-
-
 def neighbours_index(pos, matrix):
     neighbours = []
     rows = len(matrix)
@@ -101,7 +90,7 @@ def neighbours_index(pos, matrix):
                 neighbours.append((i, j))
     return neighbours
 
-
+# WARNING keep the lists of budget/carbon3 outputs updated with fortran code
 def catch_out_budget(out):
     lst = ["w2", "g2", "s2", "smavg", "ruavg", "evavg", "epavg", "phavg", "aravg", "nppavg",
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
@@ -124,8 +113,8 @@ class grd:
 
     """
     Defines the gridcell object - This object stores all the input data,
-    the data comming from model runs for each grid point, all the state varables and all the metadata
-    describing the life cycle of the gridcell
+    the data comming from model runs for each grid point, all the state variables and all the metadata
+    describing the life cycle of the gridcell and the filepaths to the generated model outputs
     """
 
     def __init__(self, x, y):
@@ -306,7 +295,7 @@ class grd:
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
            2 - Fill self.outputs dict with filepats of output data
-           3 - Returns the output data
+           3 - Returns the output data to be writen
 
            runs_descr: str a name for the files
            index = tuple or list with the first and last values of the index time variable"""
@@ -411,12 +400,24 @@ class grd:
 
         return to_pickle
 
+    def _save_output(self, data_obj):
+        """Compress and save output data
+        data_object: dict; the dict returned from _flush_output"""
+        if self.run_counter < 10:
+            fpath = "spin{}{}{}".format(0, self.run_counter, out_ext)
+        else:
+            fpath = "spin{}{}".format(self.run_counter, out_ext)
+        with open(self.outputs[fpath], 'wb') as fh:
+            dump(data_obj, fh, compress=('zlib', 3), protocol=4)
+        self.flush_data = 0
+
     def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table):
-        """
-            input_fpath: Files with climate and soil data
-            co2: (list) a alist (association list) with yearly cCO2 ATM data
+        """ PREPARE A GRIDCELL TO RUN
+            TODO adapt to change climatic data/ maybe another method
+            input_fpath:(str or pathlib.Path) path to Files with climate and soil data
+            co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
-            name: str a name for the gridcell group"""
+        """
 
         assert self.filled == False, "already done"
         self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
@@ -506,28 +507,19 @@ class grd:
 
         return None
 
-    def _save_output(self, data_obj):
-        """Compress and save output data
-        data_object: dict; the dict returned from _flush_output"""
-        if self.run_counter < 10:
-            fpath = "spin{}{}{}".format(0, self.run_counter, out_ext)
-        else:
-            fpath = "spin{}{}".format(self.run_counter, out_ext)
-        with open(self.outputs[fpath], 'wb') as fh:
-            dump(data_obj, fh, compress=('zlib', 3), protocol=4)
-        self.flush_data = 0
 
-    def run_caete(self, start_date, end_date, spinup):
+    def run_caete(self, start_date, end_date, spinup, fix_co2=False):
         """ start_date [str] "yyyymmdd" Start model execution
             end_date   [str] "yyyymmdd" End model execution
             spinup     [int] Number of repetitions in spinup. 0 for no spinu
-            coupled    [bool] engage the nutrients cycle
 
             this function run the fortran subroutines and manage data flux
             Is the proper CAETÊ-DGVM execution in the start_date - end_date period
         """
 
         assert self.filled, "The gridcell has no input data"
+        assert not fix_co2 or type(
+            fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero "
 
         def find_co2(year):
             for i in self.co2_data:
@@ -581,26 +573,39 @@ class grd:
         loop = 0
         next_year = 0.0
 
+        fix_co2_p = True
+        if not fix_co2:
+            fix_co2_p = False
+        elif type(fix_co2) == int or type(fix_co2) == float:
+            co2 = fix_co2
+        elif type(fix_co2) == str:
+            co2 = find_co2(int(fix_co2))
+        else:
+            assert False, "NEver say never"
+
         for s in range(spin):
             self._allocate_output(steps.size)
             for step in range(steps.size):
-                loop += 1
-                count_days += 1
-                # CAST CO2 ATM CONCENTRATION
-                days = 366 if m.leap(year0) == 1 else 365
-                if count_days == days:
-                    count_days = 0
-                    year0 = cftime.num2date(day_indexes[step],
-                                            self.time_unit, self.calendar).year
-                    co2 = find_co2(year0)
-                    next_year = (find_co2(year0 + 1) - co2) / days
+                if fix_co2_p:
+                    pass
+                else:
+                    loop += 1
+                    count_days += 1
+                    # CAST CO2 ATM CONCENTRATION
+                    days = 366 if m.leap(year0) == 1 else 365
+                    if count_days == days:
+                        count_days = 0
+                        year0 = cftime.num2date(day_indexes[step],
+                                                self.time_unit, self.calendar).year
+                        co2 = find_co2(year0)
+                        next_year = (find_co2(year0 + 1) - co2) / days
 
-                elif loop == 1 and count_days < days:
-                    year0 = start.year
-                    next_year = (find_co2(year0 + 1) - co2) / \
-                        (days - count_days)
+                    elif loop == 1 and count_days < days:
+                        year0 = start.year
+                        next_year = (find_co2(year0 + 1) - co2) / \
+                            (days - count_days)
 
-                co2 += next_year
+                    co2 += next_year
 
                 # Update soil temperature
                 self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
@@ -727,7 +732,6 @@ class grd:
                         f"Puptk_SO > soP_pool - 731 | in spin{s}, step{step} - {self.pupt[1, step]}")
 
                 self.sp_so_p -= self.pupt[1, step]
-
 
                 t1 = np.all(self.sp_snc > 0.0)
                 if not t1:

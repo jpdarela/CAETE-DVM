@@ -14,8 +14,8 @@
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com>
-!             João Paulo Darela Filho <darelafilho ( at ) gmail.com>
-
+! Author: JP Darela
+! This program is based on the work of those that gave us the INPE-CPTEC-PVM2 model
 
 module budget
    implicit none
@@ -185,7 +185,7 @@ contains
       !     Grid cell area fraction 0-1
       !     ============================
 
-      ! create copies of some input variables (arrays) - ( they passed by reference by standard)
+      ! create copies of some input variables (arrays) - ( they are passed by reference by standard)
       do i = 1,npls
          awood_aux(i) = dt(7,i)
          cl1_pft(i) = cl1_in(i)
@@ -288,14 +288,16 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
+         ! GABI hydro
          call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w(p), ipar, rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
                &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
 
-      ! Check if the carbon deficit can be conpensated by stored carbon
+      ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
+         ! print*, 'STO',carbon_in_storage
          storage_out_bdgt(1, p) = carbon_in_storage
          if (c_def(p) .gt. 0.0) then
             testcdef = c_def(p) - carbon_in_storage
@@ -312,13 +314,17 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
+         ! print*, cl1_pft(ri)
+         ! print*,''
+         ! print*, 'mr_sto' , mr_sto
          if (isnan(mr_sto)) mr_sto = 0.0D0
+         if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
          call allocation (dt1,nppa(p),uptk_costs(ri), soil_temp, w(p), tra(p)&
-            &,  mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
+            &, mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
             &, cf1_pft(ri),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
             &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
             &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p))
@@ -327,7 +333,7 @@ contains
          ! print*, uptk_strat(:,p)
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
          if (isnan(growth_stoc)) growth_stoc = 0.0D0
-
+         if (growth_stoc .gt. 0.1D2) growth_stoc = 0.0D0
          storage_out_bdgt(:,p) = day_storage(:,p)
 
          ! Calculate storage GROWTH respiration
@@ -335,6 +341,9 @@ contains
          if(sr .gt. 1.0D2) sr = 0.0D0
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
+
+         ! print*, 'growth_stoc' , growth_stoc
+         ! print*, 'sr' , sr
 
          growth_stoc = 0.0D0
          mr_sto = 0.0D0

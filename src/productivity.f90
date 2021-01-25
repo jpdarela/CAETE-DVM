@@ -14,7 +14,8 @@
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com>
-
+! Author: JP Darela
+! This program is based on the work of those that gave us the INPE-CPTEC-PVM2 model
 
 module productivity
   implicit none
@@ -119,6 +120,7 @@ contains
 !    |____/___\____| |_____|_____/_/   \_\_|
 !     Leaf area index (m2/m2)
     sla = spec_leaf_area(tleaf)
+    ! laia = leaf_area_index(cl1_prod, sla)
 
     laia = 0.2D0 * dexp((2.5D0 * f1a)/p25)
 ! VPD
@@ -143,6 +145,8 @@ contains
     ! print*, w, 'w'
     ! print*, rc, 'rc'
     ! print*, emax, 'emax'
+
+    ! wsoil + h +
     f5 =  water_stress_modifier(w, cf1_prod, rc, emax)
 
 
@@ -183,7 +187,6 @@ contains
     else
        ar = 0.0               !Temperature above/below respiration windown
     endif
-
 !     Net primary productivity(kgC/m2/yr)
 !     ====================================
     nppa = ph - ar

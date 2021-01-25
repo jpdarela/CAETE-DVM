@@ -1,7 +1,6 @@
 program test_caete
 
    use types
-   use utils
    use global_par
    use photo
    use water

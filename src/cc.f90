@@ -13,6 +13,7 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+! AUTHOR: João Paulo Darela Filho
 module carbon_costs
    use types
    use global_par
@@ -93,7 +94,6 @@ module carbon_costs
 
       call calc_passive_uptk1(av_n, e, w, 0.0010D0, passive_n)
       call calc_passive_uptk1(av_p, e, w, 0.0003D0, passive_p)
-
       passive_upt(1) = passive_n
       passive_upt(2) = passive_p
 

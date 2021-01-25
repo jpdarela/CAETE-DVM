@@ -13,6 +13,7 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+! AUTHORS: Bianca Rius, David Lapola, JP Darela
 module alloc
 
     use types
@@ -334,7 +335,7 @@ module alloc
 
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
-         from_sto2npp = 0.15D0 * storage(1)
+         from_sto2npp = 0.45D0 * storage(1)
          npp_pot = npp_pot + from_sto2npp
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
@@ -390,8 +391,8 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.075D0
-      mult_factor_p  = 0.0080D0
+      mult_factor_n  = 0.035D0
+      mult_factor_p  = 0.003D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
 

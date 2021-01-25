@@ -16,6 +16,9 @@ from caete import grd
 from caete import npls, print_progress
 import plsgen as pls
 
+__author__ = "João Paulo Darela Filho"
+__descr__ = """RUN CAETÊ --- TODO"""
+
 
 def check_start():
     while True:
@@ -102,13 +105,15 @@ def apply_spin(grid):
     return grid
 
 
+# Make a model spinup
 def apply_fun(grid):
-    grid.run_caete('19010101', '19351231', spinup=5)
+    grid.run_caete('19010101', '19301231', spinup=50, fix_co2='1915')
     return grid
 
 
+# RUn
 def apply_fun1(grid):
-    grid.run_caete('19010101', '19551231', spinup=1)
+    grid.run_caete('19010101', '20101231', spinup=1)
     return grid
 
 
@@ -144,12 +149,14 @@ if __name__ == "__main__":
         result = p.map(apply_spin, grid_mn)
     end_spinup = time.time() - start
     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
+    del grid_mn
 
     fh.writelines("MODEL EXEC - MAIN SPINUP",)
-    print("MODEL EXEC - spinup deco")
+    print("MODEL EXEC - spinup")
     with mp.Pool(processes=n_proc) as p:
         result1 = p.map(apply_fun, result)
     end_spinup = time.time() - start
+    del result  # clean memory
     fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
 
     fh.writelines("MODEL EXEC - RUN\n",)
@@ -157,16 +164,16 @@ if __name__ == "__main__":
     with mp.Pool(processes=n_proc) as p:
         result2 = p.map(apply_fun1, result1)
     end_spinup = time.time() - start
+    del result1
     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
     fh.close()
 
-
-#     # a = apply_spin(grid_mn[0])
-#     # print('A = OK')
-#     # b = apply_fun(a)
-#     # del a
-#     # print('B = OK - DEBUG')
-#     # c = apply_fun1(b)
-#     # # del b
-#     # # d = apply_fun2(c)
-#     # # del c
+    # a = apply_spin(grid_mn[0])
+    # print('A = OK')
+    # b = apply_fun(a)
+    # del a
+    # print('B = OK - DEBUG')
+    # c = apply_fun1(b)
+    # # del b
+    # # d = apply_fun2(c)
+    # # del c

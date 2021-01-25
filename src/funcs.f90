@@ -13,6 +13,9 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+! AUTHORS: *, JP Darela, Bianca Rius, Helena do Prado, David Lapola
+! *This program is based on the work of those that gave us the INPE-CPTEC-PVM2 model
+
 module photo
 
    ! Module defining functions related with CO2 assimilation and other processes in CAETE
@@ -503,8 +506,8 @@ contains
       nbio2 = xbio
       pbio2 = pbio
 
-      if (nbio2 .lt. 0.1D0) nbio2 = 0.1D0
-      if (pbio2 .lt. 0.1D0) pbio2 = 0.1D0
+      if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
+      if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
 
 
       ! Calculation of reference carboxilation rate of rubisco
@@ -929,14 +932,15 @@ contains
 
     stoc = sto_mr(1)
     ston = sto_mr(2)
+   !  print*, ston
 
     if(stoc .le. 0.0D0) then
        rm = 0.0D0
        return
     endif
 
-    if(ston .le. 0.0D0) then
-      ston = 1.0D0/30.0D0
+    if(ston .lt. 0.0D0) then
+      ston = 1.0D0/300.0D0
     else
       ston = ston/stoc
     endif

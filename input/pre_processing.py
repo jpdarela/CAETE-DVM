@@ -19,12 +19,14 @@ __descr__ = """ This script works in the folowing manner: Given a directory (raw
 
 # GLOBAL VARIABLES (paths)
 
+CLIMATIC_DATA = "historical_ISIMIP-v3"
+
 # FOLDER IN THE SERVER WHERE ALL data IS stored FOR ALL USERS
 shared_data = Path("/home/amazonfaceme/shared_data/")
 
 # INPUT NETCDF FILES WITH historical CLIMATIC DATA
 raw_data = Path(os.path.join(
-    shared_data, Path("historical_ISIMIP-v3")))
+    shared_data, Path(CLIMATIC_DATA)))
 
 # INPUT FILES WITH SOIL DATA (NUTRIENTS)
 soil_data = Path(os.path.join(shared_data, "soil"))
