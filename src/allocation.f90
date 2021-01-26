@@ -81,7 +81,7 @@ module alloc
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
       real(r_8),intent(in) :: npp_costs ! Carbon costs of Nutrient active uptake and retranslocation
       real(r_4),intent(in) :: ts   ! soil temp °C
-      real(r_4),intent(in) :: wsoil! soil water depth (mm)
+      real(r_8),intent(in) :: wsoil! soil water depth (mm)
       real(r_8),intent(in) :: te   ! plant transpiration (mm/s)
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)

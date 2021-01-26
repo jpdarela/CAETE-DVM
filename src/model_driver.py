@@ -10,6 +10,8 @@ import copy
 import multiprocessing as mp
 from os import mkdir
 from pathlib import Path
+
+from netCDF4 import Dataset
 import numpy as np
 
 from caete import grd
@@ -35,6 +37,25 @@ def check_start():
 
 
 sombrero = check_start()
+
+# Topsoil
+dt_ws = Dataset('../input/soil/WS.nc').variables['WS'][:]
+map_ws = np.flipud(dt_ws.__array__())
+dt_fc = Dataset('../input/soil/FC.nc').variables['FC'][:]
+map_fc = np.flipud(dt_fc.__array__())
+dt_wp = Dataset('../input/soil/WP.nc').variables['WP'][:]
+map_wp = np.flipud(dt_wp.__array__())
+
+# Subsoil
+dt_subws = Dataset('../input/soil/S_WS.nc').variables['WS'][:]
+map_subws = np.flipud(dt_subws.__array__())
+dt_subfc = Dataset('../input/soil/S_FC.nc').variables['FC'][:]
+map_subfc = np.flipud(dt_subws.__array__())
+dt_subwp = Dataset('../input/soil/S_WP.nc').variables['WP'][:]
+map_subwp = np.flipud(dt_subws.__array__())
+
+tsoil = (map_ws, map_fc, map_wp)
+ssoil = (map_subws, map_subfc, map_subwp)
 
 # Select the location of input climate and soil data (for each grid cell )
 if sombrero:
@@ -86,7 +107,7 @@ else:
 
 
 def apply_init(grid):
-    grid.init_caete_dyn(input_path, stime, co2_data, pls_table)
+    grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil)
     return grid
 
 
@@ -107,13 +128,13 @@ def apply_spin(grid):
 
 # Make a model spinup
 def apply_fun(grid):
-    grid.run_caete('19010101', '19301231', spinup=50, fix_co2='1915')
+    grid.run_caete('19010101', '19301231', spinup=15, fix_co2='1915')
     return grid
 
 
 # RUn
 def apply_fun1(grid):
-    grid.run_caete('19010101', '20101231', spinup=1)
+    grid.run_caete('19010101', '19701231', spinup=1)
     return grid
 
 
@@ -168,7 +189,7 @@ if __name__ == "__main__":
     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
     fh.close()
 
-    # a = apply_spin(grid_mn[0])
+    # a = apply_spin(grid_mn[2])
     # print('A = OK')
     # b = apply_fun(a)
     # del a

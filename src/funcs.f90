@@ -195,15 +195,16 @@ contains
    !=================================================================
    !=================================================================
 
-   function water_stress_modifier(w, cfroot, rc, ep) result(f5)
+   function water_stress_modifier(w, cfroot, rc, ep, wmax) result(f5)
       use types, only: r_4, r_8
-      use global_par, only: csru, wmax, alfm, gm, rcmin, rcmax
+      use global_par, only: csru, alfm, gm, rcmin, rcmax
       !implicit none
 
-      real(r_4),intent(in) :: w      !soil water mm
+      real(r_8),intent(in) :: w      !soil water mm
       real(r_8),intent(in) :: cfroot !carbon in fine roots kg m-2
       real(r_4),intent(in) :: rc     !Canopy resistence 1/(micromol(CO2) m-2 s-1)
-      real(r_4),intent(in) :: ep     !potential evapotranspiration
+      real(r_4),intent(in) :: ep
+      real(r_8),intent(in) :: wmax     !potential evapotranspiration
       real(r_8) :: f5
 
 
@@ -213,7 +214,7 @@ contains
       real(r_8) :: d
       real(r_8) :: f5_64
 
-      wa = real((w/wmax), kind=r_8)
+      wa = w/wmax
       rc_aux = real(rc, kind=r_8)
       rcmin_aux = real(rcmin, kind=r_8)
       ep_aux = real(ep, kind=r_8)

@@ -25,13 +25,13 @@ module budget
 
 contains
 
-   subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
+   subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
         &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, dleaf_in, dwood_in&
-        &, droot_in, uptk_costs_in, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
+        &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, limitation_status_1, uptk_strat_1, wp, cp)
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp)
 
 
       use types
@@ -45,19 +45,18 @@ contains
 
       !     ----------------------------INPUTS-------------------------------
       real(r_8),dimension(ntraits,npls),intent(in) :: dt
-      real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous month last day) soil moisture storage (mm)
-      real(r_4),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
-      real(r_4),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
+      real(r_8),intent(in) :: w1, w2   !Initial (previous month last day) soil moisture storage (mm)
+      ! real(r_4),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
+      ! real(r_4),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
       real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
       real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
-      real(r_4),intent(in) :: prec                 ! Precipitation (mm/day)
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
       real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
       real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
       real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
       real(r_8),intent(in) :: on, sop, op          ! Organic N, isoluble inorganic P, Organic P g m-2
-      real(r_8),intent(in) :: catm                 ! ATM CO2 concentration ppm
+      real(r_8),intent(in) :: catm, wmax_in                 ! ATM CO2 concentration ppm
 
 
       real(r_8),dimension(3,npls),intent(in)  :: sto_budg_in ! Rapid Storage Pool (C,N,P)  g m-2
@@ -72,8 +71,6 @@ contains
 
       !     ----------------------------OUTPUTS------------------------------
       real(r_4),intent(out) :: epavg          !Maximum evapotranspiration (mm/day)
-      real(r_8),intent(out) :: smavg          !Snowmelt Daily average (mm/day)
-      real(r_8),intent(out) :: ruavg          !Runoff Daily average (mm/day)
       real(r_8),intent(out) :: evavg          !Actual evapotranspiration Daily average (mm/day)
       real(r_8),intent(out) :: phavg          !Daily photosynthesis (Kg m-2 y-1)
       real(r_8),intent(out) :: aravg          !Daily autotrophic respiration (Kg m-2 y-1)
@@ -96,9 +93,6 @@ contains
       real(r_8),dimension(6),intent(out) :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
 
       ! FULL OUTPUT
-      real(r_4),dimension(npls),intent(out) :: w2             !Final (last day) soil moisture storage (mm)
-      real(r_4),dimension(npls),intent(out) :: g2             !Final soil ice storage (mm)
-      real(r_4),dimension(npls),intent(out) :: s2             !Final overland snow storage (mm)
       real(r_8),dimension(npls),intent(out) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
@@ -108,7 +102,7 @@ contains
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
       real(r_8),dimension(npls),intent(out) ::  npp2pay_1
-      real(r_8),dimension(3),intent(out) :: wp, cp
+      real(r_8),dimension(3),intent(out) :: cp
 
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri, i, j
@@ -125,19 +119,17 @@ contains
 
       real(r_8),dimension(npls) :: cl1_pft, cf1_pft, ca1_pft
       real(r_4) :: soil_temp
-      real(r_4) :: psnow                !Snowfall (mm/day)
-      real(r_4) :: prain                !Rainfall (mm/day)
       real(r_4) :: emax
 
       real(r_8),dimension(:),allocatable :: ocp_coeffs
-      real(r_4),dimension(:),allocatable :: rimelt !Runoff due to soil ice melting
-      real(r_4),dimension(:),allocatable :: smelt  !Snowmelt (mm/day)
-      real(r_4),dimension(:),allocatable :: w      !Daily soil moisture storage (mm)
-      real(r_4),dimension(:),allocatable :: g      !Daily soil ice storage (mm)
-      real(r_4),dimension(:),allocatable :: s      !Daily overland snow storage (mm)
-      real(r_4),dimension(:),allocatable :: ds
-      real(r_4),dimension(:),allocatable :: dw
-      real(r_4),dimension(:),allocatable :: roff   !Total runoff
+      ! real(r_4),dimension(:),allocatable :: rimelt !Runoff due to soil ice melting
+      ! real(r_4),dimension(:),allocatable :: smelt  !Snowmelt (mm/day)
+      real(r_8) :: w                               !Daily soil moisture storage (mm)
+      ! ! real(r_4),dimension(:),allocatable :: g    !Daily soil ice storage (mm)
+      ! ! real(r_4),dimension(:),allocatable :: s    !Daily overland snow storage (mm)
+      ! real(r_4),dimension(:),allocatable :: ds
+      ! real(r_4),dimension(:),allocatable :: dw
+      ! real(r_4),dimension(:),allocatable :: roff   !Total runoff
       real(r_4),dimension(:),allocatable :: evap   !Actual evapotranspiration (mm/day)
       !c     Carbon Cycle
       real(r_4),dimension(:),allocatable :: ph     !Canopy gross photosynthesis (kgC/m2/yr)
@@ -179,7 +171,7 @@ contains
 
       real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs
       real(r_8), dimension(3,npls) :: sto_budg
-
+      real(r_8) :: soil_sat
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -201,13 +193,14 @@ contains
 
       enddo
 
+      w = w1 + w2          ! soil water mm
+      soil_temp = ts   ! soil temp °C
+      soil_sat = wmax_in
+
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
 
       nlen = sum(run)    ! New length for the arrays in the main loop
-      allocate(w(nlen))
-      allocate(g(nlen))
-      allocate(s(nlen))
       allocate(lp(nlen))
       allocate(ocp_coeffs(nlen))
 
@@ -215,22 +208,12 @@ contains
       counter = 1
       do p = 1,npls
          if(run(p).eq. 1) then
-              w(counter) = w1(p)     ! hidrological pools state vars
-              g(counter) = g1(p)
-              s(counter) = s1(p)
               lp(counter) = p
               ocp_coeffs(counter) = ocpavg(p)
               counter = counter + 1
          endif
       enddo
 
-      soil_temp = ts
-
-      allocate(rimelt(nlen))
-      allocate(smelt(nlen))
-      allocate(ds(nlen))
-      allocate(dw(nlen))
-      allocate(roff(nlen))
       allocate(evap(nlen))
       allocate(nppa(nlen))
       allocate(ph(nlen))
@@ -289,13 +272,14 @@ contains
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
          ! GABI hydro
-         call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w(p), ipar, rh, emax&
+         call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
+               &, soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
+         evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 
-      ! Check if the carbon deficit can be compensated by stored carbon
+         ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
          ! print*, 'STO',carbon_in_storage
          storage_out_bdgt(1, p) = carbon_in_storage
@@ -323,7 +307,7 @@ contains
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
-         call allocation (dt1,nppa(p),uptk_costs(ri), soil_temp, w(p), tra(p)&
+         call allocation (dt1,nppa(p),uptk_costs(ri), soil_temp, w, tra(p)&
             &, mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
             &, cf1_pft(ri),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
             &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
@@ -392,52 +376,52 @@ contains
          if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
          ! WATER BALANCE - GABRIEL
-         !     Precipitation
-         !     =============
-         psnow = 0.0
-         prain = 0.0
-         if (temp.lt.tsnow) then
-            psnow = prec
-         else
-            prain = prec
-         endif
-         !     Snow budget
-         !     ===========
-         smelt(p) = 2.63 + 2.55*temp + 0.0912*temp*prain !Snowmelt (mm/day)
-         smelt(p) = amax1(smelt(p),0.)
-         smelt(p) = amin1(smelt(p),s(p)+psnow)
-         ds(p) = psnow - smelt(p)
-         s(p) = s(p) + ds(p)
+         ! !     Precipitation
+         ! !     =============
+         ! psnow = 0.0
+         ! prain = 0.0
+         ! if (temp.lt.tsnow) then
+         !    psnow = prec
+         ! else
+         !    prain = prec
+         ! endif
+         ! !     Snow budget
+         ! !     ===========
+         ! smelt(p) = 2.63 + 2.55*temp + 0.0912*temp*prain !Snowmelt (mm/day)
+         ! smelt(p) = amax1(smelt(p),0.)
+         ! smelt(p) = amin1(smelt(p),s(p)+psnow)
+         ! ds(p) = psnow - smelt(p)
+         ! s(p) = s(p) + ds(p)
 
-         !     Water budget
-         !     ============
-         if (soil_temp .le. tice) then !Frozen soil
-            g(p) = g(p) + w(p) !Soil moisture freezes
-            w(p) = 0.0
-            roff(p) = smelt(p) + prain !mm/day
-            evap(p) = 0.0
+         ! !     Water budget
+         ! !     ============
+         ! if (soil_temp .le. tice) then !Frozen soil
+         !    g(p) = g(p) + w(p) !Soil moisture freezes
+         !    w(p) = 0.0
+         !    roff(p) = smelt(p) + prain !mm/day
+         !    evap(p) = 0.0
 
-         else                !Non-frozen soil
-            w(p) = w(p) + g(p)
-            g(p) = 0.0
-            rimelt(p) = 0.0
-            if (w(p).gt.wmax) then
-               rimelt(p) = w(p) - wmax !Runoff due to soil ice melting
-               w(p) = wmax
-            endif
+         ! else                !Non-frozen soil
+         !    w(p) = w(p) + g(p)
+         !    g(p) = 0.0
+         !    rimelt(p) = 0.0
+         !    if (w(p).gt.wmax) then
+         !       rimelt(p) = w(p) - wmax !Runoff due to soil ice melting
+         !       w(p) = wmax
+         !    endif
 
-            roff(p) = runoff(w(p)/wmax)       !Soil moisture runoff (roff, mm/day)
+         !    roff(p) = runoff(w(p)/wmax)       !Soil moisture runoff (roff, mm/day)
 
-            evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
-            dw(p) = prain + smelt(p) - evap(p) - roff(p)
-            w(p) = w(p) + dw(p)
-            if (w(p).gt.wmax) then
-               roff(p) = roff(p) + (w(p) - wmax)
-               w(p) = wmax
-            endif
-            if (w(p).lt.0.) w(p) = 0.
-            roff(p) = roff(p) + rimelt(p) !Total runoff
-         endif
+         !    evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
+         !    dw(p) = prain + smelt(p) - evap(p) - roff(p)
+         !    w(p) = w(p) + dw(p)
+         !    if (w(p).gt.wmax) then
+         !       roff(p) = roff(p) + (w(p) - wmax)
+         !       w(p) = wmax
+         !    endif
+         !    if (w(p).lt.0.) w(p) = 0.
+         !    roff(p) = roff(p) + rimelt(p) !Total runoff
+         ! endif
 
 
       enddo ! end pls_loop (p)
@@ -445,8 +429,6 @@ contains
       epavg = emax !mm/day
 
       ! FILL OUTPUT DATA
-      smavg   = 0.0D0
-      ruavg = 0.0D0
       evavg = 0.0D0
       rcavg = 0.0D0
       f5avg = 0.0D0
@@ -467,10 +449,10 @@ contains
       lit_nut_content_1(:) = 0.0D0
       nupt_1(:) = 0.0D0
       pupt_1(:) = 0.0D0
-      w2(:) = 0.0
-      g2(:) = 0.0
-      s2(:) = 0.0
-      wp(:) = 0.0D0
+      ! w2(:) = 0.0
+      ! g2(:) = 0.0
+      ! s2(:) = 0.0
+      ! wp(:) = 0.0D0
       cleafavg_pft(:) = 0.0D0
       cawoodavg_pft(:) = 0.0D0
       cfrootavg_pft(:) = 0.0D0
@@ -487,8 +469,8 @@ contains
          if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
       enddo
 
-      smavg = sum(real(smelt, kind=r_8) * ocp_coeffs, mask= .not. isnan(smelt))
-      ruavg = sum(real(roff, kind=r_8) * ocp_coeffs, mask= .not. isnan(roff))
+      ! smavg = sum(real(smelt, kind=r_8) * ocp_coeffs, mask= .not. isnan(smelt))
+      ! ruavg = sum(real(roff, kind=r_8) * ocp_coeffs, mask= .not. isnan(roff))
       evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. isnan(evap))
       phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. isnan(ph))
       aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. isnan(ar))
@@ -507,9 +489,9 @@ contains
       cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
       litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
 
-      wp(1) = sum(w * ocp_coeffs, mask= .not. isnan(w))
-      wp(2) = sum(g * ocp_coeffs, mask= .not. isnan(g))
-      wp(3) = sum(s * ocp_coeffs, mask= .not. isnan(s))
+      ! wp(1) = sum(w * ocp_coeffs, mask= .not. isnan(w))
+      ! wp(2) = sum(g * ocp_coeffs, mask= .not. isnan(g))
+      ! wp(3) = sum(s * ocp_coeffs, mask= .not. isnan(s))
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
       cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
@@ -560,9 +542,9 @@ contains
 
       do p = 1, nlen
          ri = lp(p)
-         w2(ri) = w(p)
-         g2(ri) = g(p)
-         s2(ri) = s(p)
+         ! w2(ri) = w(p)
+         ! g2(ri) = g(p)
+         ! s2(ri) = s(p)
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)
@@ -573,15 +555,15 @@ contains
          npp2pay_1(ri) = npp2pay(p)
       enddo
 
-      deallocate(w)
-      deallocate(g)
-      deallocate(s)
+      ! deallocate(w)
+      ! deallocate(g)
+      ! deallocate(s)
       deallocate(lp)
-      deallocate(rimelt)
-      deallocate(smelt)
-      deallocate(ds)
-      deallocate(dw)
-      deallocate(roff)
+      ! deallocate(rimelt)
+      ! deallocate(smelt)
+      ! deallocate(ds)
+      ! deallocate(dw)
+      ! deallocate(roff)
       deallocate(evap)
       deallocate(nppa)
       deallocate(ph)
