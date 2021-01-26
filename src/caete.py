@@ -91,6 +91,8 @@ def neighbours_index(pos, matrix):
     return neighbours
 
 # WARNING keep the lists of budget/carbon3 outputs updated with fortran code
+
+
 def catch_out_budget(out):
     lst = ["w2", "g2", "s2", "smavg", "ruavg", "evavg", "epavg", "phavg", "aravg", "nppavg",
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
@@ -242,6 +244,12 @@ class grd:
         self.vp_wdl = None
         self.vp_sto = None
         self.vp_lsid = None
+
+    def save_run(self):
+        pass
+
+    def load_run(self):
+        pass
 
     def _allocate_output(self, n, npls=npls):
         """allocate space for the outputs
@@ -507,7 +515,6 @@ class grd:
 
         return None
 
-
     def run_caete(self, start_date, end_date, spinup, fix_co2=False):
         """ start_date [str] "yyyymmdd" Start model execution
             end_date   [str] "yyyymmdd" End model execution
@@ -742,7 +749,7 @@ class grd:
                     rwarn(
                         f"NuptkO < 0 - 745 | in spin{s}, step{step} - {self.nupt[1, step]}")
                     self.nupt[1, step] = 0.0
-                if self.nupt[1, step] > 0.4:
+                if self.nupt[1, step] > 0.8:
                     rwarn(
                         f"NuptkO  > max - 749 | in spin{s}, step{step} - {self.nupt[1, step]}")
                     self.nupt[1, step] = 0.0
