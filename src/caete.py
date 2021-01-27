@@ -222,6 +222,7 @@ class grd:
         self.runom = None
         self.evapm = None
         self.wsoil = None
+        self.swsoil = None
         self.rm = None
         self.rg = None
         self.cleaf = None
@@ -301,10 +302,16 @@ class grd:
     def load_run(self):
         pass
 
+    def calc_flux1(self):
+        pass
+
     def _update_pool(self, prain, evapo):
         """ """
-        evap_upper = (evapo / 300.0) * 0.30  # vol/vol
-        evap_lower = (evapo / 700.0) * 0.70  # vol/vol
+        ev1 = evapo * 0.3
+        ev2 = evapo - ev1
+
+        evap_upper = (ev1 / 300.0)  # vol/vol
+        evap_lower = (ev2 / 700.0)  # vol/vol
 
         pr = prain / 300.0
         self.wp_water_upper += pr
@@ -312,47 +319,47 @@ class grd:
         runoff1 = 0.0
         runoff2 = 0.0
 
+        # POOL 1 - 0-30 cm
+        lbd_up = B_func(self.wp_field_capacity_upper,
+                        self.wp_wilting_point_upper)
+
+        ksat_up = ksat_func(self.wp_sat_water_upper_ratio,
+                            self.wp_field_capacity_upper, lbd_up)
+
         if self.wp_water_upper > self.wp_sat_water_upper_ratio:  # saturated soil
             runoff1 += self.wp_water_upper - self.wp_sat_water_upper_ratio
             runoff1 = runoff1 * 300.0      # conversion to mm
             runoff += runoff1
             self.wp_water_upper = self.wp_sat_water_upper_ratio
-            lbd = B_func(self.wp_field_capacity_upper,
-                         self.wp_wilting_point_upper)
-            flux1_mm = ksat_func(self.wp_sat_water_upper_ratio,
-                                 self.wp_field_capacity_upper, lbd) * 24  # output in mm/day
-            flux1_tol1 = flux1_mm / 300.0
-            flux1_tol2 = flux1_mm / 700.0            # v/v conversion for layer 2
+            flux1_mm = ksat_up * 24.0  # output in mm/day
         else:
-            lbd = B_func(self.wp_field_capacity_upper,
-                         self.wp_wilting_point_upper)
-            ksat = ksat_func(self.wp_sat_water_upper_ratio,
-                             self.wp_field_capacity_upper, lbd)
             flux1_mm = kth_func(self.wp_water_upper,
-                                self.wp_sat_water_upper_ratio, lbd, ksat) * 24
-            flux1_tol1 = flux1_mm / 300.0
-            flux1_tol2 = flux1_mm / 700.0
+                                self.wp_sat_water_upper_ratio, lbd_up, ksat_up) * 24
+
+
+
+        # POOL 2 30-100 cm
+        lbd_lo = B_func(self.wp_field_capacity_lower,
+                        self.wp_wilting_point_lower)
+
+        ksat_lo = ksat_func(self.wp_water_lower,
+                            self.wp_field_capacity_lower, lbd_lo)
 
         if self.wp_water_lower > self.wp_sat_water_lower_ratio:
             runoff2 += self.wp_water_lower - self.wp_sat_water_lower_ratio
             runoff2 = runoff2 * 700.0       # conversion to mm
             runoff += runoff2
             self.wp_water_lower = self.wp_sat_water_lower_ratio
-            lbd = B_func(self.wp_field_capacity_lower,
-                         self.wp_wilting_point_lower)
-            flux2_mm = ksat_func(self.wp_water_lower,
-                                 self.wp_field_capacity_lower, lbd) * 24
-            flux2 = flux2_mm / 700.0
+            flux2_mm = ksat_lo * 24
         else:
-            lbd = B_func(self.wp_field_capacity_lower,
-                         self.wp_wilting_point_lower)
-            ksat = ksat_func(self.wp_sat_water_lower_ratio,
-                             self.wp_field_capacity_lower, lbd)
             flux2_mm = kth_func(self.wp_water_lower,
-                                self.wp_sat_water_lower_ratio, lbd, ksat) * 24
-            flux2 = flux2_mm / 700.0
+                                self.wp_sat_water_lower_ratio, lbd_lo, ksat_lo) * 24
 
         # UPDATE POOLS
+        flux1_tol1 = flux1_mm / 300.0
+        flux1_tol2 = flux1_mm / 700.0            # v/v conversion for layer 2
+        flux2 = flux2_mm / 700.0
+
         self.wp_water_upper -= (evap_upper + flux1_tol1)
         self.wp_water_lower += flux1_tol2
         self.wp_water_lower -= (flux2 + evap_lower)
@@ -393,6 +400,7 @@ class grd:
         self.runom = np.zeros(shape=(n,), order='F')
         self.evapm = np.zeros(shape=(n,), order='F')
         self.wsoil = np.zeros(shape=(n,), order='F')
+        self.swsoil = np.zeros(shape=(n,), order='F')
         self.rm = np.zeros(shape=(n,), order='F')
         self.rg = np.zeros(shape=(n,), order='F')
         self.cleaf = np.zeros(shape=(n,), order='F')
@@ -454,6 +462,7 @@ class grd:
                      'runom': self.runom,
                      'evapm': self.evapm,
                      'wsoil': self.wsoil,
+                     'swsoil': self.swsoil,
                      'rm': self.rm,
                      'rg': self.rg,
                      'cleaf': self.cleaf,
@@ -501,6 +510,7 @@ class grd:
         self.runom = None
         self.evapm = None
         self.wsoil = None
+        self.swsoil = None
         self.rm = None
         self.rg = None
         self.cleaf = None
@@ -940,8 +950,8 @@ class grd:
                 self.rcm[step] = daily_output['rcavg']
                 self.f5[step] = daily_output['f5avg']
                 self.evapm[step] = daily_output['evavg']
-                self.wsoil[step] = self.wp_water_upper_mm + \
-                    self.wp_sat_water_lower_mm
+                self.wsoil[step] = self.wp_water_upper_mm
+                self.swsoil[step] = self.wp_sat_water_lower_mm
                 self.rm[step] = daily_output['rmavg']
                 self.rg[step] = daily_output['rgavg']
                 self.wue[step] = daily_output['wueavg']

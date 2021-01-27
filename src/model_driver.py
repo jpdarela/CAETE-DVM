@@ -50,9 +50,9 @@ map_wp = np.flipud(dt_wp.__array__())
 dt_subws = Dataset('../input/soil/S_WS.nc').variables['WS'][:]
 map_subws = np.flipud(dt_subws.__array__())
 dt_subfc = Dataset('../input/soil/S_FC.nc').variables['FC'][:]
-map_subfc = np.flipud(dt_subws.__array__())
+map_subfc = np.flipud(dt_subfc.__array__())
 dt_subwp = Dataset('../input/soil/S_WP.nc').variables['WP'][:]
-map_subwp = np.flipud(dt_subws.__array__())
+map_subwp = np.flipud(dt_subwp.__array__())
 
 tsoil = (map_ws, map_fc, map_wp)
 ssoil = (map_subws, map_subfc, map_subwp)
@@ -119,7 +119,10 @@ for i, g in enumerate(grid_mn):
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
 
-# # APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
+# for x in range(10000):
+#     grid_mn[0]._update_pool(np.random.randint(1, 5), np.random.randint(1, 5))
+
+# APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
 def apply_spin(grid):
     w, ll, cwd, rl, lnc = grid.bdg_spinup()
     grid.sdc_spinup(w, ll, cwd, rl, lnc)
@@ -138,8 +141,8 @@ def apply_fun1(grid):
     return grid
 
 
-# # Garbage collection
-# #
+# Garbage collection
+#
 del pls_table
 del co2_data
 del stime
