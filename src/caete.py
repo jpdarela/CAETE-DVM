@@ -1,6 +1,6 @@
 # -*-coding:utf-8-*-
 # "CAETÊ"
-# Author João Paulo Darela Filho
+# Authors João Paulo Darela Filho & Gabriel Marandola
 
 """
 Copyright 2017- LabTerra
@@ -32,6 +32,7 @@ import bz2
 from joblib import dump
 import cftime
 import numpy as np
+from numpy import log as ln
 
 from caete_module import global_par as gp
 from caete_module import budget as model
@@ -94,11 +95,11 @@ def neighbours_index(pos, matrix):
 
 
 def catch_out_budget(out):
-    lst = ["w2", "g2", "s2", "smavg", "ruavg", "evavg", "epavg", "phavg", "aravg", "nppavg",
+    lst = ["evavg", "epavg", "phavg", "aravg", "nppavg",
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
            "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
-           "limitation_status", "uptk_strat", 'wp', 'cp']
+           "limitation_status", "uptk_strat", 'cp']
 
     return dict(zip(lst, out))
 
@@ -107,6 +108,42 @@ def catch_out_carbon3(out):
     lst = ['cs', 'snc', 'hr', 'nmin', 'pmin']
 
     return dict(zip(lst, out))
+
+
+# drainage rate functions (output in mm/h)
+def B_func(Th33, Th1500):   # coefficient of moisture-tension
+    D = ln(Th33) - ln(Th1500)
+    if D == 0.0:
+        return 0.0
+    B = (ln(1500) - ln(33)) / D
+
+    def lbd_func(C):        # slope of logarithmic tension-moisture curve
+        if C == 0:
+            return 0.0
+        lbd = 1 / C
+        return lbd
+
+    return lbd_func(B)
+
+
+# saturated soil conductivity
+def ksat_func(ThS, Th33, lbd):
+    ksat = 1930 * (ThS - Th33) ** (3 - lbd)
+    return ksat
+
+
+# unsaturated soil conductivity
+def kth_func(Th, ThS, lbd, ksat):
+    if lbd == 0:
+        return 0
+    if ThS == 0:
+        return 0
+    if Th < 0:
+        Th = 0.0
+    kth = ksat * (Th / ThS) ** (3 + (2 / lbd))
+
+    # print(ksat, Th, ThS, lbd)
+    return kth
 
 
 # MODEL
@@ -210,12 +247,25 @@ class grd:
         self.carbon_costs = None
 
         # WATER POOLS
-        self.wfim = None
-        self.gfim = None
-        self.sfim = None
-        self.wp_water = None
-        self.wp_ice = None
-        self.wp_snow = None
+        self.wp_water_upper_mm = None  # mm
+        self.wp_water_lower_mm = None  # mm
+
+        self.wp_water_upper = None  # vol/vol
+        self.wp_water_lower = None  # vol/vol
+
+        self.wp_sat_water_upper_ratio = None
+        self.wp_sat_water_lower_ratio = None
+
+        self.wp_sat_water_upper_mm = None
+        self.wp_sat_water_lower_mm = None
+
+        self.wp_wilting_point_upper = None
+        self.wp_field_capacity_upper = None
+
+        self.wp_wilting_point_lower = None
+        self.wp_field_capacity_lower = None
+
+        self.wmax_mm = None
 
         # SOIL POOLS
         self.input_nut = None
@@ -250,6 +300,77 @@ class grd:
 
     def load_run(self):
         pass
+
+    def _update_pool(self, prain, evapo):
+        """ """
+        evap_upper = (evapo / 300.0) * 0.30  # vol/vol
+        evap_lower = (evapo / 700.0) * 0.70  # vol/vol
+
+        pr = prain / 300.0
+        self.wp_water_upper += pr
+        runoff = 0.0  # mm
+        runoff1 = 0.0
+        runoff2 = 0.0
+
+        if self.wp_water_upper > self.wp_sat_water_upper_ratio:  # saturated soil
+            runoff1 += self.wp_water_upper - self.wp_sat_water_upper_ratio
+            runoff1 = runoff1 * 300.0      # conversion to mm
+            runoff += runoff1
+            self.wp_water_upper = self.wp_sat_water_upper_ratio
+            lbd = B_func(self.wp_field_capacity_upper,
+                         self.wp_wilting_point_upper)
+            flux1_mm = ksat_func(self.wp_sat_water_upper_ratio,
+                                 self.wp_field_capacity_upper, lbd) * 24  # output in mm/day
+            flux1_tol1 = flux1_mm / 300.0
+            flux1_tol2 = flux1_mm / 700.0            # v/v conversion for layer 2
+        else:
+            lbd = B_func(self.wp_field_capacity_upper,
+                         self.wp_wilting_point_upper)
+            ksat = ksat_func(self.wp_sat_water_upper_ratio,
+                             self.wp_field_capacity_upper, lbd)
+            flux1_mm = kth_func(self.wp_water_upper,
+                                self.wp_sat_water_upper_ratio, lbd, ksat) * 24
+            flux1_tol1 = flux1_mm / 300.0
+            flux1_tol2 = flux1_mm / 700.0
+
+        if self.wp_water_lower > self.wp_sat_water_lower_ratio:
+            runoff2 += self.wp_water_lower - self.wp_sat_water_lower_ratio
+            runoff2 = runoff2 * 700.0       # conversion to mm
+            runoff += runoff2
+            self.wp_water_lower = self.wp_sat_water_lower_ratio
+            lbd = B_func(self.wp_field_capacity_lower,
+                         self.wp_wilting_point_lower)
+            flux2_mm = ksat_func(self.wp_water_lower,
+                                 self.wp_field_capacity_lower, lbd) * 24
+            flux2 = flux2_mm / 700.0
+        else:
+            lbd = B_func(self.wp_field_capacity_lower,
+                         self.wp_wilting_point_lower)
+            ksat = ksat_func(self.wp_sat_water_lower_ratio,
+                             self.wp_field_capacity_lower, lbd)
+            flux2_mm = kth_func(self.wp_water_lower,
+                                self.wp_sat_water_lower_ratio, lbd, ksat) * 24
+            flux2 = flux2_mm / 700.0
+
+        # UPDATE POOLS
+        self.wp_water_upper -= (evap_upper + flux1_tol1)
+        self.wp_water_lower += flux1_tol2
+        self.wp_water_lower -= (flux2 + evap_lower)
+
+        self.wp_water_upper = np.float64(
+            0.0) if self.wp_water_upper < 0.0 else self.wp_water_upper
+        self.wp_water_lower = np.float64(
+            0.0) if self.wp_water_lower < 0.0 else self.wp_water_lower
+
+        self.wp_water_upper_mm = self.wp_water_upper * 300.0
+        self.wp_water_lower_mm = self.wp_water_lower * 700.0
+
+        self.wp_water_upper_mm = np.float64(
+            0.0) if self.wp_water_upper_mm < 0.0 else self.wp_water_upper_mm
+        self.wp_water_lower_mm = np.float64(
+            0.0) if self.wp_water_lower_mm < 0.0 else self.wp_water_lower_mm
+
+        return runoff
 
     def _allocate_output(self, n, npls=npls):
         """allocate space for the outputs
@@ -419,7 +540,7 @@ class grd:
             dump(data_obj, fh, compress=('zlib', 3), protocol=4)
         self.flush_data = 0
 
-    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table):
+    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil):
         """ PREPARE A GRIDCELL TO RUN
             TODO adapt to change climatic data/ maybe another method
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data
@@ -471,16 +592,32 @@ class grd:
         # Prepare co2 inputs (we have annually means)
         self.co2_data = copy.deepcopy(co2)
 
-        # STATE
-        self.wfim = None
-        self.gfim = None
-        self.sfim = None
-        self.wp_water = 0.01
-        self.wp_ice = 0.0
-        self.wp_snow = 0.0
-
         self.tsoil = []
         self.emaxm = []
+
+        # STATE
+        self.wp_water_upper = np.float64(0.01)  # vol/vol
+        self.wp_water_lower = np.float64(0.01)  # vol/vol
+
+        self.wp_water_upper_mm = self.wp_water_upper * 300.0
+        self.wp_water_lower_mm = self.wp_water_lower * 700.0
+
+        self.wp_sat_water_upper_ratio = tsoil[0][self.y, self.x].copy()
+        self.wp_field_capacity_upper = tsoil[1][self.y, self.x].copy()
+        self.wp_wilting_point_upper = tsoil[2][self.y, self.x].copy()
+
+        self.wp_sat_water_lower_ratio = ssoil[0][self.y, self.x].copy()
+        self.wp_field_capacity_lower = ssoil[1][self.y, self.x].copy()
+        self.wp_wilting_point_lower = ssoil[2][self.y, self.x].copy()
+
+        self.wp_sat_water_upper_mm = self.wp_sat_water_upper_ratio * 300.0
+        self.wp_sat_water_lower_mm = self.wp_sat_water_lower_ratio * 700.0
+
+        self.wmax_mm = np.float64(
+            self.wp_sat_water_upper_mm + self.wp_sat_water_lower_mm)
+
+        # self.wp_water_sat_upper = None
+        # self.wp_water_sat_lower = None
 
         # start biomass
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
@@ -618,14 +755,6 @@ class grd:
                 self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
 
                 # INFLATe VARS
-                self.wfim = np.zeros(npls, order='F')
-                self.gfim = np.zeros(npls, order='F')
-                self.sfim = np.zeros(npls, order='F')
-                for pls in self.vp_lsid:
-                    self.wfim[pls] = self.wp_water
-                    self.gfim[pls] = self.wp_ice
-                    self.sfim[pls] = self.wp_snow
-
                 sto = np.zeros(shape=(3, npls), order='F')
                 cleaf = np.zeros(npls, order='F')
                 cwood = np.zeros(npls, order='F')
@@ -652,16 +781,13 @@ class grd:
                     c += 1
                 ton = self.sp_organic_n + self.sp_sorganic_n
                 top = self.sp_organic_p + self.sp_sorganic_p
-                out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
-                                         self.soil_temp, temp[step], prec[step], p_atm[step],
+                out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
+                                         self.soil_temp, temp[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                          ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
-                                         dcl, dca, dcf, uptk_costs)
+                                         dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
                 del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
-                self.wfim = None
-                self.gfim = None
-                self.sfim = None
                 # Create a dict with the function output
                 daily_output = catch_out_budget(out)
                 # del out
@@ -674,9 +800,9 @@ class grd:
                 # UPDATE STATE VARIABLES
 
                 # WATER CWM
-                self.wp_water = daily_output['wp'][0]
-                self.wp_ice = daily_output['wp'][1]
-                self.wp_snow = daily_output['wp'][2]
+
+                self.runom[step] = self._update_pool(
+                    prec[step], daily_output['evavg'])
 
                 # UPDATE vegetation pools ! ABLE TO USE SPARSE MATRICES
                 self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
@@ -700,8 +826,8 @@ class grd:
                 self.cwd[step] = daily_output['cwd']
                 self.litter_fr[step] = daily_output['litter_fr']
                 self.lnc[:, step] = daily_output['lnc']
-
-                s_out = soil_dec.carbon3(self.soil_temp, self.wp_water / gp.wmax, self.litter_l[step],
+                wtot = self.wp_water_upper_mm + self.wp_water_lower_mm
+                s_out = soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
                                          self.cwd[step], self.litter_fr[step], self.lnc[:, step],
                                          self.sp_csoil, self.sp_snc)
 
@@ -813,9 +939,9 @@ class grd:
                 self.lai[step] = daily_output['laiavg']
                 self.rcm[step] = daily_output['rcavg']
                 self.f5[step] = daily_output['f5avg']
-                self.runom[step] = daily_output['ruavg']
                 self.evapm[step] = daily_output['evavg']
-                self.wsoil[step] = self.wp_water
+                self.wsoil[step] = self.wp_water_upper_mm + \
+                    self.wp_sat_water_lower_mm
                 self.rm[step] = daily_output['rmavg']
                 self.rg[step] = daily_output['rgavg']
                 self.wue[step] = daily_output['wueavg']
@@ -951,32 +1077,21 @@ class grd:
             co2 += next_year
             self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
 
-            self.wfim = np.zeros(npls, order='F') + self.wp_water
-            self.gfim = np.zeros(npls, order='F') + self.wp_ice
-            self.sfim = np.zeros(npls, order='F') + self.wp_snow
-
-            out = model.daily_budget(self.pls_table, self.wfim, self.gfim, self.sfim,
-                                     self.soil_temp, temp[step], prec[step], p_atm[step],
+            out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
+                                     self.soil_temp, temp[step], p_atm[step],
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                      self.sp_snc[:4].sum(
                                      ), self.sp_so_p, self.sp_snc[4:].sum(),
                                      co2, sto, cleaf, cwood, croot,
-                                     dcl, dca, dcf, uptk_costs)
-
-            self.wfim = None
-            self.gfim = None
-            self.sfim = None
+                                     dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
             # Create a dict with the function output
             daily_output = catch_out_budget(out)
-
-            self.wp_water = daily_output['wp'][0]
-            self.wp_ice = daily_output['wp'][1]
-            self.wp_snow = daily_output['wp'][2]
+            runoff = self._update_pool(prec[step], daily_output['evavg'])
 
             # UPDATE vegetation pools
 
-            wo.append(self.wp_water)
+            wo.append(np.float64(self.wp_water_upper_mm + self.wp_water_lower_mm))
             llo.append(daily_output['litter_l'])
             cwdo.append(daily_output['cwd'])
             rlo.append(daily_output['litter_fr'])
@@ -991,7 +1106,7 @@ class grd:
 
         for x in range(100000):
 
-            s_out = soil_dec.carbon3(self.soil_temp, water / gp.wmax, ll, cwd, rl, lnc,
+            s_out = soil_dec.carbon3(self.soil_temp, water / self.wmax_mm, ll, cwd, rl, lnc,
                                      self.sp_csoil, self.sp_snc)
 
             soil_out = catch_out_carbon3(s_out)

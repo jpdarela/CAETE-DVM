@@ -56,7 +56,7 @@ module carbon_costs
       ! From Fisher et al. 2010
       real(r_8), intent(in) :: nsoil  ! (ML⁻²)
       real(r_8), intent(in) :: et ! Transpiration (ML⁻²T⁻¹)
-      real(r_4), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
+      real(r_8), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
       real(r_8), intent(in) :: mf
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
@@ -79,7 +79,7 @@ module carbon_costs
    ! ESTIMATE PASSIVE UPTAKE OF NUTRIENTS
    subroutine passive_uptake (w, av_n, av_p, nupt, pupt,&
       & e, topay_upt, to_storage, passive_upt)
-      real(r_4), intent(in) :: w    ! Water soil depht Kg(H2O) m-2 == (mm)
+      real(r_8), intent(in) :: w    ! Water soil depht Kg(H2O) m-2 == (mm)
       real(r_8), intent(in) :: av_n ! available N (soluble) g m-2
       real(r_8), intent(in) :: av_p ! available P (i soluble) g m-2
       real(r_8), intent(in) :: e    ! Trannspiration (mm/day) == kg(H2O) m-2 day-1

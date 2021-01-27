@@ -27,7 +27,7 @@ module productivity
 contains
 
   subroutine prod(dt,light_limit,catm,temp,ts,p0,w,ipar,rh,emax,cl1_prod,&
-       & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,ph,ar,&
+       & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,wmax,ph,ar,&
        & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla, e)
 
     use types
@@ -41,13 +41,13 @@ contains
     real(r_8),dimension(ntraits),intent(in) :: dt ! PLS data
     real(r_4), intent(in) :: temp, ts                 !Mean monthly temperature (oC)
     real(r_4), intent(in) :: p0                   !Mean surface pressure (hPa)
-    real(r_4), intent(in) :: w                    !Soil moisture kg m-2
+    real(r_8), intent(in) :: w                    !Soil moisture kg m-2
     real(r_4), intent(in) :: ipar                 !Incident photosynthetic active radiation (w/m2)
     real(r_4), intent(in) :: rh,emax !Relative humidity/MAXIMUM EVAPOTRANSPIRATION
     real(r_8), intent(in) :: catm, cl1_prod, cf1_prod, ca1_prod        !Carbon in plant tissues (kg/m2)
     real(r_8), intent(in) :: beta_leaf            !npp allocation to carbon pools (kg/m2/day)
     real(r_8), intent(in) :: beta_awood
-    real(r_8), intent(in) :: beta_froot
+    real(r_8), intent(in) :: beta_froot, wmax
     logical(l_1), intent(in) :: light_limit                !True for no ligth limitation
 
 !     Output
@@ -147,7 +147,7 @@ contains
     ! print*, emax, 'emax'
 
     ! wsoil + h +
-    f5 =  water_stress_modifier(w, cf1_prod, rc, emax)
+    f5 =  water_stress_modifier(w, cf1_prod, rc, emax, wmax)
 
 
 !     Photosysthesis minimum and maximum temperature
