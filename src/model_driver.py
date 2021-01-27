@@ -157,47 +157,47 @@ if __name__ == "__main__":
     else:
         mkdir(output_path)
 
-    # import time
+    import time
 
-    # n_proc = mp.cpu_count() // 2 if not sombrero else 55
+    n_proc = mp.cpu_count() // 2 if not sombrero else 55
 
-    # fh = open('logfile.log', mode='w')
+    fh = open('logfile.log', mode='w')
 
-    # fh.writelines(time.ctime(),)
-    # fh.writelines("\n\n",)
-    # fh.writelines("SPINUP...",)
-    # start = time.time()
-    # print("SPINUP...")
+    fh.writelines(time.ctime(),)
+    fh.writelines("\n\n",)
+    fh.writelines("SPINUP...",)
+    start = time.time()
+    print("SPINUP...")
 
-    # with mp.Pool(processes=n_proc) as p:
-    #     result = p.map(apply_spin, grid_mn)
-    # end_spinup = time.time() - start
-    # fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
-    # del grid_mn
+    with mp.Pool(processes=n_proc) as p:
+        result = p.map(apply_spin, grid_mn)
+    end_spinup = time.time() - start
+    fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
+    del grid_mn
 
-    # fh.writelines("MODEL EXEC - MAIN SPINUP",)
-    # print("MODEL EXEC - spinup")
-    # with mp.Pool(processes=n_proc) as p:
-    #     result1 = p.map(apply_fun, result)
-    # end_spinup = time.time() - start
-    # del result  # clean memory
-    # fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+    fh.writelines("MODEL EXEC - MAIN SPINUP",)
+    print("MODEL EXEC - spinup")
+    with mp.Pool(processes=n_proc) as p:
+        result1 = p.map(apply_fun, result)
+    end_spinup = time.time() - start
+    del result  # clean memory
+    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
 
-    # fh.writelines("MODEL EXEC - RUN\n",)
-    # print("MODEL EXEC - RUN")
-    # with mp.Pool(processes=n_proc) as p:
-    #     result2 = p.map(apply_fun1, result1)
-    # end_spinup = time.time() - start
-    # del result1
-    # fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-    # fh.close()
+    fh.writelines("MODEL EXEC - RUN\n",)
+    print("MODEL EXEC - RUN")
+    with mp.Pool(processes=n_proc) as p:
+        result2 = p.map(apply_fun1, result1)
+    end_spinup = time.time() - start
+    del result1
+    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+    fh.close()
 
-    a = apply_spin(grid_mn[2])
-    print('A = OK')
-    b = apply_fun(a)
-    del a
-    print('B = OK - DEBUG')
-    c = apply_fun1(b)
-    # # del b
-    # # d = apply_fun2(c)
-    # # del c
+    # a = apply_spin(grid_mn[2])
+    # print('A = OK')
+    # b = apply_fun(a)
+    # del a
+    # print('B = OK - DEBUG')
+    # c = apply_fun1(b)
+    # # # del b
+    # # # d = apply_fun2(c)
+    # # # del c
