@@ -660,18 +660,24 @@ class grd:
 
         return runoff
 
-    def run_caete(self, start_date, end_date, spinup, fix_co2=False):
-        """ start_date [str] "yyyymmdd" Start model execution
-            end_date   [str] "yyyymmdd" End model execution
-            spinup     [int] Number of repetitions in spinup. 0 for no spinu
+    def run_caete(self, start_date, end_date, spinup = 0, fix_co2=None):
+        """ start_date [str]   "yyyymmdd" Start model execution
 
-            this function run the fortran subroutines and manage data flux
-            Is the proper CAETÊ-DGVM execution in the start_date - end_date period
+            end_date   [str]   "yyyymmdd" End model execution
+
+            spinup     [int]   Number of repetitions in spinup. 0 for no spinup
+
+            fix_co2    [Float] Fixed value for ATM [CO2]
+                       [int]   Fixed value for ATM [CO2]
+                       [str]   "yyyy" Corresponding year of an ATM [CO2]
+
+            This function run the fortran subroutines and manage data flux. It
+            is the proper CAETÊ-DVM execution in the start_date - end_date period
         """
 
         assert self.filled, "The gridcell has no input data"
         assert not fix_co2 or type(
-            fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero "
+            fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string "
 
         def find_co2(year):
             for i in self.co2_data:
@@ -690,7 +696,7 @@ class grd:
                     result.append(r)
             return result
 
-        # Define start and end dates
+        # Define start and end dates (read actual arguments)
         start = cftime.real_datetime(int(start_date[:4]), int(
             start_date[4:6]), int(start_date[6:]))
         end = cftime.real_datetime(int(end_date[:4]), int(
@@ -725,15 +731,17 @@ class grd:
         loop = 0
         next_year = 0.0
 
-        fix_co2_p = True
-        if not fix_co2:
+        fix_co2_p = False
+        if fix_co2 is None:
             fix_co2_p = False
         elif type(fix_co2) == int or type(fix_co2) == float:
             co2 = fix_co2
+            fix_co2_p = True
         elif type(fix_co2) == str:
+            assert type(int(fix_co2)) == int, "The string(\"yyyy\") for the fix_co2 argument must be an year between 1901-2016"
             co2 = find_co2(int(fix_co2))
-        else:
-            assert False, "NEver say never"
+            fix_co2_p = True
+
 
         for s in range(spin):
             self._allocate_output(steps.size)
@@ -991,7 +999,8 @@ class grd:
         return None
 
     def bdg_spinup(self, start_date='19010101', end_date='19030101'):
-        """SPINUP VEGETATION"""
+        """SPINUP SOIL POOLS - generate soil OM and Organic nutrients inputs for soil spinup
+        - Side effect - Start soil water pools pools """
 
         assert self.filled, "The gridcell has no input data"
         self.budget_spinup = True

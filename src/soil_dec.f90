@@ -32,10 +32,7 @@ module soil_dec
    public :: solution_n_equil
    public :: leaching
    public :: add_pool
-   ! TODO
-   ! public :: am_acivity       ! Arbuscular Micorrizal activity (Generate an output)
-   ! public :: ptase_activity   ! Acivity of PTASE mediated by plant inputs of C
-   ! public :: exudte_ activity ! Desorption of P from plant exudation of C
+   
 contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&

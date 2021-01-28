@@ -2,9 +2,10 @@ import _pickle as pkl
 import joblib
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
-def get_data(grd, var, spin=(1, 5)):
+def get_var(grd, var, spin=(1, 5)):
     assert spin[0] > 0 and spin[1] > spin[0] and spin[1] <= 70
 
     k = sorted(list(grd.outputs.keys()))[spin[0] - 1:spin[1]]
@@ -34,7 +35,30 @@ def get_data(grd, var, spin=(1, 5)):
     return output
 
 
-def int_tspan(grd, var):
+def get_data(grd, spin=(1, 5)):
+    assert spin[0] > 0 and spin[1] > spin[0] and spin[1] <= 70
+
+    vars = ['emaxm', 'tsoil', 'photo', 'aresp',
+            'npp', 'sind', 'eind']  # ['lai','inorg_n','inorg_p',
+    #  'sorbed_n','sorbed_p','hresp','rcm','f5','runom','evapm','wsoil',
+    #  'swsoil','rm','rg','cleaf','cawood','cfroot','wue','cue','cdef',
+    #  'nmin','pmin','vcmax','specific_la','litter_l','cwd',
+    #  'litter_fr','ls','c_cost']
+
+    k = sorted(list(grd.outputs.keys()))[spin[0] - 1:spin[1] + 1]
+    # find var dim
+    out = []
+    print(k)
+    with open(grd.outputs[k[-1]], 'rb') as fh:
+        dt1 = joblib.load(fh)
+        for key, var in dt1.items():
+            if key in vars:
+                out.append(var)
+    return dict(zip(vars, out))
+
+
+def create_panel(grd):
+    # hdf = pd.HDFStore('db.h5')
     a = grd.outputs
     return a
     # b = np.array([])

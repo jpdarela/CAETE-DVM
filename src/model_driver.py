@@ -14,6 +14,7 @@ from pathlib import Path
 from netCDF4 import Dataset
 import numpy as np
 
+import caete
 from caete import grd
 from caete import npls, print_progress
 import plsgen as pls
@@ -38,6 +39,7 @@ def check_start():
 
 sombrero = check_start()
 
+# Water saturation, field capacity & wilting point
 # Topsoil
 dt_ws = Dataset('../input/soil/WS.nc').variables['WS'][:]
 map_ws = np.flipud(dt_ws.__array__())
@@ -95,7 +97,6 @@ if sombrero:
     for Y in range(360):
         for X in range(720):
             if not mask[Y, X]:
-                print(Y, X)
                 grid_mn.append(grd(X, Y))
 
 else:
@@ -124,20 +125,26 @@ for i, g in enumerate(grid_mn):
 
 # APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
 def apply_spin(grid):
-    w, ll, cwd, rl, lnc = grid.bdg_spinup()
+    w, ll, cwd, rl, lnc = grid.bdg_spinup(
+        start_date="19790101", end_date="19830101")
     grid.sdc_spinup(w, ll, cwd, rl, lnc)
     return grid
 
 
 # Make a model spinup
 def apply_fun(grid):
-    grid.run_caete('19010101', '19301231', spinup=15, fix_co2='1915')
+    grid.run_caete('19790101', '20101231', spinup=2, fix_co2='1999')
     return grid
 
 
 # RUn
 def apply_fun1(grid):
-    grid.run_caete('19010101', '19701231', spinup=1)
+    grid.run_caete('19790101', '20101231', spinup=1)
+    return grid
+
+
+def apply_fun2(grid):
+    grid.run_caete('20110101', '20151231', fix_co2=610)
     return grid
 
 
