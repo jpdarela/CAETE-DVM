@@ -116,7 +116,7 @@ def B_func(Th33, Th1500):
     B = (ln(1500) - ln(33)) / D
 
     def lbd_func(C):
-    """processes the data from B_func, returning the slope of logarithmic tension-moisture curve"""
+        """processes the data from B_func, returning the slope of logarithmic tension-moisture curve"""
         if C == 0:
             return 0.0
         lbd = 1 / C
@@ -134,7 +134,7 @@ def ksat_func(ThS, Th33, lbd):
 
 def kth_func(Th, ThS, lbd, ksat):
     """soil conductivity in unsaturated condition. Output in mm/h"""
-    assert Th => 0, "water content < 0 IN kth_func"
+    assert Th >= 0, "water content < 0 IN kth_func"
     if lbd == 0:
         return 0
     if ThS == 0:
@@ -263,10 +263,10 @@ class grd:
 
         # Wilting point and field capacity (upper layer)
         self.wp_wilting_point_upper = None  # vol/vol
-        self.wp_field_capacity_upper = None # vol/vol
+        self.wp_field_capacity_upper = None  # vol/vol
         # Wilting point and field capacity (lower layer)
         self.wp_wilting_point_lower = None  # vol/vol
-        self.wp_field_capacity_lower = None # vol/vol
+        self.wp_field_capacity_lower = None  # vol/vol
 
         # Maximum water content for the entire grid cell
         self.wmax_mm = None  # mm
@@ -616,7 +616,6 @@ class grd:
         ksat_up = ksat_func(self.wp_sat_water_upper_ratio,
                             self.wp_field_capacity_upper, lbd_up)
 
-
         if self.wp_water_upper > self.wp_sat_water_upper_ratio:
             # saturated condition (runoff and flux)
             runoff1 += self.wp_water_upper - self.wp_sat_water_upper_ratio
@@ -649,12 +648,12 @@ class grd:
             flux2_mm = kth_func(self.wp_water_lower,
                                 self.wp_sat_water_lower_ratio, lbd_lo, ksat_lo) * 24
 
-
         # flux convertion for each layer, from mm to v/v
 
         flux1_tol1 = flux1_mm / 300.0   # because of the difference in depth,
         flux1_tol2 = flux1_mm / 700.0   # the layer flux assumes a different value
-        flux2 = flux2_mm / 700.0        # in ratio v/v for each layer from the same value in mm
+        # in ratio v/v for each layer from the same value in mm
+        flux2 = flux2_mm / 700.0
 
         # Water pool update
 
@@ -678,7 +677,7 @@ class grd:
 
         return runoff
 
-    def run_caete(self, start_date, end_date, spinup = 0, fix_co2=None):
+    def run_caete(self, start_date, end_date, spinup=0, fix_co2=None):
         """ start_date [str]   "yyyymmdd" Start model execution
 
             end_date   [str]   "yyyymmdd" End model execution
@@ -756,10 +755,10 @@ class grd:
             co2 = fix_co2
             fix_co2_p = True
         elif type(fix_co2) == str:
-            assert type(int(fix_co2)) == int, "The string(\"yyyy\") for the fix_co2 argument must be an year between 1901-2016"
+            assert type(int(
+                fix_co2)) == int, "The string(\"yyyy\") for the fix_co2 argument must be an year between 1901-2016"
             co2 = find_co2(int(fix_co2))
             fix_co2_p = True
-
 
         for s in range(spin):
             self._allocate_output(steps.size)
