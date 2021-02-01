@@ -341,7 +341,7 @@ contains
          endif
 
          delta_cveg(1,p) = cl2(p) - cl1_pft(ri)  !kg m-2
-         if(dt1(4) .le. 0) then
+         if(dt1(4) .lt. 0.0D0) then
             delta_cveg(2,p) = 0.0D0
          else
             delta_cveg(2,p) = ca2(p) - ca1_pft(ri)
@@ -351,23 +351,23 @@ contains
          ! Mass Balance
 
          if(c_def(p) .gt. 0.0) then
-            if(dt1(7) .gt. 0.0) then
+            if(dt1(7) .gt. 0.0D0) then
                cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
                ca1_int(p) = ca2(p) - ((c_def(p) * 1e-3) * 0.333333333)
                cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.333333333)
             else
                cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-               ca1_int(p) = 0.0
+               ca1_int(p) = 0.0D0
                cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
             endif
          else
-            if(dt1(7) .gt. 0.0) then
+            if(dt1(7) .gt. 0.0D0) then
                cl1_int(p) = cl2(p)
                ca1_int(p) = ca2(p)
                cf1_int(p) = cf2(p)
             else
                cl1_int(p) = cl2(p)
-               ca1_int(p) = 0.0
+               ca1_int(p) = 0.0D0
                cf1_int(p) = cf2(p)
             endif
          endif
@@ -500,7 +500,7 @@ contains
       do p = 1,2
          do i = 1, nlen
             if (isnan(nupt(p, i))) nupt(p, i) = 0.0D0
-            if (nupt(p, i) .gt. 0.01D2) nupt(p, i) = 0.0D0
+            if (nupt(p, i) .gt. 1.5D2) nupt(p, i) = 0.0D0
             if (nupt(p, i) .lt. 0.0D0) nupt(p, i) = 0.0D0
          enddo
       enddo
@@ -508,7 +508,7 @@ contains
       do p = 1,3
          do i = 1, nlen
             if(isnan(pupt(p, i))) pupt(p, i) = 0.0D0
-            if (pupt(p, i) .gt. 0.01D2) pupt(p, i) = 0.0D0
+            if (pupt(p, i) .gt. 0.7D2) pupt(p, i) = 0.0D0
             if (pupt(p, i) .lt. 0.0D0) pupt(p, i) = 0.0D0
          enddo
       enddo
@@ -523,7 +523,7 @@ contains
       do p = 1,6
          do i = 1, nlen
             if(isnan(lit_nut_content(p, i))) lit_nut_content(p, i) = 0.0D0
-            if (lit_nut_content(p, i) .gt. 0.01D2) lit_nut_content(p, i) = 0.0D0
+            if (lit_nut_content(p, i) .gt. 1.0D2) lit_nut_content(p, i) = 0.0D0
             if (lit_nut_content(p, i) .lt. 0.0D0) lit_nut_content(p, i) = 0.0D0
          enddo
       enddo
@@ -531,7 +531,7 @@ contains
       do p = 1,3
          do i = 1, nlen
             if(isnan(storage_out_bdgt(p,i))) storage_out_bdgt(p,i) = 0.0D0
-            if(storage_out_bdgt(p,i) > 0.1D2) storage_out_bdgt(p,i) = 0.0D0
+            if(storage_out_bdgt(p,i) > 0.5D2) storage_out_bdgt(p,i) = 0.0D0
             if(storage_out_bdgt(p,i) < 0.0D0) storage_out_bdgt(p,i) = 0.0D0
          enddo
       enddo

@@ -29,7 +29,7 @@ from pathlib import Path
 import warnings
 import bz2
 
-from joblib import dump
+from joblib import load, dump
 import cftime
 import numpy as np
 from numpy import log as ln
@@ -148,7 +148,24 @@ def kth_func(Th, ThS, lbd, ksat):
 # MODEL
 
 class run:
-    pass
+
+    def __init__(self, grid_pool, descr='HISTORCAL-ISIMIP'):
+        """__INIT_
+        grid_pool = list or np_array with grd instances
+        grd instances are started an"""
+        self.grid_pool = grid_pool
+        self.descr = descr
+
+    def save_run(self):
+        with open(f'RUN-{self.descr}.pkz', mode='wb') as fh:
+            dump(self.grid_pool, fh, compress=('zlib', 3), protocol=4)
+
+    def load_run(self):
+        try:
+            with open(f'RUN-{self.descr}.pkz', mode='rb') as fh:
+                return load(fh)
+        except:
+            raise(FileNotFoundError)
 
 
 class grd:
@@ -257,22 +274,24 @@ class grd:
         self.wp_water_lower_mm = None  # mm
         self.wp_water_upper = None  # vol/vol
         self.wp_water_lower = None  # vol/vol
-
         # Saturation point
         self.wp_sat_water_upper_ratio = None  # vol/vol
         self.wp_sat_water_lower_ratio = None  # vol/vol
         self.wp_sat_water_upper_mm = None  # mm
         self.wp_sat_water_lower_mm = None  # mm
-
         # Wilting point and field capacity (upper layer)
         self.wp_wilting_point_upper = None  # vol/vol
         self.wp_field_capacity_upper = None  # vol/vol
         # Wilting point and field capacity (lower layer)
         self.wp_wilting_point_lower = None  # vol/vol
         self.wp_field_capacity_lower = None  # vol/vol
-
         # Maximum water content for the entire grid cell
         self.wmax_mm = None  # mm
+        # CONSTANTS
+        self.lbd_up = None
+        self.ksat_up = None
+        self.lbd_lo = None
+        self.ksat_lo = None
 
         # SOIL POOLS
         self.input_nut = None
@@ -301,12 +320,6 @@ class grd:
         self.vp_wdl = None
         self.vp_sto = None
         self.vp_lsid = None
-
-    def save_run(self):
-        pass
-
-    def load_run(self):
-        pass
 
     def _allocate_output_nosave(self, n):
         """allocate space for some tracked variables during spinup
@@ -980,13 +993,13 @@ class grd:
 
                     # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
                     # Soluble and inorganic pools
-                    if self.pupt[0, step] > 2.5:
+                    if self.pupt[0, step] > 1e2:
                         rwarn(
                             f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
                         self.pupt[0, step] = 0.0
                     self.sp_available_p -= self.pupt[0, step]
 
-                    if self.nupt[0, step] > 2.5:
+                    if self.nupt[0, step] > 1e3:
                         rwarn(
                             f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
                         self.nupt[0, step] = 0.0

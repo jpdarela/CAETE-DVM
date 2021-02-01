@@ -135,31 +135,35 @@ def apply_spin(grid):
 # Make a model spinup
 def apply_fun(grid):
     grid.run_caete('19790101', '20101231', spinup=2,
-                   fix_co2='1999', save=False)
+                   fix_co2='1999', save=False, nutri_cycle=False)
     return grid
 
 
-# RUn
+def apply_fun0(grid):
+    grid.run_caete('19790101', '20101231', spinup=5,
+                   fix_co2='1979', save=False)
+    grid.run_caete('19790101', '20101231', spinup=5,
+                   fix_co2='1979')
+    return grid
+
+
 def apply_fun1(grid):
-    # Last run of spinup is saved and runs with real CO2
     grid.run_caete('19790101', '19881231')
     return grid
 
 
 def apply_fun2(grid):
-    # Last run of spinup is saved and runs with real CO2
     grid.run_caete('19890101', '19991231')
     return grid
 
 
 def apply_fun3(grid):
-    # Last run of spinup is saved and runs with real CO2
     grid.run_caete('20000101', '20051231')
     return grid
 
 
 def apply_fun4(grid):
-    grid.run_caete('20060101', '20151231', fix_co2=610)
+    grid.run_caete('20060101', '20151231', spinup=3, fix_co2=610)
     return grid
 
 
@@ -192,7 +196,7 @@ if __name__ == "__main__":
     print("SPINUP...")
 
     with mp.Pool(processes=n_proc) as p:
-        result = p.map(apply_spin, grid_mn)
+        _spinup_ = p.map(apply_spin, grid_mn)
     end_spinup = time.time() - start
     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
     del grid_mn
@@ -200,7 +204,15 @@ if __name__ == "__main__":
     fh.writelines("MODEL EXEC - MAIN SPINUP",)
     print("MODEL EXEC - spinup")
     with mp.Pool(processes=n_proc) as p:
-        result1 = p.map(apply_fun, result)
+        result = p.map(apply_fun, _spinup_)
+    end_spinup = time.time() - start
+    del _spinup_  # clean memory
+    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+
+    fh.writelines("MODEL EXEC - MAIN SPINUP",)
+    print("MODEL EXEC - spinup")
+    with mp.Pool(processes=n_proc) as p:
+        result1 = p.map(apply_fun0, result)
     end_spinup = time.time() - start
     del result  # clean memory
     fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)

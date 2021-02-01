@@ -410,7 +410,7 @@ module alloc
       if (sop .lt. 0.0D0) then
          aux_sop = 0.0D0
       else
-         aux_sop = sop * mult_factor_p * 0.3
+         aux_sop = sop * mult_factor_p
       endif
 
       ! NITROGEN FIXATION goes direct to plant use
