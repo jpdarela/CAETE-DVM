@@ -236,7 +236,7 @@ def table_gen(NPLS):
     froot_p2c = root[:, 1]
 
     # new traits
-    pdia = np.random.uniform(0.0, 0.1e-8, NPLS)
+    pdia = np.random.uniform(0.0, 0.1e-6, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)
     for i in woods:

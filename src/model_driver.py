@@ -134,16 +134,14 @@ def apply_spin(grid):
 
 # Make a model spinup
 def apply_fun(grid):
-    grid.run_caete('19790101', '20101231', spinup=2,
+    grid.run_caete('19790101', '20101231', spinup=1,
                    fix_co2='1999', save=False, nutri_cycle=False)
     return grid
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '20101231', spinup=5,
+    grid.run_caete('19790101', '20101231', spinup=15,
                    fix_co2='1979', save=False)
-    grid.run_caete('19790101', '20101231', spinup=5,
-                   fix_co2='1979')
     return grid
 
 
@@ -163,7 +161,7 @@ def apply_fun3(grid):
 
 
 def apply_fun4(grid):
-    grid.run_caete('20060101', '20151231', spinup=3, fix_co2=610)
+    grid.run_caete('20060101', '20151231')
     return grid
 
 
@@ -255,13 +253,3 @@ if __name__ == "__main__":
     end_spinup = time.time() - start
     fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
     fh.close()
-
-    # a = apply_spin(grid_mn[2])
-    # print('A = OK')
-    # b = apply_fun(a)
-    # del a
-    # print('B = OK - DEBUG')
-    # c = apply_fun1(b)
-    # # # del b
-    # # # d = apply_fun2(c)
-    # # # del c
