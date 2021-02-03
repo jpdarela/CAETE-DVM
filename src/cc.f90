@@ -357,37 +357,25 @@ module carbon_costs
       integer(i_4), intent(out) :: strategy
 
       real(r_8), dimension(:), allocatable :: cca
-      real(r_8) :: cc_strat
       integer(i_4) :: cc_size, j
-      logical(l_1) :: test1, test2
       integer(i_4),dimension(1) :: min_index
-      cc_size = size(cc_array)
-      cc_strat = 1D17
 
+      cc_size = size(cc_array)
       allocate(cca(cc_size))
 
+      strategy = -1
+
+      cca(:) = cc_array
+
       do j = 1, cc_size
-         if(cc_array(j) .le. 0.0) then
-            cca(j) = cc_strat + 1
-         else
-            cca(j) = cc_array(j)
-         endif
+         if (isnan(cca(j))) cca(j) = 1D17
+         if (cca(j) .le. 0.0D0) cca(j) = 1D17
       enddo
+
       min_index = minloc(cca)
       strategy = min_index(1)
-      do j = cc_size, 1, -1
-         test1 = cca(j) .lt. cc_strat
-         if(test1) then
-            cc_strat = cca(j)
-         endif
 
-         test2 = abs(cca(j) - cc_strat) .lt. 1D-8
-         if(test2) then
-            cc_strat = cca(j)
-         endif
-
-      enddo
-      cc = cc_strat
+      cc = cca(strategy)
    end subroutine select_active_strategy
 
 

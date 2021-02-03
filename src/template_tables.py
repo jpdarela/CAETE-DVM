@@ -1,87 +1,97 @@
 # template_tables.py
-# Templates for tables
+# Templates for tables of CAETÊ outputs
+from caete_module import global_par as gp
 import tables as tb
 
-
-def write_output(dt):
-    pass
-
-
-def write_PLSTable(fh):
-    pass
-
-
-class run(tb.IsDescription):
+class run_g1(tb.IsDescription):
     """ Row template for CAETÊ output data"""
     # ID
     row_id = tb.Int64Col(dflt=0, pos=0)
     date = tb.StringCol(itemsize=8, dflt="yyyymmdd", pos=1)
     grid_y = tb.Int16Col(dflt=0, pos=2)
     grid_x = tb.Int16Col(dflt=0, pos=3)
-    # Data
+    # Fluxees
     emaxm = tb.Float64Col(dflt=0.0, pos=4)
     tsoil = tb.Float64Col(dflt=0.0, pos=5)
     photo = tb.Float64Col(dflt=0.0, pos=6)
     aresp = tb.Float64Col(dflt=0.0, pos=7)
     npp = tb.Float64Col(dflt=0.0, pos=8)
     lai = tb.Float64Col(dflt=0.0, pos=9)
-    csoil1 = tb.Float64Col(dflt=0.0, pos=10)
-    csoil2 = tb.Float64Col(dflt=0.0, pos=11)
-    csoil3 = tb.Float64Col(dflt=0.0, pos=12)
-    csoil4 = tb.Float64Col(dflt=0.0, pos=13)
-    inorg_n = tb.Float64Col(dflt=0.0, pos=14)
-    inorg_p = tb.Float64Col(dflt=0.0, pos=15)
-    sorbed_n = tb.Float64Col(dflt=0.0, pos=16)
-    sorbed_p = tb.Float64Col(dflt=0.0, pos=17)
-    sncN1 = tb.Float64Col(dflt=0.0, pos=18)
-    sncN2 = tb.Float64Col(dflt=0.0, pos=19)
-    sncN3 = tb.Float64Col(dflt=0.0, pos=20)
-    sncN4 = tb.Float64Col(dflt=0.0, pos=21)
-    sncp1 = tb.Float64Col(dflt=0.0, pos=22)
-    sncp2 = tb.Float64Col(dflt=0.0, pos=23)
-    sncp3 = tb.Float64Col(dflt=0.0, pos=24)
-    sncp4 = tb.Float64Col(dflt=0.0, pos=25)
-    hresp = tb.Float64Col(dflt=0.0, pos=26)
-    rcm = tb.Float64Col(dflt=0.0, pos=27)
-    f5 = tb.Float64Col(dflt=0.0, pos=28)
-    runom = tb.Float64Col(dflt=0.0, pos=29)
-    evapm = tb.Float64Col(dflt=0.0, pos=30)
-    wsoil = tb.Float64Col(dflt=0.0, pos=31)
-    swsoil = tb.Float64Col(dflt=0.0, pos=32)
-    rm = tb.Float64Col(dflt=0.0, pos=33)
-    rg = tb.Float64Col(dflt=0.0, pos=34)
-    cleaf = tb.Float64Col(dflt=0.0, pos=35)
-    cawood = tb.Float64Col(dflt=0.0, pos=36)
-    cfroot = tb.Float64Col(dflt=0.0, pos=37)
-    wue = tb.Float64Col(dflt=0.0, pos=38)
-    cue = tb.Float64Col(dflt=0.0, pos=39)
-    cdef = tb.Float64Col(dflt=0.0, pos=40)
-    nmin = tb.Float64Col(dflt=0.0, pos=41)
-    pmin = tb.Float64Col(dflt=0.0, pos=42)
-    vcmax = tb.Float64Col(dflt=0.0, pos=43)
-    sla = tb.Float64Col(dflt=0.0, pos=44)
-    nupt1 = tb.Float64Col(dflt=0.0, pos=45)
-    nupt2 = tb.Float64Col(dflt=0.0, pos=46)
-    pupt1 = tb.Float64Col(dflt=0.0, pos=47)
-    pupt2 = tb.Float64Col(dflt=0.0, pos=48)
-    pupt3 = tb.Float64Col(dflt=0.0, pos=49)
-    litter_l = tb.Float64Col(dflt=0.0, pos=50)
-    cwd = tb.Float64Col(dflt=0.0, pos=51)
-    litter_fr = tb.Float64Col(dflt=0.0, pos=52)
-    lnc1 = tb.Float64Col(dflt=0.0, pos=53)
-    lnc2 = tb.Float64Col(dflt=0.0, pos=54)
-    lnc3 = tb.Float64Col(dflt=0.0, pos=55)
-    lnc4 = tb.Float64Col(dflt=0.0, pos=56)
-    lnc5 = tb.Float64Col(dflt=0.0, pos=57)
-    lnc6 = tb.Float64Col(dflt=0.0, pos=58)
-    sto1 = tb.Float64Col(dflt=0.0, pos=59)
-    sto2 = tb.Float64Col(dflt=0.0, pos=60)
-    sto3 = tb.Float64Col(dflt=0.0, pos=61)
-    c_cost = tb.Float64Col(dflt=0.0, pos=62)
+    f5 = tb.Float64Col(dflt=0.0, pos=10)
+    rm = tb.Float64Col(dflt=0.0, pos=11)
+    rg = tb.Float64Col(dflt=0.0, pos=12)
+    wue = tb.Float64Col(dflt=0.0, pos=13)
+    cue = tb.Float64Col(dflt=0.0, pos=14)
+    cdef = tb.Float64Col(dflt=0.0, pos=15)
+    vcmax = tb.Float64Col(dflt=0.0, pos=16)
+    sla = tb.Float64Col(dflt=0.0, pos=17)
+    nupt1 = tb.Float64Col(dflt=0.0, pos=18)
+    nupt2 = tb.Float64Col(dflt=0.0, pos=19)
+    pupt1 = tb.Float64Col(dflt=0.0, pos=20)
+    pupt2 = tb.Float64Col(dflt=0.0, pos=21)
+    pupt3 = tb.Float64Col(dflt=0.0, pos=22)
 
+class run_g2(tb.IsDescription):
+    """ Row template for CAETÊ output data"""
+    # ID
+    row_id = tb.Int64Col(dflt=0, pos=0)
+    date = tb.StringCol(itemsize=8, dflt="yyyymmdd", pos=1)
+    grid_y = tb.Int16Col(dflt=0, pos=2)
+    grid_x = tb.Int16Col(dflt=0, pos=3)
 
-class PLS_table(tb.IsDescription):
+    csoil1 = tb.Float64Col(dflt=0.0, pos=4)
+    csoil2 = tb.Float64Col(dflt=0.0, pos=5)
+    csoil3 = tb.Float64Col(dflt=0.0, pos=6)
+    csoil4 = tb.Float64Col(dflt=0.0, pos=7)
+    sncN1 = tb.Float64Col(dflt=0.0, pos=8)
+    sncN2 = tb.Float64Col(dflt=0.0, pos=8)
+    sncN3 = tb.Float64Col(dflt=0.0, pos=10)
+    sncN4 = tb.Float64Col(dflt=0.0, pos=11)
+    sncp1 = tb.Float64Col(dflt=0.0, pos=12)
+    sncp2 = tb.Float64Col(dflt=0.0, pos=13)
+    sncp3 = tb.Float64Col(dflt=0.0, pos=14)
+    sncp4 = tb.Float64Col(dflt=0.0, pos=15)
+    inorg_n = tb.Float64Col(dflt=0.0, pos=16)
+    inorg_p = tb.Float64Col(dflt=0.0, pos=17)
+    sorbed_n = tb.Float64Col(dflt=0.0, pos=18)
+    sorbed_p = tb.Float64Col(dflt=0.0, pos=19)
+    hresp = tb.Float64Col(dflt=0.0, pos=20)
+    nmin = tb.Float64Col(dflt=0.0, pos=21)
+    pmin = tb.Float64Col(dflt=0.0, pos=22)
+
+class run_g3(tb.IsDescription):
+    """ Row template for CAETÊ output data"""
+    # ID
+    row_id = tb.Int64Col(dflt=0, pos=0)
+    date = tb.StringCol(itemsize=8, dflt="yyyymmdd", pos=1)
+    grid_y = tb.Int16Col(dflt=0, pos=2)
+    grid_x = tb.Int16Col(dflt=0, pos=3)
+
+    rcm = tb.Float64Col(dflt=0.0, pos=4)
+    runom = tb.Float64Col(dflt=0.0, pos=5)
+    evapm = tb.Float64Col(dflt=0.0, pos=6)
+    wsoil = tb.Float64Col(dflt=0.0, pos=7)
+    swsoil = tb.Float64Col(dflt=0.0, pos=8)
+    cleaf = tb.Float64Col(dflt=0.0, pos=9)
+    cawood = tb.Float64Col(dflt=0.0, pos=10)
+    cfroot = tb.Float64Col(dflt=0.0, pos=11)
+    litter_l = tb.Float64Col(dflt=0.0, pos=12)
+    cwd = tb.Float64Col(dflt=0.0, pos=13)
+    litter_fr = tb.Float64Col(dflt=0.0, pos=14)
+    lnc1 = tb.Float64Col(dflt=0.0, pos=15)
+    lnc2 = tb.Float64Col(dflt=0.0, pos=16)
+    lnc3 = tb.Float64Col(dflt=0.0, pos=17)
+    lnc4 = tb.Float64Col(dflt=0.0, pos=18)
+    lnc5 = tb.Float64Col(dflt=0.0, pos=19)
+    lnc6 = tb.Float64Col(dflt=0.0, pos=20)
+    sto1 = tb.Float64Col(dflt=0.0, pos=21)
+    sto2 = tb.Float64Col(dflt=0.0, pos=22)
+    sto3 = tb.Float64Col(dflt=0.0, pos=23)
+    c_cost = tb.Float64Col(dflt=0.0, pos=24)
+
+class PLS_temp(tb.IsDescription):
     """PLS table row template"""
+    pls_id = tb.Int16Col(dflt=0, pos=0)
     g1 = tb.Float64Col(dflt=0.0, pos=1)
     resopfrac = tb.Float64Col(dflt=0.0, pos=2)
     tleaf = tb.Float64Col(dflt=0.0, pos=3)
@@ -100,32 +110,48 @@ class PLS_table(tb.IsDescription):
     amp = tb.Float64Col(dflt=0.0, pos=16)
     pdia = tb.Float64Col(dflt=0.0, pos=17)
 
+class spin_snapshots(tb.IsDescription):
 
-class ocp_snapshots:
-    pass
-# vai salvar a area/ocp para cada pls entre o inicio e o fim de uma chamada de run_caete
-# tb limitação e uptake
+    row_id = tb.Int64Col(dflt=0, pos=0)
+    spin = tb.Int8Col(dflt=0, pos=1)
+    start_date = tb.StringCol(itemsize=8, dflt="yyyymmdd", pos=2)
+    start_date = tb.StringCol(itemsize=8, dflt="yyyymmdd", pos=3)
+    grid_y = tb.Int16Col(dflt=0, pos=4)
+    grid_x = tb.Int16Col(dflt=0, pos=5)
 
-# init_date & end_date = str"yyyymmdd"
+    leaf_nolim = tb.Float64Col(dflt=0.0, pos=6)
+    leaf_lim_n = tb.Float64Col(dflt=0.0, pos=7)
+    leaf_lim_p = tb.Float64Col(dflt=0.0, pos=8)
+    leaf_colim_n = tb.Float64Col(dflt=0.0, pos=9)
+    leaf_colim_p = tb.Float64Col(dflt=0.0, pos=10)
+    leaf_colim_np = tb.Float64Col(dflt=0.0, pos=11)
+    wood_nolim = tb.Float64Col(dflt=0.0, pos=12)
+    wood_lim_n = tb.Float64Col(dflt=0.0, pos=13)
+    wood_lim_p = tb.Float64Col(dflt=0.0, pos=14)
+    wood_colim_n = tb.Float64Col(dflt=0.0, pos=15)
+    wood_colim_p = tb.Float64Col(dflt=0.0, pos=16)
+    wood_colim_np = tb.Float64Col(dflt=0.0, pos=17)
+    root_nolim = tb.Float64Col(dflt=0.0, pos=18)
+    root_lim_n = tb.Float64Col(dflt=0.0, pos=19)
+    root_lim_p = tb.Float64Col(dflt=0.0, pos=20)
+    root_colim_n = tb.Float64Col(dflt=0.0, pos=21)
+    root_colim_p = tb.Float64Col(dflt=0.0, pos=22)
+    root_colim_np = tb.Float64Col(dflt=0.0, pos=23)
 
-# nolim  (% of the simulated time)
-    # LEAF/WOOD/ROOT
-# lim_n  (% of the simulated time)
-    # LEAF/WOOD/ROOT
-# lim_p  (% of the simulated time)
-    # LEAF/WOOD/ROOT
-# colim_n  (% of the simulated time)
-    # LEAF/WOOD/ROOT
-# colim_p  (% of the simulated time)
-    # LEAF/WOOD/ROOT
-# colim_np (% of the simulated time)
-    # LEAF/WOOD/ROOT
+    upt_stratN1 = tb.Float64Col(dflt=0.0, pos=24)
+    upt_stratN2 = tb.Float64Col(dflt=0.0, pos=25)
+    upt_stratN3 = tb.Float64Col(dflt=0.0, pos=26)
+    upt_stratN4 = tb.Float64Col(dflt=0.0, pos=27)
+    upt_stratN6 = tb.Float64Col(dflt=0.0, pos=28)
 
-# upt_stratN1 (% of the simulated time)
-# upt_stratN2 (% of the simulated time)
-# upt_stratP1 (% of the simulated time)
-# upt_stratP2 (% of the simulated time)
-# upt_stratP3 (% of the simulated time)
-  # 3
-  # subclass_area: init_area[npls]
-  #                endarea[npls]
+    upt_stratP1 = tb.Float64Col(dflt=0.0, pos=29)
+    upt_stratP2 = tb.Float64Col(dflt=0.0, pos=30)
+    upt_stratP3 = tb.Float64Col(dflt=0.0, pos=31)
+    upt_stratP4 = tb.Float64Col(dflt=0.0, pos=32)
+    upt_stratP5 = tb.Float64Col(dflt=0.0, pos=33)
+    upt_stratP6 = tb.Float64Col(dflt=0.0, pos=34)
+    upt_stratP7 = tb.Float64Col(dflt=0.0, pos=35)
+    upt_stratP8 = tb.Float64Col(dflt=0.0, pos=36)
+
+    area_0 = tb.Float64Col(shape=(gp.npls,), pos=37)
+    area_f = tb.Float64Col(shape=(gp.npls,), pos=38)

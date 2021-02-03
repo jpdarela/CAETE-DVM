@@ -2,12 +2,14 @@
 # Process raw outputs from CAETÊ-DVM
 # USe pytables to create h5 complex datasets
 import os
+from pathlib import Path
 import joblib
 import numpy as np
 import cftime
 import pandas as pd
-
-# Open a spinXX.pkz file
+import tables as tb
+import template_tables as tt
+from caete_module import global_par as gp
 
 
 def open_fh(fl):
@@ -66,12 +68,22 @@ def se_dates(dt):
 
 
 def process_lim(pool_lim, area):
+    """post processing of Nutrients limitation in the allocation process for leaf||wood||root.
+       - pool_lim[np.ndarray shape(NPLS,NDAYS)] is the limitation status record for a pool (leaf||wood||root)
+       of a bunch of PLS
+       - area is a NPLS sized array with area percentage of the cuupied area of each pls
+       output: A tuple with the percentage of the time that a specific limitation occured in a vegetation pool"""
 
-    pool_nolim = []
-    pool_lim_n = []
-    pool_lim_p = []
+    pool_nolim = []  # No limitation
+    pool_lim_n = []  # N limitation
+    pool_lim_p = []  # P limitation
+    # Colimitation driven by N (When the realized NPP allocation is smaller
+    # thant the potential due to N but the other element is also limitant)
     pool_colim_n = []
+    # Colimitation driven by P (When the realized NPP allocation is smaller
+    # than the potential due to P but the other element is also limitant
     pool_colim_p = []
+    # Real Colimitation = K <= 1D-6 (K is difference between P and N realized NPP allocation)
     pool_colim_np = []
 
     ndays = pool_lim.shape[1]
@@ -79,12 +91,17 @@ def process_lim(pool_lim, area):
 
     for pls in range(npls):
         if area[pls]:
-            no_lim = (pool_lim[pls, :] == 0).sum() / ndays
-            lim_n = np.count_nonzero(pool_lim[pls, :] == 1) / ndays
-            lim_p = np.count_nonzero(pool_lim[pls, :] == 2) / ndays
-            colim_n = np.count_nonzero(pool_lim[pls, :] == 4) / ndays
-            colim_p = np.count_nonzero(pool_lim[pls, :] == 5) / ndays
-            colim_np = np.count_nonzero(pool_lim[pls, :] == 6) / ndays
+            no_lim = (pool_lim[pls, :] == 0).sum() / ndays * area[pls]
+            lim_n = (np.count_nonzero(
+                pool_lim[pls, :] == 1) / ndays) * area[pls]
+            lim_p = (np.count_nonzero(
+                pool_lim[pls, :] == 2) / ndays) * area[pls]
+            colim_n = (np.count_nonzero(
+                pool_lim[pls, :] == 4) / ndays) * area[pls]
+            colim_p = (np.count_nonzero(
+                pool_lim[pls, :] == 5) / ndays) * area[pls]
+            colim_np = (np.count_nonzero(
+                pool_lim[pls, :] == 6) / ndays) * area[pls]
 
             pool_nolim.append(no_lim)
             pool_lim_n.append(lim_n)
@@ -93,48 +110,148 @@ def process_lim(pool_lim, area):
             pool_colim_p.append(colim_p)
             pool_colim_np.append(colim_np)
 
-    return (np.mean(pool_nolim),
-            np.mean(pool_lim_n),
-            np.mean(pool_lim_p),
-            np.mean(pool_colim_n),
-            np.mean(pool_colim_p),
-            np.mean(pool_colim_np))
+    return (np.sum(pool_nolim),
+            np.sum(pool_lim_n),
+            np.sum(pool_lim_p),
+            np.sum(pool_colim_n),
+            np.sum(pool_colim_p),
+            np.sum(pool_colim_np))
 
 
-def main():
+def process_ustrat(u_strat, area):
 
-    d1 = {'emaxm': (3652,), 'tsoil': (3652,), 'photo': (3652,), 'aresp': (3652,),
-          'npp': (3652,), 'lai': (3652,), 'csoil': (4, 3652), 'inorg_n': (3652,),
-          'inorg_p': (3652,), 'sorbed_n': (3652,), 'sorbed_p': (3652,), 'snc': (8, 3652),
-          'hresp': (3652,), 'rcm': (3652,), 'f5': (3652,), 'runom': (3652,), 'evapm': (3652,),
-          'wsoil': (3652,), 'swsoil': (3652,), 'rm': (3652,), 'rg': (3652,), 'cleaf': (3652,),
-          'cawood': (3652,), 'cfroot': (3652,), 'area': (1000, 3652), 'wue': (3652,), 'cue': (3652,),
-          'cdef': (3652,), 'nmin': (3652,), 'pmin': (3652,), 'vcmax': (3652,), 'specific_la': (3652,),
-          'nupt': (2, 3652), 'pupt': (3, 3652), 'litter_l': (3652,), 'cwd': (3652,),
-          'litter_fr': (3652,), 'lnc': (6, 3652), 'ls': (3652,), 'lim_status': (3, 1000, 3652),
-          'c_cost': (1000, 3652), 'u_strat': (2, 1000, 3652), 'storage_pool': (3, 3652)}
+    nuts = u_strat.shape[0]
+    npls = u_strat.shape[1]
+    ndays = u_strat.shape[2]
 
-    ok_dim = ['emaxm', 'tsoil', 'photo', 'aresp', 'npp', 'lai',
-              'csoil', 'inorg_n', 'inorg_p', 'sorbed_n', 'sorbed_p', 'snc',
-              'hresp', 'rcm', 'f5', 'runom', 'evapm', 'wsoil', 'swsoil', 'rm',
-              'rg', 'cleaf', 'cawood', 'cfroot', 'area', 'wue', 'cue', 'cdef',
-              'nmin', 'pmin', 'vcmax', 'specific_la', 'nupt', 'pupt', 'litter_l',
-              'cwd', 'litter_fr', 'lnc']
+    # Nitrogen strats
+    pool_passive_uptkN = []
+    pool_nmaN = []
+    pool_nmeN = []
+    pool_amN = []
+    pool_emN = []
+    pool_em0 = []
 
-    ex_dim = [('csoil', 4), ('snc', 8), ('lnc', 6), ('nupt', 2), ('pupt', 3)]
+    # P strats
+    pool_passive_uptkP = []
+    pool_nmaP = []
+    pool_nmeP = []
+    pool_amP = []
+    pool_emP = []
+    pool_ramAP = []
+    pool_remAP = []
+    pool_amap = []
+    pool_emx0 = []
 
-    # unfold 2/3 dim vars
+    for pls in range(npls):
+        if area[pls]:
+            passive_uptkN = (u_strat[0, pls, :] == 0).sum() / ndays * area[pls]
+            nmaN = (np.count_nonzero(
+                u_strat[0, pls, :] == 1) / ndays) * area[pls]
+            nmeN = (np.count_nonzero(
+                u_strat[0, pls, :] == 2) / ndays) * area[pls]
+            amN = (np.count_nonzero(
+                u_strat[0, pls, :] == 3) / ndays) * area[pls]
+            emN = (np.count_nonzero(
+                u_strat[0, pls, :] == 4) / ndays) * area[pls]
+            em0 = (np.count_nonzero(
+                u_strat[0, pls, :] == 6) / ndays) * area[pls]
+
+            passive_uptkP = (u_strat[1, pls, :] == 0).sum() / ndays * area[pls]
+            nmaP = (np.count_nonzero(
+                u_strat[1, pls, :] == 1) / ndays) * area[pls]
+            nmeP = (np.count_nonzero(
+                u_strat[1, pls, :] == 2) / ndays) * area[pls]
+            amP = (np.count_nonzero(
+                u_strat[1, pls, :] == 3) / ndays) * area[pls]
+            emP = (np.count_nonzero(
+                u_strat[1, pls, :] == 4) / ndays) * area[pls]
+            ramAP = (np.count_nonzero(
+                u_strat[1, pls, :] == 5) / ndays) * area[pls]
+            remAP = (np.count_nonzero(
+                u_strat[1, pls, :] == 6) / ndays) * area[pls]
+            amap = (np.count_nonzero(
+                u_strat[1, pls, :] == 7) / ndays) * area[pls]
+            emx0 = (np.count_nonzero(
+                u_strat[1, pls, :] == 8) / ndays) * area[pls]
+
+            pool_passive_uptkN.append(passive_uptkN)
+            pool_nmaN.append(nmaN)
+            pool_nmeN.append(nmeN)
+            pool_amN.append(amN)
+            pool_emN.append(emN)
+            pool_em0.append(em0)
+
+            pool_passive_uptkP.append(passive_uptkP)
+            pool_nmaP.append(nmaP)
+            pool_nmeP.append(nmeP)
+            pool_amP.append(amP)
+            pool_emP.append(emP)
+            pool_ramAP.append(ramAP)
+            pool_remAP.append(remAP)
+            pool_amap.append(amap)
+            pool_emx0.append(emx0)
+
+    return((
+        np.sum(pool_passive_uptkN),
+        np.sum(pool_nmaN),
+        np.sum(pool_nmeN),
+        np.sum(pool_amN),
+        np.sum(pool_emN),
+        np.sum(pool_em0)
+    ), (
+        np.sum(pool_passive_uptkP),
+        np.sum(pool_nmaP),
+        np.sum(pool_nmeP),
+        np.sum(pool_amP),
+        np.sum(pool_emP),
+        np.sum(pool_ramAP),
+        np.sum(pool_remAP),
+        np.sum(pool_amap),
+        np.sum(pool_emx0)
+    ))
+
+
+def write_h5(out_dir=Path('../outputs'), RUN=0):
+
+    postp = os.path.join(Path(out_dir), Path("CAETE.h5"))
+    h5file = tb.open_file(postp, mode="w", title="Test file")
+
+    group_run = h5file.create_group(
+        "/", f'RUN{RUN}', f'CAETÊ outputs tables Run {RUN}')
+
+    table_g1 = h5file.create_table(
+        group_run, 'Outputs_G1', tt.run_g1, "outputs for variables of group 1", expectedrows=9 * 365 * 40)
+    table_g2 = h5file.create_table(
+        group_run, 'Outputs_G2', tt.run_g2, "outputs for variables of group 2", expectedrows=9 * 365 * 40)
+    table_g3 = h5file.create_table(
+        group_run, 'Outputs_G3', tt.run_g3, "outputs for variables of group 3", expectedrows=9 * 365 * 40)
+    PLS_table = h5file.create_table(
+        group_run, 'PLS', tt.PLS_temp, f"PLS table for RUN{RUN}", expectedrows=gp.npls)
+    spin_table = h5file.create_table(
+        group_run, 'spin_snapshot', tt.spin_snapshots, "Area, Nutrient limitation and N/P uptake")
+
+    h5file.flush()
+    h5file.close()
 
     cells = []
-    grds = os.listdir("../outputs")
+    grds = os.listdir(out_dir)
+    grds = [Path(os.path.join(out_dir, grd)).resolve()
+            for grd in grds if Path(os.path.join(out_dir, grd)).is_dir()]
     for grd in grds:
-        fpath = os.path.join("../outputs", grd)
-        files = sorted(os.listdir(fpath))
+        files = sorted(os.listdir(grd))
         for f in files:
-            cells.append(os.path.join(fpath, f))
+            cells.append(os.path.join(grd, f))
+
     for fp in cells:
         dt = open_fh(fp)
-        print(f"\n\n{fp}\n")
-        print(var_names_dims(dt))
-        print(se_dates(dt))
-        return dt
+        # FILL group 1
+        # FILL group 2
+        # FILL group 3
+        # FILL PLS
+        # FILL SPIN SNAPSHOT
+        #
+        # print(f"\n\n{fp}\n")
+        # print(var_names_dims(dt))
+        # print(se_dates(dt))
+        # return dt

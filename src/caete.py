@@ -98,7 +98,7 @@ def catch_out_budget(out):
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
            "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
-           "limitation_status", "uptk_strat", 'cp']
+           "limitation_status", "uptk_strat", 'cp', 'c_cost_cwm']
 
     return dict(zip(lst, out))
 
@@ -362,7 +362,6 @@ class grd:
         self.cleaf = np.zeros(shape=(n,), order='F')
         self.cawood = np.zeros(shape=(n,), order='F')
         self.cfroot = np.zeros(shape=(n,), order='F')
-        self.area = np.zeros(shape=(npls, n))
         self.wue = np.zeros(shape=(n,), order='F')
         self.cue = np.zeros(shape=(n,), order='F')
         self.cdef = np.zeros(shape=(n,), order='F')
@@ -378,12 +377,13 @@ class grd:
         self.lnc = np.zeros(shape=(6, n), order='F')
         self.storage_pool = np.zeros(shape=(3, n), order='F')
         self.ls = np.zeros(shape=(n,), order='F')
+        self.carbon_costs = np.zeros(shape=(n,), order='F')
+
+        self.area = np.zeros(shape=(npls, n), order='F')
         self.lim_status = np.zeros(
             shape=(3, npls, n), dtype=np.dtype('int16'), order='F')
         self.uptake_strategy = np.zeros(
             shape=(2, npls, n), dtype=np.dtype('int32'), order='F')
-        self.carbon_costs = np.zeros(
-            shape=(npls, n), dtype=np.dtype('float32'), order='F')
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -1010,7 +1010,7 @@ class grd:
                 # # # Process (cwm) & store (np.array) outputs
                 if save:
                     assert self.save == True
-                    self.carbon_costs[self.vp_lsid, step] = self.sp_uptk_costs
+                    self.carbon_costs = daily_output['c_cost_cwm']
                     self.emaxm.append(daily_output['epavg'])
                     self.tsoil.append(self.soil_temp)
                     self.photo[step] = daily_output['phavg']
