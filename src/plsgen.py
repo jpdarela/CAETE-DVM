@@ -23,6 +23,7 @@ import sys
 from random import shuffle, sample
 from math import ceil
 import csv
+from pathlib import Path
 
 import numpy as np
 from caete_module import photo as model
@@ -244,26 +245,28 @@ def table_gen(NPLS):
             pdia[i] = 0.0
     amp = np.random.uniform(0.001, 0.999, NPLS)
 
-    stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
+    pls_id = np.arange(NPLS)
+
+    stack = (pls_id, g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,
              awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c,
              amp, pdia)
 
-    head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
+    head = ['PLS_id', 'g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
 
     pls_table = np.vstack(stack)
 
     # # ___side_effects
-    with open('pls_attrs.csv', mode='w') as fh:
+    if not Path("../outputs").exists():
+        os.mkdir("../outputs")
+    with open('../outputs/pls_attrs.csv', mode='w') as fh:
         writer = csv.writer(fh, delimiter=',')
         writer.writerow(head)
         for x in range(pls_table.shape[1]):
             writer.writerow(list(pls_table[:, x]))
         # writer.writerows(pls_table)
 
-    out_arr = np.asfortranarray(pls_table, dtype=np.float64)
-    np.savetxt('pls_ex.txt', out_arr.T, fmt='%.24f')
-
-    return out_arr
+    pls_table = np.vstack(stack[1:])
+    return np.asfortranarray(pls_table, dtype=np.float64)

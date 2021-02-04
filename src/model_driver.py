@@ -20,6 +20,8 @@ from caete import grd
 from caete import npls, print_progress
 import plsgen as pls
 
+from post_processing import write_h5
+
 __author__ = "João Paulo Darela Filho"
 __descr__ = """RUN CAETÊ --- TODO"""
 
@@ -120,11 +122,9 @@ for i, g in enumerate(grid_mn):
     apply_init(g)
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
-
-# for x in range(10000):
-#     grid_mn[0]._update_pool(np.random.randint(1, 5), np.random.randint(1, 5))
-
 # APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
+
+
 def apply_spin(grid):
     w, ll, cwd, rl, lnc = grid.bdg_spinup(
         start_date="19790101", end_date="19830101")
@@ -146,22 +146,32 @@ def apply_fun0(grid):
 
 
 def apply_fun1(grid):
-    grid.run_caete('19790101', '19881231')
+    grid.run_caete('19790101', '19841231')
     return grid
 
 
 def apply_fun2(grid):
-    grid.run_caete('19890101', '19991231')
+    grid.run_caete('19850101', '19911231')
     return grid
 
 
 def apply_fun3(grid):
-    grid.run_caete('20000101', '20051231')
+    grid.run_caete('19920101', '19961231')
     return grid
 
 
 def apply_fun4(grid):
-    grid.run_caete('20060101', '20151231')
+    grid.run_caete('19970101', '20011231')
+    return grid
+
+
+def apply_fun5(grid):
+    grid.run_caete('20020101', '20061231')
+    return grid
+
+
+def apply_fun6(grid):
+    grid.run_caete('20070101', '20151231')
     return grid
 
 
@@ -171,6 +181,11 @@ del pls_table
 del co2_data
 del stime
 
+for d in tsoil:
+    del d
+
+for d in ssoil:
+    del d
 
 if __name__ == "__main__":
 
@@ -187,69 +202,60 @@ if __name__ == "__main__":
 
     fh = open('logfile.log', mode='w')
 
+    def applyXy(fun, input):
+        fh.writelines("MODEL EXEC - \n",)
+        print("MODEL EXEC - RUN")
+        with mp.Pool(processes=n_proc) as p:
+            result = p.map(fun, input)
+        end_spinup = time.time() - start
+        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+        return result
+
     fh.writelines(time.ctime(),)
     fh.writelines("\n\n",)
     fh.writelines("SPINUP...",)
     start = time.time()
     print("SPINUP...")
 
+    # SOIL SPINUP
     with mp.Pool(processes=n_proc) as p:
         _spinup_ = p.map(apply_spin, grid_mn)
     end_spinup = time.time() - start
     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
     del grid_mn
 
-    fh.writelines("MODEL EXEC - MAIN SPINUP",)
-    print("MODEL EXEC - spinup")
-    with mp.Pool(processes=n_proc) as p:
-        result = p.map(apply_fun, _spinup_)
-    end_spinup = time.time() - start
-    del _spinup_  # clean memory
-    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+    # MAIN SPINUP
+    result = applyXy(apply_fun, _spinup_)
+    del _spinup_
 
-    fh.writelines("MODEL EXEC - MAIN SPINUP",)
-    print("MODEL EXEC - spinup")
-    with mp.Pool(processes=n_proc) as p:
-        result1 = p.map(apply_fun0, result)
-    end_spinup = time.time() - start
-    del result  # clean memory
-    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+    result1 = applyXy(apply_fun0, result)
+    del result
 
+    # Save Ground 0
     with open("RUN0.pkz", 'wb') as fh2:
         print("Saving gridcells with init state in RUN0.pkz")
-        joblib.dump(result1, fh2, compress=('zlib', 3), protocol=4)
+        joblib.dump(result1, fh2, compress=('zlib', 9), protocol=4)
 
-    # After the main spinup we can store the gridcells to run another experiments
-
-    fh.writelines("MODEL EXEC - RUN 0 \n",)
-    print("MODEL EXEC - RUN")
-    with mp.Pool(processes=n_proc) as p:
-        result2 = p.map(apply_fun1, result1)
-    end_spinup = time.time() - start
+    # Apply MODEL
+    result2 = applyXy(apply_fun1, result1)
     del result1
-    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
 
-    fh.writelines("MODEL EXEC - RUN 1 \n",)
-    print("MODEL EXEC - RUN")
-    with mp.Pool(processes=n_proc) as p:
-        result3 = p.map(apply_fun2, result2)
-    end_spinup = time.time() - start
+    result3 = applyXy(apply_fun2, result2)
     del result2
-    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
 
-    fh.writelines("MODEL EXEC - RUN 3\n",)
-    print("MODEL EXEC - RUN")
-    with mp.Pool(processes=n_proc) as p:
-        result4 = p.map(apply_fun3, result3)
-    end_spinup = time.time() - start
+    result4 = applyXy(apply_fun3, result3)
     del result3
-    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
 
-    fh.writelines("MODEL EXEC - RUN 4\n",)
-    print("MODEL EXEC - RUN")
-    with mp.Pool(processes=n_proc) as p:
-        result5 = p.map(apply_fun4, result4)
+    result5 = applyXy(apply_fun4, result4)
     del result4
-    end_spinup = time.time() - start
-    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+
+    result6 = applyXy(apply_fun5, result5)
+    del result5
+
+    result7 = applyXy(apply_fun6, result6)
+    del result6
+
     fh.close()
+
+    print("Salvando db")
+    write_h5()

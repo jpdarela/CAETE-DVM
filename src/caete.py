@@ -1010,7 +1010,7 @@ class grd:
                 # # # Process (cwm) & store (np.array) outputs
                 if save:
                     assert self.save == True
-                    self.carbon_costs = daily_output['c_cost_cwm']
+                    self.carbon_costs[step] = daily_output['c_cost_cwm']
                     self.emaxm.append(daily_output['epavg'])
                     self.tsoil.append(self.soil_temp)
                     self.photo[step] = daily_output['phavg']
