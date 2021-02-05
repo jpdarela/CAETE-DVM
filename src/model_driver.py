@@ -84,169 +84,169 @@ with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls)
 
-# # # Create the gridcell objects
-# if sombrero:
-#     # Running in all gridcells of mask
-#     grid_mn = []
-#     for Y in range(360):
-#         for X in range(720):
-#             if not mask[Y, X]:
-#                 grid_mn.append(grd(X, Y))
+# # Create the gridcell objects
+if sombrero:
+    # Running in all gridcells of mask
+    grid_mn = []
+    for Y in range(360):
+        for X in range(720):
+            if not mask[Y, X]:
+                grid_mn.append(grd(X, Y))
 
-# else:
-#     grid_mn = []
-#     for Y in range(168, 171):
-#         for X in range(225, 228):
-#             if not mask[Y, X]:
-#                 grid_mn.append(grd(X, Y))
-
-
-# def apply_init(grid):
-#     grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil)
-#     return grid
+else:
+    grid_mn = []
+    for Y in range(168, 171):
+        for X in range(225, 228):
+            if not mask[Y, X]:
+                grid_mn.append(grd(X, Y))
 
 
-# # # START GRIDCELLS
-# print("Starting gridcells")
-# print_progress(0, len(grid_mn), prefix='Progress:', suffix='Complete')
-# for i, g in enumerate(grid_mn):
-#     apply_init(g)
-#     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
-
-# # APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
+def apply_init(grid):
+    grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil)
+    return grid
 
 
-# def apply_spin(grid):
-#     w, ll, cwd, rl, lnc = grid.bdg_spinup(
-#         start_date="19790101", end_date="19830101")
-#     grid.sdc_spinup(w, ll, cwd, rl, lnc)
-#     return grid
+# # START GRIDCELLS
+print("Starting gridcells")
+print_progress(0, len(grid_mn), prefix='Progress:', suffix='Complete')
+for i, g in enumerate(grid_mn):
+    apply_init(g)
+    print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
+
+# APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
 
 
-# # Make a model spinup
-# def apply_fun(grid):
-#     grid.run_caete('19790101', '20101231', spinup=1,
-#                    fix_co2='1999', save=False, nutri_cycle=False)
-#     return grid
+def apply_spin(grid):
+    w, ll, cwd, rl, lnc = grid.bdg_spinup(
+        start_date="19790101", end_date="19830101")
+    grid.sdc_spinup(w, ll, cwd, rl, lnc)
+    return grid
 
 
-# def apply_fun0(grid):
-#     grid.run_caete('19790101', '20101231', spinup=15,
-#                    fix_co2='1979', save=False)
-#     return grid
+# Make a model spinup
+def apply_fun(grid):
+    grid.run_caete('19790101', '20101231', spinup=1,
+                   fix_co2='1999', save=False, nutri_cycle=False)
+    return grid
 
 
-# def apply_fun1(grid):
-#     grid.run_caete('19790101', '19841231')
-#     return grid
+def apply_fun0(grid):
+    grid.run_caete('19790101', '20101231', spinup=15,
+                   fix_co2='1979', save=False)
+    return grid
 
 
-# def apply_fun2(grid):
-#     grid.run_caete('19850101', '19911231')
-#     return grid
+def apply_fun1(grid):
+    grid.run_caete('19790101', '19841231')
+    return grid
 
 
-# def apply_fun3(grid):
-#     grid.run_caete('19920101', '19961231')
-#     return grid
+def apply_fun2(grid):
+    grid.run_caete('19850101', '19911231')
+    return grid
 
 
-# def apply_fun4(grid):
-#     grid.run_caete('19970101', '20011231')
-#     return grid
+def apply_fun3(grid):
+    grid.run_caete('19920101', '19961231')
+    return grid
 
 
-# def apply_fun5(grid):
-#     grid.run_caete('20020101', '20061231')
-#     return grid
+def apply_fun4(grid):
+    grid.run_caete('19970101', '20011231')
+    return grid
 
 
-# def apply_fun6(grid):
-#     grid.run_caete('20070101', '20151231')
-#     return grid
+def apply_fun5(grid):
+    grid.run_caete('20020101', '20061231')
+    return grid
 
 
-# # Garbage collection
-# #
-# del pls_table
-# del co2_data
-# del stime
+def apply_fun6(grid):
+    grid.run_caete('20070101', '20151231')
+    return grid
 
-# for d in tsoil:
-#     del d
 
-# for d in ssoil:
-#     del d
+# Garbage collection
+#
+del pls_table
+del co2_data
+del stime
 
-# if __name__ == "__main__":
+for d in tsoil:
+    del d
 
-#     output_path = Path("../outputs").resolve()
+for d in ssoil:
+    del d
 
-#     if output_path.exists():
-#         pass
-#     else:
-#         mkdir(output_path)
+if __name__ == "__main__":
 
-#     import time
+    output_path = Path("../outputs").resolve()
 
-#     n_proc = mp.cpu_count() // 2 if not sombrero else 55
+    if output_path.exists():
+        pass
+    else:
+        mkdir(output_path)
 
-#     fh = open('logfile.log', mode='w')
+    import time
 
-#     def applyXy(fun, input):
-#         fh.writelines("MODEL EXEC - \n",)
-#         print("MODEL EXEC - RUN")
-#         with mp.Pool(processes=n_proc) as p:
-#             result = p.map(fun, input)
-#         end_spinup = time.time() - start
-#         fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-#         return result
+    n_proc = mp.cpu_count() // 2 if not sombrero else 55
 
-#     fh.writelines(time.ctime(),)
-#     fh.writelines("\n\n",)
-#     fh.writelines("SPINUP...",)
-#     start = time.time()
-#     print("SPINUP...")
+    fh = open('logfile.log', mode='w')
 
-#     # SOIL SPINUP
-#     with mp.Pool(processes=n_proc) as p:
-#         _spinup_ = p.map(apply_spin, grid_mn)
-#     end_spinup = time.time() - start
-#     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
-#     del grid_mn
+    def applyXy(fun, input):
+        fh.writelines("MODEL EXEC - \n",)
+        print("MODEL EXEC - RUN")
+        with mp.Pool(processes=n_proc) as p:
+            result = p.map(fun, input)
+        end_spinup = time.time() - start
+        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+        return result
 
-#     # MAIN SPINUP
-#     result = applyXy(apply_fun, _spinup_)
-#     del _spinup_
+    fh.writelines(time.ctime(),)
+    fh.writelines("\n\n",)
+    fh.writelines("SPINUP...",)
+    start = time.time()
+    print("SPINUP...")
 
-#     result1 = applyXy(apply_fun0, result)
-#     del result
+    # SOIL SPINUP
+    with mp.Pool(processes=n_proc) as p:
+        _spinup_ = p.map(apply_spin, grid_mn)
+    end_spinup = time.time() - start
+    fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
+    del grid_mn
 
-#     # Save Ground 0
-#     with open("RUN0.pkz", 'wb') as fh2:
-#         print("Saving gridcells with init state in RUN0.pkz")
-#         joblib.dump(result1, fh2, compress=('zlib', 9), protocol=4)
+    # MAIN SPINUP
+    result = applyXy(apply_fun, _spinup_)
+    del _spinup_
 
-#     # Apply MODEL
-#     result2 = applyXy(apply_fun1, result1)
-#     del result1
+    result1 = applyXy(apply_fun0, result)
+    del result
 
-#     result3 = applyXy(apply_fun2, result2)
-#     del result2
+    # Save Ground 0
+    with open("RUN0.pkz", 'wb') as fh2:
+        print("Saving gridcells with init state in RUN0.pkz")
+        joblib.dump(result1, fh2, compress=('zlib', 9), protocol=4)
 
-#     result4 = applyXy(apply_fun3, result3)
-#     del result3
+    # Apply MODEL
+    result2 = applyXy(apply_fun1, result1)
+    del result1
 
-#     result5 = applyXy(apply_fun4, result4)
-#     del result4
+    result3 = applyXy(apply_fun2, result2)
+    del result2
 
-#     result6 = applyXy(apply_fun5, result5)
-#     del result5
+    result4 = applyXy(apply_fun3, result3)
+    del result3
 
-#     result7 = applyXy(apply_fun6, result6)
-#     del result6
+    result5 = applyXy(apply_fun4, result4)
+    del result4
 
-#     fh.close()
+    result6 = applyXy(apply_fun5, result5)
+    del result5
 
-#     print("Salvando db")
-#     write_h5()
+    result7 = applyXy(apply_fun6, result6)
+    del result6
+
+    fh.close()
+
+    print("Salvando db")
+    write_h5()
