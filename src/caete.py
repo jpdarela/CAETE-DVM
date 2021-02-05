@@ -126,14 +126,19 @@ def B_func(Th33, Th1500):
 
 def ksat_func(ThS, Th33, lbd):
     """soil conductivity in saturated condition. Output in mm/h"""
-    assert ThS > Th33, "sat <= fc IN ksat_func"
+    if ThS < Th33:
+        rwarn("sat <= fc IN ksat_func")
+    # assert ThS > Th33, "sat <= fc IN ksat_func"
     ksat = 1930 * (ThS - Th33) ** (3 - lbd)
     return ksat
 
 
 def kth_func(Th, ThS, lbd, ksat):
     """soil conductivity in unsaturated condition. Output in mm/h"""
-    assert Th >= 0, "water content < 0 IN kth_func"
+    if Th < 0.0:
+        rwarn("water content < 0 IN kth_func")
+        Th = 0.0
+    # assert Th >= 0, "water content < 0 IN kth_func"
     if lbd == 0:
         return 0
     if ThS == 0:
