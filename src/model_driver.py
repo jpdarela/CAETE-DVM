@@ -45,19 +45,19 @@ sombrero = check_start()
 # Water saturation, field capacity & wilting point
 # Topsoil
 dt_ws = Dataset('../input/soil/WS.nc').variables['WS'][:]
-map_ws = np.flipud(dt_ws.__array__())
+map_ws = dt_ws.__array__()
 dt_fc = Dataset('../input/soil/FC.nc').variables['FC'][:]
-map_fc = np.flipud(dt_fc.__array__())
+map_fc = dt_fc.__array__()
 dt_wp = Dataset('../input/soil/WP.nc').variables['WP'][:]
-map_wp = np.flipud(dt_wp.__array__())
+map_wp = dt_wp.__array__()
 
 # Subsoil
 dt_subws = Dataset('../input/soil/S_WS.nc').variables['WS'][:]
-map_subws = np.flipud(dt_subws.__array__())
+map_subws = dt_subws.__array__()
 dt_subfc = Dataset('../input/soil/S_FC.nc').variables['FC'][:]
-map_subfc = np.flipud(dt_subfc.__array__())
+map_subfc = dt_subfc.__array__()
 dt_subwp = Dataset('../input/soil/S_WP.nc').variables['WP'][:]
-map_subwp = np.flipud(dt_subwp.__array__())
+map_subwp = dt_subwp.__array__()
 
 tsoil = (map_ws, map_fc, map_wp)
 ssoil = (map_subws, map_subfc, map_subwp)
