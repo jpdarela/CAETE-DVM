@@ -111,6 +111,21 @@ def catch_out_carbon3(out):
 
 def B_func(Th33, Th1500):
     """calculates the coefficient of moisture-tension, used for water flux estimation"""
+
+    if Th33 <= 0.0:
+        Th33 = 0.4
+        rwarn("Th33  < 0")
+    if np.isneginf(Th33) or np.isposinf(Th33) or not Th33 == Th33:
+        Th33 = 0.4
+        rwarn("Th33 is NaN or inf")
+
+    if Th1500 <= 0.0:
+        Th1500 = 0.2
+        rwarn("Th1500  < 0")
+    if np.isneginf(Th1500) or np.isposinf(Th1500) or not Th1500 == Th1500:
+        Th1500 = 0.2
+        rwarn("Th1500 is NaN or inf")
+
     D = ln(Th33) - ln(Th1500)
     B = (ln(1500) - ln(33)) / D
 
@@ -958,7 +973,7 @@ class grd:
                         rwarn(
                             f"NuptkO < 0 - 745 | in spin{s}, step{step} - {self.nupt[1, step]}")
                         self.nupt[1, step] = 0.0
-                    if self.nupt[1, step] > 0.8:
+                    if self.nupt[1, step] > 1.5:
                         rwarn(
                             f"NuptkO  > max - 749 | in spin{s}, step{step} - {self.nupt[1, step]}")
                         self.nupt[1, step] = 0.0
@@ -975,7 +990,7 @@ class grd:
                         rwarn(
                             f"PuptkO < 0 - 759 | in spin{s}, step{step} - {self.pupt[2, step]}")
                         self.pupt[2, step] = 0.0
-                    if self.pupt[2, step] > 0.1:
+                    if self.pupt[2, step] > 1.0:
                         rwarn(
                             f"PuptkO  < max - 763 | in spin{s}, step{step} - {self.pupt[2, step]}")
                         self.pupt[2, step] = 0.0
