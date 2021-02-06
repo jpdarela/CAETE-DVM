@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     import time
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else 274
+    n_proc = mp.cpu_count() // 2 if not sombrero else 128
 
     fh = open('logfile.log', mode='w')
 

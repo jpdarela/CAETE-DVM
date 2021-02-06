@@ -6,6 +6,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import cftime
+import datetime
 import pandas as pd
 import tables as tb
 import template_tables as tt
@@ -26,10 +27,8 @@ def cf_date2str(cftime_in):
 
 def str2cf_date(string_date, cf_time=True):
     if not cf_time:
-        import datetime
         func = datetime.date
     else:
-        import cftime
         func = cftime.real_datetime
     year = int(string_date[:4])
     month = int(string_date[4:6])
@@ -200,7 +199,7 @@ def process_ustrat(u_strat, area):
 
 def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
-    h5_opt = tb.Filters(complevel=3, complib="blosc:lz4hc")
+    h5_opt = tb.Filters(complevel=1, complib="blosc:lz4hc")
 
     # Filters(complevel=0, complib='zlib', shuffle=True,
     # bitshuffle=False, fletcher32=False,
