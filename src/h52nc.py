@@ -178,7 +178,7 @@ def write_area_output(arr, year, experiment="TEST RUN HISTORICAL ISIMIP"):
     time_dim = cftime.date2num(str2cf_date(year), time_units, calendar)
 
     longitude_0 = np.arange(-179.75, 180, 0.5)[201:272]
-    latitude_0 = np.arange(-89.75, 90, 0.5)[160:221]
+    latitude_0 = np.arange(89.75, -90, -0.5)[160:221]
     print("\nSaving netCDF4 area file:", cftime.num2date(
         time_dim, time_units, calendar))
     nc_filename = os.path.join(nc_out, Path(f'ocp_area_{year}.nc4'))
