@@ -239,7 +239,7 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
         PLS_table.flush()
 
-        # Write outpits//
+        # Write outputs//
         cells = []
         grds = os.listdir(out_dir)
         grds = [Path(os.path.join(out_dir, grd)).resolve()
