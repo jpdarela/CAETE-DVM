@@ -46,6 +46,16 @@ out_ext = ".pkz"
 npls = gp.npls
 mask = np.load("../input/mask/mask_raisg-360-720.npy")
 
+run_breaks = [('19790101', '19841231'),
+              ('19850101', '19911231'),
+              ('19920101', '19961231'),
+              ('19970101', '20011231'),
+              ('20020101', '20061231'),
+              ('20070101', '20151231')]
+
+TIME_UNITS = u"days since 1979-01-01"
+CALENDAR = u"proleptic_gregorian"
+
 warnings.simplefilter("default")
 
 
@@ -121,11 +131,11 @@ def B_func(Th33, Th1500):
 
     if Th1500 <= 0.0:
         Th1500 = 0.2
-        rwarn("Th1500  < 0")
+        rwarn("Th1500  <= 0")
     if np.isneginf(Th1500) or np.isposinf(Th1500) or not Th1500 == Th1500:
         Th1500 = 0.2
         rwarn("Th1500 is NaN or inf")
-
+# -58.2559,6.2590
     D = ln(Th33) - ln(Th1500)
     B = (ln(1500) - ln(33)) / D
 
@@ -592,10 +602,22 @@ class grd:
         self.wp_sat_water_upper_ratio = tsoil[0][self.y, self.x].copy()
         self.wp_field_capacity_upper = tsoil[1][self.y, self.x].copy()
         self.wp_wilting_point_upper = tsoil[2][self.y, self.x].copy()
+        msg = f"wp_negative UPPER-{self.xyname}"
+        assert self.wp_wilting_point_upper > 0.0, msg
+        msg = f"Ufc > wsat-{self.xyname}"
+        assert self.wp_sat_water_upper_ratio > self.wp_field_capacity_upper, msg
+        msg = f"Ufc < wp-{self.xyname}"
+        assert self.wp_field_capacity_upper > self.wp_wilting_point_upper, msg
 
         self.wp_sat_water_lower_ratio = ssoil[0][self.y, self.x].copy()
         self.wp_field_capacity_lower = ssoil[1][self.y, self.x].copy()
         self.wp_wilting_point_lower = ssoil[2][self.y, self.x].copy()
+        msg = f"wp_negative LOWER-{self.xyname}"
+        assert self.wp_wilting_point_lower > 0.0, msg
+        msg = f"Sfc > wsat-{self.xyname}"
+        assert self.wp_sat_water_lower_ratio > self.wp_field_capacity_lower, msg
+        msg = f"Sfc < wp-{self.xyname}"
+        assert self.wp_field_capacity_lower > self.wp_wilting_point_lower, msg
 
         self.wp_sat_water_upper_mm = self.wp_sat_water_upper_ratio * 300.0
         self.wp_sat_water_lower_mm = self.wp_sat_water_lower_ratio * 700.0

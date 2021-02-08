@@ -199,7 +199,7 @@ def process_ustrat(u_strat, area):
 
 def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
-    h5_opt = tb.Filters(complevel=1, complib="blosc:lz4hc")
+    h5_opt = tb.Filters(complevel=2, complib="lzo")
 
     # Filters(complevel=0, complib='zlib', shuffle=True,
     # bitshuffle=False, fletcher32=False,

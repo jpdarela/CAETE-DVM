@@ -16,13 +16,15 @@ from netCDF4 import Dataset
 import numpy as np
 
 import caete
-from caete import grd, mask, npls, print_progress
+from caete import grd, mask, npls, print_progress, run_breaks
 import plsgen as pls
 
 from post_processing import write_h5
 
 __author__ = "João Paulo Darela Filho"
 __descr__ = """RUN CAETÊ --- TODO"""
+
+FUNCALLS = 0
 
 
 def check_start():
@@ -113,7 +115,7 @@ for i, g in enumerate(grid_mn):
     apply_init(g)
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
-# APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
+# # APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
 
 
 def apply_spin(grid):
@@ -131,38 +133,44 @@ def apply_fun(grid):
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '20101231', spinup=15,
+    grid.run_caete('19790101', '20101231', spinup=9,
                    fix_co2='1979', save=False)
     return grid
 
 
 def apply_fun1(grid):
-    grid.run_caete('19790101', '19841231')
+    dates = run_breaks[0]
+    grid.run_caete(dates[0], dates[1])
     return grid
 
 
 def apply_fun2(grid):
-    grid.run_caete('19850101', '19911231')
+    dates = run_breaks[1]
+    grid.run_caete(dates[0], dates[1])
     return grid
 
 
 def apply_fun3(grid):
-    grid.run_caete('19920101', '19961231')
+    dates = run_breaks[2]
+    grid.run_caete(dates[0], dates[1])
     return grid
 
 
 def apply_fun4(grid):
-    grid.run_caete('19970101', '20011231')
+    dates = run_breaks[3]
+    grid.run_caete(dates[0], dates[1])
     return grid
 
 
 def apply_fun5(grid):
-    grid.run_caete('20020101', '20061231')
+    dates = run_breaks[4]
+    grid.run_caete(dates[0], dates[1])
     return grid
 
 
 def apply_fun6(grid):
-    grid.run_caete('20070101', '20151231')
+    dates = run_breaks[5]
+    grid.run_caete(dates[0], dates[1])
     return grid
 
 
@@ -172,11 +180,6 @@ del pls_table
 del co2_data
 del stime
 
-for d in tsoil:
-    del d
-
-for d in ssoil:
-    del d
 
 if __name__ == "__main__":
 
@@ -194,8 +197,10 @@ if __name__ == "__main__":
     fh = open('logfile.log', mode='w')
 
     def applyXy(fun, input):
-        fh.writelines("MODEL EXEC - \n",)
-        print("MODEL EXEC - RUN")
+        global FUNCALLS
+        FUNCALLS += 1
+        fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
+        print(f"MODEL EXEC - RUN {FUNCALLS}")
         with mp.Pool(processes=n_proc) as p:
             result = p.map(fun, input)
         end_spinup = time.time() - start
