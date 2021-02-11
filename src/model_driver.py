@@ -20,9 +20,10 @@ from caete import grd, mask, npls, print_progress, run_breaks
 import plsgen as pls
 
 from post_processing import write_h5
+from h52nc import h52nc
 
 __author__ = "João Paulo Darela Filho"
-__descr__ = """RUN CAETÊ --- TODO"""
+__descr__ = """RUN CAETÊ"""
 
 FUNCALLS = 0
 
@@ -115,62 +116,37 @@ for i, g in enumerate(grid_mn):
     apply_init(g)
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
-# # APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
 
-
+# DEFINE HARVERSTERS - funcs that will apply grd methods(run the CAETÊ model) over the instanvces
 def apply_spin(grid):
+    """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
     w, ll, cwd, rl, lnc = grid.bdg_spinup(
         start_date="19790101", end_date="19830101")
     grid.sdc_spinup(w, ll, cwd, rl, lnc)
     return grid
 
 
-# Make a model spinup
 def apply_fun(grid):
-    grid.run_caete('19790101', '20101231', spinup=1,
-                   fix_co2='1999', save=False, nutri_cycle=False)
+    grid.run_caete('19790101', '19801231', spinup=1,
+                   fix_co2='1979', save=False, nutri_cycle=False)
     return grid
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '20101231', spinup=9,
+    grid.run_caete('19790101', '19801231', spinup=1,
                    fix_co2='1979', save=False)
     return grid
 
 
-def apply_fun1(grid):
-    dates = run_breaks[0]
-    grid.run_caete(dates[0], dates[1])
-    return grid
+def zip_gridtime(grd_pool, interval):
+    res = []
+    for i, j in enumerate(grd_pool):
+        res.append((j, interval[i % len(interval)]))
+    return res
 
 
-def apply_fun2(grid):
-    dates = run_breaks[1]
-    grid.run_caete(dates[0], dates[1])
-    return grid
-
-
-def apply_fun3(grid):
-    dates = run_breaks[2]
-    grid.run_caete(dates[0], dates[1])
-    return grid
-
-
-def apply_fun4(grid):
-    dates = run_breaks[3]
-    grid.run_caete(dates[0], dates[1])
-    return grid
-
-
-def apply_fun5(grid):
-    dates = run_breaks[4]
-    grid.run_caete(dates[0], dates[1])
-    return grid
-
-
-def apply_fun6(grid):
-    dates = run_breaks[5]
-    grid.run_caete(dates[0], dates[1])
+def apply_funX(grid, brk):
+    grid.run_caete(brk[0], brk[1])
     return grid
 
 
@@ -192,20 +168,11 @@ if __name__ == "__main__":
 
     import time
 
+    print("START: ", time.ctime())
+
     n_proc = mp.cpu_count() // 2 if not sombrero else 128
 
     fh = open('logfile.log', mode='w')
-
-    def applyXy(fun, input):
-        global FUNCALLS
-        FUNCALLS += 1
-        fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
-        print(f"MODEL EXEC - RUN {FUNCALLS}")
-        with mp.Pool(processes=n_proc) as p:
-            result = p.map(fun, input)
-        end_spinup = time.time() - start
-        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-        return result
 
     fh.writelines(time.ctime(),)
     fh.writelines("\n\n",)
@@ -221,6 +188,22 @@ if __name__ == "__main__":
     del grid_mn
 
     # MAIN SPINUP
+    def applyXy(fun, input):
+        global FUNCALLS
+        FUNCALLS += 1
+        fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
+        print(f"MODEL EXEC - RUN {FUNCALLS}")
+        with mp.Pool(processes=n_proc) as p:
+            # reserve 2 funcalls for the main spinup
+            if FUNCALLS > 2:
+                result = p.starmap(fun, input)
+            else:
+                result = p.map(fun, input)
+        end_spinup = time.time() - start
+        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+        return result
+
+    print("Applying main spinup. This process can take hours (RUN 1 & 2)")
     result = applyXy(apply_fun, _spinup_)
     del _spinup_
 
@@ -228,30 +211,22 @@ if __name__ == "__main__":
     del result
 
     # Save Ground 0
-    with open("RUN0.pkz", 'wb') as fh2:
-        print("Saving gridcells with init state in RUN0.pkz")
-        joblib.dump(result1, fh2, compress=('zlib', 9), protocol=4)
+    # with open("RUN0.pkz", 'wb') as fh2:
+    #     print("Saving gridcells with init state in RUN0.pkz")
+    #     joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
-    # Apply MODEL
-    result2 = applyXy(apply_fun1, result1)
+    result = result1
     del result1
-
-    result3 = applyXy(apply_fun2, result2)
-    del result2
-
-    result4 = applyXy(apply_fun3, result3)
-    del result3
-
-    result5 = applyXy(apply_fun4, result4)
-    del result4
-
-    result6 = applyXy(apply_fun5, result5)
-    del result5
-
-    result7 = applyXy(apply_fun6, result6)
-    del result6
+    for i, brk in enumerate(run_breaks):
+        print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+        result = zip_gridtime(result, (brk,))
+        result = applyXy(apply_funX, result)
 
     fh.close()
 
-    print("Salvando db")
-    write_h5()
+    # print(time.ctime())
+    # print("Salvando db")
+    # write_h5()
+    # print("Processamento Final")
+    # h52nc()
+    # print(time.ctime())

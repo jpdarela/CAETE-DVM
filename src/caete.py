@@ -46,15 +46,32 @@ out_ext = ".pkz"
 npls = gp.npls
 mask = np.load("../input/mask/mask_raisg-360-720.npy")
 
-run_breaks = [('19790101', '19841231'),
-              ('19850101', '19911231'),
-              ('19920101', '19961231'),
-              ('19970101', '20011231'),
-              ('20020101', '20061231'),
-              ('20070101', '20151231')]
+run_breaks = [('19790101', '19801231'),
+              ('19810101', '19821231')]
+#   ('19830101', '19841231'),
+#   ('19850101', '19861231'),
+#   ('19870101', '19881231'),
+#   ('19890101', '19901231'),
+#   ('19910101', '19921231'),
+#   ('19930101', '19941231'),
+#   ('19950101', '19961231'),
+#   ('19970101', '19981231'),
+#   ('19990101', '20001231'),
+#   ('20010101', '20021231'),
+#   ('20030101', '20041231'),
+#   ('20050101', '20061231'),
+#   ('20070101', '20081231'),
+#   ('20090101', '20101231'),
+#   ('20110101', '20121231'),
+#   ('20130101', '20141231')]
 
 TIME_UNITS = u"days since 1979-01-01"
 CALENDAR = u"proleptic_gregorian"
+NO_DATA = [-9999.0, -9999.0]
+
+longitude_0 = np.arange(-179.75, 180, 0.5)[201:272]
+latitude_0 = np.arange(89.75, -90, -0.5)[160:221]
+
 
 warnings.simplefilter("default")
 
@@ -135,7 +152,7 @@ def B_func(Th33, Th1500):
     if np.isneginf(Th1500) or np.isposinf(Th1500) or not Th1500 == Th1500:
         Th1500 = 0.2
         rwarn("Th1500 is NaN or inf")
-# -58.2559,6.2590
+
     D = ln(Th33) - ln(Th1500)
     B = (ln(1500) - ln(33)) / D
 
@@ -176,27 +193,6 @@ def kth_func(Th, ThS, lbd, ksat):
 
 
 # MODEL
-
-class run:
-
-    def __init__(self, grid_pool, descr='HISTORCAL-ISIMIP'):
-        """__INIT_
-        grid_pool = list or np_array with grd instances
-        grd instances are started an"""
-        self.grid_pool = grid_pool
-        self.descr = descr
-
-    def save_run(self):
-        with open(f'RUN-{self.descr}.pkz', mode='wb') as fh:
-            dump(self.grid_pool, fh, compress=('zlib', 3), protocol=4)
-
-    def load_run(self):
-        try:
-            with open(f'RUN-{self.descr}.pkz', mode='rb') as fh:
-                return load(fh)
-        except:
-            raise(FileNotFoundError)
-
 
 class grd:
 

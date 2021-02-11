@@ -9,7 +9,7 @@ from netCDF4 import Dataset as dt
 
 from post_processing import cf_date2str, str2cf_date
 from caete_module import global_par as gp
-from caete import print_progress, run_breaks
+from caete import NO_DATA, print_progress, run_breaks
 
 TIME_UNITS = u"days since 1979-01-01"
 CALENDAR = u"proleptic_gregorian"
@@ -32,8 +32,16 @@ def assemble_layer(ny, nx, var):
     return out[160:221, 201:272]
 
 
-def assemble_layer_area(npls, ny, nx, var):
-    out = np.zeros(shape=(npls, 360, 720), dtype=np.float32) - 9999.0
+def assemble_cwm(ny, nx, area, pls_arr):
+    out = np.zeros(shape=(360, 720), dtype=np.float32) - 9999.0
+
+    for x in range(area.shape[0]):
+        out[ny[x], nx[x]] = np.sum(area[x, :] * pls_arr)
+    return out[160:221, 201:272]
+
+
+def assemble_layer_area(ny, nx, var):
+    out = np.zeros(shape=(gp.npls, 360, 720), dtype=np.float32) - 9999.0
     # var shape = ny*nx , npls
     for x in range(var.shape[0]):
         out[:, ny[x], nx[x]] = var[x, :]
@@ -53,7 +61,7 @@ def time_queries(interval):
 
 def get_var_metadata(var):
 
-    vunits = {'header': ['long_name', 'unit', 'standart_name', 'ldim'],
+    vunits = {'header': ['long_name', 'unit', 'standart_name'],
 
               'rsds': ['short_wav_rad_down', 'W m-2', 'rsds'],
               'wind': ['wind_velocity', 'm s-1', 'wind'],
@@ -132,7 +140,24 @@ def get_var_metadata(var):
               'upt_stratP5': ['ram-ap', 'Time fraction', 'upt_stratP5'],
               'upt_stratP6': ['rem-ap', 'Time fraction', 'upt_stratP6'],
               'upt_stratP7': ['amap', 'Time fraction', 'upt_stratP7'],
-              'upt_stratP8': ['em0x', 'Time fraction', 'upt_stratP8']}
+              'upt_stratP8': ['em0x', 'Time fraction', 'upt_stratP8'],
+              'g1': ['CWM- G1 param for Stomat.Resist  model', 'unitless', 'g1'],
+              'resopfrac': ['CWM- Leaf resorpton fractio', '%', 'resopfrac'],
+              'tleaf': ['CWM- leaf turnover time', 'years', 'tleaf'],
+              'twood': ['CWM- wood turnover time', 'years', 'twood'],
+              'troot': ['CWM- fine root turnover time', 'years', 'troot'],
+              'aleaf': ['CWM- allocation coefficients for leaf', 'unitless', 'aleaf'],
+              'awood': ['CWM- allocation coefficients for wood', 'unitless', 'awood'],
+              'aroot': ['CWM- allocation coefficients for root', 'unitless', 'aroot'],
+              'c4': ['CWM- c4 photosynthesis pathway', 'unitless', 'c4'],
+              'leaf_n2c': ['CWM- leaf N:C', 'g g-1', 'leaf_n2c'],
+              'awood_n2c': ['CWM- wood tissues N:C', 'g g-1', 'awood_n2c'],
+              'froot_n2c': ['CWM- fine root N:C', 'g g-1', 'froot_n2c'],
+              'leaf_p2c': ['CWM- leaf P:C', 'g g-1', 'leaf_p2c'],
+              'awood_p2c': ['CWM- wood tissues P:C', 'g g-1', 'awood_p2c'],
+              'froot_p2c': ['CWM- fine root P:C', 'g g-1', 'froot_p2c'],
+              'amp': ['CWM- Percentage of fine root colonized by AM', '%', 'amp'],
+              'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia']}
 
     out = {}
     for v in var:
@@ -356,7 +381,7 @@ def write_area_output(arr, time_index, experiment="TEST RUN HISTORICAL ISIMIP"):
         var_.missing_value = NO_DATA[0]
 
         # WRITING DATA
-        pls[:] = np.arange(100, dtype=np.int16)
+        pls[:] = np.arange(gp.npls, dtype=np.int16)
         longitude[:] = longitude_0
         latitude[:] = latitude_0
         time[:] = time_dim
@@ -391,10 +416,6 @@ def create_ncG1(table, interval):
     pupt2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     pupt3 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
 
-    # TODO sort G1 table
-    # if table.col has index: reindex_dirty
-    # else: create_index(row_id)
-    # tbl = table.copy(newname="indexed_g1", sortby=table.cols.row_index)
     print("\nQuerying data from file FOR", end=': ')
     for v in vars:
         print(v, end=", ")
@@ -434,7 +455,9 @@ def create_ncG1(table, interval):
                        suffix='Complete')
     # write netcdf
     nupt1 = nupt2 + nupt1
+    np.place(nupt1, mask=nupt2 == -9999.0, vals=NO_DATA)
     pupt1 = pupt3 + pupt2 + pupt1
+    np.place(pupt1, mask=pupt2 == -9999.0, vals=NO_DATA)
 
     vars = ['photo', 'aresp', 'npp', 'lai', 'wue', 'cue',
             'vcmax', 'sla', 'nupt', 'pupt']
@@ -530,9 +553,13 @@ def create_ncG2(table, interval):
                        suffix='Complete')
     # write netcdf
     csoil = csoil1 + csoil2 + csoil3 + csoil4
+    np.place(csoil, mask=csoil1 == -9999.0, vals=NO_DATA)
     org_n = sncN1 + sncN2 + sncN3 + sncN4
+    np.place(org_n, mask=sncN1 == -9999.0, vals=NO_DATA)
     org_p = sncP1 + sncP2 + sncP3 + sncP4
+    np.place(org_p, mask=sncP1 == -9999.0, vals=NO_DATA)
     inorg_n = sorbed_n + inorg_n
+    np.place(inorg_n, mask=sorbed_n == -9999.0, vals=NO_DATA)
 
     vars = ['csoil', 'org_n', 'org_p', 'inorg_n',
             'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
@@ -631,8 +658,11 @@ def create_ncG3(table, interval):
                        suffix='Complete')
     # write netcdf
     litter_n = lnc1 + lnc2 + lnc3
+    np.place(litter_n, mask=lnc1 == -9999.0, vals=NO_DATA)
     litter_p = lnc4 + lnc5 + lnc6
+    np.place(litter_p, mask=lnc4 == -9999.0, vals=NO_DATA)
     wsoil = swsoil + wsoil
+    np.place(wsoil, mask=swsoil == -9999.0, vals=NO_DATA)
 
     vars = ["rcm", "runom", "evapm", "wsoil", "cleaf", "cawood",
             "cfroot", "litter_l", "cwd", "litter_fr", "litter_n",
@@ -862,6 +892,191 @@ def ustrat_data(table):
     write_snap_output(arr, vars, flt_attrs, time_index)
 
 
+def ccc(table, pls_table):
+
+    nc_out = Path("../nc_outputs")
+    out_data = True if nc_out.exists() else os.mkdir(nc_out)
+    if out_data is None:
+        print(f"Creating output folder at{nc_out.resolve()}")
+    elif out_data:
+        print(f"Saving outputs in {nc_out.resolve()}")
+
+    dm1 = len(run_breaks) + 1
+    g1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    resopfrac = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    tleaf = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    twood = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    troot = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    aleaf = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    awood = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    aroot = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    c4 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    leaf_n2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    awood_n2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    froot_n2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    leaf_p2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    awood_p2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    froot_p2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    amp = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    pdia = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+
+    time_index = []
+    pls_array = pls_table.read_where("PLS_id >= 0")
+    for i, interval in enumerate(run_breaks):
+        out = table.read_where(build_strds(interval[0]))
+        if i == 0:
+            a0date = str2cf_date(interval[0])
+            time_index.append(
+                int(cftime.date2num(a0date, TIME_UNITS, CALENDAR)))
+            afdate = str2cf_date(interval[1])
+            time_index.append(
+                int(cftime.date2num(afdate, TIME_UNITS, CALENDAR)))
+            g1[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['g1'])
+            resopfrac[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['resopfrac'])
+            tleaf[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['tleaf'])
+            twood[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['twood'])
+            troot[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['troot'])
+            aleaf[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['aleaf'])
+            awood[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['awood'])
+            aroot[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['aroot'])
+            c4[i, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
+                                       out['area_0'], pls_array['c4'])
+            leaf_n2c[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['leaf_n2c'])
+            awood_n2c[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['awood_n2c'])
+            froot_n2c[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['froot_n2c'])
+            leaf_p2c[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['leaf_p2c'])
+            awood_p2c[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['awood_p2c'])
+            froot_p2c[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['froot_p2c'])
+            amp[i, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
+                                        out['area_0'], pls_array['amp'])
+            pdia[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['pdia'])
+
+            g1[i + 1, :, :] = assemble_cwm(out['grid_y'],
+                                           out['grid_x'], out['area_f'], pls_array['g1'])
+            resopfrac[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['resopfrac'])
+            tleaf[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['tleaf'])
+            twood[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['twood'])
+            troot[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['troot'])
+            aleaf[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['aleaf'])
+            awood[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['awood'])
+            aroot[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['aroot'])
+            c4[i + 1, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
+                                           out['area_f'], pls_array['c4'])
+            leaf_n2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['leaf_n2c'])
+            awood_n2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['awood_n2c'])
+            froot_n2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['froot_n2c'])
+            leaf_p2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['leaf_p2c'])
+            awood_p2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['awood_p2c'])
+            froot_p2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['froot_p2c'])
+            amp[i + 1, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
+                                            out['area_f'], pls_array['amp'])
+            pdia[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['pdia'])
+        else:
+            afdate = str2cf_date(interval[1])
+            time_index.append(
+                int(cftime.date2num(afdate, TIME_UNITS, CALENDAR)))
+            g1[i + 1, :, :] = assemble_cwm(out['grid_y'],
+                                           out['grid_x'], out['area_f'], pls_array['g1'])
+            resopfrac[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['resopfrac'])
+            tleaf[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['tleaf'])
+            twood[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['twood'])
+            troot[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['troot'])
+            aleaf[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['aleaf'])
+            awood[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['awood'])
+            aroot[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['aroot'])
+            c4[i + 1, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
+                                           out['area_f'], pls_array['c4'])
+            leaf_n2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['leaf_n2c'])
+            awood_n2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['awood_n2c'])
+            froot_n2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['froot_n2c'])
+            leaf_p2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['leaf_p2c'])
+            awood_p2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['awood_p2c'])
+            froot_p2c[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['froot_p2c'])
+            amp[i + 1, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
+                                            out['area_f'], pls_array['amp'])
+
+    arr = [g1,
+           resopfrac,
+           tleaf,
+           twood,
+           troot,
+           aleaf,
+           awood,
+           aroot,
+           c4,
+           leaf_n2c,
+           awood_n2c,
+           froot_n2c,
+           leaf_p2c,
+           awood_p2c,
+           froot_p2c,
+           amp,
+           pdia]
+
+    vars = ['g1',
+            'resopfrac',
+            'tleaf',
+            'twood',
+            'troot',
+            'aleaf',
+            'awood',
+            'aroot',
+            'c4',
+            'leaf_n2c',
+            'awood_n2c',
+            'froot_n2c',
+            'leaf_p2c',
+            'awood_p2c',
+            'froot_p2c',
+            'amp',
+            'pdia']
+
+    flt_attrs = get_var_metadata(vars)
+    write_snap_output(arr, vars, flt_attrs, time_index)
+
+
 def create_nc_area(table):
 
     nc_out = Path("../nc_outputs")
@@ -873,7 +1088,7 @@ def create_nc_area(table):
 
     dm1 = len(run_breaks) + 1
 
-    area = np.zeros(shape=(dm1, 100, 61, 71), dtype=np.float32) - 9999.0
+    area = np.zeros(shape=(dm1, gp.npls, 61, 71), dtype=np.float32) - 9999.0
 
     time_index = []
 
@@ -887,42 +1102,70 @@ def create_nc_area(table):
             time_index.append(
                 int(cftime.date2num(afdate, TIME_UNITS, CALENDAR)))
             area[i, :, :, :] = assemble_layer_area(
-                100, out['grid_y'], out['grid_x'], out['area_0'])
-            area[i + 1, :, :, :] = assemble_layer_area(
-                100, out['grid_y'], out['grid_x'], out['area_f'])
+                out['grid_y'], out['grid_x'], out['area_0'])
+            area[i + 1, :, :,
+                 :] = assemble_layer_area(out['grid_y'], out['grid_x'], out['area_f'])
         else:
             afdate = str2cf_date(interval[1])
             time_index.append(
                 int(cftime.date2num(afdate, TIME_UNITS, CALENDAR)))
-            area[i + 1, :, :, :] = assemble_layer_area(
-                100, out['grid_y'], out['grid_x'], out['area_f'])
+            area[i + 1, :, :,
+                 :] = assemble_layer_area(out['grid_y'], out['grid_x'], out['area_f'])
 
     write_area_output(area, time_index)
 
 
-if __name__ == "__main__":
+def h52nc(input_file):
 
-    # interval1 = ('19790101', '19790115')
-    # interval2 = ('19900101', '19991231')
-    # interval3 = ('20000101', '20151231')
+    import time
+
+    interval1 = ('19790101', '19891231')
+    interval2 = ('19900101', '19991231')
+    interval3 = ('20000101', '20151231')
 
     # # print("Loading file...")
-    # # with tb.open_file("/d/c1/homes/amazonfaceme/jpdarela/CAETE/out_test/CAETE_100_2.h5", mode='a', driver="H5FD_CORE") as h5f:
+    # # with tb.open_file("../outputs/CAETE.h5", mode='a') as h5f:
     # #     print('Loaded')
+
     print("Loading file...")
-    h5f = tb.open_file(
-        "/d/c1/homes/amazonfaceme/jpdarela/CAETE/out_test/CAETE_100_2.h5", mode='r', driver="H5FD_CORE")
+    h5f = tb.open_file(input_file, mode='a', driver="H5FD_CORE")
     print('Loaded')
-    snap_table = h5f.root.RUN0.spin_snapshot
-    # pls_table = h5f.root.RUN0.PLS
-    # lim_data(snap_table)
-    # ustrat_data(snap_table)
-    ti = create_nc_area(snap_table)
 
     # g1_table = h5f.root.RUN0.Outputs_G1
+    print('Creating Sorted table for g1', time.ctime())
+    # index_dt = g1_table.cols.date.create_csindex()
+    # t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
+    t1d = h5f.root.RUN0.indexedT1date
+
     # g2_table = h5f.root.RUN0.Outputs_G2
+    print('Creating Sorted table for g2', time.ctime())
+    # index_dt = g2_table.cols.date.create_csindex()
+    # t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
+    t2d = h5f.root.RUN0.indexedT2date
+
     # g3_table = h5f.root.RUN0.Outputs_G3
-    #
-    # create_ncG1(g1_table, interval1)
-    # create_ncG2(g2_table, interval1)
-    # create_ncG3(g3_table, interval1)
+    print('Creating Sorted table for g3', time.ctime())
+    # index_dt = g3_table.cols.date.create_csindex()
+    # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
+    t3d = h5f.root.RUN0.indexedT3date
+
+
+    create_ncG1(t1d, interval1)
+    create_ncG1(t1d, interval2)
+    create_ncG1(t1d, interval3)
+    create_ncG2(t2d, interval1)
+    create_ncG2(t2d, interval2)
+    create_ncG2(t2d, interval3)
+    create_ncG3(t3d, interval1)
+    create_ncG3(t3d, interval2)
+    create_ncG3(t3d, interval3)
+
+    snap_table = h5f.root.RUN0.spin_snapshot
+
+    lim_data(snap_table)
+    ustrat_data(snap_table)
+    create_nc_area(snap_table)
+    pls_table = h5f.root.RUN0.PLS
+    ccc(snap_table, pls_table)
+
+    h5f.close()

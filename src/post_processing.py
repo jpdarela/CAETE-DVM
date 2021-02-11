@@ -199,14 +199,14 @@ def process_ustrat(u_strat, area):
 
 def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
-    h5_opt = tb.Filters(complevel=2, complib="lzo")
+    h5_opt = tb.Filters(complevel=1, complib="blosc:blosclz")
 
     # Filters(complevel=0, complib='zlib', shuffle=True,
     # bitshuffle=False, fletcher32=False,
     # least_significant_digit=None, _new=True)
 
     postp = os.path.join(Path(out_dir), Path("CAETE.h5"))
-    with tb.open_file(postp, mode="w", title="Test file") as h5file:
+    with tb.open_file(postp, mode="w", driver='H5FD_CORE', title="CAETÊ outputs") as h5file:
 
         group_run = h5file.create_group(
             "/", f'RUN{RUN}', f'CAETÊ outputs tables Run {RUN}')
@@ -224,7 +224,7 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
             group_run, 'PLS', tt.PLS_temp, f"PLS table for RUN{RUN}", expectedrows=gp.npls)
         spin_table = h5file.create_table(
             group_run, 'spin_snapshot', tt.spin_snapshots,
-            "Area, Nutrient limitation and N/P uptake", expectedrows=2749 * 7, filters=h5_opt)
+            "Area, Nutrient limitation and N/P uptake", expectedrows=2749 * 18, filters=h5_opt)
 
         # write PLS table
         PLS_row = PLS_table.row
