@@ -215,7 +215,7 @@ def table_gen(NPLS):
     # # C4 STYLE
     c4 = np.zeros((NPLS,), dtype=np.float64)
     n123 = ceil(alloc_g.shape[0] * 0.70)
-    c4[0:n123 - 1] = 1.0
+    c4[0: n123 - 1] = 1.0
 
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
@@ -237,7 +237,7 @@ def table_gen(NPLS):
     froot_p2c = root[:, 1]
 
     # new traits
-    pdia = np.random.uniform(0.0, 0.1e-6, NPLS)
+    pdia = np.random.uniform(0.0, 0.1e-7, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)
     for i in woods:

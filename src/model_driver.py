@@ -127,14 +127,14 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19790101', '19801231', spinup=1,
-                   fix_co2='1979', save=False, nutri_cycle=False)
+    grid.run_caete('19790101', '19891231', spinup=2,
+                   fix_co2='1983', save=False, nutri_cycle=False)
     return grid
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '19801231', spinup=1,
-                   fix_co2='1979', save=False)
+    grid.run_caete('19790101', '19881231', spinup=45,
+                   fix_co2='1983', save=False)
     return grid
 
 
@@ -168,17 +168,15 @@ if __name__ == "__main__":
 
     import time
 
-    print("START: ", time.ctime())
-
     n_proc = mp.cpu_count() // 2 if not sombrero else 128
 
     fh = open('logfile.log', mode='w')
-
+    print("START: ", time.ctime())
     fh.writelines(time.ctime(),)
     fh.writelines("\n\n",)
-    fh.writelines("SPINUP...",)
+    fh.writelines("SOIL SPINUP...\n",)
     start = time.time()
-    print("SPINUP...")
+    print("SOIL SPINUP...")
 
     # SOIL SPINUP
     with mp.Pool(processes=n_proc) as p:
@@ -204,6 +202,10 @@ if __name__ == "__main__":
         return result
 
     print("Applying main spinup. This process can take hours (RUN 1 & 2)")
+
+    # The first 2 calls of applyXy are reserved to the MAIN spinup
+    # These 2 calls will use the method map of the Pool(multiprocessing)
+    # the remaining calls will use the starmap method
     result = applyXy(apply_fun, _spinup_)
     del _spinup_
 
@@ -211,9 +213,9 @@ if __name__ == "__main__":
     del result
 
     # Save Ground 0
-    # with open("RUN0.pkz", 'wb') as fh2:
-    #     print("Saving gridcells with init state in RUN0.pkz")
-    #     joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
+    with open("RUN0.pkz", 'wb') as fh2:
+        print("Saving gridcells with init state in RUN0.pkz")
+        joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
     result = result1
     del result1
@@ -224,9 +226,9 @@ if __name__ == "__main__":
 
     fh.close()
 
-    # print(time.ctime())
-    # print("Salvando db")
-    # write_h5()
-    # print("Processamento Final")
-    # h52nc()
-    # print(time.ctime())
+    print(time.ctime())
+    print("Saving db - This will take some hours")
+    write_h5()
+    print("\n\nSaving netCDF4 files")
+    h52nc("../outputs/CAETE.h5")
+    print(time.ctime())

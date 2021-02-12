@@ -1119,35 +1119,32 @@ def h52nc(input_file):
 
     import time
 
-    interval1 = ('19790101', '19891231')
+    interval1 = (run_breaks[0][0], '19891231')
     interval2 = ('19900101', '19991231')
-    interval3 = ('20000101', '20151231')
+    interval3 = ('20000101', run_breaks[-1][-1])
 
-    # # print("Loading file...")
-    # # with tb.open_file("../outputs/CAETE.h5", mode='a') as h5f:
-    # #     print('Loaded')
 
     print("Loading file...")
     h5f = tb.open_file(input_file, mode='a', driver="H5FD_CORE")
     print('Loaded')
 
-    # g1_table = h5f.root.RUN0.Outputs_G1
+    g1_table = h5f.root.RUN0.Outputs_G1
     print('Creating Sorted table for g1', time.ctime())
-    # index_dt = g1_table.cols.date.create_csindex()
-    # t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
-    t1d = h5f.root.RUN0.indexedT1date
+    index_dt = g1_table.cols.date.create_csindex()
+    t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
+    # t1d = h5f.root.RUN0.indexedT1date
 
-    # g2_table = h5f.root.RUN0.Outputs_G2
+    g2_table = h5f.root.RUN0.Outputs_G2
     print('Creating Sorted table for g2', time.ctime())
-    # index_dt = g2_table.cols.date.create_csindex()
-    # t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
-    t2d = h5f.root.RUN0.indexedT2date
+    index_dt = g2_table.cols.date.create_csindex()
+    t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
+    # t2d = h5f.root.RUN0.indexedT2date
 
-    # g3_table = h5f.root.RUN0.Outputs_G3
+    g3_table = h5f.root.RUN0.Outputs_G3
     print('Creating Sorted table for g3', time.ctime())
-    # index_dt = g3_table.cols.date.create_csindex()
-    # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
-    t3d = h5f.root.RUN0.indexedT3date
+    index_dt = g3_table.cols.date.create_csindex()
+    t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
+    # t3d = h5f.root.RUN0.indexedT3date
 
 
     create_ncG1(t1d, interval1)
@@ -1161,10 +1158,10 @@ def h52nc(input_file):
     create_ncG3(t3d, interval3)
 
     snap_table = h5f.root.RUN0.spin_snapshot
-
     lim_data(snap_table)
     ustrat_data(snap_table)
     create_nc_area(snap_table)
+
     pls_table = h5f.root.RUN0.PLS
     ccc(snap_table, pls_table)
 

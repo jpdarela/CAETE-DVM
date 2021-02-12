@@ -120,9 +120,9 @@ contains
 !    |____/___\____| |_____|_____/_/   \_\_|
 !     Leaf area index (m2/m2)
     sla = spec_leaf_area(tleaf)
-    ! laia = leaf_area_index(cl1_prod, sla)
-
-    laia = 0.2D0 * dexp((2.5D0 * f1a)/p25)
+    laia = leaf_area_index(cl1_prod, sla)
+    ! TODO organizar a parada
+    ! laia = 0.2D0 * dexp((2.5D0 * f1a)/p25)
 ! VPD
 !========
     vpd = vapor_p_defcit(temp,rh)
@@ -130,10 +130,6 @@ contains
 !Stomatal resistence
 !===================
     rc = canopy_resistence(vpd, f1a, g1, catm) * real(laia, kind=r_4)!s m-1
-
-! Novo calculo da WUE
-
-    wue = water_ue(f1a, rc, p0, vpd)
 
 !     calcula a transpiração em mm/s
 
@@ -158,6 +154,10 @@ contains
     else
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif
+
+    ! Novo calculo da WUE
+
+    wue = water_ue(f1, rc, p0, vpd)
 
 
 
