@@ -82,6 +82,7 @@ contains
 
     real(r_8) :: f1       !Leaf level gross photosynthesis (molCO2/m2/s)
     real(r_8) :: f1a      !auxiliar_f1
+    real(r_4) :: rc_pot, rc_aux
 
 !getting pls parameters
 
@@ -111,43 +112,18 @@ contains
     call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
          & p2cl,tleaf,f1a,vm_out,jl_out)
 
-    ! print*, 'jl: ',jl_out, catm
 
-!    _____     ____   _     _____    _    _____
-!    | __ )_ _/ ___| | |   | ____|  / \  |  ___|
-!    |  _ \| | |  _  | |   |  _|   / _ \ | |_
-!    | |_)|| | |_| | | |___| |___ / ___ \|  _|
-!    |____/___\____| |_____|_____/_/   \_\_|
-!     Leaf area index (m2/m2)
-    sla = spec_leaf_area(tleaf)
-    ! laia = leaf_area_index(cl1_prod, sla)
-
-    laia = 0.2D0 * dexp((2.5D0 * f1a)/p25)
-! VPD
-!========
+    ! VPD
+    !========
     vpd = vapor_p_defcit(temp,rh)
 
-!Stomatal resistence
-!===================
-    rc = canopy_resistence(vpd, f1a, g1, catm) * real(laia, kind=r_4)!s m-1
+    !Stomatal resistence
+    !===================
+    rc_pot = canopy_resistence(vpd, f1a, g1, catm) ! Potential RCM leaf level - s m-1
 
-! Novo calculo da WUE
-
-    wue = water_ue(f1a, rc, p0, vpd)
-
-!     calcula a transpiração em mm/s
-
-    e = transpiration(rc, p0, vpd, 2)
-
-!     Water stress response modifier (dimensionless)
-!     ----------------------------------------------
-    ! print*,cf1_prod, 'CF in F5'
-    ! print*, w, 'w'
-    ! print*, rc, 'rc'
-    ! print*, emax, 'emax'
-
-    ! wsoil + h +
-    f5 =  water_stress_modifier(w, cf1_prod, rc, emax, wmax)
+    !Water stress response modifier (dimensionless)
+    !----------------------------------------------
+    f5 =  water_stress_modifier(w, cf1_prod, rc_pot, emax, wmax)
 
 
 !     Photosysthesis minimum and maximum temperature
@@ -159,10 +135,25 @@ contains
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif
 
+    rc_aux = canopy_resistence(vpd, f1, g1, catm)  ! RCM leaf level -!s m-1
 
+    wue = water_ue(f1, rc_aux, p0, vpd)
+
+
+    !     calcula a transpiração em mm/s
+    e = transpiration(rc_aux, p0, vpd, 2)
+
+    ! Leaf area index (m2/m2)
+    ! recalcula rc e escalona para dossel
+    ! laia = 0.2D0 * dexp((2.5D0 * f1)/p25)
+    sla = spec_leaf_area(tleaf)  ! m2 g-1  ! Convertions made in leaf_area_index &  gross_ph + calls therein
+
+    laia = leaf_area_index(cl1_prod, sla)
+    rc = rc_aux * real(laia,kind=r_4) ! RCM -!s m-1
 
 !     Canopy gross photosynthesis (kgC/m2/yr)
 !     =======================================x
+
     ph =  gross_ph(f1,cl1_prod,sla)       ! kg m-2 year-1
 
 !     Autothrophic respiration

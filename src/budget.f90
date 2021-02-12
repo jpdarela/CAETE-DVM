@@ -31,7 +31,7 @@ contains
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp)
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
 
 
       use types
@@ -101,9 +101,9 @@ contains
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
-      real(r_8),dimension(npls),intent(out) ::  npp2pay_1
+      real(r_8),dimension(npls),intent(out) ::  npp2pay_1 ! C costs of N/P uptake
       real(r_8),dimension(3),intent(out) :: cp
-
+      real(r_8),intent(out) :: c_cost_cwm
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri, i, j
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
@@ -271,7 +271,6 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
-         ! GABI hydro
          call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
                &, soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
@@ -281,7 +280,6 @@ contains
 
          ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
-         ! print*, 'STO',carbon_in_storage
          storage_out_bdgt(1, p) = carbon_in_storage
          if (c_def(p) .gt. 0.0) then
             testcdef = c_def(p) - carbon_in_storage
@@ -298,9 +296,6 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
-         ! print*, cl1_pft(ri)
-         ! print*,''
-         ! print*, 'mr_sto' , mr_sto
          if (isnan(mr_sto)) mr_sto = 0.0D0
          if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
@@ -314,7 +309,6 @@ contains
             &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p))
 
          ! Estimate growth of storage C pool
-         ! print*, uptk_strat(:,p)
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
          if (isnan(growth_stoc)) growth_stoc = 0.0D0
          if (growth_stoc .gt. 0.1D2) growth_stoc = 0.0D0
@@ -325,9 +319,6 @@ contains
          if(sr .gt. 1.0D2) sr = 0.0D0
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
-
-         ! print*, 'growth_stoc' , growth_stoc
-         ! print*, 'sr' , sr
 
          growth_stoc = 0.0D0
          mr_sto = 0.0D0
@@ -341,7 +332,7 @@ contains
          endif
 
          delta_cveg(1,p) = cl2(p) - cl1_pft(ri)  !kg m-2
-         if(dt1(4) .le. 0) then
+         if(dt1(4) .lt. 0.0D0) then
             delta_cveg(2,p) = 0.0D0
          else
             delta_cveg(2,p) = ca2(p) - ca1_pft(ri)
@@ -351,78 +342,29 @@ contains
          ! Mass Balance
 
          if(c_def(p) .gt. 0.0) then
-            if(dt1(7) .gt. 0.0) then
+            if(dt1(7) .gt. 0.0D0) then
                cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
                ca1_int(p) = ca2(p) - ((c_def(p) * 1e-3) * 0.333333333)
                cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.333333333)
             else
                cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-               ca1_int(p) = 0.0
+               ca1_int(p) = 0.0D0
                cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
             endif
          else
-            if(dt1(7) .gt. 0.0) then
+            if(dt1(7) .gt. 0.0D0) then
                cl1_int(p) = cl2(p)
                ca1_int(p) = ca2(p)
                cf1_int(p) = cf2(p)
             else
                cl1_int(p) = cl2(p)
-               ca1_int(p) = 0.0
+               ca1_int(p) = 0.0D0
                cf1_int(p) = cf2(p)
             endif
          endif
          if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
          if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
          if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
-
-         ! WATER BALANCE - GABRIEL
-         ! !     Precipitation
-         ! !     =============
-         ! psnow = 0.0
-         ! prain = 0.0
-         ! if (temp.lt.tsnow) then
-         !    psnow = prec
-         ! else
-         !    prain = prec
-         ! endif
-         ! !     Snow budget
-         ! !     ===========
-         ! smelt(p) = 2.63 + 2.55*temp + 0.0912*temp*prain !Snowmelt (mm/day)
-         ! smelt(p) = amax1(smelt(p),0.)
-         ! smelt(p) = amin1(smelt(p),s(p)+psnow)
-         ! ds(p) = psnow - smelt(p)
-         ! s(p) = s(p) + ds(p)
-
-         ! !     Water budget
-         ! !     ============
-         ! if (soil_temp .le. tice) then !Frozen soil
-         !    g(p) = g(p) + w(p) !Soil moisture freezes
-         !    w(p) = 0.0
-         !    roff(p) = smelt(p) + prain !mm/day
-         !    evap(p) = 0.0
-
-         ! else                !Non-frozen soil
-         !    w(p) = w(p) + g(p)
-         !    g(p) = 0.0
-         !    rimelt(p) = 0.0
-         !    if (w(p).gt.wmax) then
-         !       rimelt(p) = w(p) - wmax !Runoff due to soil ice melting
-         !       w(p) = wmax
-         !    endif
-
-         !    roff(p) = runoff(w(p)/wmax)       !Soil moisture runoff (roff, mm/day)
-
-         !    evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
-         !    dw(p) = prain + smelt(p) - evap(p) - roff(p)
-         !    w(p) = w(p) + dw(p)
-         !    if (w(p).gt.wmax) then
-         !       roff(p) = roff(p) + (w(p) - wmax)
-         !       w(p) = wmax
-         !    endif
-         !    if (w(p).lt.0.) w(p) = 0.
-         !    roff(p) = roff(p) + rimelt(p) !Total runoff
-         ! endif
-
 
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
@@ -449,10 +391,7 @@ contains
       lit_nut_content_1(:) = 0.0D0
       nupt_1(:) = 0.0D0
       pupt_1(:) = 0.0D0
-      ! w2(:) = 0.0
-      ! g2(:) = 0.0
-      ! s2(:) = 0.0
-      ! wp(:) = 0.0D0
+
       cleafavg_pft(:) = 0.0D0
       cawoodavg_pft(:) = 0.0D0
       cfrootavg_pft(:) = 0.0D0
@@ -469,8 +408,6 @@ contains
          if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
       enddo
 
-      ! smavg = sum(real(smelt, kind=r_8) * ocp_coeffs, mask= .not. isnan(smelt))
-      ! ruavg = sum(real(roff, kind=r_8) * ocp_coeffs, mask= .not. isnan(roff))
       evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. isnan(evap))
       phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. isnan(ph))
       aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. isnan(ar))
@@ -488,10 +425,8 @@ contains
       litter_l_1 = sum(litter_l * ocp_coeffs, mask= .not. isnan(litter_l))
       cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
       litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
+      c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. isnan(npp2pay))
 
-      ! wp(1) = sum(w * ocp_coeffs, mask= .not. isnan(w))
-      ! wp(2) = sum(g * ocp_coeffs, mask= .not. isnan(g))
-      ! wp(3) = sum(s * ocp_coeffs, mask= .not. isnan(s))
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
       cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
@@ -500,7 +435,7 @@ contains
       do p = 1,2
          do i = 1, nlen
             if (isnan(nupt(p, i))) nupt(p, i) = 0.0D0
-            if (nupt(p, i) .gt. 0.01D2) nupt(p, i) = 0.0D0
+            if (nupt(p, i) .gt. 1.5D2) nupt(p, i) = 0.0D0
             if (nupt(p, i) .lt. 0.0D0) nupt(p, i) = 0.0D0
          enddo
       enddo
@@ -508,7 +443,7 @@ contains
       do p = 1,3
          do i = 1, nlen
             if(isnan(pupt(p, i))) pupt(p, i) = 0.0D0
-            if (pupt(p, i) .gt. 0.01D2) pupt(p, i) = 0.0D0
+            if (pupt(p, i) .gt. 0.7D2) pupt(p, i) = 0.0D0
             if (pupt(p, i) .lt. 0.0D0) pupt(p, i) = 0.0D0
          enddo
       enddo
@@ -523,7 +458,7 @@ contains
       do p = 1,6
          do i = 1, nlen
             if(isnan(lit_nut_content(p, i))) lit_nut_content(p, i) = 0.0D0
-            if (lit_nut_content(p, i) .gt. 0.01D2) lit_nut_content(p, i) = 0.0D0
+            if (lit_nut_content(p, i) .gt. 1.0D2) lit_nut_content(p, i) = 0.0D0
             if (lit_nut_content(p, i) .lt. 0.0D0) lit_nut_content(p, i) = 0.0D0
          enddo
       enddo
@@ -531,7 +466,7 @@ contains
       do p = 1,3
          do i = 1, nlen
             if(isnan(storage_out_bdgt(p,i))) storage_out_bdgt(p,i) = 0.0D0
-            if(storage_out_bdgt(p,i) > 0.1D2) storage_out_bdgt(p,i) = 0.0D0
+            if(storage_out_bdgt(p,i) > 0.5D2) storage_out_bdgt(p,i) = 0.0D0
             if(storage_out_bdgt(p,i) < 0.0D0) storage_out_bdgt(p,i) = 0.0D0
          enddo
       enddo
@@ -542,9 +477,7 @@ contains
 
       do p = 1, nlen
          ri = lp(p)
-         ! w2(ri) = w(p)
-         ! g2(ri) = g(p)
-         ! s2(ri) = s(p)
+
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)

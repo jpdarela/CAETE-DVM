@@ -1,8 +1,8 @@
-import _pickle as pkl
+
 import joblib
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
+import tables as tb
 
 
 def get_var(grd, var, spin=(1, 5)):
@@ -30,72 +30,39 @@ def get_var(grd, var, spin=(1, 5)):
                 dt1 = joblib.load(fh)
                 dt1 = dt1[var]
                 output = np.hstack((output, dt1))
+    elif len(dim) == 3:
+        s = (dim[0], dim[1], 0)
+        output = np.zeros(s, dtype=dt.dtype)
+        for fname in k:
+            with open(grd.outputs[fname], mode='rb') as fh:
+                dt1 = joblib.load(fh)
+                dt1 = dt1[var]
+                output = np.hstack((output, dt1))
     else:
         output = 0
     return output
 
 
-def get_data(grd, spin=(1, 5)):
-    assert spin[0] > 0 and spin[1] > spin[0] and spin[1] <= 70
+class test(tb.IsDescription):
 
-    vars = ['emaxm', 'tsoil', 'photo', 'aresp',
-            'npp', 'sind', 'eind']  # ['lai','inorg_n','inorg_p',
-    #  'sorbed_n','sorbed_p','hresp','rcm','f5','runom','evapm','wsoil',
-    #  'swsoil','rm','rg','cleaf','cawood','cfroot','wue','cue','cdef',
-    #  'nmin','pmin','vcmax','specific_la','litter_l','cwd',
-    #  'litter_fr','ls','c_cost']
-
-    k = sorted(list(grd.outputs.keys()))[spin[0] - 1:spin[1] + 1]
-    # find var dim
-    out = []
-    print(k)
-    with open(grd.outputs[k[-1]], 'rb') as fh:
-        dt1 = joblib.load(fh)
-        for key, var in dt1.items():
-            if key in vars:
-                out.append(var)
-    return dict(zip(vars, out))
+    v1 = tb.Float64Col(dflt=0.0, pos=0)
+    v2 = tb.Float64Col(dflt=0.0, pos=1)
+    v3 = tb.Float64Col(shape=(100,), pos=0)
 
 
-def create_panel(grd):
-    # hdf = pd.HDFStore('db.h5')
-    a = grd.outputs
-    return a
-    # b = np.array([])
-    # names = []
-    # arrays = []
+a = np.zeros(100,)
 
-    # c = grd.outputs
-    # dt_shape = c['spin1'][var].shape
-    # test = len(dt_shape) > 1
+h5file = tb.open_file("test1.h5", mode="w", title="Test file")
+group = h5file.create_group("/", 'test1', 'Test nested dtypes')
 
-    # if not test:
-    #     for i, spin in enumerate(a):
-    #         data = c[spin][var]
-    #         b = np.hstack((b, data))
-    #     return b,
-    # else:
-    #     arrays = [np.array([]) for x in np.arange(dt_shape[0])]
-    #     for i, spin in enumerate(a):
-    #         data = c[spin][var]
-    #         for z in range(data.shape[0]):
-    #             dt2 = data[z, :]
-    #             arrays[z] = np.hstack((arrays[z], dt2))
-    #     for z in range(dt_shape[0]):
-    #         names.append("{}{}".format(var, z + 1))
-    #     return arrays, names
+table = h5file.create_table(group, 'readout', test, "Nested datatype example")
 
+obs = table.row
 
-# def plot_var(grd, var):
-#     to_plot = int_tspan(grd, var)
+for x in range(200):
+    obs['v1'] = np.random.normal()
+    obs['v2'] = np.random.normal()
+    obs['v3'] = np.random.normal(100,)
+    obs.append()
 
-#     if len(to_plot) == 1:
-#         plt.plot(to_plot[0])
-#         plt.legend([var, ])
-#         plt.show()
-#     else:
-#         data, names = to_plot
-#         for array in data:
-#             plt.plot(array)
-#         plt.legend(names)
-#         plt.show()
+table.flush()

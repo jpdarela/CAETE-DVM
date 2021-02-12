@@ -1051,7 +1051,7 @@ contains
       real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs
       logical(kind=l_1),dimension(npft),intent(out) :: ocp_wood
       integer(kind=i_4),dimension(npft),intent(out) :: run_pls
-      real(kind=r_8), dimension(npls), intent(out) :: c_to_soil
+      real(kind=r_8), dimension(npls), intent(out) :: c_to_soil ! NOT IMPLEMENTED IN BUDGET
       logical(kind=l_1),dimension(npft) :: is_living
       real(kind=r_8),dimension(npft) :: cleaf, cawood, cfroot
       real(kind=r_8),dimension(npft) :: total_biomass_pft,total_w_pft

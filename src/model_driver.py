@@ -10,17 +10,22 @@ import copy
 import multiprocessing as mp
 from os import mkdir
 from pathlib import Path
+import joblib
 
 from netCDF4 import Dataset
 import numpy as np
 
 import caete
-from caete import grd
-from caete import npls, print_progress
+from caete import grd, mask, npls, print_progress, run_breaks
 import plsgen as pls
 
+from post_processing import write_h5
+from h52nc import h52nc
+
 __author__ = "João Paulo Darela Filho"
-__descr__ = """RUN CAETÊ --- TODO"""
+__descr__ = """RUN CAETÊ"""
+
+FUNCALLS = 0
 
 
 def check_start():
@@ -41,20 +46,14 @@ sombrero = check_start()
 
 # Water saturation, field capacity & wilting point
 # Topsoil
-dt_ws = Dataset('../input/soil/WS.nc').variables['WS'][:]
-map_ws = np.flipud(dt_ws.__array__())
-dt_fc = Dataset('../input/soil/FC.nc').variables['FC'][:]
-map_fc = np.flipud(dt_fc.__array__())
-dt_wp = Dataset('../input/soil/WP.nc').variables['WP'][:]
-map_wp = np.flipud(dt_wp.__array__())
+map_ws = np.load("../input/soil/ws.npy")
+map_fc = np.load('../input/soil/fc.npy')
+map_wp = np.load('../input/soil/wp.npy')
 
 # Subsoil
-dt_subws = Dataset('../input/soil/S_WS.nc').variables['WS'][:]
-map_subws = np.flipud(dt_subws.__array__())
-dt_subfc = Dataset('../input/soil/S_FC.nc').variables['FC'][:]
-map_subfc = np.flipud(dt_subfc.__array__())
-dt_subwp = Dataset('../input/soil/S_WP.nc').variables['WP'][:]
-map_subwp = np.flipud(dt_subwp.__array__())
+map_subws = np.load("../input/soil/sws.npy")
+map_subfc = np.load("../input/soil/sfc.npy")
+map_subwp = np.load("../input/soil/swp.npy")
 
 tsoil = (map_ws, map_fc, map_wp)
 ssoil = (map_subws, map_subfc, map_subwp)
@@ -88,8 +87,6 @@ with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls)
 
-mask = np.load(os.path.join(s_data, "mask/mask_raisg-360-720.npy"))
-
 # # Create the gridcell objects
 if sombrero:
     # Running in all gridcells of mask
@@ -120,31 +117,36 @@ for i, g in enumerate(grid_mn):
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
 
-# for x in range(10000):
-#     grid_mn[0]._update_pool(np.random.randint(1, 5), np.random.randint(1, 5))
-
-# APPLY AN "ANALYTICAL" SPINUP - IT is a pre-spinup filling of soil organic pools
+# DEFINE HARVERSTERS - funcs that will apply grd methods(run the CAETÊ model) over the instanvces
 def apply_spin(grid):
+    """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
     w, ll, cwd, rl, lnc = grid.bdg_spinup(
         start_date="19790101", end_date="19830101")
     grid.sdc_spinup(w, ll, cwd, rl, lnc)
     return grid
 
 
-# Make a model spinup
 def apply_fun(grid):
-    grid.run_caete('19790101', '20101231', spinup=2, fix_co2='1999')
+    grid.run_caete('19790101', '19891231', spinup=2,
+                   fix_co2='1983', save=False, nutri_cycle=False)
     return grid
 
 
-# RUn
-def apply_fun1(grid):
-    grid.run_caete('19790101', '20101231', spinup=1)
+def apply_fun0(grid):
+    grid.run_caete('19790101', '19881231', spinup=45,
+                   fix_co2='1983', save=False)
     return grid
 
 
-def apply_fun2(grid):
-    grid.run_caete('20110101', '20151231', fix_co2=610)
+def zip_gridtime(grd_pool, interval):
+    res = []
+    for i, j in enumerate(grd_pool):
+        res.append((j, interval[i % len(interval)]))
+    return res
+
+
+def apply_funX(grid, brk):
+    grid.run_caete(brk[0], brk[1])
     return grid
 
 
@@ -166,45 +168,67 @@ if __name__ == "__main__":
 
     import time
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else 55
+    n_proc = mp.cpu_count() // 2 if not sombrero else 128
 
     fh = open('logfile.log', mode='w')
-
+    print("START: ", time.ctime())
     fh.writelines(time.ctime(),)
     fh.writelines("\n\n",)
-    fh.writelines("SPINUP...",)
+    fh.writelines("SOIL SPINUP...\n",)
     start = time.time()
-    print("SPINUP...")
+    print("SOIL SPINUP...")
 
+    # SOIL SPINUP
     with mp.Pool(processes=n_proc) as p:
-        result = p.map(apply_spin, grid_mn)
+        _spinup_ = p.map(apply_spin, grid_mn)
     end_spinup = time.time() - start
     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
     del grid_mn
 
-    fh.writelines("MODEL EXEC - MAIN SPINUP",)
-    print("MODEL EXEC - spinup")
-    with mp.Pool(processes=n_proc) as p:
-        result1 = p.map(apply_fun, result)
-    end_spinup = time.time() - start
-    del result  # clean memory
-    fh.writelines(f"MODEL EXEC - spinup deco END after (s){end_spinup}\n",)
+    # MAIN SPINUP
+    def applyXy(fun, input):
+        global FUNCALLS
+        FUNCALLS += 1
+        fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
+        print(f"MODEL EXEC - RUN {FUNCALLS}")
+        with mp.Pool(processes=n_proc) as p:
+            # reserve 2 funcalls for the main spinup
+            if FUNCALLS > 2:
+                result = p.starmap(fun, input)
+            else:
+                result = p.map(fun, input)
+        end_spinup = time.time() - start
+        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+        return result
 
-    fh.writelines("MODEL EXEC - RUN\n",)
-    print("MODEL EXEC - RUN")
-    with mp.Pool(processes=n_proc) as p:
-        result2 = p.map(apply_fun1, result1)
-    end_spinup = time.time() - start
+    print("Applying main spinup. This process can take hours (RUN 1 & 2)")
+
+    # The first 2 calls of applyXy are reserved to the MAIN spinup
+    # These 2 calls will use the method map of the Pool(multiprocessing)
+    # the remaining calls will use the starmap method
+    result = applyXy(apply_fun, _spinup_)
+    del _spinup_
+
+    result1 = applyXy(apply_fun0, result)
+    del result
+
+    # Save Ground 0
+    with open("RUN0.pkz", 'wb') as fh2:
+        print("Saving gridcells with init state in RUN0.pkz")
+        joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
+
+    result = result1
     del result1
-    fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+    for i, brk in enumerate(run_breaks):
+        print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+        result = zip_gridtime(result, (brk,))
+        result = applyXy(apply_funX, result)
+
     fh.close()
 
-    # a = apply_spin(grid_mn[2])
-    # print('A = OK')
-    # b = apply_fun(a)
-    # del a
-    # print('B = OK - DEBUG')
-    # c = apply_fun1(b)
-    # # # del b
-    # # # d = apply_fun2(c)
-    # # # del c
+    print(time.ctime())
+    print("Saving db - This will take some hours")
+    write_h5()
+    print("\n\nSaving netCDF4 files")
+    h52nc("../outputs/CAETE.h5")
+    print(time.ctime())

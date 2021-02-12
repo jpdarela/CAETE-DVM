@@ -410,7 +410,7 @@ module alloc
       if (sop .lt. 0.0D0) then
          aux_sop = 0.0D0
       else
-         aux_sop = sop * mult_factor_p * 0.3
+         aux_sop = sop * mult_factor_p
       endif
 
       ! NITROGEN FIXATION goes direct to plant use
@@ -769,9 +769,11 @@ module alloc
          call active_costn(amp, avail_n - plant_uptake(1), aux_on, scf1 * 1D3, ccn)
          call select_active_strategy(ccn, active_nupt_cost, naquis_strat)
          call prep_out_n(naquis_strat, nuptk, to_pay(1), nitrogen_uptake)
+         uptk_strategy(1) = naquis_strat
       else
          nitrogen_uptake(1) = nuptk
          nitrogen_uptake(2) = 0.0D0
+         uptk_strategy(1) = 0
       endif
       test34 = nitrogen_uptake(2) .gt. on
       uptk_strategy(1) = naquis_strat
@@ -789,10 +791,13 @@ module alloc
          call active_costp(amp, avail_p - plant_uptake(2), aux_sop, aux_op, scf1 * 1D3, ccp)
          call select_active_strategy(ccp, active_pupt_cost, paquis_strat)
          call prep_out_p(paquis_strat, puptk, to_pay(2), phosphorus_uptake)
+         uptk_strategy(2) = paquis_strat
       else
          phosphorus_uptake(1) = puptk
+         phosphorus_uptake(2) = 0.0D0
+         phosphorus_uptake(3) = 0.0D0
+         uptk_strategy(2) = 0
       endif
-      uptk_strategy(2) = paquis_strat
       if(isnan(to_sto(2))) to_sto(2) = 0.0D0
       if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
       if(to_sto(2) .lt. 0.0D0) to_sto(2) = 0.0D0
