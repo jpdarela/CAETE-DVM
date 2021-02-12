@@ -23,6 +23,7 @@ import sys
 from random import shuffle, sample
 from math import ceil
 import csv
+from pathlib import Path
 
 import numpy as np
 from caete_module import photo as model
@@ -117,7 +118,7 @@ def turnover_combinations(verbose=False):
         np.save(woody_allocations_file, np.array(plsa_wood))
 
     if verbose:
-        print('Number of combinations = %d' %
+        print('Number of ALLOCATION combinations (grass + wood) - aleaf/awood/aroot = %d' %
               (len(plsa_grass) + len(plsa_wood)))
 
     if file1:
@@ -163,7 +164,7 @@ def table_gen(NPLS):
     index0 = 0
     rtime = vec_ranging(np.random.normal(
         0.0, 10.0, r_ceil), 0.083333, 8.333333333333)
-    print("CREATE GRASS STRATEGIES")
+    print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
 
@@ -179,7 +180,7 @@ def table_gen(NPLS):
         sys.stdout.write('\r%s' % (str(index0)))
     sys.stdout.flush()
     print("\n")
-    print("CREATE WOODY STRATEGIES")
+    print("CREATE WOODY STRATEGIES - Checking potential npp/alocation")
     # Creating woody plants (maybe herbaceous)
     index1 = 0
     rtime_wood = vec_ranging(np.random.normal(
@@ -214,7 +215,7 @@ def table_gen(NPLS):
     # # C4 STYLE
     c4 = np.zeros((NPLS,), dtype=np.float64)
     n123 = ceil(alloc_g.shape[0] * 0.70)
-    c4[0:n123 - 1] = 1.0
+    c4[0: n123 - 1] = 1.0
 
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
@@ -236,29 +237,36 @@ def table_gen(NPLS):
     froot_p2c = root[:, 1]
 
     # new traits
-    pdia = np.random.uniform(0.001, 0.15, NPLS)
-    amp = np.random.uniform(0.01, 0.999, NPLS)
+    pdia = np.random.uniform(0.0, 0.1e-7, NPLS)
+    np.place(pdia, test, 0.0)
+    woods = np.where(alloc[:, 4] > 0.0)
+    for i in woods:
+        if np.random.normal() > 0:
+            pdia[i] = 0.0
+    amp = np.random.uniform(0.001, 0.999, NPLS)
 
-    stack = (g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
+    pls_id = np.arange(NPLS)
+
+    stack = (pls_id, g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,
              awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c,
              amp, pdia)
 
-    head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
+    head = ['PLS_id', 'g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
 
     pls_table = np.vstack(stack)
 
     # # ___side_effects
-    with open('pls_attrs.csv', mode='w') as fh:
+    if not Path("../outputs").exists():
+        os.mkdir("../outputs")
+    with open('../outputs/pls_attrs.csv', mode='w') as fh:
         writer = csv.writer(fh, delimiter=',')
         writer.writerow(head)
         for x in range(pls_table.shape[1]):
             writer.writerow(list(pls_table[:, x]))
         # writer.writerows(pls_table)
 
-    out_arr = np.asfortranarray(pls_table, dtype=np.float64)
-    np.savetxt('pls_ex.txt', out_arr.T, fmt='%.24f')
-
-    return out_arr
+    pls_table = np.vstack(stack[1:])
+    return np.asfortranarray(pls_table, dtype=np.float64)

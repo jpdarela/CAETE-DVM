@@ -1,0 +1,473 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module cc ! in 
+    interface  ! in :cc
+        module types ! in :cc:global.f90
+            integer, public,parameter,optional :: l_1=4
+            integer, public,parameter,optional :: i_2=2
+            integer, public,parameter,optional :: i_4=4
+            integer, public,parameter,optional :: r_4=4
+            integer, public,parameter,optional :: r_8=8
+        end module types
+        module global_par ! in :cc:global.f90
+            use types
+            real(kind=4), public,parameter,optional :: q10=1.4
+            real(kind=4), public,parameter,optional :: h=1.0
+            real(kind=4), public,parameter,optional :: diffu=103680000000000.0
+            real(kind=4), public,parameter,optional,depend(h,diffu) :: tau=4.822530864197531e-15
+            real(kind=4), public,parameter,optional :: rcmax=5000.0
+            real(kind=4), public,parameter,optional :: rcmin=100
+            real(kind=8), public,parameter,optional :: cmin=1.0d-3
+            real(kind=4), public,parameter,optional :: wmax=500.0
+            real(kind=8), public,parameter,optional :: csru=0.5d0
+            real(kind=8), public,parameter,optional :: alfm=1.391d0
+            real(kind=8), public,parameter,optional :: gm=3.26d0*86400d0
+            real(kind=8), public,parameter,optional :: sapwood=0.05d0
+            real(kind=4), public,parameter,optional :: ks=0.25
+            integer(kind=4), public,parameter,optional :: npls=1000
+            integer(kind=4), public,parameter,optional :: ntraits=17
+        end module global_par
+        module photo_par ! in :cc:global.f90
+            use types, only: r_8
+            real(kind=8), parameter,public,optional :: a=0.8300d0
+            real(kind=8), parameter,public,optional :: a2=0.930d0
+            real(kind=8), parameter,public,optional :: p3=21200.0d0
+            real(kind=8), parameter,public,optional :: p4=0.080d0
+            real(kind=8), parameter,public,optional :: p5=0.150d0
+            real(kind=8), parameter,public,optional :: p6=2.0d0
+            real(kind=8), parameter,public,optional :: p7=0.50d0
+            real(kind=8), parameter,public,optional :: p8=5200.0d0
+            real(kind=8), parameter,public,optional :: p9=0.570d0
+            real(kind=8), parameter,public,optional :: p10=0.100d0
+            real(kind=8), parameter,public,optional :: p11=25.0d0
+            real(kind=8), parameter,public,optional :: p12=30.0d0
+            real(kind=8), parameter,public,optional :: p13=2.100d0
+            real(kind=8), parameter,public,optional :: p14=30000.0d0
+            real(kind=8), parameter,public,optional :: p15=1.20d0
+            real(kind=8), parameter,public,optional :: p19=0.90d0
+            real(kind=8), parameter,public,optional :: p20=0.10d0
+            real(kind=8), parameter,public,optional :: p22=2.0d0
+            real(kind=8), parameter,public,optional :: p23=0.30d0
+            real(kind=8), parameter,public,optional :: p24=36.0d0
+            real(kind=8), parameter,public,optional :: p25=0.000008d0
+            real(kind=8), parameter,public,optional :: p26=0.50d0
+            real(kind=8), parameter,public,optional :: p27=1.50d0
+            real(kind=8), parameter,public,optional :: alphap=0.0913d0
+            real(kind=8), parameter,public,optional :: vpm25=85.0d0
+            real(kind=8), parameter,public,optional :: h_vpm=185075.0d0
+            real(kind=8), parameter,public,optional :: s_vpm=591.0d0
+            real(kind=8), parameter,public,optional :: r_vpm=8.314d0
+            real(kind=8), parameter,public,optional :: e_vpm=60592.0d0
+            real(kind=8), parameter,public,optional :: kp25=82.0d0
+        end module photo_par
+        module utils ! in :cc:utils.f90
+            use types
+            subroutine ascii2bin32(file_in,file_out,nx1,ny1) ! in :cc:utils.f90:utils
+                use types
+                character*100 intent(in) :: file_in
+                character*100 intent(in) :: file_out
+                integer(kind=4) intent(in) :: nx1
+                integer(kind=4) intent(in) :: ny1
+            end subroutine ascii2bin32
+            subroutine ascii2bin64(file_in,file_out,nx1,ny1) ! in :cc:utils.f90:utils
+                use types
+                character*100 intent(in) :: file_in
+                character*100 intent(in) :: file_out
+                integer(kind=4) intent(in) :: nx1
+                integer(kind=4) intent(in) :: ny1
+            end subroutine ascii2bin64
+            function leap(year) result (is_leap) ! in :cc:utils.f90:utils
+                use types
+                integer(kind=4) intent(in) :: year
+                logical(kind=4) :: is_leap
+            end function leap
+            subroutine abort_on_nan(arg1) ! in :cc:utils.f90:utils
+                real(kind=4) intent(in) :: arg1
+            end subroutine abort_on_nan
+            subroutine abort_on_inf(arg1) ! in :cc:utils.f90:utils
+                real(kind=4) intent(inout) :: arg1
+            end subroutine abort_on_inf
+            subroutine linspace(from,to,array) ! in :cc:utils.f90:utils
+                real(kind=8) intent(in) :: from
+                real(kind=8) intent(in) :: to
+                real(kind=8) dimension(:),intent(out) :: array
+            end subroutine linspace
+            function process_id() result (ipid) ! in :cc:utils.f90:utils
+                integer(kind=4) :: ipid
+            end function process_id
+            function cwm(var_arr,area_arr) result (retval) ! in :cc:utils.f90:utils
+                use types
+                use global_par
+                real(kind=8) dimension(1000),intent(in) :: var_arr
+                real(kind=8) dimension(1000),intent(in) :: area_arr
+                real(kind=4) :: retval
+            end function cwm
+        end module utils
+        module carbon_costs ! in :cc:cc.f90
+            use types
+            use global_par
+            use utils
+            subroutine abrt(arg1) ! in :cc:cc.f90:carbon_costs
+                character*(*) intent(in) :: arg1
+            end subroutine abrt
+            subroutine calc_passive_uptk1(nsoil,et,sd,mf,uptk) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: nsoil
+                real(kind=8) intent(in) :: et
+                real(kind=4) intent(in) :: sd
+                real(kind=8) intent(in) :: mf
+                real(kind=8) intent(out) :: uptk
+            end subroutine calc_passive_uptk1
+            subroutine passive_uptake(w,av_n,av_p,nupt,pupt,e,topay_upt,to_storage,passive_upt) ! in :cc:cc.f90:carbon_costs
+                real(kind=4) intent(in) :: w
+                real(kind=8) intent(in) :: av_n
+                real(kind=8) intent(in) :: av_p
+                real(kind=8) intent(in) :: nupt
+                real(kind=8) intent(in) :: pupt
+                real(kind=8) intent(in) :: e
+                real(kind=8) dimension(2),intent(out) :: topay_upt
+                real(kind=8) dimension(2),intent(out) :: to_storage
+                real(kind=8) dimension(2),intent(out) :: passive_upt
+            end subroutine passive_uptake
+            function cc_active(k1,d1,k2,d2) result (c_active) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: k1
+                real(kind=8) intent(in) :: d1
+                real(kind=8) intent(in) :: k2
+                real(kind=8) intent(in) :: d2
+                real(kind=8) :: c_active
+            end function cc_active
+            subroutine active_cost(amp,av_n,av_p,croot,cc) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: amp
+                real(kind=8) intent(in) :: av_n
+                real(kind=8) intent(in) :: av_p
+                real(kind=8) intent(in) :: croot
+                real(kind=8) dimension(2,4),intent(out) :: cc
+            end subroutine active_cost
+            subroutine active_costn(amp,av_n,on,croot,ccn) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: amp
+                real(kind=8) intent(in) :: av_n
+                real(kind=8) intent(in) :: on
+                real(kind=8) intent(in) :: croot
+                real(kind=8) dimension(6),intent(out) :: ccn
+            end subroutine active_costn
+            subroutine active_costp(amp,av_p,sop,op,croot,ccp) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: amp
+                real(kind=8) intent(in) :: av_p
+                real(kind=8) intent(in) :: sop
+                real(kind=8) intent(in) :: op
+                real(kind=8) intent(in) :: croot
+                real(kind=8) dimension(8),intent(out) :: ccp
+            end subroutine active_costp
+            function cc_fix(ts) result (c_fix) ! in :cc:cc.f90:carbon_costs
+                real(kind=4) intent(in) :: ts
+                real(kind=8) :: c_fix
+            end function cc_fix
+            function fixed_n(c,ts) result (fn) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: c
+                real(kind=4) intent(in) :: ts
+                real(kind=8) :: fn
+            end function fixed_n
+            function cc_retran(k1,d1) result (c_retran) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: k1
+                real(kind=8) intent(in) :: d1
+                real(kind=8) :: c_retran
+            end function cc_retran
+            function retran_nutri_cost(littern,resorbed_n,nut) result (c_cost_nr) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: littern
+                real(kind=8) intent(in) :: resorbed_n
+                integer(kind=4) intent(in) :: nut
+                real(kind=8) :: c_cost_nr
+            end function retran_nutri_cost
+            subroutine select_active_strategy(cc_array,cc,strategy) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) dimension(:),intent(in) :: cc_array
+                real(kind=8) intent(out) :: cc
+                integer(kind=4) intent(out) :: strategy
+            end subroutine select_active_strategy
+            subroutine prep_out_n(nut_aqui_strat,nupt,to_pay,out_array) ! in :cc:cc.f90:carbon_costs
+                integer(kind=4) intent(in) :: nut_aqui_strat
+                real(kind=8) intent(in) :: nupt
+                real(kind=8) intent(in) :: to_pay
+                real(kind=8) dimension(2),intent(out) :: out_array
+            end subroutine prep_out_n
+            subroutine prep_out_p(nut_aqui_strat,pupt,to_pay,out_array) ! in :cc:cc.f90:carbon_costs
+                integer(kind=4) intent(in) :: nut_aqui_strat
+                real(kind=8) intent(in) :: pupt
+                real(kind=8) intent(in) :: to_pay
+                real(kind=8) dimension(3),intent(out) :: out_array
+            end subroutine prep_out_p
+            subroutine ap_actvity1(c_xm,strat,cc_array,ezc_ap) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: c_xm
+                integer(kind=4) intent(in) :: strat
+                real(kind=8) dimension(2,4),intent(in) :: cc_array
+                real(kind=8) intent(out) :: ezc_ap
+            end subroutine ap_actvity1
+            subroutine ezc_prod(c_ezc,strat,cc_array,enzyme_conc) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: c_ezc
+                integer(kind=4) intent(in) :: strat
+                real(kind=8) dimension(2,4),intent(in) :: cc_array
+                real(kind=8) intent(out) :: enzyme_conc
+            end subroutine ezc_prod
+            function active_nutri_gain(enzyme_conc) result (nutri_out) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: enzyme_conc
+                real(kind=8) :: nutri_out
+            end function active_nutri_gain
+            function n_invest_p(c_ezc) result (nmass) ! in :cc:cc.f90:carbon_costs
+                real(kind=8) intent(in) :: c_ezc
+                real(kind=8) :: nmass
+            end function n_invest_p
+        end module carbon_costs
+        module photo ! in :cc:funcs.f90
+            function gross_ph(f1,cleaf,sla) result (ph) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                real(kind=8) intent(in) :: f1
+                real(kind=8) intent(in) :: cleaf
+                real(kind=8) intent(in) :: sla
+                real(kind=4) :: ph
+            end function gross_ph
+            function leaf_area_index(cleaf,sla) result (lai) ! in :cc:funcs.f90:photo
+                use types, only: r_8
+                real(kind=8) intent(in) :: cleaf
+                real(kind=8) intent(in) :: sla
+                real(kind=8) :: lai
+            end function leaf_area_index
+            function spec_leaf_area(tau_leaf) result (sla) ! in :cc:funcs.f90:photo
+                use types, only: r_8
+                real(kind=8) intent(in) :: tau_leaf
+                real(kind=8) :: sla
+            end function spec_leaf_area
+            function f_four(fs,cleaf,sla) result (lai_ss) ! in :cc:funcs.f90:photo
+                use types, only: i_4,r_4,r_8
+                use photo_par, only: p26,p27
+                integer(kind=4) intent(in) :: fs
+                real(kind=8) intent(in) :: cleaf
+                real(kind=8) intent(in) :: sla
+                real(kind=8) :: lai_ss
+            end function f_four
+            function water_stress_modifier(w,cfroot,rc,ep) result (f5) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                use global_par, only: csru,wmax,alfm,gm,rcmin,rcmax
+                real(kind=4) intent(in) :: w
+                real(kind=8) intent(in) :: cfroot
+                real(kind=4) intent(in) :: rc
+                real(kind=4) intent(in) :: ep
+                real(kind=8) :: f5
+            end function water_stress_modifier
+            function canopy_resistence(vpd_in,f1_in,g1,ca) result (rc2_in) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                real(kind=4) intent(in) :: vpd_in
+                real(kind=8) intent(in) :: f1_in
+                real(kind=8) intent(in) :: g1
+                real(kind=8) intent(in) :: ca
+                real(kind=4) :: rc2_in
+            end function canopy_resistence
+            function stomatal_conductance(vpd_in,f1_in,g1,ca) result (gs) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                real(kind=4) intent(in) :: vpd_in
+                real(kind=4) intent(in) :: f1_in
+                real(kind=4) intent(in) :: g1
+                real(kind=8) intent(in) :: ca
+                real(kind=8) :: gs
+            end function stomatal_conductance
+            function water_ue(a,g,p0,vpd) result (wue) ! in :cc:funcs.f90:photo
+                use types
+                real(kind=8) intent(in) :: a
+                real(kind=4) intent(in) :: g
+                real(kind=4) intent(in) :: p0
+                real(kind=4) intent(in) :: vpd
+                real(kind=4) :: wue
+            end function water_ue
+            function transpiration(g,p0,vpd,unit) result (e) ! in :cc:funcs.f90:photo
+                use types
+                real(kind=4) intent(in) :: g
+                real(kind=4) intent(in) :: p0
+                real(kind=4) intent(in) :: vpd
+                integer(kind=4) intent(in) :: unit
+                real(kind=4) :: e
+            end function transpiration
+            function vapor_p_defcit(t,rh) result (vpd_0) ! in :cc:funcs.f90:photo
+                use types
+                real(kind=4) intent(in) :: t
+                real(kind=4) intent(in) :: rh
+                real(kind=4) :: vpd_0
+            end function vapor_p_defcit
+            subroutine realized_npp(pot_npp_pool,nupt_pot,available_n,rnpp,nl) ! in :cc:funcs.f90:photo
+                use types
+                real(kind=8) intent(in) :: pot_npp_pool
+                real(kind=8) intent(in) :: nupt_pot
+                real(kind=8) intent(in) :: available_n
+                real(kind=8) intent(out) :: rnpp
+                logical(kind=4) intent(out) :: nl
+            end subroutine realized_npp
+            function nrubisco(leaf_t,nbio_in) result (nb) ! in :cc:funcs.f90:photo
+                use types
+                real(kind=8) intent(in) :: leaf_t
+                real(kind=8) intent(in) :: nbio_in
+                real(kind=8) :: nb
+            end function nrubisco
+            subroutine photosynthesis_rate(c_atm,temp,p0,ipar,ll,c4,nbio,pbio,leaf_turnover,f1ab,vm) ! in :cc:funcs.f90:photo
+                use types
+                use utils
+                use global_par
+                use photo_par
+                real(kind=8) intent(in) :: c_atm
+                real(kind=4) intent(in) :: temp
+                real(kind=4) intent(in) :: p0
+                real(kind=4) intent(in) :: ipar
+                logical(kind=4) intent(in) :: ll
+                integer(kind=4) intent(in) :: c4
+                real(kind=8) intent(in) :: nbio
+                real(kind=8) intent(in) :: pbio
+                real(kind=8) intent(in) :: leaf_turnover
+                real(kind=8) intent(out) :: f1ab
+                real(kind=8) intent(out) :: vm
+            end subroutine photosynthesis_rate
+            subroutine spinup3(nppot,dt,cleafini,cfrootini,cawoodini) ! in :cc:funcs.f90:photo
+                use types
+                real(kind=4) intent(in) :: nppot
+                real(kind=4) dimension(6),intent(in) :: dt
+                real(kind=4) intent(out) :: cleafini
+                real(kind=4) intent(out) :: cfrootini
+                real(kind=4) intent(out) :: cawoodini
+            end subroutine spinup3
+            subroutine spinup2(nppot,dt,cleafini,cfrootini,cawoodini) ! in :cc:funcs.f90:photo
+                use types
+                use global_par, only: ntraits,npls
+                real(kind=4) intent(in) :: nppot
+                real(kind=4) dimension(17,1000),intent(in) :: dt
+                real(kind=4) dimension(1000),intent(out) :: cleafini
+                real(kind=4) dimension(1000),intent(out) :: cfrootini
+                real(kind=4) dimension(1000),intent(out) :: cawoodini
+            end subroutine spinup2
+            function m_resp(temp,ts,cl1_mr,cf1_mr,ca1_mr,n2cl,n2cw,n2cf,aawood_mr) result (rm) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                use global_par, only: sapwood
+                real(kind=4) intent(in) :: temp
+                real(kind=4) intent(in) :: ts
+                real(kind=8) intent(in) :: cl1_mr
+                real(kind=8) intent(in) :: cf1_mr
+                real(kind=8) intent(in) :: ca1_mr
+                real(kind=8) intent(in) :: n2cl
+                real(kind=8) intent(in) :: n2cw
+                real(kind=8) intent(in) :: n2cf
+                real(kind=8) intent(in) :: aawood_mr
+                real(kind=4) :: rm
+            end function m_resp
+            function sto_resp(temp,sto_mr) result (rm) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                real(kind=4) intent(in) :: temp
+                real(kind=8) dimension(3),intent(in) :: sto_mr
+                real(kind=8) :: rm
+            end function sto_resp
+            function g_resp(beta_leaf,beta_awood,beta_froot,aawood_rg) result (rg) ! in :cc:funcs.f90:photo
+                use types, only: r_4,r_8
+                real(kind=8) intent(in) :: beta_leaf
+                real(kind=8) intent(in) :: beta_awood
+                real(kind=8) intent(in) :: beta_froot
+                real(kind=8) intent(in) :: aawood_rg
+                real(kind=4) :: rg
+            end function g_resp
+            function tetens(t) result (es) ! in :cc:funcs.f90:photo
+                use types, only: r_4
+                real(kind=4) intent(in) :: t
+                real(kind=4) :: es
+            end function tetens
+            subroutine pft_area_frac(cleaf1,cfroot1,cawood1,awood,ocp_coeffs,ocp_wood,run_pls,c_to_soil) ! in :cc:funcs.f90:photo
+                use types, only: l_1,i_4,r_8
+                use global_par, only: npls,cmin,sapwood
+                real(kind=8) dimension(1000),intent(in) :: cleaf1
+                real(kind=8) dimension(1000),intent(in) :: cfroot1
+                real(kind=8) dimension(1000),intent(in) :: cawood1
+                real(kind=8) dimension(1000),intent(in) :: awood
+                real(kind=8) dimension(1000),intent(out) :: ocp_coeffs
+                logical(kind=4) dimension(1000),intent(out) :: ocp_wood
+                integer(kind=4) dimension(1000),intent(out) :: run_pls
+                real(kind=8) dimension(1000),intent(out) :: c_to_soil
+            end subroutine pft_area_frac
+        end module photo
+        module water ! in :cc:funcs.f90
+            subroutine soil_temp_sub(temp,tsoil) ! in :cc:funcs.f90:water
+                use types
+                use global_par
+                real(kind=4) dimension(1095),intent(in) :: temp
+                real(kind=4) intent(out) :: tsoil
+            end subroutine soil_temp_sub
+            function soil_temp(t0,temp) result (tsoil) ! in :cc:funcs.f90:water
+                use types
+                use global_par, only: h,tau,diffu
+                real(kind=4) intent(in) :: t0
+                real(kind=4) intent(in) :: temp
+                real(kind=4) :: tsoil
+            end function soil_temp
+            function penman(spre,temp,ur,rn,rc2) result (evap) ! in :cc:funcs.f90:water
+                use types, only: r_4
+                use global_par, only: rcmin,rcmax
+                use photo, only: tetens
+                real(kind=4) intent(in) :: spre
+                real(kind=4) intent(in) :: temp
+                real(kind=4) intent(in) :: ur
+                real(kind=4) intent(in) :: rn
+                real(kind=4) intent(in) :: rc2
+                real(kind=4) :: evap
+            end function penman
+            function available_energy(temp) result (ae) ! in :cc:funcs.f90:water
+                use types, only: r_4
+                real(kind=4) intent(in) :: temp
+                real(kind=4) :: ae
+            end function available_energy
+            function runoff(wa) result (roff) ! in :cc:funcs.f90:water
+                use types, only: r_4
+                real(kind=4) intent(in) :: wa
+                real(kind=4) :: roff
+            end function runoff
+            function evpot2(spre,temp,ur,rn) result (evap) ! in :cc:funcs.f90:water
+                use types, only: r_4
+                use global_par, only: rcmin,rcmax
+                use photo, only: tetens
+                real(kind=4) intent(in) :: spre
+                real(kind=4) intent(in) :: temp
+                real(kind=4) intent(in) :: ur
+                real(kind=4) intent(in) :: rn
+                real(kind=4) :: evap
+            end function evpot2
+        end module water
+        module alloc ! in :cc:allocation.f90
+            use types
+            use carbon_costs, only: fixed_n,passive_uptake,active_costn,active_costp,prep_out_n,prep_out_p,retran_nutri_cost,select_active_strategy
+            use global_par, only: ntraits,sapwood
+            use photo, only: f_four,spec_leaf_area,realized_npp
+            subroutine allocation(dt,npp,npp_costs,ts,wsoil,te,nmin,plab,on,sop,op,scl1,sca1,scf1,storage,storage_out_alloc,scl2,sca2,scf2,leaf_litter,cwd,root_litter,nitrogen_uptake,phosphorus_uptake,litter_nutrient_content,limiting_nutrient,c_costs_of_uptake,uptk_strategy) ! in :cc:allocation.f90:alloc
+                real(kind=8) dimension(17),intent(in) :: dt
+                real(kind=4) intent(in) :: npp
+                real(kind=8) intent(in) :: npp_costs
+                real(kind=4) intent(in) :: ts
+                real(kind=4) intent(in) :: wsoil
+                real(kind=8) intent(in) :: te
+                real(kind=4) intent(in) :: nmin
+                real(kind=4) intent(in) :: plab
+                real(kind=8) intent(in) :: on
+                real(kind=8) intent(in) :: sop
+                real(kind=8) intent(in) :: op
+                real(kind=8) intent(in) :: scl1
+                real(kind=8) intent(in) :: sca1
+                real(kind=8) intent(in) :: scf1
+                real(kind=8) dimension(3),intent(in) :: storage
+                real(kind=8) dimension(3),intent(out) :: storage_out_alloc
+                real(kind=8) intent(out) :: scl2
+                real(kind=8) intent(out) :: sca2
+                real(kind=8) intent(out) :: scf2
+                real(kind=8) intent(out) :: leaf_litter
+                real(kind=8) intent(out) :: cwd
+                real(kind=8) intent(out) :: root_litter
+                real(kind=8) dimension(2),intent(out) :: nitrogen_uptake
+                real(kind=8) dimension(3),intent(out) :: phosphorus_uptake
+                real(kind=8) dimension(6),intent(out) :: litter_nutrient_content
+                integer(kind=2) dimension(3),intent(out) :: limiting_nutrient
+                real(kind=8) intent(out) :: c_costs_of_uptake
+                integer(kind=4) dimension(2),intent(out) :: uptk_strategy
+            end subroutine allocation
+        end module alloc
+    end interface 
+end python module cc
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/
