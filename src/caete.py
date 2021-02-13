@@ -41,6 +41,7 @@ from caete_module import photo as m
 from caete_module import soil_dec
 
 
+print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
 # GLOBAL
 out_ext = ".pkz"
 npls = gp.npls

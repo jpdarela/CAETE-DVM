@@ -62,13 +62,13 @@ def check_viability(trait_values, wood):
     """
 
     assert wood is not None
-    rtur = np.array(model.spinup3(1.0, trait_values))
+    rtur = np.array(model.spinup3(0.3, trait_values))
     if wood:
-        if rtur[0] <= 0.5 or rtur[1] <= 0.5 or rtur[2] <= 0.5:
+        if rtur[0] <= 0.05 or rtur[1] <= 0.05 or rtur[2] <= 0.05:
             return False
         return True
     else:
-        if rtur[0] <= 0.5 or rtur[1] <= 0.5:
+        if rtur[0] <= 0.05 or rtur[1] <= 0.05:
             return False
         return True
 
@@ -162,8 +162,9 @@ def table_gen(NPLS):
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
-    rtime = vec_ranging(np.random.normal(
-        0.0, 10.0, r_ceil), 0.083333, 8.333333333333)
+    rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
+                        0.083333, 8.333333333333)
+    # rtime = np.random.uniform(0.083333333333333333, 8.33333333333333333, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -183,8 +184,9 @@ def table_gen(NPLS):
     print("CREATE WOODY STRATEGIES - Checking potential npp/alocation")
     # Creating woody plants (maybe herbaceous)
     index1 = 0
-    rtime_wood = vec_ranging(np.random.normal(
-        1.0, 10.0, r_ceil), 0.083333333333, 100.0)
+    rtime_wood = vec_ranging(np.random.beta(
+        2, 6, r_ceil), 0.083333333333, 99.9)
+    # rtime_wood = np.random.uniform(0.08333333333333333, 100, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]

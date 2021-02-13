@@ -88,8 +88,8 @@ def get_var_metadata(var):
               'lai': ['Leaf Area Index', 'm2 m-2', 'LAI'],
               'rcm': ['stomatal resistence', 's m-1', 'rcm'],
               'hresp': ['Soil heterothrophic respiration', 'g m-2 day-1', 'hr'],
-              'nupt': ['Nitrogen uptake', 'g m-2', 'nupt'],
-              'pupt': ['Phosphorus uptake', 'g m-2', 'pupt'],
+              'nupt': ['Nitrogen uptake', 'g m-2 day-1', 'nupt'],
+              'pupt': ['Phosphorus uptake', 'g m-2 day-1', 'pupt'],
               'csoil': ['Soil Organic Carbon', 'g m-2', 'csoil'],
               'org_n': ['Soil Organic Nitrogen', 'g m-2', 'org_n'],
               'org_p': ['Soil Organic Phosphorus', 'g m-2', 'org_p'],
@@ -392,9 +392,9 @@ def create_ncG1(table, interval):
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     vars = ['photo', 'aresp', 'npp', 'lai', 'wue', 'cue',
             'vcmax', 'sla', 'nupt', 'pupt']
@@ -472,12 +472,12 @@ def create_ncG2(table, interval):
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
-    vars = ['csoil', 'total_n', 'total_p', 'org_n', 'org_p',
-            'inorg_n', 'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
+    vars = ['csoil', 'org_n', 'org_p', 'inorg_n',
+            'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
 
     dates = time_queries(interval)
     dm1 = len(dates)
@@ -572,9 +572,9 @@ def create_ncG3(table, interval):
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     vars = ["rcm", "runom", "evapm", "wsoil", "cleaf", "cawood",
             "cfroot", "litter_l", "cwd", "litter_fr", "litter_n",
@@ -677,13 +677,13 @@ def create_ncG3(table, interval):
 
 
 def lim_data(table):
-
+    print("\n EXTRACTING NUTRIENT LIMITATION INFORMATION")
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     dm1 = len(run_breaks)
 
@@ -793,6 +793,7 @@ def lim_data(table):
 
 
 def ustrat_data(table):
+    print("\n EXTRACTING N/P UPTAKE STRATEGY INFORMATION")
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
@@ -893,13 +894,13 @@ def ustrat_data(table):
 
 
 def ccc(table, pls_table):
-
+    print("\n EXTRACTING TRAITS CWM INFORMATION")
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     dm1 = len(run_breaks) + 1
     g1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -1078,13 +1079,13 @@ def ccc(table, pls_table):
 
 
 def create_nc_area(table):
-
+    print("\n EXTRACTING PLS ABUNDANCE INFORMATION")
     nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     dm1 = len(run_breaks) + 1
 
@@ -1122,10 +1123,9 @@ def h52nc(input_file):
     interval1 = (run_breaks[0][0], '19891231')
     interval2 = ('19900101', '19991231')
     interval3 = ('20000101', run_breaks[-1][-1])
-
-
-    print("Loading file...")
-    h5f = tb.open_file(input_file, mode='a', driver="H5FD_CORE")
+    ip = Path(input_file).resolve()
+    print(f"Loading file: {ip}", end='---')
+    h5f = tb.open_file(ip, mode='a', driver="H5FD_CORE")
     print('Loaded')
 
     g1_table = h5f.root.RUN0.Outputs_G1
@@ -1145,7 +1145,6 @@ def h52nc(input_file):
     index_dt = g3_table.cols.date.create_csindex()
     t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
     # t3d = h5f.root.RUN0.indexedT3date
-
 
     create_ncG1(t1d, interval1)
     create_ncG1(t1d, interval2)
