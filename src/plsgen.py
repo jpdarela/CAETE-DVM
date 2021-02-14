@@ -62,13 +62,13 @@ def check_viability(trait_values, wood):
     """
 
     assert wood is not None
-    rtur = np.array(model.spinup3(0.3, trait_values))
+    rtur = np.array(model.spinup3(1.0, trait_values))
     if wood:
-        if rtur[0] <= 0.05 or rtur[1] <= 0.05 or rtur[2] <= 0.05:
+        if rtur[0] <= 0.5 or rtur[1] <= 0.5 or rtur[2] <= 0.5:
             return False
         return True
     else:
-        if rtur[0] <= 0.05 or rtur[1] <= 0.05:
+        if rtur[0] <= 0.5 or rtur[1] <= 0.5:
             return False
         return True
 
