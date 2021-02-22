@@ -66,7 +66,7 @@ run_breaks = [('19790101', '19801231'),
               ('20110101', '20121231'),
               ('20130101', '20141231')]
 
-TIME_UNITS = u"days since 1979-01-01"
+TIME_UNITS = u"days since 1850-1-1 00:00:00"
 CALENDAR = u"proleptic_gregorian"
 NO_DATA = [-9999.0, -9999.0]
 

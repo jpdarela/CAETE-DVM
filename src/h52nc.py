@@ -11,8 +11,8 @@ from post_processing import cf_date2str, str2cf_date
 from caete_module import global_par as gp
 from caete import NO_DATA, print_progress, run_breaks
 
-TIME_UNITS = u"days since 1979-01-01"
-CALENDAR = u"proleptic_gregorian"
+TIME_UNITS = u"days since 1900-01-01 23:59:59"
+CALENDAR = u"standard"
 
 
 def build_strd(strd):
@@ -69,11 +69,11 @@ def get_var_metadata(var):
               'tas': ['sur_temperature_2m', 'celcius', 'tas'],
               'tsoil': ['soil_temperature', 'celcius', 'soil_temp'],
               'pr': ['precipitation', 'Kg m-2 month-1', 'pr'],
-              'litter_l': ['Litter C flux - leaf', 'g m-2', 'll'],
-              'cwd': ['Litter C flux - wood', 'g m-2', 'cwd'],
-              'litter_fr': ['Litter C flux fine root', 'g m-2', 'lr'],
-              'litter_n': ['Litter Nitrogen Flux', 'g m-2', 'ln'],
-              'litter_p': ['Litter phosphorus flux', 'g m-2', 'lp'],
+              'litter_l': ['Litter C flux - leaf', 'g m-2 day-1', 'll'],
+              'cwd': ['Litter C flux - wood', 'g m-2 day-1', 'cwd'],
+              'litter_fr': ['Litter C flux fine root', 'g m-2 day-1', 'lr'],
+              'litter_n': ['Litter Nitrogen Flux', 'g m-2 day-1', 'ln'],
+              'litter_p': ['Litter phosphorus flux', 'g m-2 day-1', 'lp'],
               'sto_c': ['PLant Reserve Carbon', 'g m-2', 'sto_c'],
               'sto_n': ['Pant Reserve Nitrogen', 'g m-2', 'sto_n'],
               'sto_p': ['Plant Reserve Phosphorus', 'g m-2', 'sto_p'],
@@ -83,9 +83,9 @@ def get_var_metadata(var):
               'emaxm': ['potent. evapotranpiration', 'kg m-2 day-1', 'etpot'],
               'runom': ['total_runoff', 'kg m-2 day-1', 'mrro'],
               'aresp': ['autothrophic respiration', 'kg m-2 year-1', 'ar'],
-              'photo': ['photosynthesis', 'kg m-2 year-1', 'ph'],
+              'photo': ['gross primary productivity', 'kg m-2 year-1', 'gpp'],
               'npp': ['net primary productivity', 'kg m-2 year-1', 'npp'],
-              'lai': ['Leaf Area Index', 'm2 m-2', 'LAI'],
+              'lai': ['Leaf Area Index - LAI - BIG LEAF', 'm2 m-2', 'lai'],
               'rcm': ['stomatal resistence', 's m-1', 'rcm'],
               'hresp': ['Soil heterothrophic respiration', 'g m-2 day-1', 'hr'],
               'nupt': ['Nitrogen uptake', 'g m-2 day-1', 'nupt'],
@@ -165,6 +165,16 @@ def get_var_metadata(var):
     return out
 
 
+def create_lband(res=0.5):
+    lon = np.arange(-179.75, 180, 0.5)[201:272]
+    lat = np.arange(89.75, -90, -0.5)[160:221]
+
+    latbnd = np.array([[l - res, l + res] for l in lat])
+    lonbnd = np.array([[l - res, l + res] for l in lon])
+
+    return lat, latbnd, lon, lonbnd
+
+
 def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTORICAL ISIMIP"):
 
     NO_DATA = [-9999.0, -9999.0]
@@ -173,13 +183,27 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
     calendar = CALENDAR
     nc_out = Path("../nc_outputs")
 
+    # Prepare time
     start = cftime.date2num(str2cf_date(interval[0]), time_units, calendar)
     stop = cftime.date2num(str2cf_date(interval[1]), time_units, calendar)
 
-    time_dim = np.arange(start, stop + 1, dtype=np.int32)
+    time_index = np.arange(start, stop + 1.0, dtype=np.float64)
 
-    longitude_0 = np.arange(-179.75, 180, 0.5)[201:272]
-    latitude_0 = np.arange(89.75, -90, -0.5)[160:221]
+    # tbnds = np.zeros(shape=(time_index.size, 2))
+    # t = np.zeros(shape=(time_index.size,))
+
+    # for i, day in enumerate(time_index):
+    #     str_date = cf_date2str(cftime.num2date(day, time_units, calendar))
+    #     tbnds[i, :], t[i] = create_tbnd(str_date)
+
+    # Prepare lat/lon
+    geo_v = create_lband()
+
+    lat = geo_v[0]
+    lat_bnds = geo_v[1]
+    lon = geo_v[2]
+    lon_bnds = geo_v[3]
+
     print("\nSaving netCDF4 files")
     print_progress(0, len(var), prefix='Progress:', suffix='Complete')
 
@@ -189,16 +213,26 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
         with dt(nc_filename, mode='w', format='NETCDF4') as rootgrp:
             # dimensions  & variables
 
-            rootgrp.createDimension("latitude", latitude_0.size)
-            rootgrp.createDimension("longitude", longitude_0.size)
+            rootgrp.createDimension("latitude", lat.size)
+            rootgrp.createDimension("longitude", lon.size)
+            rootgrp.createDimension("bnds", size=2)
             rootgrp.createDimension("time", None)
 
-            time = rootgrp.createVariable(varname="time", datatype=np.int32,
-                                          dimensions=("time",))
+            # BOUNDS
+            # TB = rootgrp.createVariable(
+            #     "time_bounds", tbnds.dtype, ("time", "nb"))
+            YB = rootgrp.createVariable(
+                "lat_bounds", lat_bnds.dtype, ("latitude", "bnds"))
+            XB = rootgrp.createVariable(
+                "lon_bounds", lon_bnds.dtype, ("longitude", "bnds"))
+            # nb = rootgrp.createVariable("nb", int, ("nb",))
+
+            time = rootgrp.createVariable("time", np.float64, ("time",))
+
             latitude = rootgrp.createVariable(
-                varname="latitude", datatype=np.float32, dimensions=("latitude",))
+                "latitude", lat.dtype, ("latitude",))
             longitude = rootgrp.createVariable(
-                varname="longitude", datatype=np.float32, dimensions=("longitude",))
+                "longitude", lon.dtype, ("longitude",))
             var_ = rootgrp.createVariable(varname=flt_attrs[v][2], datatype=np.float32,
                                           dimensions=(
                                               "time", "latitude", "longitude",),
@@ -214,17 +248,25 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
             time.units = time_units
             time.calendar = calendar
             time.axis = 'T'
+            time[...] = time_index
+            # nb[...] = np.array([0, 1])
+            # TB[...] = tbnds
 
             # lat
             latitude.units = u"degrees_north"
             latitude.long_name = u"latitude"
             latitude.standart_name = u"latitude"
             latitude.axis = u'Y'
+            latitude[...] = lat
+            YB[...] = lat_bnds
+
             # lon
             longitude.units = "degrees_east"
             longitude.long_name = "longitude"
             longitude.standart_name = "longitude"
             longitude.axis = u'X'
+            longitude[...] = lon
+            XB[...] = lon_bnds
             # var
             var_.long_name = flt_attrs[v][0]
             var_.units = flt_attrs[v][1]
@@ -232,9 +274,7 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
             var_.missing_value = NO_DATA[0]
 
             # WRITING DATA
-            longitude[:] = longitude_0
-            latitude[:] = latitude_0
-            time[:] = time_dim
+
             var_[:, :, :] = np.ma.masked_array(
                 arr[i], mask=arr[i] == NO_DATA[0])
             print_progress(i + 1, len(var), prefix='Progress:',
@@ -1130,21 +1170,21 @@ def h52nc(input_file):
 
     g1_table = h5f.root.RUN0.Outputs_G1
     print('Creating Sorted table for g1', time.ctime())
-    index_dt = g1_table.cols.date.create_csindex()
-    t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
-    # t1d = h5f.root.RUN0.indexedT1date
+    # index_dt = g1_table.cols.date.create_csindex()
+    # t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
+    t1d = h5f.root.RUN0.indexedT1date
 
     g2_table = h5f.root.RUN0.Outputs_G2
     print('Creating Sorted table for g2', time.ctime())
-    index_dt = g2_table.cols.date.create_csindex()
-    t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
-    # t2d = h5f.root.RUN0.indexedT2date
+    # index_dt = g2_table.cols.date.create_csindex()
+    # t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
+    t2d = h5f.root.RUN0.indexedT2date
 
     g3_table = h5f.root.RUN0.Outputs_G3
     print('Creating Sorted table for g3', time.ctime())
-    index_dt = g3_table.cols.date.create_csindex()
-    t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
-    # t3d = h5f.root.RUN0.indexedT3date
+    # index_dt = g3_table.cols.date.create_csindex()
+    # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
+    t3d = h5f.root.RUN0.indexedT3date
 
     create_ncG1(t1d, interval1)
     create_ncG1(t1d, interval2)
