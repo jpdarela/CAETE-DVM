@@ -11,7 +11,7 @@ from post_processing import cf_date2str, str2cf_date
 from caete_module import global_par as gp
 from caete import NO_DATA, print_progress, run_breaks
 
-TIME_UNITS = u"days since 1900-01-01 23:59:59"
+TIME_UNITS = u"days since 1850-01-01 12:00:00"
 CALENDAR = u"standard"
 
 
@@ -166,35 +166,30 @@ def get_var_metadata(var):
 
 
 def create_lband(res=0.5):
-    lon = np.arange(-179.75, 180, 0.5)[201:272]
-    lat = np.arange(89.75, -90, -0.5)[160:221]
-
-    latbnd = np.array([[l - res, l + res] for l in lat])
-    lonbnd = np.array([[l - res, l + res] for l in lon])
+    lon = np.arange(-179.75, 180, res, dtype=np.float64)[201:272]
+    lat = np.arange(89.75, -90, -res, dtype=np.float64)[160:221][::-1]
+    half = res / 2.0
+    latbnd = np.array([[l - half, l + half] for l in lat])
+    lonbnd = np.array([[l - half, l + half] for l in lon])
 
     return lat, latbnd, lon, lonbnd
 
 
-def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTORICAL ISIMIP"):
+def write_daily_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+
+    def _azzmble(in_arr):
+        d0 = in_arr.shape[0]
+        out_arr = np.ma.masked_all((d0, 360, 720), dtype=np.float32)
+        out_arr.fill(NO_DATA[0])
+        out_arr.fill_value = NO_DATA[0]
+        out_arr[:, 160:221, 201:272] = in_arr.copy()
+        return out_arr
 
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
     calendar = CALENDAR
     nc_out = Path("../nc_outputs")
-
-    # Prepare time
-    start = cftime.date2num(str2cf_date(interval[0]), time_units, calendar)
-    stop = cftime.date2num(str2cf_date(interval[1]), time_units, calendar)
-
-    time_index = np.arange(start, stop + 1.0, dtype=np.float64)
-
-    # tbnds = np.zeros(shape=(time_index.size, 2))
-    # t = np.zeros(shape=(time_index.size,))
-
-    # for i, day in enumerate(time_index):
-    #     str_date = cf_date2str(cftime.num2date(day, time_units, calendar))
-    #     tbnds[i, :], t[i] = create_tbnd(str_date)
 
     # Prepare lat/lon
     geo_v = create_lband()
@@ -204,12 +199,18 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
     lon = geo_v[2]
     lon_bnds = geo_v[3]
 
+    # tbnds = np.zeros(shape=(time_index.size, 2))
+    # tbnds[:, 0] = time_index
+    # tbnds[:, 1] = time_index + 1.0
+
+    t0 = cf_date2str(cftime.num2date(time_index[0], time_units, calendar))
+    tf = cf_date2str(cftime.num2date(time_index[-1], time_units, calendar))
+
     print("\nSaving netCDF4 files")
     print_progress(0, len(var), prefix='Progress:', suffix='Complete')
-
     for i, v in enumerate(var):
         nc_filename = os.path.join(nc_out, Path(
-            f'{v}_{interval[0]}-{interval[1]}.nc4'))
+            f'{v}_{t0}-{tf}.nc4'))
         with dt(nc_filename, mode='w', format='NETCDF4') as rootgrp:
             # dimensions  & variables
 
@@ -220,11 +221,11 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
 
             # BOUNDS
             # TB = rootgrp.createVariable(
-            #     "time_bounds", tbnds.dtype, ("time", "nb"))
+            #     "time_bnds", tbnds.dtype, ("time", "bnds"))
             YB = rootgrp.createVariable(
-                "lat_bounds", lat_bnds.dtype, ("latitude", "bnds"))
+                "lat_bnds", lat_bnds.dtype, ("latitude", "bnds"))
             XB = rootgrp.createVariable(
-                "lon_bounds", lon_bnds.dtype, ("longitude", "bnds"))
+                "lon_bnds", lon_bnds.dtype, ("longitude", "bnds"))
             # nb = rootgrp.createVariable("nb", int, ("nb",))
 
             time = rootgrp.createVariable("time", np.float64, ("time",))
@@ -249,7 +250,6 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
             time.calendar = calendar
             time.axis = 'T'
             time[...] = time_index
-            # nb[...] = np.array([0, 1])
             # TB[...] = tbnds
 
             # lat
@@ -274,14 +274,14 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
             var_.missing_value = NO_DATA[0]
 
             # WRITING DATA
-
+            out_arr = np.fliplr(arr[i])
             var_[:, :, :] = np.ma.masked_array(
-                arr[i], mask=arr[i] == NO_DATA[0])
+                out_arr, mask=out_arr == NO_DATA[0])
             print_progress(i + 1, len(var), prefix='Progress:',
                            suffix='Complete')
 
 
-def write_snap_output(arr, var, flt_attrs, time_index, experiment="TEST RUN HISTORICAL ISIMIP"):
+def write_snap_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
 
     NO_DATA = [-9999.0, -9999.0]
 
@@ -353,7 +353,7 @@ def write_snap_output(arr, var, flt_attrs, time_index, experiment="TEST RUN HIST
                            suffix='Complete')
 
 
-def write_area_output(arr, time_index, experiment="TEST RUN HISTORICAL ISIMIP"):
+def write_area_output(arr, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
@@ -441,6 +441,18 @@ def create_ncG1(table, interval):
 
     dates = time_queries(interval)
     dm1 = len(dates)
+    time_units = TIME_UNITS
+    calendar = CALENDAR
+
+    sdate = str2cf_date(interval[0])
+    edate = str2cf_date(interval[1])
+    start = cftime.date2num(sdate, time_units, calendar)
+    stop = cftime.date2num(edate, time_units, calendar)
+
+    time_index = np.arange(start, stop + 1, dtype=np.float64)
+    print("dm1 = ", dm1, 'time_axis  = ', time_index.size)
+    print('day0 = ', cftime.num2date(start, time_units, calendar))
+    print('dayf = ', cftime.num2date(stop, time_units, calendar))
 
     photo = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     aresp = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -505,7 +517,7 @@ def create_ncG1(table, interval):
     arr = (photo, aresp, npp, lai, wue, cue, vcmax,
            specific_la, nupt1, pupt1)
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, interval)
+    write_daily_output(arr, vars, var_attrs, time_index)
 
 
 def create_ncG2(table, interval):
@@ -521,6 +533,19 @@ def create_ncG2(table, interval):
 
     dates = time_queries(interval)
     dm1 = len(dates)
+
+    time_units = TIME_UNITS
+    calendar = CALENDAR
+
+    sdate = str2cf_date(interval[0])
+    edate = str2cf_date(interval[1])
+    start = cftime.date2num(sdate, time_units, calendar)
+    stop = cftime.date2num(edate, time_units, calendar)
+
+    time_index = np.arange(start, stop + 1, dtype=np.float64)
+    print("dm1 = ", dm1, 'time_axis  = ', time_index.size)
+    print('day0 = ', cftime.num2date(start, time_units, calendar))
+    print('dayf = ', cftime.num2date(stop, time_units, calendar))
 
     csoil1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     csoil2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -605,7 +630,7 @@ def create_ncG2(table, interval):
             'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
     arr = (csoil, org_n, org_p, inorg_n, inorg_p, sorbed_p, hresp, nmin, pmin)
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, interval)
+    write_daily_output(arr, vars, var_attrs, time_index)
 
 
 def create_ncG3(table, interval):
@@ -622,6 +647,19 @@ def create_ncG3(table, interval):
 
     dates = time_queries(interval)
     dm1 = len(dates)
+
+    time_units = TIME_UNITS
+    calendar = CALENDAR
+
+    sdate = str2cf_date(interval[0])
+    edate = str2cf_date(interval[1])
+    start = cftime.date2num(sdate, time_units, calendar)
+    stop = cftime.date2num(edate, time_units, calendar)
+
+    time_index = np.arange(start, stop + 1, dtype=np.float64)
+    print("dm1 = ", dm1, 'time_axis  = ', time_index.size)
+    print('day0 = ', cftime.num2date(start, time_units, calendar))
+    print('dayf = ', cftime.num2date(stop, time_units, calendar))
 
     rcm = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     runom = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -713,7 +751,7 @@ def create_ncG3(table, interval):
            sto1, sto2, sto3, c_cost)
 
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, interval)
+    write_daily_output(arr, vars, var_attrs, time_index)
 
 
 def lim_data(table):
@@ -1160,9 +1198,6 @@ def h52nc(input_file):
 
     import time
 
-    interval1 = (run_breaks[0][0], '19891231')
-    interval2 = ('19900101', '19991231')
-    interval3 = ('20000101', run_breaks[-1][-1])
     ip = Path(input_file).resolve()
     print(f"Loading file: {ip}", end='---')
     h5f = tb.open_file(ip, mode='a', driver="H5FD_CORE")
@@ -1186,15 +1221,20 @@ def h52nc(input_file):
     # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
     t3d = h5f.root.RUN0.indexedT3date
 
-    create_ncG1(t1d, interval1)
-    create_ncG1(t1d, interval2)
-    create_ncG1(t1d, interval3)
-    create_ncG2(t2d, interval1)
-    create_ncG2(t2d, interval2)
-    create_ncG2(t2d, interval3)
-    create_ncG3(t3d, interval1)
-    create_ncG3(t3d, interval2)
-    create_ncG3(t3d, interval3)
+    for interval in run_breaks:
+        create_ncG1(t1d, interval)
+        create_ncG2(t2d, interval)
+        create_ncG3(t3d, interval)
+
+    # create_ncG1(t1d, interval1)
+    # create_ncG1(t1d, interval2)
+    # create_ncG1(t1d, interval3)
+    # create_ncG2(t2d, interval1)
+    # create_ncG2(t2d, interval2)
+    # create_ncG2(t2d, interval3)
+    # create_ncG3(t3d, interval1)
+    # create_ncG3(t3d, interval2)
+    # create_ncG3(t3d, interval3)
 
     snap_table = h5f.root.RUN0.spin_snapshot
     lim_data(snap_table)

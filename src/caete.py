@@ -40,6 +40,7 @@ from caete_module import water as st
 from caete_module import photo as m
 from caete_module import soil_dec
 
+NO_DATA = [-9999.0, -9999.0]
 
 print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
 # GLOBAL
@@ -65,14 +66,6 @@ run_breaks = [('19790101', '19801231'),
               ('20090101', '20101231'),
               ('20110101', '20121231'),
               ('20130101', '20141231')]
-
-TIME_UNITS = u"days since 1850-1-1 00:00:00"
-CALENDAR = u"proleptic_gregorian"
-NO_DATA = [-9999.0, -9999.0]
-
-longitude_0 = np.arange(-179.75, 180, 0.5)[201:272]
-latitude_0 = np.arange(89.75, -90, -0.5)[160:221]
-
 
 warnings.simplefilter("default")
 
