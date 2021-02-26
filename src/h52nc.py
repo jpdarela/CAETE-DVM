@@ -1196,6 +1196,7 @@ def create_nc_area(table):
 
 def h52nc(input_file):
 
+    from threading import Thread
     import time
 
     ip = Path(input_file).resolve()
@@ -1221,20 +1222,26 @@ def h52nc(input_file):
     # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
     t3d = h5f.root.RUN0.indexedT3date
 
-    for interval in run_breaks:
+    # parallel access to tables
+    def apply_ng1(interval):
         create_ncG1(t1d, interval)
+
+    def apply_ng2(interval):
         create_ncG2(t2d, interval)
+
+    def apply_ng3(interval):
         create_ncG3(t3d, interval)
 
-    # create_ncG1(t1d, interval1)
-    # create_ncG1(t1d, interval2)
-    # create_ncG1(t1d, interval3)
-    # create_ncG2(t2d, interval1)
-    # create_ncG2(t2d, interval2)
-    # create_ncG2(t2d, interval3)
-    # create_ncG3(t3d, interval1)
-    # create_ncG3(t3d, interval2)
-    # create_ncG3(t3d, interval3)
+    for interval in run_breaks:
+        thr = [Thread(target=interval, args=(apply_ng1)),
+               Thread(target=interval, args=(apply_ng2)),
+               Thread(target=interval, args=(apply_ng3))]
+        for t in thr:
+            t.start()
+        for t in thr:
+            t.join()
+        for t in thr:
+            assert not t.is_alive()
 
     snap_table = h5f.root.RUN0.spin_snapshot
     lim_data(snap_table)
