@@ -1206,42 +1206,26 @@ def h52nc(input_file):
 
     g1_table = h5f.root.RUN0.Outputs_G1
     print('Creating Sorted table for g1', time.ctime())
-    # index_dt = g1_table.cols.date.create_csindex()
+    # index_dt1 = g1_table.cols.date.create_csindex()
     # t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
     t1d = h5f.root.RUN0.indexedT1date
 
     g2_table = h5f.root.RUN0.Outputs_G2
     print('Creating Sorted table for g2', time.ctime())
-    # index_dt = g2_table.cols.date.create_csindex()
+    # index_dt2 = g2_table.cols.date.create_csindex()
     # t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
     t2d = h5f.root.RUN0.indexedT2date
 
     g3_table = h5f.root.RUN0.Outputs_G3
     print('Creating Sorted table for g3', time.ctime())
-    # index_dt = g3_table.cols.date.create_csindex()
+    # index_dt3 = g3_table.cols.date.create_csindex()
     # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
     t3d = h5f.root.RUN0.indexedT3date
 
-    # parallel access to tables
-    def apply_ng1(interval):
-        create_ncG1(t1d, interval)
-
-    def apply_ng2(interval):
-        create_ncG2(t2d, interval)
-
-    def apply_ng3(interval):
-        create_ncG3(t3d, interval)
-
     for interval in run_breaks:
-        thr = [Thread(target=interval, args=(apply_ng1)),
-               Thread(target=interval, args=(apply_ng2)),
-               Thread(target=interval, args=(apply_ng3))]
-        for t in thr:
-            t.start()
-        for t in thr:
-            t.join()
-        for t in thr:
-            assert not t.is_alive()
+        create_ncG1(t1d, interval)
+        create_ncG2(t2d, interval)
+        create_ncG3(t3d, interval)
 
     snap_table = h5f.root.RUN0.spin_snapshot
     lim_data(snap_table)
