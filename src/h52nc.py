@@ -11,7 +11,7 @@ from post_processing import cf_date2str, str2cf_date
 from caete_module import global_par as gp
 from caete import NO_DATA, print_progress, run_breaks
 
-TIME_UNITS = u"days since 1850-01-01 12:00:00"
+TIME_UNITS = u"days since 1850-01-01 00:00:00"
 CALENDAR = u"standard"
 
 
@@ -127,20 +127,20 @@ def get_var_metadata(var):
               'root_colim_p': ['colim P R', 'Time fraction', 'root_colim_p'],
               'root_colim_np': ['colim NP R', 'Time fraction', 'root_colim_np'],
               'upt_stratN0': ['passive N uptake', 'Time fraction', 'upt_stratN0'],
-              'upt_stratN1': ['nma', 'Time fraction', 'upt_stratN1'],
-              'upt_stratN2': ['nme', 'Time fraction', 'upt_stratN2'],
-              'upt_stratN3': ['am', 'Time fraction', 'upt_stratN3'],
-              'upt_stratN4': ['em', 'Time fraction', 'upt_stratN4'],
-              'upt_stratN6': ['am0', 'Time fraction', 'upt_stratN6'],
+              'upt_stratN1': ['active N uptake via AM ROOT surface - nma', 'Time fraction', 'upt_stratN1'],
+              'upt_stratN2': ['active N uptake via ECM ROOT surface - nme', 'Time fraction', 'upt_stratN2'],
+              'upt_stratN3': ['active N uptake via AM surface - am', 'Time fraction', 'upt_stratN3'],
+              'upt_stratN4': ['active N uptake via ECM surface - em', 'Time fraction', 'upt_stratN4'],
+              'upt_stratN6': ['N uptake via ECM NITROGENASE activity - em0', 'Time fraction', 'upt_stratN6'],
               'upt_stratP0': ['passive P uptake', 'Time fraction', 'upt_stratP0'],
-              'upt_stratP1': ['nma', 'Time fraction', 'upt_stratP1'],
-              'upt_stratP2': ['nme', 'Time fraction', 'upt_stratP2'],
-              'upt_stratP3': ['am', 'Time fraction', 'upt_stratP3'],
-              'upt_stratP4': ['em', 'Time fraction', 'upt_stratP4'],
-              'upt_stratP5': ['ram-ap', 'Time fraction', 'upt_stratP5'],
-              'upt_stratP6': ['rem-ap', 'Time fraction', 'upt_stratP6'],
-              'upt_stratP7': ['amap', 'Time fraction', 'upt_stratP7'],
-              'upt_stratP8': ['em0x', 'Time fraction', 'upt_stratP8'],
+              'upt_stratP1': ['active P uptake via AM ROOT surface - nma', 'Time fraction', 'upt_stratP1'],
+              'upt_stratP2': ['active P uptake via ECM ROOT surface - nme', 'Time fraction', 'upt_stratP2'],
+              'upt_stratP3': ['active P uptake via AM surface - am', 'Time fraction', 'upt_stratP3'],
+              'upt_stratP4': ['active P uptake via ECMM surface - em', 'Time fraction', 'upt_stratP4'],
+              'upt_stratP5': ['P uptake via ROOT AM Ptase activity - ram-ap', 'Time fraction', 'upt_stratP5'],
+              'upt_stratP6': ['P uptake via ROOT ECM Ptase activity - rem-ap', 'Time fraction', 'upt_stratP6'],
+              'upt_stratP7': ['P uptake via AM Ptase activity - amap', 'Time fraction', 'upt_stratP7'],
+              'upt_stratP8': ['P uptake via exudates activity - em0x', 'Time fraction', 'upt_stratP8'],
               'g1': ['CWM- G1 param for Stomat.Resist  model', 'unitless', 'g1'],
               'resopfrac': ['CWM- Leaf resorpton fractio', '%', 'resopfrac'],
               'tleaf': ['CWM- leaf turnover time', 'years', 'tleaf'],
@@ -175,7 +175,8 @@ def create_lband(res=0.5):
     return lat, latbnd, lon, lonbnd
 
 
-def write_daily_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+def write_daily_output(arr, var, flt_attrs, time_index, nc_out,
+                       experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
 
     def _azzmble(in_arr):
         d0 = in_arr.shape[0]
@@ -189,8 +190,6 @@ def write_daily_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL R
 
     time_units = TIME_UNITS
     calendar = CALENDAR
-    nc_out = Path("../nc_outputs")
-
     # Prepare lat/lon
     geo_v = create_lband()
 
@@ -281,13 +280,13 @@ def write_daily_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL R
                            suffix='Complete')
 
 
-def write_snap_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+def write_snap_output(arr, var, flt_attrs, time_index, nc_out,
+                      experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
 
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
     calendar = CALENDAR
-    nc_out = Path("../nc_outputs")
 
     time_dim = time_index
 
@@ -353,12 +352,12 @@ def write_snap_output(arr, var, flt_attrs, time_index, experiment="HISTORICAL RU
                            suffix='Complete')
 
 
-def write_area_output(arr, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+def write_area_output(arr, time_index, nc_out,
+                      experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
     calendar = CALENDAR
-    nc_out = Path("../nc_outputs")
 
     time_dim = time_index
 
@@ -428,8 +427,7 @@ def write_area_output(arr, time_index, experiment="HISTORICAL RUN ISIMIP - WATCH
         var_[:, :, :, :] = np.ma.masked_array(arr, mask=arr == NO_DATA[0])
 
 
-def create_ncG1(table, interval):
-    nc_out = Path("../nc_outputs")
+def create_ncG1(table, interval, nc_out):
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"\n\nCreating output folder at{nc_out.resolve()}")
@@ -517,11 +515,10 @@ def create_ncG1(table, interval):
     arr = (photo, aresp, npp, lai, wue, cue, vcmax,
            specific_la, nupt1, pupt1)
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, time_index)
+    write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
 
-def create_ncG2(table, interval):
-    nc_out = Path("../nc_outputs")
+def create_ncG2(table, interval, nc_out):
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"\n\nCreating output folder at{nc_out.resolve()}")
@@ -630,11 +627,10 @@ def create_ncG2(table, interval):
             'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
     arr = (csoil, org_n, org_p, inorg_n, inorg_p, sorbed_p, hresp, nmin, pmin)
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, time_index)
+    write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
 
-def create_ncG3(table, interval):
-    nc_out = Path("../nc_outputs")
+def create_ncG3(table, interval, nc_out):
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"\n\nCreating output folder at{nc_out.resolve()}")
@@ -751,12 +747,11 @@ def create_ncG3(table, interval):
            sto1, sto2, sto3, c_cost)
 
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, time_index)
+    write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
 
-def lim_data(table):
+def lim_data(table, nc_out):
     print("\n EXTRACTING NUTRIENT LIMITATION INFORMATION")
-    nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"\n\nCreating output folder at{nc_out.resolve()}")
@@ -867,12 +862,11 @@ def lim_data(table):
 
     flt_attrs = get_var_metadata(vars)
     print("Saving growth limitation outputs")
-    write_snap_output(arr, vars, flt_attrs, time_index)
+    write_snap_output(arr, vars, flt_attrs, time_index, nc_out)
 
 
-def ustrat_data(table):
+def ustrat_data(table, nc_out):
     print("\n EXTRACTING N/P UPTAKE STRATEGY INFORMATION")
-    nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"Creating output folder at{nc_out.resolve()}")
@@ -968,12 +962,11 @@ def ustrat_data(table):
 
     flt_attrs = get_var_metadata(vars)
     print("Saving uptake strategy outputs")
-    write_snap_output(arr, vars, flt_attrs, time_index)
+    write_snap_output(arr, vars, flt_attrs, time_index, nc_out)
 
 
-def ccc(table, pls_table):
+def ccc(table, pls_table, nc_out):
     print("\n EXTRACTING TRAITS CWM INFORMATION")
-    nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"\n\nCreating output folder at{nc_out.resolve()}")
@@ -1153,12 +1146,11 @@ def ccc(table, pls_table):
             'pdia']
 
     flt_attrs = get_var_metadata(vars)
-    write_snap_output(arr, vars, flt_attrs, time_index)
+    write_snap_output(arr, vars, flt_attrs, time_index, nc_out)
 
 
-def create_nc_area(table):
+def create_nc_area(table, nc_out):
     print("\n EXTRACTING PLS ABUNDANCE INFORMATION")
-    nc_out = Path("../nc_outputs")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"\n\nCreating output folder at{nc_out.resolve()}")
@@ -1191,12 +1183,11 @@ def create_nc_area(table):
             area[i + 1, :, :,
                  :] = assemble_layer_area(out['grid_y'], out['grid_x'], out['area_f'])
 
-    write_area_output(area, time_index)
+    write_area_output(area, time_index, nc_out)
 
 
-def h52nc(input_file):
+def h52nc(input_file, dump_nc_folder):
 
-    from threading import Thread
     import time
 
     ip = Path(input_file).resolve()
@@ -1206,33 +1197,33 @@ def h52nc(input_file):
 
     g1_table = h5f.root.RUN0.Outputs_G1
     print('Creating Sorted table for g1', time.ctime())
-    # index_dt1 = g1_table.cols.date.create_csindex()
-    # t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
-    t1d = h5f.root.RUN0.indexedT1date
+    index_dt1 = g1_table.cols.date.create_csindex()
+    t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
+    # t1d = h5f.root.RUN0.indexedT1date
 
     g2_table = h5f.root.RUN0.Outputs_G2
     print('Creating Sorted table for g2', time.ctime())
-    # index_dt2 = g2_table.cols.date.create_csindex()
-    # t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
-    t2d = h5f.root.RUN0.indexedT2date
+    index_dt2 = g2_table.cols.date.create_csindex()
+    t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
+    # t2d = h5f.root.RUN0.indexedT2date
 
     g3_table = h5f.root.RUN0.Outputs_G3
     print('Creating Sorted table for g3', time.ctime())
-    # index_dt3 = g3_table.cols.date.create_csindex()
-    # t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
-    t3d = h5f.root.RUN0.indexedT3date
+    index_dt3 = g3_table.cols.date.create_csindex()
+    t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
+    # t3d = h5f.root.RUN0.indexedT3date
 
     for interval in run_breaks:
-        create_ncG1(t1d, interval)
-        create_ncG2(t2d, interval)
-        create_ncG3(t3d, interval)
+        create_ncG1(t1d, interval, dump_nc_folder)
+        create_ncG2(t2d, interval, dump_nc_folder)
+        create_ncG3(t3d, interval, dump_nc_folder)
 
     snap_table = h5f.root.RUN0.spin_snapshot
-    lim_data(snap_table)
-    ustrat_data(snap_table)
-    create_nc_area(snap_table)
+    lim_data(snap_table, dump_nc_folder)
+    ustrat_data(snap_table, dump_nc_folder)
+    create_nc_area(snap_table, dump_nc_folder)
 
     pls_table = h5f.root.RUN0.PLS
-    ccc(snap_table, pls_table)
+    ccc(snap_table, pls_table, dump_nc_folder)
 
     h5f.close()

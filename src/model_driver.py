@@ -43,6 +43,11 @@ def check_start():
 
 
 sombrero = check_start()
+outf = input("Give a name to your run: ")
+dump_folder = Path(f'../outputs/{outf}').resolve()
+nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
+print(f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
+print(f"The final netCDF files will be stored at: {nc_outputs}\n")
 
 # Water saturation, field capacity & wilting point
 # Topsoil
@@ -85,7 +90,7 @@ with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh
     co2_data = fh.readlines()
 
 # FUNCTIONAL TRAITS DATA
-pls_table = pls.table_gen(npls)
+pls_table = pls.table_gen(npls, dump_folder)
 
 # # Create the gridcell objects
 if sombrero:
@@ -94,14 +99,14 @@ if sombrero:
     for Y in range(360):
         for X in range(720):
             if not mask[Y, X]:
-                grid_mn.append(grd(X, Y))
+                grid_mn.append(grd(X, Y, outf))
 
 else:
     grid_mn = []
     for Y in range(168, 175):
         for X in range(225, 230):
             if not mask[Y, X]:
-                grid_mn.append(grd(X, Y))
+                grid_mn.append(grd(X, Y, outf))
 
 
 def apply_init(grid):
@@ -213,8 +218,10 @@ if __name__ == "__main__":
     del result
 
     # Save Ground 0
-    with open("RUN0.pkz", 'wb') as fh2:
-        print("Saving gridcells with init state in RUN0.pkz")
+    g0_path = Path(os.path.join(
+        dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
+    with open(g0_path, 'wb') as fh2:
+        print(f"Saving gridcells with init state in: {g0_path}\n")
         joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
     result = result1
@@ -228,7 +235,8 @@ if __name__ == "__main__":
 
     print(time.ctime())
     print("Saving db - This will take some hours")
-    write_h5()
+    write_h5(dump_folder)
     print("\n\nSaving netCDF4 files")
-    h52nc("../outputs/CAETE.h5")
+    h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
+    h52nc(h5path, nc_outputs)
     print(time.ctime())

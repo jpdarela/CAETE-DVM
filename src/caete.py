@@ -48,6 +48,11 @@ out_ext = ".pkz"
 npls = gp.npls
 mask = np.load("../input/mask/mask_raisg-360-720.npy")
 
+Pan_Amazon_RECTANGLE = "y = 160:221 x = 201:272"
+
+Pan_Amazon_CORNERS = {'ulc': (201, 160),
+                      'lrc': (271, 220)}
+
 run_breaks = [('19790101', '19801231'),
               ('19810101', '19821231'),
               ('19830101', '19841231'),
@@ -196,7 +201,7 @@ class grd:
     describing the life cycle of the gridcell and the filepaths to the generated model outputs
     """
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, dump_folder):
         """Construct the gridcell object"""
 
         # CELL Identifiers
@@ -209,13 +214,16 @@ class grd:
         self.pos = (int(self.x), int(self.y))
         self.pls_table = None   # will receive the np.array with functional traits data
         self.outputs = {}       # dict, store filepaths of output data
+        self.realized_runs = []
+        self.experiments = 1
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
         self.neighbours = None
 
         self.ls = None          # Number of surviving plss//
 
-        self.out_dir = Path("../outputs/gridcell{}/".format(self.xyname))
+        self.out_dir = Path(
+            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname))
         self.flush_data = None
 
         # Time attributes
@@ -660,7 +668,13 @@ class grd:
 
         return None
 
-    def update_gridcell_input(self):
+    def clean_run(self, dump_folder, save_id):
+        self.out_dir = Path(
+            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname))
+        self.realized_runs.append((save_id, self.outputs))
+        self.outputs = {}
+        self.run_counter = 0
+        self.experiments += 1
         pass
 
     def insert_pls(self):
@@ -872,7 +886,7 @@ class grd:
                 sto[1, self.vp_lsid] = self.vp_sto[1, :]
                 sto[2, self.vp_lsid] = self.vp_sto[2, :]
                 # Just Check the integrity of the data
-                assert self.vp_lsid.size == self.vp_cleaf.size, 'different shapes'
+                assert self.vp_lsid.size == self.vp_cleaf.size, 'different array sizes'
                 c = 0
                 for n in self.vp_lsid:
                     cleaf[n] = self.vp_cleaf[c]
@@ -896,6 +910,9 @@ class grd:
                 daily_output = catch_out_budget(out)
 
                 self.vp_lsid = np.where(daily_output['ocpavg'] > 0.0)[0]
+                if self.vp_lsid.size == 0:
+                    rwarn(
+                        f"Gridcell {self.xyname} has no living Plant Life Strategies")
                 self.vp_ocp = daily_output['ocpavg'][self.vp_lsid]
                 self.ls[step] = self.vp_lsid.size
 

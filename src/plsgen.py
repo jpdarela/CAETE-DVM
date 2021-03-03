@@ -133,19 +133,19 @@ def turnover_combinations(verbose=False):
     return a1, a2
 
 
-def table_gen(NPLS):
+def table_gen(NPLS, fpath=None):
     """AKA main - generate a trait table for CAETÊ - save it to a .csv"""
 
     def calc_ratios(pool):
 
-        pool_n2c = np.linspace(0.002, 0.025, 500)
-        pool_p2c = np.linspace(0.0002, 0.0025, 500)
+        pool_n2c = np.linspace(0.003, 0.04, 500)
+        pool_p2c = np.linspace(1e-5, 0.005, 500)
 
         if pool == 'leaf' or pool == 'root':
             pass
         else:
-            pool_n2c = np.linspace(0.002, 0.025, 500) / 10.0
-            pool_p2c = np.linspace(0.00025, 0.0025, 500) / 10.0
+            pool_n2c /=  100.0
+            pool_p2c /=  100.0
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
             (a / b) >= 3.0) and ((a / b) <= 50.0)]
@@ -185,7 +185,7 @@ def table_gen(NPLS):
     # Creating woody plants (maybe herbaceous)
     index1 = 0
     rtime_wood = vec_ranging(np.random.beta(
-        2, 6, r_ceil), 0.083333333333, 99.9)
+        2, 4, r_ceil), 0.083333333333, 99.9)
     # rtime_wood = np.random.uniform(0.08333333333333333, 100, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -258,17 +258,20 @@ def table_gen(NPLS):
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
 
-    pls_table = np.vstack(stack)
+    if fpath is not None:
 
-    # # ___side_effects
-    if not Path("../outputs").exists():
-        os.mkdir("../outputs")
-    with open('../outputs/pls_attrs.csv', mode='w') as fh:
-        writer = csv.writer(fh, delimiter=',')
-        writer.writerow(head)
-        for x in range(pls_table.shape[1]):
-            writer.writerow(list(pls_table[:, x]))
-        # writer.writerows(pls_table)
+        pls_table = np.vstack(stack)
+
+        # # ___side_effects
+        if not fpath.exists():
+            os.system(f" mkdir -p {fpath.resolve()}")
+        fnp = Path(os.path.join(fpath, 'pls_attrs.csv')).resolve()
+        with open(fnp, mode='w') as fh:
+            writer = csv.writer(fh, delimiter=',')
+            writer.writerow(head)
+            for x in range(pls_table.shape[1]):
+                writer.writerow(list(pls_table[:, x]))
+            # writer.writerows(pls_table)
 
     pls_table = np.vstack(stack[1:])
     return np.asfortranarray(pls_table, dtype=np.float64)
