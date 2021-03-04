@@ -46,7 +46,8 @@ sombrero = check_start()
 outf = input("Give a name to your run: ")
 dump_folder = Path(f'../outputs/{outf}').resolve()
 nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
-print(f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
+print(
+    f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
 print(f"The final netCDF files will be stored at: {nc_outputs}\n")
 
 # Water saturation, field capacity & wilting point
@@ -139,7 +140,7 @@ def apply_fun(grid):
 
 def apply_fun0(grid):
     grid.run_caete('19790101', '19881231', spinup=45,
-                   fix_co2='1983', save=False)
+                   fix_co2='1979', save=False)
     return grid
 
 

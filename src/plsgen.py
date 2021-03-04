@@ -144,8 +144,8 @@ def table_gen(NPLS, fpath=None):
         if pool == 'leaf' or pool == 'root':
             pass
         else:
-            pool_n2c /=  100.0
-            pool_p2c /=  100.0
+            pool_n2c /= 150.0
+            pool_p2c /= 250.0
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
             (a / b) >= 3.0) and ((a / b) <= 50.0)]
@@ -185,7 +185,7 @@ def table_gen(NPLS, fpath=None):
     # Creating woody plants (maybe herbaceous)
     index1 = 0
     rtime_wood = vec_ranging(np.random.beta(
-        2, 4, r_ceil), 0.083333333333, 99.9)
+        2, 4, r_ceil), 0.083333333333, 99.9999)
     # rtime_wood = np.random.uniform(0.08333333333333333, 100, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
