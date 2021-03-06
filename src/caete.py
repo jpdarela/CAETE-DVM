@@ -224,7 +224,7 @@ class grd:
         self.ls = None          # Number of surviving plss//
 
         self.out_dir = Path(
-            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname))
+            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
         self.flush_data = None
 
         # Time attributes
@@ -566,6 +566,7 @@ class grd:
             self.input_nut.append(self.data[nut])
         self.soil_dict = dict(zip(self.nutlist, self.input_nut))
         self.data = None
+
         # TIME
         self.stime = copy.deepcopy(stime_i)
         self.calendar = self.stime['calendar']
@@ -679,9 +680,6 @@ class grd:
         self.outputs = {}
         self.run_counter = 0
         self.experiments += 1
-
-    def insert_pls(self):
-        pass
 
     def _update_pool(self, prain, evapo):
         """Calculates upper and lower soil water pools for the grid cell,

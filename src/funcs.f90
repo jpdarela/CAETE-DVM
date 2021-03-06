@@ -244,7 +244,7 @@ contains
    function canopy_resistence(vpd_in,f1_in,g1,ca) result(rc2_in)
       ! return stomatal resistence based on Medlyn et al. 2011a
       ! Coded by Helena Alves do Prado
-
+      use global_par, only: rcmin, rcmax
       use types, only: r_4 ,r_8
 
 
@@ -274,6 +274,10 @@ contains
       gs = 0.003 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0e6)/ca) ! mol m-2 s-1
       gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
       rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
+
+      if(rc2_in .ge. rcmax) rc2_in = rcmax
+      if(rc2_in .lt. rcmin) rc2_in = rcmin
+
    end function canopy_resistence
 
    !=================================================================
