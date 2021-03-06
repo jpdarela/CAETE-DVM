@@ -433,7 +433,7 @@ contains
       real(r_8) :: nb, tl
       real(r_8) :: e = 2.718281828459045D0
 
-      tl = e**(-(leaf_t + 1.4)) + 0.06
+      tl = e**(-(leaf_t + 1.4)) + 0.04
 
       nb = tl * n_in
 

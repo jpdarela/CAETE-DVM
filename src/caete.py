@@ -70,7 +70,8 @@ run_breaks = [('19790101', '19801231'),
               ('20070101', '20081231'),
               ('20090101', '20101231'),
               ('20110101', '20121231'),
-              ('20130101', '20141231')]
+              ('20130101', '20141231'),
+              ('20150101', '20161231')]
 
 warnings.simplefilter("default")
 
@@ -670,12 +671,14 @@ class grd:
 
     def clean_run(self, dump_folder, save_id):
         self.out_dir = Path(
-            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname))
+            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
+
+        os.makedirs(str(self.out_dir), exist_ok=True)
+
         self.realized_runs.append((save_id, self.outputs))
         self.outputs = {}
         self.run_counter = 0
         self.experiments += 1
-        pass
 
     def insert_pls(self):
         pass
@@ -982,14 +985,14 @@ class grd:
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
                     # Sorbed P
-                    if self.pupt[1, step] > 0.05:
+                    if self.pupt[1, step] > 0.15:
                         rwarn(
-                            f"Puptk_SO > soP_max - 729 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                            f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
                         self.pupt[1, step] = 0.0
 
                     if self.pupt[1, step] > self.sp_so_p:
                         rwarn(
-                            f"Puptk_SO > soP_pool - 731 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                            f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
 
                     self.sp_so_p -= self.pupt[1, step]
 
@@ -1000,11 +1003,11 @@ class grd:
                     # N
                     if self.nupt[1, step] < 0.0:
                         rwarn(
-                            f"NuptkO < 0 - 745 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                            f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
                         self.nupt[1, step] = 0.0
                     if self.nupt[1, step] > 1.5:
                         rwarn(
-                            f"NuptkO  > max - 749 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                            f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
                         self.nupt[1, step] = 0.0
 
                     total_on = self.sp_snc[:4].sum()
@@ -1017,11 +1020,11 @@ class grd:
                     # P
                     if self.pupt[2, step] < 0.0:
                         rwarn(
-                            f"PuptkO < 0 - 759 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                            f"PuptkO < 0 - 1020 | in spin{s}, step{step} - {self.pupt[2, step]}")
                         self.pupt[2, step] = 0.0
                     if self.pupt[2, step] > 1.0:
                         rwarn(
-                            f"PuptkO  < max - 763 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                            f"PuptkO  < max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
                         self.pupt[2, step] = 0.0
                     total_op = self.sp_snc[4:].sum()
                     frsp = [i / total_op for i in self.sp_snc[4:]]

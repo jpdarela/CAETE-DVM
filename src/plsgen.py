@@ -239,12 +239,15 @@ def table_gen(NPLS, fpath=None):
     froot_p2c = root[:, 1]
 
     # new traits
-    pdia = np.random.uniform(0.0, 0.1e-7, NPLS)
+    pdia = np.random.uniform(0.0, 0.005, NPLS)
     np.place(pdia, test, 0.0)
-    woods = np.where(alloc[:, 4] > 0.0)
+    woods = np.where(alloc[:, 4] > 0.0)[0]
+    # return woods
+
     for i in woods:
         if np.random.normal() > 0:
             pdia[i] = 0.0
+
     amp = np.random.uniform(0.001, 0.999, NPLS)
 
     pls_id = np.arange(NPLS)

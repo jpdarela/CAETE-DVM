@@ -1108,6 +1108,8 @@ def ccc(table, pls_table, nc_out):
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['froot_p2c'])
             amp[i + 1, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
                                             out['area_f'], pls_array['amp'])
+            pdia[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['pdia'])
 
     arr = [g1,
            resopfrac,
