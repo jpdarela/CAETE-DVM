@@ -1220,6 +1220,10 @@ def h52nc(input_file, dump_nc_folder):
         create_ncG2(t2d, interval, dump_nc_folder)
         create_ncG3(t3d, interval, dump_nc_folder)
 
+    # t1d.remove()
+    # t2d.remove()
+    # t3d.remove()
+
     snap_table = h5f.root.RUN0.spin_snapshot
     lim_data(snap_table, dump_nc_folder)
     ustrat_data(snap_table, dump_nc_folder)

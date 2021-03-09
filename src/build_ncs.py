@@ -1,35 +1,32 @@
 # experiments.py
+from pathlib import Path
 import os
 import joblib
+import tables as tb
 from post_processing import write_h5
-from h52nc import h52nc
+import timeit as tit
+# from h52nc import h52nc
+
+# h52nc(Path("../outputs/r5/CAETE.h5").resolve(), Path("../h5"))
+
+h5f = tb.open_file("../outputs/r5/CAETE.h5", mode='a')
+
+t1d = h5f.root.RUN0.indexedT1date
 
 
-# # antes de rodar o experimento:
-
-# # 1 limpar a pasta outputs deixando apenas o arquivo dos PLSs
-# # 2 mover a pasta nc_outputs para outro local pois o programa pode sobrescrever os arquivos
-
-# with open("RUN0.pkz", 'rb') as fh:
-#     gridcells = joblib.load(fh)
+def a():
+    coords = t1d.get_where_list("(date == b'19790101')")
+    data = t1d.read_coordinates(coords)
+    return data
 
 
-# def fun1(grid):
-#     os.mkdir(grid.out_dir)
-#     grid.run_caete("19790101", "19991231")
+def b():
+    data = t1d.read_where("(date == b'19790101')")
+    return data
 
 
-# def fun2(grid):
-#     grid.run_caete("20000101", "20150101", fix_co2=600.0)
+print("Timing strateg a")
+print(tit.timeit(stmt=a, number=600))
 
-
-# for gridcell in gridcells:
-#     fun1(gridcell)
-
-# for gridcell in gridcells:
-#     fun2(gridcell)
-
-# print("Saving db")
-# write_h5()
-print("\n\nSaving netCDF4 files")
-h52nc("../outputs/CAETE.h5")
+print("Timing strateg b")
+print(tit.timeit(stmt=b, number=600))

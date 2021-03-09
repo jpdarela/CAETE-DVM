@@ -200,6 +200,7 @@ class grd:
     Defines the gridcell object - This object stores all the input data,
     the data comming from model runs for each grid point, all the state variables and all the metadata
     describing the life cycle of the gridcell and the filepaths to the generated model outputs
+    This class also provide several methods to apply the CAETÊ model with proper formated climatic and soil variables
     """
 
     def __init__(self, x, y, dump_folder):
