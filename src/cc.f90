@@ -298,7 +298,7 @@ module carbon_costs
 
       ! !Costs of Mycorrhizal AP/exudates
       ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
-      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) !+ 2.0
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 0.8 ! Artificial increasing of c costs
    end subroutine active_costp
 
 

@@ -45,7 +45,7 @@ module global_par
    real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
-   integer(i_4),parameter,public :: npls = 250                    ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: npls = 1000                    ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = 17                 ! Number of traits for each PLS
 
 end module global_par
@@ -74,10 +74,7 @@ module photo_par
         p15 = 1.20D0         ,&          !Michaelis-Menten constant for O2
         p19 = 0.90D0         ,&          !Maximum ratio of internal to external CO2
         p20 = 0.10D0         ,&          !Critical humidity deficit (kg/kg)
-        p22 = 2.0D0          ,&          !Rubisco carboxylation rate
-        p23 = 0.30D0         ,&          !Rubisco carboxylation rate
-        p24 = 36.0D0         ,&          !Rubisco carboxylation rate (oC)
-        p25 = 1.17D-5         ,&          !Maximum gross photosynthesis rate (molCO2/m2/s)0.000008
+        p25 = 8.0D-5         ,&          !Maximum gross photosynthesis rate (molCO2/m2/s)
         p26 = 0.50D0         ,&          !light extinction coefficient for IPAR/sun (0.5/sen90)
         p27 = 1.50D0         ,&          !light extinction coefficient for IPAR/shade (0.5/sen20)
         alphap = 0.0913D0    ,&          ! 0.0913 parameter for v4m. Hard to explain. See Chen et al. 1994

@@ -493,7 +493,7 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: vm_nutri
-      real(r_8) :: nbio2, pbio2
+      real(r_8) :: nbio2, pbio2, cbio_aux
       real(r_8) :: nmgg, pmgg
       real(r_8) :: coeffa, coeffb
 
@@ -511,18 +511,24 @@ contains
       ! vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
 
       ! !### DOMINGUES et al. 2010
+      cbio_aux = cbio
+      if(cbio .le. 0.0D0) cbio_aux = 0.01
 
-      nmgg = nbio2 / cbio
-      pmgg = pbio2 / cbio
+      nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
       coeffa = 1.57D0
       coeffb = 0.55D0
 
       vm_nutri = coeffa + (coeffb * dlog10(nmgg))
       vm =  10**vm_nutri * 1D-6
+      if(vm + 1 .eq. vm) vm = p25 - 5.0D-5
+      if(vm .gt. p25) vm = p25
 
 
       ! Rubisco Carboxilation Rate - temperature dependence
       vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0)))
+      if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
+      if(vm_in .gt. p25) vm_in = p25
 
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
@@ -560,30 +566,19 @@ contains
          b = (-1.)*(jc+jl)
          c = jc*jl
          delta = (b**2)-4.0*a*c
-         ! if(delta .eq. 0.0)then
-         !    jp = (-b) / (2 * a)
-         ! else if(delta .gt. 0.0) then
          jp1 = (-b-(sqrt(delta)))/(2.0*a)
          jp2 = (-b+(sqrt(delta)))/(2.0*a)
          jp = dmin1(jp1,jp2)
-         ! else
-         !    jp = 0.0
-         ! endif
 
          !Leaf level gross photosynthesis (minimum between jc, jl and je)
          !---------------------------------------------------------------
          b2 = (-1.)*(jp+je)
          c2 = jp*je
          delta2 = (b2**2)-4.0*a2*c2
-         ! if(delta2 .eq. 0.0)then
-         !    f1a = (-b2) / (2.0 * a2)
-         ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0d0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0d0*a2)
          f1a = dmin1(j1,j2)
-         ! else
-         !    f1a = 0.0
-         ! endif
+
 
          f1ab = f1a
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
@@ -632,15 +627,10 @@ contains
          b2 = (-1.)*(jcl+je)
          c2 = jcl*je
          delta2 = (b2**2)-4.0*a2*c2
-         ! if(delta2 .eq. 0.0)then
-         !    f1a = (-b2) / (2.0 * a2)
-         ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0*a2)
          f1a = dmin1(j1,j2)
-         ! else
-         !    f1a = 0.0
-         ! endif
+
 
          f1ab = f1a
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0

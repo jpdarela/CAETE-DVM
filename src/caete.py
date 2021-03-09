@@ -961,12 +961,10 @@ class grd:
                 self.sp_organic_p = self.sp_snc[4:6].sum()
                 self.sp_sorganic_p = self.sp_snc[6:].sum()
 
-                # INCLUDE MINERALIZED NUTRIENTS
                 # IF NUTRICYCLE:
                 if nutri_cycle:
                     self.sp_available_p += soil_out['pmin']
                     self.sp_available_n += soil_out['nmin']
-
                     # NUTRIENT DINAMICS
                     # Inorganic N
                     self.sp_in_n += self.sp_available_n + self.sp_so_n
@@ -983,7 +981,7 @@ class grd:
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
                     # Sorbed P
-                    if self.pupt[1, step] > 0.15:
+                    if self.pupt[1, step] > 0.45:
                         rwarn(
                             f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
                         self.pupt[1, step] = 0.0
@@ -993,10 +991,17 @@ class grd:
                             f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
 
                     self.sp_so_p -= self.pupt[1, step]
-
-                    t1 = np.all(self.sp_snc > 0.0)
+                    try:
+                        t1 = np.all(self.sp_snc > 0.0)
+                    except:
+                        if self.sp_snc is None:
+                            self.sp_snc = np.zeros(shape=8,)
+                            t1 = True
+                        elif self.sp_snc is not None:
+                            t1 = True
+                        rwarn(f"Exception while handling sp_snc pool")
                     if not t1:
-                        self.snc[np.where(self.snc < 0)] = 0.0
+                        self.sp_snc[np.where(self.sp_snc < 0)[0]] = 0.0
                     # ORGANIC nutrients uptake
                     # N
                     if self.nupt[1, step] < 0.0:
