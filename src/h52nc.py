@@ -102,7 +102,7 @@ def get_var_metadata(var):
               'rg': ['growth respiration', 'kg m-2 year-1', 'rg'],
               'wue': ['water use efficiency', 'unitless', 'wue'],
               'vcmax': ['maximum RuBisCo activity', 'mol m-2 s-1', 'vcmax'],
-              'sla': ['specfic leaf area', 'm-2 g-1', 'SLA'],
+              'sla': ['specfic leaf area', 'm2 g-1', 'sla'],
               'cue': ['Carbon use efficiency', 'unitless', 'cue'],
               'cawood': ['C in woody tissues', 'kg m-2', 'cawood'],
               'cfroot': ['C in fine roots', 'kg m-2', 'cfroot'],
