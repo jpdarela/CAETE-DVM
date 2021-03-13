@@ -20,7 +20,8 @@ G1_1d = ['emaxm',
          'cue',
          'cdef',
          'vcmax',
-         'specific_la']
+         'specific_la',
+         'ls']
 
 G1_2d = ['nupt', ]
 
@@ -90,11 +91,12 @@ class run_g1(tb.IsDescription):
     cdef = tb.Float32Col(dflt=0.0, pos=15)
     vcmax = tb.Float32Col(dflt=0.0, pos=16)
     specific_la = tb.Float32Col(dflt=0.0, pos=17)
-    nupt1 = tb.Float32Col(dflt=0.0, pos=18)
-    nupt2 = tb.Float32Col(dflt=0.0, pos=19)
-    pupt1 = tb.Float32Col(dflt=0.0, pos=20)
-    pupt2 = tb.Float32Col(dflt=0.0, pos=21)
-    pupt3 = tb.Float32Col(dflt=0.0, pos=22)
+    ls = tb.Float32Col(dflt=0.0, pos=18)
+    nupt1 = tb.Float32Col(dflt=0.0, pos=19)
+    nupt2 = tb.Float32Col(dflt=0.0, pos=20)
+    pupt1 = tb.Float32Col(dflt=0.0, pos=21)
+    pupt2 = tb.Float32Col(dflt=0.0, pos=22)
+    pupt3 = tb.Float32Col(dflt=0.0, pos=23)
 
 
 class run_g2(tb.IsDescription):

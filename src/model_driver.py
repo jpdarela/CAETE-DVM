@@ -8,10 +8,10 @@ import _pickle as pkl
 import bz2
 import copy
 import multiprocessing as mp
-from os import mkdir
 from pathlib import Path
-import joblib
+from random import shuffle
 
+import joblib
 from netCDF4 import Dataset
 import numpy as np
 
@@ -115,6 +115,13 @@ def apply_init(grid):
     return grid
 
 
+def chunks(lst, chunck_size):
+    shuffle(lst)
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), chunck_size):
+        yield lst[i:i + chunck_size]
+
+
 # # START GRIDCELLS
 print("Starting gridcells")
 print_progress(0, len(grid_mn), prefix='Progress:', suffix='Complete')
@@ -170,6 +177,7 @@ if __name__ == "__main__":
     if output_path.exists():
         pass
     else:
+        from os import mkdir
         mkdir(output_path)
 
     import time
@@ -203,6 +211,11 @@ if __name__ == "__main__":
                 result = p.starmap(fun, input)
             else:
                 result = p.map(fun, input)
+                # # Divide in chunks to leverage the work
+                # result = []
+                # for l in chunks(input, n_proc * 2):
+                #     r1 = p.map(fun, input)
+                # result += r1
         end_spinup = time.time() - start
         fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
         return result
@@ -234,8 +247,8 @@ if __name__ == "__main__":
 
     fh.close()
 
-    print(time.ctime())
-    print("Saving db - This will take some hours")
+    print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
+    print("Saving db - This will take some hours\n")
     write_h5(dump_folder)
     print("\n\nSaving netCDF4 files")
     h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()

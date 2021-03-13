@@ -157,7 +157,8 @@ def get_var_metadata(var):
               'awood_p2c': ['CWM- wood tissues P:C', 'g g-1', 'awood_p2c'],
               'froot_p2c': ['CWM- fine root P:C', 'g g-1', 'froot_p2c'],
               'amp': ['CWM- Percentage of fine root colonized by AM', '%', 'amp'],
-              'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia']}
+              'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia'],
+              'ls': ['Living Plant Life Strategies', 'unitless', 'ls']}
 
     out = {}
     for v in var:
@@ -435,7 +436,7 @@ def create_ncG1(table, interval, nc_out):
         print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     vars = ['photo', 'aresp', 'npp', 'lai', 'wue', 'cue',
-            'vcmax', 'sla', 'nupt', 'pupt']
+            'vcmax', 'sla', 'nupt', 'pupt', 'ls']
 
     dates = time_queries(interval)
     dm1 = len(dates)
@@ -460,6 +461,7 @@ def create_ncG1(table, interval, nc_out):
     cue = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     vcmax = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     specific_la = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    ls = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     nupt1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     nupt2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     pupt1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -489,6 +491,8 @@ def create_ncG1(table, interval, nc_out):
             out['grid_y'], out['grid_x'], out['vcmax'])
         specific_la[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['specific_la'])
+        ls[i, :, :] = assemble_layer(
+            out['grid_y'], out['grid_x'], out['ls'])
         nupt1[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['nupt1'])
         nupt2[i, :, :] = assemble_layer(
@@ -510,10 +514,10 @@ def create_ncG1(table, interval, nc_out):
     np.place(pupt1, mask=pupt2 == -9999.0, vals=NO_DATA)
 
     vars = ['photo', 'aresp', 'npp', 'lai', 'wue', 'cue',
-            'vcmax', 'sla', 'nupt', 'pupt']
+            'vcmax', 'sla', 'nupt', 'pupt', 'ls']
 
     arr = (photo, aresp, npp, lai, wue, cue, vcmax,
-           specific_la, nupt1, pupt1)
+           specific_la, nupt1, pupt1, ls)
     var_attrs = get_var_metadata(vars)
     write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
