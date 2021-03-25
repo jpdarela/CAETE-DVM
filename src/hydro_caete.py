@@ -34,7 +34,7 @@ def ksat_func(ThS, Th33, lbd):
 def kth_func(Th, ThS, lbd, ksat):
     """soil conductivity in unsaturated condition. Output in mm/h"""
     if Th < 0.0:
-        rwarn("water content < 0 IN kth_func")
+        # rwarn("water content < 0 IN kth_func")
         Th = 0.0
     kth = ksat * (Th / ThS) ** (3 + (2 / lbd))
 
