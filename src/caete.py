@@ -135,65 +135,6 @@ def catch_out_carbon3(out):
 
     return dict(zip(lst, out))
 
-
-def B_func(Th33, Th1500):
-    """calculates the coefficient of moisture-tension, used for water flux estimation"""
-
-    if Th33 <= 0.0:
-        Th33 = 0.4
-        rwarn("Th33  < 0")
-    if np.isneginf(Th33) or np.isposinf(Th33) or not Th33 == Th33:
-        Th33 = 0.4
-        rwarn("Th33 is NaN or inf")
-
-    if Th1500 <= 0.0:
-        Th1500 = 0.2
-        rwarn("Th1500  <= 0")
-    if np.isneginf(Th1500) or np.isposinf(Th1500) or not Th1500 == Th1500:
-        Th1500 = 0.2
-        rwarn("Th1500 is NaN or inf")
-
-    D = ln(Th33) - ln(Th1500)
-    B = (ln(1500) - ln(33)) / D
-
-    def lbd_func(C):
-        """processes the data from B_func, returning the slope of logarithmic tension-moisture curve"""
-        if C == 0:
-            return 0.0
-        lbd = 1 / C
-        return lbd
-
-    return lbd_func(B)
-
-
-def ksat_func(ThS, Th33, lbd):
-    """soil conductivity in saturated condition. Output in mm/h"""
-    if ThS < Th33:
-        rwarn("sat <= fc IN ksat_func")
-    # assert ThS > Th33, "sat <= fc IN ksat_func"
-    ksat = 1930 * (ThS - Th33) ** (3 - lbd)
-    return ksat
-
-
-def kth_func(Th, ThS, lbd, ksat):
-    """soil conductivity in unsaturated condition. Output in mm/h"""
-    if Th < 0.0:
-        rwarn("water content < 0 IN kth_func")
-        Th = 0.0
-    # assert Th >= 0, "water content < 0 IN kth_func"
-    if lbd == 0:
-        return 0
-    if ThS == 0:
-        return 0
-    if Th < 0:
-        Th = 0.0
-    kth = ksat * (Th / ThS) ** (3 + (2 / lbd))
-
-    return kth
-
-
-# MODEL
-
 class grd:
 
     """
@@ -298,7 +239,6 @@ class grd:
         self.carbon_costs = None
 
         # WATER POOLS
-
         # Water content for each soil layer
         self.wp_water_upper_mm = None  # mm
         self.wp_water_lower_mm = None  # mm
@@ -350,6 +290,11 @@ class grd:
         self.vp_wdl = None
         self.vp_sto = None
         self.vp_lsid = None
+
+        # Hydraulics
+        self.theta_sat = None
+        self.psi_sat = None
+        self.soil_texture = None
 
     def _allocate_output_nosave(self, n):
         """allocate space for some tracked variables during spinup
@@ -536,7 +481,7 @@ class grd:
             dump(data_obj, fh, compress=('zlib', 3), protocol=4)
         self.flush_data = 0
 
-    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil):
+    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN
             TODO adapt to change climatic data/ maybe another method
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data
@@ -606,49 +551,10 @@ class grd:
         self.wp_water_upper_mm = self.swp.w1
         self.wp_water_lower_mm = self.swp.w2
         self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
-        # self.wp_water_upper = np.float64(0.1)  # vol/vol
-        # self.wp_water_lower = np.float64(0.1)  # vol/vol
 
-        # self.wp_water_upper_mm = self.wp_water_upper * 300.0
-        # self.wp_water_lower_mm = self.wp_water_lower * 700.0
-
-        # self.wp_sat_water_upper_ratio = tsoil[0][self.y, self.x].copy()
-        # self.wp_field_capacity_upper = tsoil[1][self.y, self.x].copy()
-        # self.wp_wilting_point_upper = tsoil[2][self.y, self.x].copy()
-        # msg = f"wp_negative UPPER-{self.xyname}"
-        # assert self.wp_wilting_point_upper > 0.0, msg
-        # msg = f"Ufc > wsat-{self.xyname}"
-        # assert self.wp_sat_water_upper_ratio > self.wp_field_capacity_upper, msg
-        # msg = f"Ufc < wp-{self.xyname}"
-        # assert self.wp_field_capacity_upper > self.wp_wilting_point_upper, msg
-
-        # self.wp_sat_water_lower_ratio = ssoil[0][self.y, self.x].copy()
-        # self.wp_field_capacity_lower = ssoil[1][self.y, self.x].copy()
-        # self.wp_wilting_point_lower = ssoil[2][self.y, self.x].copy()
-        # msg = f"wp_negative LOWER-{self.xyname}"
-        # assert self.wp_wilting_point_lower > 0.0, msg
-        # msg = f"Sfc > wsat-{self.xyname}"
-        # assert self.wp_sat_water_lower_ratio > self.wp_field_capacity_lower, msg
-        # msg = f"Sfc < wp-{self.xyname}"
-        # assert self.wp_field_capacity_lower > self.wp_wilting_point_lower, msg
-
-        # self.wp_sat_water_upper_mm = self.wp_sat_water_upper_ratio * 300.0
-        # self.wp_sat_water_lower_mm = self.wp_sat_water_lower_ratio * 700.0
-
-        # self.wmax_mm = np.float64(
-        #     self.wp_sat_water_upper_mm + self.wp_sat_water_lower_mm)
-
-        # self.lbd_up = B_func(self.wp_field_capacity_upper,
-        #                      self.wp_wilting_point_upper)
-
-        # self.ksat_up = ksat_func(self.wp_sat_water_upper_ratio,
-        #                          self.wp_field_capacity_upper, self.lbd_up)
-
-        # self.lbd_lo = B_func(self.wp_field_capacity_lower,
-        #                      self.wp_wilting_point_lower)
-
-        # self.ksat_lo = ksat_func(self.wp_sat_water_lower_ratio,
-        #                          self.wp_field_capacity_lower, self.lbd_lo)
+        self.theta_sat = hsoil[0][self.y, self.x].copy()
+        self.psi_sat =hsoil[1][self.y, self.x].copy()
+        self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
@@ -709,83 +615,6 @@ class grd:
         self.outputs = {}
         self.run_counter = 0
         self.experiments += 1
-
-    # def _update_pool(self, prain, evapo):
-    #     """Calculates upper and lower soil water pools for the grid cell,
-    #     as well as the grid runoff and the water fluxes between layers"""
-
-    #     # evapo adaptation to use in both layers
-    #     ev1 = evapo * 0.3
-    #     ev2 = evapo - ev1
-    #     # conversion from mm to ratio v/v for evapo and prain
-    #     evap_upper = ev1 / 300.0
-    #     evap_lower = ev2 / 700.0
-
-    #     pr = prain / 300.0
-
-    #     # rainfall addition to upper water content
-    #     self.wp_water_upper += pr
-
-    #     # runoff initial values
-    #     runoff = 0.0  # mm
-    #     runoff1 = 0.0
-    #     runoff2 = 0.0
-
-    #     # POOL 1 - 0-30 cm
-    #     if self.wp_water_upper > self.wp_sat_water_upper_ratio:
-    #         # saturated condition (runoff and flux)
-    #         runoff1 += self.wp_water_upper - self.wp_sat_water_upper_ratio
-    #         runoff1 = runoff1 * 300.0      # conversion to mm
-    #         runoff += runoff1
-    #         self.wp_water_upper = self.wp_sat_water_upper_ratio
-    #         flux1_mm = self.ksat_up * 24.0  # output in mm/day
-    #     else:
-    #         # unsaturated condition (no runoff)
-    #         flux1_mm = kth_func(self.wp_water_upper,
-    #                             self.wp_sat_water_upper_ratio, self.lbd_up, self.ksat_up) * 24.0
-
-    #     # POOL 2 30-100 cm
-    #     if self.wp_water_lower > self.wp_sat_water_lower_ratio:
-    #         # saturated condition (runoff and flux)
-    #         runoff2 += self.wp_water_lower - self.wp_sat_water_lower_ratio
-    #         runoff2 = runoff2 * 700.0       # conversion to mm
-    #         runoff += runoff2
-    #         self.wp_water_lower = self.wp_sat_water_lower_ratio
-    #         flux2_mm = kth_func(self.wp_water_lower,
-    #                             self.wp_sat_water_lower_ratio, self.lbd_lo, self.ksat_lo) * 24.0
-    #     else:
-    #         # unsaturated condition (no runoff)
-    #         flux2_mm = kth_func(self.wp_water_lower,
-    #                             self.wp_sat_water_lower_ratio, self.lbd_lo, self.ksat_lo) * 24.0
-
-    #     # flux convertion for each layer, from mm to v/v
-
-    #     flux1_tol1 = flux1_mm / 300.0   # because of the difference in depth,
-    #     flux1_tol2 = flux1_mm / 700.0   # the layer flux assumes a different value
-    #     # in ratio v/v for each layer from the same value in mm
-    #     flux2 = flux2_mm / 700.0
-
-    #     # Water pool update
-
-    #     self.wp_water_upper -= (evap_upper + flux1_tol1)
-    #     self.wp_water_lower += flux1_tol2
-    #     self.wp_water_lower -= (flux2 + evap_lower)
-
-    #     # asserts the water content is never less than zero
-    #     self.wp_water_upper = np.float64(
-    #         0.0) if self.wp_water_upper < 0.0 else self.wp_water_upper
-    #     self.wp_water_lower = np.float64(
-    #         0.0) if self.wp_water_lower < 0.0 else self.wp_water_lower
-
-    #     self.wp_water_upper_mm = self.wp_water_upper * 300.0  # conversion to mm
-    #     self.wp_water_lower_mm = self.wp_water_lower * 700.0
-
-    #     self.wp_water_upper_mm = np.float64(
-    #         0.0) if self.wp_water_upper_mm < 0.0 else self.wp_water_upper_mm
-    #     self.wp_water_lower_mm = np.float64(
-    #         0.0) if self.wp_water_lower_mm < 0.0 else self.wp_water_lower_mm
-
-    #     return runoff
 
     def run_caete(self, start_date, end_date, spinup=0, fix_co2=None, save=True, nutri_cycle=True):
         """ start_date [str]   "yyyymmdd" Start model execution
