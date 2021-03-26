@@ -242,26 +242,9 @@ class grd:
         # Water content for each soil layer
         self.wp_water_upper_mm = None  # mm
         self.wp_water_lower_mm = None  # mm
-        self.wp_water_upper = None  # vol/vol
-        self.wp_water_lower = None  # vol/vol
         # Saturation point
-        self.wp_sat_water_upper_ratio = None  # vol/vol
-        self.wp_sat_water_lower_ratio = None  # vol/vol
-        self.wp_sat_water_upper_mm = None  # mm
-        self.wp_sat_water_lower_mm = None  # mm
-        # Wilting point and field capacity (upper layer)
-        self.wp_wilting_point_upper = None  # vol/vol
-        self.wp_field_capacity_upper = None  # vol/vol
-        # Wilting point and field capacity (lower layer)
-        self.wp_wilting_point_lower = None  # vol/vol
-        self.wp_field_capacity_lower = None  # vol/vol
-        # Maximum water content for the entire grid cell
         self.wmax_mm = None  # mm
-        # CONSTANTS
-        self.lbd_up = None
-        self.ksat_up = None
-        self.lbd_lo = None
-        self.ksat_lo = None
+
 
         # SOIL POOLS
         self.input_nut = None

@@ -118,7 +118,7 @@ else:
 
 
 def apply_init(grid):
-    grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil)
+    grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil, hsoil)
     return grid
 
 
@@ -154,7 +154,7 @@ def apply_fun(grid):
 
 def apply_fun0(grid):
     grid.run_caete('19790101', '19881231', spinup=45,
-                   fix_co2=600.0, save=False)
+                   fix_co2='1979', save=False)
     return grid
 
 
