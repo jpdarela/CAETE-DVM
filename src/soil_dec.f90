@@ -449,7 +449,7 @@ contains
       real(r_4), intent(in) :: arg
       real(r_4) :: retval
 
-      retval = arg * 0.3
+      retval = arg * 0.1
    end function solution_n_equil
 
 

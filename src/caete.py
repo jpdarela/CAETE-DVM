@@ -758,81 +758,82 @@ class grd:
 
                 if self.vp_lsid.size < 1 and not save:
                     self.vp_lsid = np.sort(
-                        np.array(rd.sample(list(np.arange(gp.npls)), 20)))
+                        np.array(
+                            rd.sample(list(np.arange(gp.npls)), gp.npls // 2)))
                     rwarn(
-                        f"Gridcell {self.xyname} has less than 5 living Plant Life Strategies - Re-populating")
+                        f"Gridcell {self.xyname} has less than 1 living Plant Life Strategies - Re-populating")
                     # REPOPULATE]
                     # UPDATE vegetation pools
-                    self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
-                    self.vp_cwood = np.zeros(shape=(self.vp_lsid.size,))
-                    self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
-                    awood = self.pls_table[6, :]
+                    self.vp_cleaf=np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    self.vp_cwood=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_croot=np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    awood=self.pls_table[6, :]
                     for i0, i in enumerate(self.vp_lsid):
                         if awood[i] > 0.0:
-                            self.vp_cwood[i0] = 0.5
+                            self.vp_cwood[i0]=0.5
 
-                    self.vp_dcl = np.zeros(shape=(self.vp_lsid.size,))
-                    self.vp_dca = np.zeros(shape=(self.vp_lsid.size,))
-                    self.vp_dcf = np.zeros(shape=(self.vp_lsid.size,))
-                    self.vp_sto = np.zeros(shape=(3, self.vp_lsid.size))
-                    self.sp_uptk_costs = np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dcl=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dca=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dcf=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_sto=np.zeros(shape=(3, self.vp_lsid.size))
+                    self.sp_uptk_costs=np.zeros(shape=(self.vp_lsid.size,))
 
-                    self.vp_ocp = np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_ocp=np.zeros(shape=(self.vp_lsid.size,))
                     del awood
-                    self.ls[step] = self.vp_lsid.size
+                    self.ls[step]=self.vp_lsid.size
                 else:
                     if self.vp_lsid.size < 1:
                         rwarn(f"Gridcell {self.xyname} has less \
-                                than 5 living Plant Life Strategies")
+                                than 1 living Plant Life Strategies")
                     # UPDATE vegetation pools
-                    self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
-                    self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
-                    self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
-                    self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
-                    self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
-                    self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
-                    self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
-                    self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
+                    self.vp_cleaf=daily_output['cleafavg_pft'][self.vp_lsid]
+                    self.vp_cwood=daily_output['cawoodavg_pft'][self.vp_lsid]
+                    self.vp_croot=daily_output['cfrootavg_pft'][self.vp_lsid]
+                    self.vp_dcl=daily_output['delta_cveg'][0][self.vp_lsid]
+                    self.vp_dca=daily_output['delta_cveg'][1][self.vp_lsid]
+                    self.vp_dcf=daily_output['delta_cveg'][2][self.vp_lsid]
+                    self.vp_sto=daily_output['stodbg'][:, self.vp_lsid]
+                    self.sp_uptk_costs=daily_output['npp2pay'][self.vp_lsid]
 
                 # UPDATE STATE VARIABLES
                 # WATER CWM
-                self.runom[step] = self.swp._update_pool(
+                self.runom[step]=self.swp._update_pool(
                     prec[step], daily_output['evavg'])
-                self.swp.w1 = np.float64(
+                self.swp.w1=np.float64(
                     0.0) if self.swp.w1 < 0.0 else self.swp.w1
-                self.swp.w2 = np.float64(
+                self.swp.w2=np.float64(
                     0.0) if self.swp.w2 < 0.0 else self.swp.w2
-                self.wp_water_upper_mm = self.swp.w1
-                self.wp_water_lower_mm = self.swp.w2
+                self.wp_water_upper_mm=self.swp.w1
+                self.wp_water_lower_mm=self.swp.w2
 
                 # Plant uptake and Carbon costs of nutrient uptake
-                self.nupt[:, step] = daily_output['nupt']
-                self.pupt[:, step] = daily_output['pupt']
+                self.nupt[:, step]=daily_output['nupt']
+                self.pupt[:, step]=daily_output['pupt']
                 for i in range(3):
-                    self.storage_pool[i, step] = np.sum(
+                    self.storage_pool[i, step]=np.sum(
                         self.vp_ocp * self.vp_sto[i])
 
                 # OUTPUTS for SOIL CWM
-                self.litter_l[step] = daily_output['litter_l']
-                self.cwd[step] = daily_output['cwd']
-                self.litter_fr[step] = daily_output['litter_fr']
-                self.lnc[:, step] = daily_output['lnc']
-                wtot = self.wp_water_upper_mm + self.wp_water_lower_mm
-                s_out = soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
+                self.litter_l[step]=daily_output['litter_l']
+                self.cwd[step]=daily_output['cwd']
+                self.litter_fr[step]=daily_output['litter_fr']
+                self.lnc[:, step]=daily_output['lnc']
+                wtot=self.wp_water_upper_mm + self.wp_water_lower_mm
+                s_out=soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
                                          self.cwd[step], self.litter_fr[step], self.lnc[:, step],
                                          self.sp_csoil, self.sp_snc)
 
-                soil_out = catch_out_carbon3(s_out)
+                soil_out=catch_out_carbon3(s_out)
 
                 # Organic C N & P
-                self.sp_csoil = soil_out['cs']
-                self.sp_snc = soil_out['snc']
+                self.sp_csoil=soil_out['cs']
+                self.sp_snc=soil_out['snc']
 
                 # UPDATE ORGANIC POOLS
-                self.sp_organic_n = self.sp_snc[:2].sum()
-                self.sp_sorganic_n = self.sp_snc[2:4].sum()
-                self.sp_organic_p = self.sp_snc[4:6].sum()
-                self.sp_sorganic_p = self.sp_snc[6:].sum()
+                self.sp_organic_n=self.sp_snc[:2].sum()
+                self.sp_sorganic_n=self.sp_snc[2:4].sum()
+                self.sp_organic_p=self.sp_snc[4:6].sum()
+                self.sp_sorganic_p=self.sp_snc[6:].sum()
 
                 # IF NUTRICYCLE:
                 if nutri_cycle:
@@ -841,15 +842,15 @@ class grd:
                     # NUTRIENT DINAMICS
                     # Inorganic N
                     self.sp_in_n += self.sp_available_n + self.sp_so_n
-                    self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
-                    self.sp_available_n = soil_dec.solution_n_equil(
+                    self.sp_so_n=soil_dec.sorbed_n_equil(self.sp_in_n)
+                    self.sp_available_n=soil_dec.solution_n_equil(
                         self.sp_in_n)
                     self.sp_in_n -= self.sp_so_n + self.sp_available_n
 
                     # Inorganic P
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
-                    self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
-                    self.sp_available_p = soil_dec.solution_p_equil(
+                    self.sp_so_p=soil_dec.sorbed_p_equil(self.sp_in_p)
+                    self.sp_available_p=soil_dec.solution_p_equil(
                         self.sp_in_p)
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
@@ -857,7 +858,7 @@ class grd:
                     if self.pupt[1, step] > 0.75:
                         rwarn(
                             f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
-                        self.pupt[1, step] = 0.0
+                        self.pupt[1, step]=0.0
 
                     if self.pupt[1, step] > self.sp_so_p:
                         rwarn(
@@ -865,62 +866,62 @@ class grd:
 
                     self.sp_so_p -= self.pupt[1, step]
                     try:
-                        t1 = np.all(self.sp_snc > 0.0)
+                        t1=np.all(self.sp_snc > 0.0)
                     except:
                         if self.sp_snc is None:
-                            self.sp_snc = np.zeros(shape=8,)
-                            t1 = True
+                            self.sp_snc=np.zeros(shape=8,)
+                            t1=True
                         elif self.sp_snc is not None:
-                            t1 = True
+                            t1=True
                         rwarn(f"Exception while handling sp_snc pool")
                     if not t1:
-                        self.sp_snc[np.where(self.sp_snc < 0)[0]] = 0.0
+                        self.sp_snc[np.where(self.sp_snc < 0)[0]]=0.0
                     # ORGANIC nutrients uptake
                     # N
                     if self.nupt[1, step] < 0.0:
                         rwarn(
                             f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                        self.nupt[1, step] = 0.0
+                        self.nupt[1, step]=0.0
                     if self.nupt[1, step] > 2.5:
                         rwarn(
                             f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                        self.nupt[1, step] = 0.0
+                        self.nupt[1, step]=0.0
 
-                    total_on = self.sp_snc[:4].sum()
-                    frsn = [i / total_on for i in self.sp_snc[:4]]
+                    total_on=self.sp_snc[:4].sum()
+                    frsn=[i / total_on for i in self.sp_snc[:4]]
                     for i, fr in enumerate(frsn):
                         self.sp_snc[i] -= self.nupt[1, step] * fr
-                    self.sp_organic_n = self.sp_snc[:2].sum()
-                    self.sp_sorganic_n = self.sp_snc[2:4].sum()
+                    self.sp_organic_n=self.sp_snc[:2].sum()
+                    self.sp_sorganic_n=self.sp_snc[2:4].sum()
 
                     # P
                     if self.pupt[2, step] < 0.0:
                         rwarn(
                             f"PuptkO < 0 - 1020 | in spin{s}, step{step} - {self.pupt[2, step]}")
-                        self.pupt[2, step] = 0.0
+                        self.pupt[2, step]=0.0
                     if self.pupt[2, step] > 1.0:
                         rwarn(
                             f"PuptkO  < max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
-                        self.pupt[2, step] = 0.0
-                    total_op = self.sp_snc[4:].sum()
-                    frsp = [i / total_op for i in self.sp_snc[4:]]
+                        self.pupt[2, step]=0.0
+                    total_op=self.sp_snc[4:].sum()
+                    frsp=[i / total_op for i in self.sp_snc[4:]]
                     for i, fr in enumerate(frsp):
                         self.sp_snc[i + 4] -= self.pupt[2, step] * fr
-                    self.sp_organic_p = self.sp_snc[4:6].sum()
-                    self.sp_sorganic_p = self.sp_snc[6:].sum()
+                    self.sp_organic_p=self.sp_snc[4:6].sum()
+                    self.sp_sorganic_p=self.sp_snc[6:].sum()
 
                     # Raise some warnings
                     if self.sp_organic_n < 0.0:
-                        self.sp_organic_n = 0.0
+                        self.sp_organic_n=0.0
                         rwarn(f"ON negative in spin{s}, step{step}")
                     if self.sp_sorganic_n < 0.0:
-                        self.sp_sorganic_n = 0.0
+                        self.sp_sorganic_n=0.0
                         rwarn(f"SON negative in spin{s}, step{step}")
                     if self.sp_organic_p < 0.0:
-                        self.sp_organic_p = 0.0
+                        self.sp_organic_p=0.0
                         rwarn(f"OP negative in spin{s}, step{step}")
                     if self.sp_sorganic_p < 0.0:
-                        self.sp_sorganic_p = 0.0
+                        self.sp_sorganic_p=0.0
                         rwarn(f"SOP negative in spin{s}, step{step}")
 
                     # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
@@ -928,13 +929,13 @@ class grd:
                     if self.pupt[0, step] > 1e2:
                         rwarn(
                             f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
-                        self.pupt[0, step] = 0.0
+                        self.pupt[0, step]=0.0
                     self.sp_available_p -= self.pupt[0, step]
 
                     if self.nupt[0, step] > 1e3:
                         rwarn(
                             f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
-                        self.nupt[0, step] = 0.0
+                        self.nupt[0, step]=0.0
                     self.sp_available_n -= self.nupt[0, step]
 
                 # END SOIL NUTRIENT DYNAMICS
@@ -942,42 +943,42 @@ class grd:
                 # # # Process (cwm) & store (np.array) outputs
                 if save:
                     assert self.save == True
-                    self.carbon_costs[step] = daily_output['c_cost_cwm']
+                    self.carbon_costs[step]=daily_output['c_cost_cwm']
                     self.emaxm.append(daily_output['epavg'])
                     self.tsoil.append(self.soil_temp)
-                    self.photo[step] = daily_output['phavg']
-                    self.aresp[step] = daily_output['aravg']
-                    self.npp[step] = daily_output['nppavg']
-                    self.lai[step] = daily_output['laiavg']
-                    self.rcm[step] = daily_output['rcavg']
-                    self.f5[step] = daily_output['f5avg']
-                    self.evapm[step] = daily_output['evavg']
-                    self.wsoil[step] = self.wp_water_upper_mm
-                    self.swsoil[step] = self.wp_water_lower_mm
-                    self.rm[step] = daily_output['rmavg']
-                    self.rg[step] = daily_output['rgavg']
-                    self.wue[step] = daily_output['wueavg']
-                    self.cue[step] = daily_output['cueavg']
-                    self.cdef[step] = daily_output['c_defavg']
-                    self.vcmax[step] = daily_output['vcmax']
-                    self.specific_la[step] = daily_output['specific_la']
-                    self.cleaf[step] = daily_output['cp'][0]
-                    self.cawood[step] = daily_output['cp'][1]
-                    self.cfroot[step] = daily_output['cp'][2]
-                    self.hresp[step] = soil_out['hr']
-                    self.csoil[:, step] = soil_out['cs']
-                    self.inorg_n[step] = self.sp_in_n
-                    self.inorg_p[step] = self.sp_in_p
-                    self.sorbed_n[step] = self.sp_so_n
-                    self.sorbed_p[step] = self.sp_so_p
-                    self.snc[:, step] = soil_out['snc']
-                    self.nmin[step] = self.sp_available_n
-                    self.pmin[step] = self.sp_available_p
-                    self.area[self.vp_lsid, step] = self.vp_ocp
+                    self.photo[step]=daily_output['phavg']
+                    self.aresp[step]=daily_output['aravg']
+                    self.npp[step]=daily_output['nppavg']
+                    self.lai[step]=daily_output['laiavg']
+                    self.rcm[step]=daily_output['rcavg']
+                    self.f5[step]=daily_output['f5avg']
+                    self.evapm[step]=daily_output['evavg']
+                    self.wsoil[step]=self.wp_water_upper_mm
+                    self.swsoil[step]=self.wp_water_lower_mm
+                    self.rm[step]=daily_output['rmavg']
+                    self.rg[step]=daily_output['rgavg']
+                    self.wue[step]=daily_output['wueavg']
+                    self.cue[step]=daily_output['cueavg']
+                    self.cdef[step]=daily_output['c_defavg']
+                    self.vcmax[step]=daily_output['vcmax']
+                    self.specific_la[step]=daily_output['specific_la']
+                    self.cleaf[step]=daily_output['cp'][0]
+                    self.cawood[step]=daily_output['cp'][1]
+                    self.cfroot[step]=daily_output['cp'][2]
+                    self.hresp[step]=soil_out['hr']
+                    self.csoil[:, step]=soil_out['cs']
+                    self.inorg_n[step]=self.sp_in_n
+                    self.inorg_p[step]=self.sp_in_p
+                    self.sorbed_n[step]=self.sp_so_n
+                    self.sorbed_p[step]=self.sp_so_p
+                    self.snc[:, step]=soil_out['snc']
+                    self.nmin[step]=self.sp_available_n
+                    self.pmin[step]=self.sp_available_p
+                    self.area[self.vp_lsid, step]=self.vp_ocp
                     self.lim_status[:, self.vp_lsid,
-                                    step] = daily_output['limitation_status'][:, self.vp_lsid]
+                                    step]=daily_output['limitation_status'][:, self.vp_lsid]
                     self.uptake_strategy[:, self.vp_lsid,
-                                         step] = daily_output['uptk_strat'][:, self.vp_lsid]
+                                         step]=daily_output['uptk_strat'][:, self.vp_lsid]
             if save:
                 if s > 0:
                     while True:
@@ -986,9 +987,9 @@ class grd:
                         else:
                             break
 
-                self.flush_data = self._flush_output(
+                self.flush_data=self._flush_output(
                     'spin', (start_index, end_index))
-                sv = Thread(target=self._save_output, args=(self.flush_data,))
+                sv=Thread(target=self._save_output, args=(self.flush_data,))
                 sv.start()
         if save:
             while True:
@@ -1003,7 +1004,7 @@ class grd:
         - Side effect - Start soil water pools pools """
 
         assert self.filled, "The gridcell has no input data"
-        self.budget_spinup = True
+        self.budget_spinup=True
 
         def find_co2(year):
             for i in self.co2_data:
@@ -1011,9 +1012,9 @@ class grd:
                     return float(i.split('\t')[1].strip())
 
         def find_index(start, end):
-            result = []
-            num = np.arange(self.ssize)
-            ind = np.arange(self.sind, self.eind + 1)
+            result=[]
+            num=np.arange(self.ssize)
+            ind=np.arange(self.sind, self.eind + 1)
             for r, i in zip(num, ind):
                 if i == start:
                     result.append(r)
@@ -1023,9 +1024,9 @@ class grd:
             return result
 
         # Define start and end dates
-        start = cftime.real_datetime(int(start_date[:4]), int(
+        start=cftime.real_datetime(int(start_date[:4]), int(
             start_date[4:6]), int(start_date[6:]))
-        end = cftime.real_datetime(int(end_date[:4]), int(
+        end=cftime.real_datetime(int(end_date[:4]), int(
             end_date[4:6]), int(end_date[6:]))
         # Check dates sanity
         assert start < end, "start > end"
@@ -1033,64 +1034,64 @@ class grd:
         assert end <= self.end_date
 
         # Define time index
-        start_index = int(cftime.date2num(
+        start_index=int(cftime.date2num(
             start, self.time_unit, self.calendar))
-        end_index = int(cftime.date2num(end, self.time_unit, self.calendar))
+        end_index=int(cftime.date2num(end, self.time_unit, self.calendar))
 
-        lb, hb = find_index(start_index, end_index)
-        steps = np.arange(lb, hb + 1)
-        day_indexes = np.arange(start_index, end_index + 1)
+        lb, hb=find_index(start_index, end_index)
+        steps=np.arange(lb, hb + 1)
+        day_indexes=np.arange(start_index, end_index + 1)
 
         # Catch climatic input and make conversions
-        temp = self.tas[lb: hb + 1] - 273.15  # ! K to °C
-        prec = self.pr[lb: hb + 1] * 86400  # kg m-2 s-1 to  mm/day
+        temp=self.tas[lb: hb + 1] - 273.15  # ! K to °C
+        prec=self.pr[lb: hb + 1] * 86400  # kg m-2 s-1 to  mm/day
         # transforamando de Pascal pra mbar (hPa)
-        p_atm = self.ps[lb: hb + 1] * 0.01
+        p_atm=self.ps[lb: hb + 1] * 0.01
         # W m-2 to mol m-2 s-1 ! 0.5 converts RSDS to PAR
-        ipar = self.rsds[lb: hb + 1] * 0.5 / 2.18e5
-        ru = self.rhs[lb: hb + 1] / 100.0
+        ipar=self.rsds[lb: hb + 1] * 0.5 / 2.18e5
+        ru=self.rhs[lb: hb + 1] / 100.0
 
-        year0 = start.year
-        co2 = find_co2(year0)
-        count_days = start.dayofyr - 2
-        loop = 0
-        next_year = 0
-        wo = []
-        llo = []
-        cwdo = []
-        rlo = []
-        lnco = []
+        year0=start.year
+        co2=find_co2(year0)
+        count_days=start.dayofyr - 2
+        loop=0
+        next_year=0
+        wo=[]
+        llo=[]
+        cwdo=[]
+        rlo=[]
+        lnco=[]
 
-        sto = self.vp_sto
-        cleaf = self.vp_cleaf
-        cwood = self.vp_cwood
-        croot = self.vp_croot
-        dcl = self.vp_dcl
-        dca = self.vp_dca
-        dcf = self.vp_dcf
-        uptk_costs = np.zeros(npls, order='F')
+        sto=self.vp_sto
+        cleaf=self.vp_cleaf
+        cwood=self.vp_cwood
+        croot=self.vp_croot
+        dcl=self.vp_dcl
+        dca=self.vp_dca
+        dcf=self.vp_dcf
+        uptk_costs=np.zeros(npls, order='F')
 
         for step in range(steps.size):
             loop += 1
             count_days += 1
             # CAST CO2 ATM CONCENTRATION
-            days = 366 if m.leap(year0) == 1 else 365
+            days=366 if m.leap(year0) == 1 else 365
             if count_days == days:
-                count_days = 0
-                year0 = cftime.num2date(day_indexes[step],
+                count_days=0
+                year0=cftime.num2date(day_indexes[step],
                                         self.time_unit, self.calendar).year
-                co2 = find_co2(year0)
-                next_year = (find_co2(year0 + 1) - co2) / days
+                co2=find_co2(year0)
+                next_year=(find_co2(year0 + 1) - co2) / days
 
             elif loop == 1 and count_days < days:
-                year0 = start.year
-                next_year = (find_co2(year0 + 1) - co2) / \
+                year0=start.year
+                next_year=(find_co2(year0 + 1) - co2) / \
                     (days - count_days)
 
             co2 += next_year
-            self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
+            self.soil_temp=st.soil_temp(self.soil_temp, temp[step])
 
-            out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
+            out=model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                      self.soil_temp, temp[step], p_atm[step],
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                      self.sp_snc[:4].sum(
@@ -1099,11 +1100,11 @@ class grd:
                                      dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
             # Create a dict with the function output
-            daily_output = catch_out_budget(out)
-            runoff = self.swp._update_pool(prec[step], daily_output['evavg'])
+            daily_output=catch_out_budget(out)
+            runoff=self.swp._update_pool(prec[step], daily_output['evavg'])
 
-            self.wp_water_upper_mm = self.swp.w1
-            self.wp_water_lower_mm = self.swp.w2
+            self.wp_water_upper_mm=self.swp.w1
+            self.wp_water_lower_mm=self.swp.w2
             # UPDATE vegetation pools
 
             wo.append(np.float64(self.wp_water_upper_mm + self.wp_water_lower_mm))
@@ -1112,7 +1113,7 @@ class grd:
             rlo.append(daily_output['litter_fr'])
             lnco.append(daily_output['lnc'])
 
-        f = np.array
+        f=np.array
         def x(a): return a * 0.75
         return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 
@@ -1121,9 +1122,9 @@ class grd:
 
         for x in range(100000):
 
-            s_out = soil_dec.carbon3(self.soil_temp, water / self.wmax_mm, ll, cwd, rl, lnc,
+            s_out=soil_dec.carbon3(self.soil_temp, water / self.wmax_mm, ll, cwd, rl, lnc,
                                      self.sp_csoil, self.sp_snc)
 
-            soil_out = catch_out_carbon3(s_out)
-            self.sp_csoil = soil_out['cs']
-            self.sp_snc = soil_out['snc']
+            soil_out=catch_out_carbon3(s_out)
+            self.sp_csoil=soil_out['cs']
+            self.sp_snc=soil_out['snc']

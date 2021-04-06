@@ -139,8 +139,8 @@ def table_gen(NPLS, fpath=None):
 
     def calc_ratios(pool):
 
-        pool_n2c = np.linspace(0.003, 0.04, 500)
-        pool_p2c = np.linspace(1e-5, 0.005, 500)
+        pool_n2c = np.linspace(0.001, 0.04, 500) # TODO increase ranges to left
+        pool_p2c = np.linspace(0.5e-5, 0.005, 500) # TODO
 
         if pool == 'leaf' or pool == 'root':
             pass
@@ -159,13 +159,13 @@ def table_gen(NPLS, fpath=None):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 300000
+    r_ceil = 3000000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime = np.random.uniform(0.08333333333333333, 4, r_ceil)
+    rtime = np.random.uniform(0.08333333333333333, 5, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)

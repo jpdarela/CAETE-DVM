@@ -5,6 +5,7 @@
 #      \____/_/   \_\_____| |_| |_____|
 
 import os
+import sys
 import _pickle as pkl
 import bz2
 import copy
@@ -29,6 +30,7 @@ __descr__ = """RUN CAETÊ"""
 FUNCALLS = 0
 
 
+
 def check_start():
     while True:
         i = input("---RUN IN SOMBRERO(y/n): ")
@@ -42,14 +44,53 @@ def check_start():
             pass
     return r
 
-
+# Check sombrero
 sombrero = check_start()
+
+# Set folder to store outputs
 outf = input("Give a name to your run: ")
 dump_folder = Path(f'../outputs/{outf}').resolve()
 nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
 print(
     f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
 print(f"The final netCDF files will be stored at: {nc_outputs}\n")
+
+zone = ""
+y0, y1 = 0, 0
+x0, x1 = 0, 0
+folder = "central"
+
+if not sombrero:
+    zone = input("Select a zone [c: central, s: south, e: east, nw: NW]: ")
+    if zone in ['c','s','e','nw']:
+        print("Running in the zone:", zone)
+        pass
+    else:
+        print("Running in the zone: c")
+        zone = 'c'
+
+if zone == 'c':
+    y0, y1 = 175, 186
+    x0, x1 = 235, 241
+    folder = "central"
+
+elif zone == 's':
+    y0, y1 = 200, 211
+    x0, x1 = 225, 231
+    folder = "south"
+
+elif zone == 'nw':
+    y0, y1 = 168, 175
+    x0, x1 = 225, 230
+    folder = "north_west"
+
+elif zone == 'e':
+    y0, y1 = 190, 201
+    x0, x1 = 255, 261
+    folder = "east"
+else:
+    assert sombrero
+
 
 # Water saturation, field capacity & wilting point
 # Topsoil
@@ -77,7 +118,7 @@ if sombrero:
     clim_and_soil_data = Path("HISTORICAL-RUN")
 else:
     s_data = Path("../input").resolve()
-    clim_and_soil_data = Path("caete_input")
+    clim_and_soil_data = Path(folder)
 
 
 # Shared data among grid cells
@@ -111,14 +152,15 @@ if sombrero:
 
 else:
     grid_mn = []
-    for Y in range(168, 175):
-        for X in range(225, 230):
+    for Y in range(y0, y1):
+        for X in range(x0, x1):
             if not mask[Y, X]:
                 grid_mn.append(grd(X, Y, outf))
 
 
 def apply_init(grid):
-    grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil, hsoil)
+    grid.init_caete_dyn(input_path, stime, co2_data,
+                        pls_table, tsoil, ssoil, hsoil)
     return grid
 
 
@@ -154,7 +196,7 @@ def apply_fun(grid):
 
 def apply_fun0(grid):
     grid.run_caete('19790101', '19881231', spinup=45,
-                   fix_co2='1979', save=False)
+                   fix_co2='1983', save=False)
     return grid
 
 
@@ -164,6 +206,7 @@ def zip_gridtime(grd_pool, interval):
         res.append((j, interval[i % len(interval)]))
     return res
 
+
 def apply_funX(grid, brk):
     grid.run_caete(brk[0], brk[1])
     return grid
@@ -172,6 +215,7 @@ def apply_funX(grid, brk):
 def apply_fun_eCO2(grid, brk):
     grid.run_caete(brk[0], brk[1], fix_co2=600.0)
     return grid
+
 
 # Garbage collection
 #

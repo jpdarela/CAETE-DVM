@@ -239,7 +239,7 @@ module carbon_costs
       ccn(am) = cc_active(kan, amp * av_n, kanc, amp * croot)
       ccn(em) = cc_active(ken, ecm * av_n, kenc, ecm * croot)
       ccn(Am0) =  1.0D15 ! cc_active(kan, amp * on, kenc, amp * croot)
-      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot)
+      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot) + 0.05
    end subroutine active_costn
 
 
