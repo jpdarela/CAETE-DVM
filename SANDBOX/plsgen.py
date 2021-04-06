@@ -240,7 +240,7 @@ def table_gen(NPLS, fpath=None):
     froot_p2c = root[:, 1]
 
     # new traits
-    pdia = np.random.uniform(0.01, 0.05, NPLS)
+    pdia = np.random.uniform(0.01, 0.1, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)[0]
     # return woods

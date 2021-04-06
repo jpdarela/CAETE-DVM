@@ -164,11 +164,14 @@ def zip_gridtime(grd_pool, interval):
         res.append((j, interval[i % len(interval)]))
     return res
 
-
 def apply_funX(grid, brk):
     grid.run_caete(brk[0], brk[1])
     return grid
 
+
+def apply_fun_eCO2(grid, brk):
+    grid.run_caete(brk[0], brk[1], fix_co2=600.0)
+    return grid
 
 # Garbage collection
 #
@@ -189,7 +192,7 @@ if __name__ == "__main__":
 
     import time
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else 128
+    n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count()
 
     fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())
@@ -247,6 +250,21 @@ if __name__ == "__main__":
 
     result = result1
     del result1
+    # result has the gridcells with total aptitude to run
+
+    # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
+    # if FACE_EXPERIMENT == 'y':
+    #     interval_1 = run_breaks[:11] 1979-2000
+    #     interval_2 = run_breaks[11:] 2001-1016
+    #     for i, brk in enumerate(interval_1):
+    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #         result = zip_gridtime(result, (brk,))
+    #         result = applyXy(apply_funX, result)
+    #     for i, brk in enumerate(interval_2):
+    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #         result = zip_gridtime(result, (brk,))
+    #         result = applyXy(apply_fun_eCO2, result)
+    # else:
     for i, brk in enumerate(run_breaks):
         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
         result = zip_gridtime(result, (brk,))

@@ -23,6 +23,7 @@ import os
 import sys
 import copy
 import _pickle as pkl
+import random as rd
 from threading import Thread
 from time import sleep
 from pathlib import Path
@@ -135,6 +136,7 @@ def catch_out_carbon3(out):
 
     return dict(zip(lst, out))
 
+
 class grd:
 
     """
@@ -244,7 +246,6 @@ class grd:
         self.wp_water_lower_mm = None  # mm
         # Saturation point
         self.wmax_mm = None  # mm
-
 
         # SOIL POOLS
         self.input_nut = None
@@ -536,7 +537,7 @@ class grd:
         self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
 
         self.theta_sat = hsoil[0][self.y, self.x].copy()
-        self.psi_sat =hsoil[1][self.y, self.x].copy()
+        self.psi_sat = hsoil[1][self.y, self.x].copy()
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
@@ -752,30 +753,57 @@ class grd:
                 daily_output = catch_out_budget(out)
 
                 self.vp_lsid = np.where(daily_output['ocpavg'] > 0.0)[0]
-                if self.vp_lsid.size == 0:
-                    rwarn(
-                        f"Gridcell {self.xyname} has no living Plant Life Strategies")
                 self.vp_ocp = daily_output['ocpavg'][self.vp_lsid]
                 self.ls[step] = self.vp_lsid.size
+
+                if self.vp_lsid.size < 1 and not save:
+                    self.vp_lsid = np.sort(
+                        np.array(rd.sample(list(np.arange(gp.npls)), 20)))
+                    rwarn(
+                        f"Gridcell {self.xyname} has less than 5 living Plant Life Strategies - Re-populating")
+                    # REPOPULATE]
+                    # UPDATE vegetation pools
+                    self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    self.vp_cwood = np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    awood = self.pls_table[6, :]
+                    for i0, i in enumerate(self.vp_lsid):
+                        if awood[i] > 0.0:
+                            self.vp_cwood[i0] = 0.5
+
+                    self.vp_dcl = np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dca = np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dcf = np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_sto = np.zeros(shape=(3, self.vp_lsid.size))
+                    self.sp_uptk_costs = np.zeros(shape=(self.vp_lsid.size,))
+
+                    self.vp_ocp = np.zeros(shape=(self.vp_lsid.size,))
+                    del awood
+                    self.ls[step] = self.vp_lsid.size
+                else:
+                    if self.vp_lsid.size < 1:
+                        rwarn(f"Gridcell {self.xyname} has less \
+                                than 5 living Plant Life Strategies")
+                    # UPDATE vegetation pools
+                    self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
+                    self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
+                    self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
+                    self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
+                    self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
+                    self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
+                    self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
+                    self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
 
                 # UPDATE STATE VARIABLES
                 # WATER CWM
                 self.runom[step] = self.swp._update_pool(
                     prec[step], daily_output['evavg'])
-                self.swp.w1 = np.float64(0.0) if self.swp.w1 < 0.0 else self.swp.w1
-                self.swp.w2 = np.float64(0.0) if self.swp.w2 < 0.0 else self.swp.w2
+                self.swp.w1 = np.float64(
+                    0.0) if self.swp.w1 < 0.0 else self.swp.w1
+                self.swp.w2 = np.float64(
+                    0.0) if self.swp.w2 < 0.0 else self.swp.w2
                 self.wp_water_upper_mm = self.swp.w1
                 self.wp_water_lower_mm = self.swp.w2
-
-                # UPDATE vegetation pools ! ABLE TO USE SPARSE MATRICES
-                self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
-                self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
-                self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
-                self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
-                self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
-                self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
-                self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
-                self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
 
                 # Plant uptake and Carbon costs of nutrient uptake
                 self.nupt[:, step] = daily_output['nupt']
@@ -826,7 +854,7 @@ class grd:
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
                     # Sorbed P
-                    if self.pupt[1, step] > 0.45:
+                    if self.pupt[1, step] > 0.75:
                         rwarn(
                             f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
                         self.pupt[1, step] = 0.0
@@ -853,7 +881,7 @@ class grd:
                         rwarn(
                             f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
                         self.nupt[1, step] = 0.0
-                    if self.nupt[1, step] > 1.5:
+                    if self.nupt[1, step] > 2.5:
                         rwarn(
                             f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
                         self.nupt[1, step] = 0.0
@@ -883,12 +911,16 @@ class grd:
 
                     # Raise some warnings
                     if self.sp_organic_n < 0.0:
+                        self.sp_organic_n = 0.0
                         rwarn(f"ON negative in spin{s}, step{step}")
                     if self.sp_sorganic_n < 0.0:
+                        self.sp_sorganic_n = 0.0
                         rwarn(f"SON negative in spin{s}, step{step}")
                     if self.sp_organic_p < 0.0:
+                        self.sp_organic_p = 0.0
                         rwarn(f"OP negative in spin{s}, step{step}")
                     if self.sp_sorganic_p < 0.0:
+                        self.sp_sorganic_p = 0.0
                         rwarn(f"SOP negative in spin{s}, step{step}")
 
                     # CALCULATE THE EQUILIBTIUM IN SOIL POOLS

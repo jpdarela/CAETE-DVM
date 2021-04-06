@@ -498,8 +498,8 @@ contains
       real(r_8) :: coeffa, coeffb
 
       ! Calculating Fraction of leaf Nitrogen that is lignin
-      nbio2 = nrubisco(leaf_turnover, nbio)
-      pbio2 = nrubisco(leaf_turnover, pbio)
+      nbio2 = nbio !nrubisco(leaf_turnover, nbio)
+      pbio2 = pbio !nrubisco(leaf_turnover, pbio)
 
       if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
       if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
