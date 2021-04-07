@@ -139,8 +139,9 @@ def table_gen(NPLS, fpath=None):
 
     def calc_ratios(pool):
 
-        pool_n2c = np.linspace(0.001, 0.04, 500) # TODO increase ranges to left
-        pool_p2c = np.linspace(0.5e-5, 0.005, 500) # TODO
+        # TODO increase ranges to left
+        pool_n2c = np.linspace(0.001, 0.04, 500)
+        pool_p2c = np.linspace(0.3e-5, 0.005, 500)  # TODO
 
         if pool == 'leaf' or pool == 'root':
             pass

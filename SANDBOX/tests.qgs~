@@ -1,0 +1,2064 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis saveUser="jdarela" saveUserFull="João Paulo Darela Filho" saveDateTime="2021-04-07T15:04:46" projectname="" version="3.18.1-Zürich">
+  <homePath path=""/>
+  <title></title>
+  <autotransaction active="0"/>
+  <evaluateDefaultValues active="0"/>
+  <trust active="0"/>
+  <projectCrs>
+    <spatialrefsys>
+      <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+      <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+      <srsid>3452</srsid>
+      <srid>4326</srid>
+      <authid>EPSG:4326</authid>
+      <description>WGS 84</description>
+      <projectionacronym>longlat</projectionacronym>
+      <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+      <geographicflag>true</geographicflag>
+    </spatialrefsys>
+  </projectCrs>
+  <layer-tree-group>
+    <customproperties/>
+    <layer-tree-layer name="ocp_area" source="../outputs/r3/nc_outputs/ocp_area.nc4" legend_split_behavior="0" id="ocp_area_a592f5f7_219b_4d93_9af7_d7653fbd1da2" providerKey="gdal" expanded="1" legend_exp="" patch_size="-1,-1" checked="Qt::Unchecked">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer name="NETCDF:&quot;ls_20150101-20161231&quot;:ls" source="NETCDF:&quot;/home/jdarela/Desktop/caete/CAETE-DVM/outputs/r3/nc_outputs/ls_20150101-20161231.nc4&quot;:ls" legend_split_behavior="0" id="NETCDF__ls_20150101_20161231__ls_96db2ce3_554e_4fd9_81fe_e120c920293e" providerKey="gdal" expanded="1" legend_exp="" patch_size="-1,-1" checked="Qt::Checked">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer name="mask_360-720-PAN_AMAZONIA" source="../input/mask/mask_360-720-PAN_AMAZONIA.tif" legend_split_behavior="0" id="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542" providerKey="gdal" expanded="0" legend_exp="" patch_size="-1,-1" checked="Qt::Checked">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer name="World_Countries" source="../../../GIS/World_Countries/World_Countries.shp" legend_split_behavior="0" id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" providerKey="ogr" expanded="1" legend_exp="" patch_size="-1,-1" checked="Qt::Checked">
+      <customproperties/>
+    </layer-tree-layer>
+    <custom-order enabled="0">
+      <item>World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d</item>
+      <item>mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542</item>
+      <item>NETCDF__ls_20150101_20161231__ls_96db2ce3_554e_4fd9_81fe_e120c920293e</item>
+      <item>ocp_area_a592f5f7_219b_4d93_9af7_d7653fbd1da2</item>
+    </custom-order>
+  </layer-tree-group>
+  <snapping-settings minScale="0" type="1" mode="2" tolerance="12" scaleDependencyMode="0" intersection-snapping="0" enabled="0" self-snapping="0" maxScale="0" unit="1">
+    <individual-layer-settings>
+      <layer-setting minScale="0" type="1" tolerance="12" units="1" enabled="0" id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" maxScale="0"/>
+    </individual-layer-settings>
+  </snapping-settings>
+  <relations/>
+  <polymorphicRelations/>
+  <mapcanvas name="theMapCanvas" annotationsVisible="1">
+    <units>degrees</units>
+    <extent>
+      <xmin>-70.67456824880072475</xmin>
+      <ymin>-16.44124216082365564</ymin>
+      <xmax>-49.70738074880058832</xmax>
+      <ymax>1.57282033917630848</ymax>
+    </extent>
+    <rotation>0</rotation>
+    <destinationsrs>
+      <spatialrefsys>
+        <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+        <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+        <srsid>3452</srsid>
+        <srid>4326</srid>
+        <authid>EPSG:4326</authid>
+        <description>WGS 84</description>
+        <projectionacronym>longlat</projectionacronym>
+        <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+        <geographicflag>true</geographicflag>
+      </spatialrefsys>
+    </destinationsrs>
+    <rendermaptile>0</rendermaptile>
+    <expressionContextScope/>
+  </mapcanvas>
+  <projectModels/>
+  <legend updateDrawingOrder="true">
+    <legendlayer open="true" name="ocp_area" drawingOrder="-1" showFeatureCount="0" checked="Qt::Unchecked">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile layerid="ocp_area_a592f5f7_219b_4d93_9af7_d7653fbd1da2" isInOverview="0" visible="0"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer open="true" name="NETCDF:&quot;ls_20150101-20161231&quot;:ls" drawingOrder="-1" showFeatureCount="0" checked="Qt::Checked">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile layerid="NETCDF__ls_20150101_20161231__ls_96db2ce3_554e_4fd9_81fe_e120c920293e" isInOverview="0" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer open="false" name="mask_360-720-PAN_AMAZONIA" drawingOrder="-1" showFeatureCount="0" checked="Qt::Checked">
+      <filegroup open="false" hidden="false">
+        <legendlayerfile layerid="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542" isInOverview="0" visible="1"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer open="true" name="World_Countries" drawingOrder="-1" showFeatureCount="0" checked="Qt::Checked">
+      <filegroup open="true" hidden="false">
+        <legendlayerfile layerid="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" isInOverview="0" visible="1"/>
+      </filegroup>
+    </legendlayer>
+  </legend>
+  <mapViewDocks/>
+  <mapViewDocks3D/>
+  <mapcanvas name="mAreaCanvas" annotationsVisible="1">
+    <units>degrees</units>
+    <extent>
+      <xmin>0</xmin>
+      <ymin>0</ymin>
+      <xmax>0</xmax>
+      <ymax>0</ymax>
+    </extent>
+    <rotation>0</rotation>
+    <destinationsrs>
+      <spatialrefsys>
+        <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+        <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+        <srsid>3452</srsid>
+        <srid>4326</srid>
+        <authid>EPSG:4326</authid>
+        <description>WGS 84</description>
+        <projectionacronym>longlat</projectionacronym>
+        <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+        <geographicflag>true</geographicflag>
+      </spatialrefsys>
+    </destinationsrs>
+    <rendermaptile>0</rendermaptile>
+    <expressionContextScope/>
+  </mapcanvas>
+  <main-annotation-layer autoRefreshEnabled="0" refreshOnNotifyMessage="" type="annotation" refreshOnNotifyEnabled="0" autoRefreshTime="0">
+    <id>Annotations_43489599_92eb_4ed6_abb9_2810379906cc</id>
+    <datasource></datasource>
+    <keywordList>
+      <value></value>
+    </keywordList>
+    <layername>Annotations</layername>
+    <srs>
+      <spatialrefsys>
+        <wkt></wkt>
+        <proj4></proj4>
+        <srsid>0</srsid>
+        <srid>0</srid>
+        <authid></authid>
+        <description></description>
+        <projectionacronym></projectionacronym>
+        <ellipsoidacronym></ellipsoidacronym>
+        <geographicflag>true</geographicflag>
+      </spatialrefsys>
+    </srs>
+    <resourceMetadata>
+      <identifier></identifier>
+      <parentidentifier></parentidentifier>
+      <language></language>
+      <type></type>
+      <title></title>
+      <abstract></abstract>
+      <links/>
+      <fees></fees>
+      <encoding></encoding>
+      <crs>
+        <spatialrefsys>
+          <wkt></wkt>
+          <proj4></proj4>
+          <srsid>0</srsid>
+          <srid>0</srid>
+          <authid></authid>
+          <description></description>
+          <projectionacronym></projectionacronym>
+          <ellipsoidacronym></ellipsoidacronym>
+          <geographicflag>true</geographicflag>
+        </spatialrefsys>
+      </crs>
+      <extent/>
+    </resourceMetadata>
+    <items/>
+    <layerOpacity>1</layerOpacity>
+    <blendMode>0</blendMode>
+  </main-annotation-layer>
+  <projectlayers>
+    <maplayer autoRefreshEnabled="0" minScale="1e+08" refreshOnNotifyMessage="" type="raster" styleCategories="AllStyleCategories" refreshOnNotifyEnabled="0" autoRefreshTime="0" maxScale="0" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>-79.5</xmin>
+        <ymin>-20.5</ymin>
+        <xmax>-44</xmax>
+        <ymax>10</ymax>
+      </extent>
+      <id>NETCDF__ls_20150101_20161231__ls_96db2ce3_554e_4fd9_81fe_e120c920293e</id>
+      <datasource>NETCDF:"../outputs/r3/nc_outputs/ls_20150101-20161231.nc4":ls</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>NETCDF:"ls_20150101-20161231":ls</layername>
+      <srs>
+        <spatialrefsys>
+          <wkt></wkt>
+          <proj4></proj4>
+          <srsid>0</srsid>
+          <srid>0</srid>
+          <authid></authid>
+          <description></description>
+          <projectionacronym></projectionacronym>
+          <ellipsoidacronym></ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <resourceMetadata>
+        <identifier></identifier>
+        <parentidentifier></parentidentifier>
+        <language></language>
+        <type></type>
+        <title></title>
+        <abstract></abstract>
+        <contact>
+          <name></name>
+          <organization></organization>
+          <position></position>
+          <voice></voice>
+          <fax></fax>
+          <email></email>
+          <role></role>
+        </contact>
+        <links/>
+        <fees></fees>
+        <encoding></encoding>
+        <crs>
+          <spatialrefsys>
+            <wkt></wkt>
+            <proj4></proj4>
+            <srsid>0</srsid>
+            <srid>0</srid>
+            <authid></authid>
+            <description></description>
+            <projectionacronym></projectionacronym>
+            <ellipsoidacronym></ellipsoidacronym>
+            <geographicflag>false</geographicflag>
+          </spatialrefsys>
+        </crs>
+        <extent>
+          <spatial dimensions="2" maxy="0" miny="0" crs="" minx="0" maxx="0" maxz="0" minz="0"/>
+          <temporal>
+            <period>
+              <start></start>
+              <end></end>
+            </period>
+          </temporal>
+        </extent>
+      </resourceMetadata>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList useSrcNoData="1" bandNo="1"/>
+        <noDataList useSrcNoData="1" bandNo="2"/>
+        <noDataList useSrcNoData="1" bandNo="3"/>
+        <noDataList useSrcNoData="1" bandNo="4"/>
+        <noDataList useSrcNoData="1" bandNo="5"/>
+        <noDataList useSrcNoData="1" bandNo="6"/>
+        <noDataList useSrcNoData="1" bandNo="7"/>
+        <noDataList useSrcNoData="1" bandNo="8"/>
+        <noDataList useSrcNoData="1" bandNo="9"/>
+        <noDataList useSrcNoData="1" bandNo="10"/>
+        <noDataList useSrcNoData="1" bandNo="11"/>
+        <noDataList useSrcNoData="1" bandNo="12"/>
+        <noDataList useSrcNoData="1" bandNo="13"/>
+        <noDataList useSrcNoData="1" bandNo="14"/>
+        <noDataList useSrcNoData="1" bandNo="15"/>
+        <noDataList useSrcNoData="1" bandNo="16"/>
+        <noDataList useSrcNoData="1" bandNo="17"/>
+        <noDataList useSrcNoData="1" bandNo="18"/>
+        <noDataList useSrcNoData="1" bandNo="19"/>
+        <noDataList useSrcNoData="1" bandNo="20"/>
+        <noDataList useSrcNoData="1" bandNo="21"/>
+        <noDataList useSrcNoData="1" bandNo="22"/>
+        <noDataList useSrcNoData="1" bandNo="23"/>
+        <noDataList useSrcNoData="1" bandNo="24"/>
+        <noDataList useSrcNoData="1" bandNo="25"/>
+        <noDataList useSrcNoData="1" bandNo="26"/>
+        <noDataList useSrcNoData="1" bandNo="27"/>
+        <noDataList useSrcNoData="1" bandNo="28"/>
+        <noDataList useSrcNoData="1" bandNo="29"/>
+        <noDataList useSrcNoData="1" bandNo="30"/>
+        <noDataList useSrcNoData="1" bandNo="31"/>
+        <noDataList useSrcNoData="1" bandNo="32"/>
+        <noDataList useSrcNoData="1" bandNo="33"/>
+        <noDataList useSrcNoData="1" bandNo="34"/>
+        <noDataList useSrcNoData="1" bandNo="35"/>
+        <noDataList useSrcNoData="1" bandNo="36"/>
+        <noDataList useSrcNoData="1" bandNo="37"/>
+        <noDataList useSrcNoData="1" bandNo="38"/>
+        <noDataList useSrcNoData="1" bandNo="39"/>
+        <noDataList useSrcNoData="1" bandNo="40"/>
+        <noDataList useSrcNoData="1" bandNo="41"/>
+        <noDataList useSrcNoData="1" bandNo="42"/>
+        <noDataList useSrcNoData="1" bandNo="43"/>
+        <noDataList useSrcNoData="1" bandNo="44"/>
+        <noDataList useSrcNoData="1" bandNo="45"/>
+        <noDataList useSrcNoData="1" bandNo="46"/>
+        <noDataList useSrcNoData="1" bandNo="47"/>
+        <noDataList useSrcNoData="1" bandNo="48"/>
+        <noDataList useSrcNoData="1" bandNo="49"/>
+        <noDataList useSrcNoData="1" bandNo="50"/>
+        <noDataList useSrcNoData="1" bandNo="51"/>
+        <noDataList useSrcNoData="1" bandNo="52"/>
+        <noDataList useSrcNoData="1" bandNo="53"/>
+        <noDataList useSrcNoData="1" bandNo="54"/>
+        <noDataList useSrcNoData="1" bandNo="55"/>
+        <noDataList useSrcNoData="1" bandNo="56"/>
+        <noDataList useSrcNoData="1" bandNo="57"/>
+        <noDataList useSrcNoData="1" bandNo="58"/>
+        <noDataList useSrcNoData="1" bandNo="59"/>
+        <noDataList useSrcNoData="1" bandNo="60"/>
+        <noDataList useSrcNoData="1" bandNo="61"/>
+        <noDataList useSrcNoData="1" bandNo="62"/>
+        <noDataList useSrcNoData="1" bandNo="63"/>
+        <noDataList useSrcNoData="1" bandNo="64"/>
+        <noDataList useSrcNoData="1" bandNo="65"/>
+        <noDataList useSrcNoData="1" bandNo="66"/>
+        <noDataList useSrcNoData="1" bandNo="67"/>
+        <noDataList useSrcNoData="1" bandNo="68"/>
+        <noDataList useSrcNoData="1" bandNo="69"/>
+        <noDataList useSrcNoData="1" bandNo="70"/>
+        <noDataList useSrcNoData="1" bandNo="71"/>
+        <noDataList useSrcNoData="1" bandNo="72"/>
+        <noDataList useSrcNoData="1" bandNo="73"/>
+        <noDataList useSrcNoData="1" bandNo="74"/>
+        <noDataList useSrcNoData="1" bandNo="75"/>
+        <noDataList useSrcNoData="1" bandNo="76"/>
+        <noDataList useSrcNoData="1" bandNo="77"/>
+        <noDataList useSrcNoData="1" bandNo="78"/>
+        <noDataList useSrcNoData="1" bandNo="79"/>
+        <noDataList useSrcNoData="1" bandNo="80"/>
+        <noDataList useSrcNoData="1" bandNo="81"/>
+        <noDataList useSrcNoData="1" bandNo="82"/>
+        <noDataList useSrcNoData="1" bandNo="83"/>
+        <noDataList useSrcNoData="1" bandNo="84"/>
+        <noDataList useSrcNoData="1" bandNo="85"/>
+        <noDataList useSrcNoData="1" bandNo="86"/>
+        <noDataList useSrcNoData="1" bandNo="87"/>
+        <noDataList useSrcNoData="1" bandNo="88"/>
+        <noDataList useSrcNoData="1" bandNo="89"/>
+        <noDataList useSrcNoData="1" bandNo="90"/>
+        <noDataList useSrcNoData="1" bandNo="91"/>
+        <noDataList useSrcNoData="1" bandNo="92"/>
+        <noDataList useSrcNoData="1" bandNo="93"/>
+        <noDataList useSrcNoData="1" bandNo="94"/>
+        <noDataList useSrcNoData="1" bandNo="95"/>
+        <noDataList useSrcNoData="1" bandNo="96"/>
+        <noDataList useSrcNoData="1" bandNo="97"/>
+        <noDataList useSrcNoData="1" bandNo="98"/>
+        <noDataList useSrcNoData="1" bandNo="99"/>
+        <noDataList useSrcNoData="1" bandNo="100"/>
+        <noDataList useSrcNoData="1" bandNo="101"/>
+        <noDataList useSrcNoData="1" bandNo="102"/>
+        <noDataList useSrcNoData="1" bandNo="103"/>
+        <noDataList useSrcNoData="1" bandNo="104"/>
+        <noDataList useSrcNoData="1" bandNo="105"/>
+        <noDataList useSrcNoData="1" bandNo="106"/>
+        <noDataList useSrcNoData="1" bandNo="107"/>
+        <noDataList useSrcNoData="1" bandNo="108"/>
+        <noDataList useSrcNoData="1" bandNo="109"/>
+        <noDataList useSrcNoData="1" bandNo="110"/>
+        <noDataList useSrcNoData="1" bandNo="111"/>
+        <noDataList useSrcNoData="1" bandNo="112"/>
+        <noDataList useSrcNoData="1" bandNo="113"/>
+        <noDataList useSrcNoData="1" bandNo="114"/>
+        <noDataList useSrcNoData="1" bandNo="115"/>
+        <noDataList useSrcNoData="1" bandNo="116"/>
+        <noDataList useSrcNoData="1" bandNo="117"/>
+        <noDataList useSrcNoData="1" bandNo="118"/>
+        <noDataList useSrcNoData="1" bandNo="119"/>
+        <noDataList useSrcNoData="1" bandNo="120"/>
+        <noDataList useSrcNoData="1" bandNo="121"/>
+        <noDataList useSrcNoData="1" bandNo="122"/>
+        <noDataList useSrcNoData="1" bandNo="123"/>
+        <noDataList useSrcNoData="1" bandNo="124"/>
+        <noDataList useSrcNoData="1" bandNo="125"/>
+        <noDataList useSrcNoData="1" bandNo="126"/>
+        <noDataList useSrcNoData="1" bandNo="127"/>
+        <noDataList useSrcNoData="1" bandNo="128"/>
+        <noDataList useSrcNoData="1" bandNo="129"/>
+        <noDataList useSrcNoData="1" bandNo="130"/>
+        <noDataList useSrcNoData="1" bandNo="131"/>
+        <noDataList useSrcNoData="1" bandNo="132"/>
+        <noDataList useSrcNoData="1" bandNo="133"/>
+        <noDataList useSrcNoData="1" bandNo="134"/>
+        <noDataList useSrcNoData="1" bandNo="135"/>
+        <noDataList useSrcNoData="1" bandNo="136"/>
+        <noDataList useSrcNoData="1" bandNo="137"/>
+        <noDataList useSrcNoData="1" bandNo="138"/>
+        <noDataList useSrcNoData="1" bandNo="139"/>
+        <noDataList useSrcNoData="1" bandNo="140"/>
+        <noDataList useSrcNoData="1" bandNo="141"/>
+        <noDataList useSrcNoData="1" bandNo="142"/>
+        <noDataList useSrcNoData="1" bandNo="143"/>
+        <noDataList useSrcNoData="1" bandNo="144"/>
+        <noDataList useSrcNoData="1" bandNo="145"/>
+        <noDataList useSrcNoData="1" bandNo="146"/>
+        <noDataList useSrcNoData="1" bandNo="147"/>
+        <noDataList useSrcNoData="1" bandNo="148"/>
+        <noDataList useSrcNoData="1" bandNo="149"/>
+        <noDataList useSrcNoData="1" bandNo="150"/>
+        <noDataList useSrcNoData="1" bandNo="151"/>
+        <noDataList useSrcNoData="1" bandNo="152"/>
+        <noDataList useSrcNoData="1" bandNo="153"/>
+        <noDataList useSrcNoData="1" bandNo="154"/>
+        <noDataList useSrcNoData="1" bandNo="155"/>
+        <noDataList useSrcNoData="1" bandNo="156"/>
+        <noDataList useSrcNoData="1" bandNo="157"/>
+        <noDataList useSrcNoData="1" bandNo="158"/>
+        <noDataList useSrcNoData="1" bandNo="159"/>
+        <noDataList useSrcNoData="1" bandNo="160"/>
+        <noDataList useSrcNoData="1" bandNo="161"/>
+        <noDataList useSrcNoData="1" bandNo="162"/>
+        <noDataList useSrcNoData="1" bandNo="163"/>
+        <noDataList useSrcNoData="1" bandNo="164"/>
+        <noDataList useSrcNoData="1" bandNo="165"/>
+        <noDataList useSrcNoData="1" bandNo="166"/>
+        <noDataList useSrcNoData="1" bandNo="167"/>
+        <noDataList useSrcNoData="1" bandNo="168"/>
+        <noDataList useSrcNoData="1" bandNo="169"/>
+        <noDataList useSrcNoData="1" bandNo="170"/>
+        <noDataList useSrcNoData="1" bandNo="171"/>
+        <noDataList useSrcNoData="1" bandNo="172"/>
+        <noDataList useSrcNoData="1" bandNo="173"/>
+        <noDataList useSrcNoData="1" bandNo="174"/>
+        <noDataList useSrcNoData="1" bandNo="175"/>
+        <noDataList useSrcNoData="1" bandNo="176"/>
+        <noDataList useSrcNoData="1" bandNo="177"/>
+        <noDataList useSrcNoData="1" bandNo="178"/>
+        <noDataList useSrcNoData="1" bandNo="179"/>
+        <noDataList useSrcNoData="1" bandNo="180"/>
+        <noDataList useSrcNoData="1" bandNo="181"/>
+        <noDataList useSrcNoData="1" bandNo="182"/>
+        <noDataList useSrcNoData="1" bandNo="183"/>
+        <noDataList useSrcNoData="1" bandNo="184"/>
+        <noDataList useSrcNoData="1" bandNo="185"/>
+        <noDataList useSrcNoData="1" bandNo="186"/>
+        <noDataList useSrcNoData="1" bandNo="187"/>
+        <noDataList useSrcNoData="1" bandNo="188"/>
+        <noDataList useSrcNoData="1" bandNo="189"/>
+        <noDataList useSrcNoData="1" bandNo="190"/>
+        <noDataList useSrcNoData="1" bandNo="191"/>
+        <noDataList useSrcNoData="1" bandNo="192"/>
+        <noDataList useSrcNoData="1" bandNo="193"/>
+        <noDataList useSrcNoData="1" bandNo="194"/>
+        <noDataList useSrcNoData="1" bandNo="195"/>
+        <noDataList useSrcNoData="1" bandNo="196"/>
+        <noDataList useSrcNoData="1" bandNo="197"/>
+        <noDataList useSrcNoData="1" bandNo="198"/>
+        <noDataList useSrcNoData="1" bandNo="199"/>
+        <noDataList useSrcNoData="1" bandNo="200"/>
+        <noDataList useSrcNoData="1" bandNo="201"/>
+        <noDataList useSrcNoData="1" bandNo="202"/>
+        <noDataList useSrcNoData="1" bandNo="203"/>
+        <noDataList useSrcNoData="1" bandNo="204"/>
+        <noDataList useSrcNoData="1" bandNo="205"/>
+        <noDataList useSrcNoData="1" bandNo="206"/>
+        <noDataList useSrcNoData="1" bandNo="207"/>
+        <noDataList useSrcNoData="1" bandNo="208"/>
+        <noDataList useSrcNoData="1" bandNo="209"/>
+        <noDataList useSrcNoData="1" bandNo="210"/>
+        <noDataList useSrcNoData="1" bandNo="211"/>
+        <noDataList useSrcNoData="1" bandNo="212"/>
+        <noDataList useSrcNoData="1" bandNo="213"/>
+        <noDataList useSrcNoData="1" bandNo="214"/>
+        <noDataList useSrcNoData="1" bandNo="215"/>
+        <noDataList useSrcNoData="1" bandNo="216"/>
+        <noDataList useSrcNoData="1" bandNo="217"/>
+        <noDataList useSrcNoData="1" bandNo="218"/>
+        <noDataList useSrcNoData="1" bandNo="219"/>
+        <noDataList useSrcNoData="1" bandNo="220"/>
+        <noDataList useSrcNoData="1" bandNo="221"/>
+        <noDataList useSrcNoData="1" bandNo="222"/>
+        <noDataList useSrcNoData="1" bandNo="223"/>
+        <noDataList useSrcNoData="1" bandNo="224"/>
+        <noDataList useSrcNoData="1" bandNo="225"/>
+        <noDataList useSrcNoData="1" bandNo="226"/>
+        <noDataList useSrcNoData="1" bandNo="227"/>
+        <noDataList useSrcNoData="1" bandNo="228"/>
+        <noDataList useSrcNoData="1" bandNo="229"/>
+        <noDataList useSrcNoData="1" bandNo="230"/>
+        <noDataList useSrcNoData="1" bandNo="231"/>
+        <noDataList useSrcNoData="1" bandNo="232"/>
+        <noDataList useSrcNoData="1" bandNo="233"/>
+        <noDataList useSrcNoData="1" bandNo="234"/>
+        <noDataList useSrcNoData="1" bandNo="235"/>
+        <noDataList useSrcNoData="1" bandNo="236"/>
+        <noDataList useSrcNoData="1" bandNo="237"/>
+        <noDataList useSrcNoData="1" bandNo="238"/>
+        <noDataList useSrcNoData="1" bandNo="239"/>
+        <noDataList useSrcNoData="1" bandNo="240"/>
+        <noDataList useSrcNoData="1" bandNo="241"/>
+        <noDataList useSrcNoData="1" bandNo="242"/>
+        <noDataList useSrcNoData="1" bandNo="243"/>
+        <noDataList useSrcNoData="1" bandNo="244"/>
+        <noDataList useSrcNoData="1" bandNo="245"/>
+        <noDataList useSrcNoData="1" bandNo="246"/>
+        <noDataList useSrcNoData="1" bandNo="247"/>
+        <noDataList useSrcNoData="1" bandNo="248"/>
+        <noDataList useSrcNoData="1" bandNo="249"/>
+        <noDataList useSrcNoData="1" bandNo="250"/>
+        <noDataList useSrcNoData="1" bandNo="251"/>
+        <noDataList useSrcNoData="1" bandNo="252"/>
+        <noDataList useSrcNoData="1" bandNo="253"/>
+        <noDataList useSrcNoData="1" bandNo="254"/>
+        <noDataList useSrcNoData="1" bandNo="255"/>
+        <noDataList useSrcNoData="1" bandNo="256"/>
+        <noDataList useSrcNoData="1" bandNo="257"/>
+        <noDataList useSrcNoData="1" bandNo="258"/>
+        <noDataList useSrcNoData="1" bandNo="259"/>
+        <noDataList useSrcNoData="1" bandNo="260"/>
+        <noDataList useSrcNoData="1" bandNo="261"/>
+        <noDataList useSrcNoData="1" bandNo="262"/>
+        <noDataList useSrcNoData="1" bandNo="263"/>
+        <noDataList useSrcNoData="1" bandNo="264"/>
+        <noDataList useSrcNoData="1" bandNo="265"/>
+        <noDataList useSrcNoData="1" bandNo="266"/>
+        <noDataList useSrcNoData="1" bandNo="267"/>
+        <noDataList useSrcNoData="1" bandNo="268"/>
+        <noDataList useSrcNoData="1" bandNo="269"/>
+        <noDataList useSrcNoData="1" bandNo="270"/>
+        <noDataList useSrcNoData="1" bandNo="271"/>
+        <noDataList useSrcNoData="1" bandNo="272"/>
+        <noDataList useSrcNoData="1" bandNo="273"/>
+        <noDataList useSrcNoData="1" bandNo="274"/>
+        <noDataList useSrcNoData="1" bandNo="275"/>
+        <noDataList useSrcNoData="1" bandNo="276"/>
+        <noDataList useSrcNoData="1" bandNo="277"/>
+        <noDataList useSrcNoData="1" bandNo="278"/>
+        <noDataList useSrcNoData="1" bandNo="279"/>
+        <noDataList useSrcNoData="1" bandNo="280"/>
+        <noDataList useSrcNoData="1" bandNo="281"/>
+        <noDataList useSrcNoData="1" bandNo="282"/>
+        <noDataList useSrcNoData="1" bandNo="283"/>
+        <noDataList useSrcNoData="1" bandNo="284"/>
+        <noDataList useSrcNoData="1" bandNo="285"/>
+        <noDataList useSrcNoData="1" bandNo="286"/>
+        <noDataList useSrcNoData="1" bandNo="287"/>
+        <noDataList useSrcNoData="1" bandNo="288"/>
+        <noDataList useSrcNoData="1" bandNo="289"/>
+        <noDataList useSrcNoData="1" bandNo="290"/>
+        <noDataList useSrcNoData="1" bandNo="291"/>
+        <noDataList useSrcNoData="1" bandNo="292"/>
+        <noDataList useSrcNoData="1" bandNo="293"/>
+        <noDataList useSrcNoData="1" bandNo="294"/>
+        <noDataList useSrcNoData="1" bandNo="295"/>
+        <noDataList useSrcNoData="1" bandNo="296"/>
+        <noDataList useSrcNoData="1" bandNo="297"/>
+        <noDataList useSrcNoData="1" bandNo="298"/>
+        <noDataList useSrcNoData="1" bandNo="299"/>
+        <noDataList useSrcNoData="1" bandNo="300"/>
+        <noDataList useSrcNoData="1" bandNo="301"/>
+        <noDataList useSrcNoData="1" bandNo="302"/>
+        <noDataList useSrcNoData="1" bandNo="303"/>
+        <noDataList useSrcNoData="1" bandNo="304"/>
+        <noDataList useSrcNoData="1" bandNo="305"/>
+        <noDataList useSrcNoData="1" bandNo="306"/>
+        <noDataList useSrcNoData="1" bandNo="307"/>
+        <noDataList useSrcNoData="1" bandNo="308"/>
+        <noDataList useSrcNoData="1" bandNo="309"/>
+        <noDataList useSrcNoData="1" bandNo="310"/>
+        <noDataList useSrcNoData="1" bandNo="311"/>
+        <noDataList useSrcNoData="1" bandNo="312"/>
+        <noDataList useSrcNoData="1" bandNo="313"/>
+        <noDataList useSrcNoData="1" bandNo="314"/>
+        <noDataList useSrcNoData="1" bandNo="315"/>
+        <noDataList useSrcNoData="1" bandNo="316"/>
+        <noDataList useSrcNoData="1" bandNo="317"/>
+        <noDataList useSrcNoData="1" bandNo="318"/>
+        <noDataList useSrcNoData="1" bandNo="319"/>
+        <noDataList useSrcNoData="1" bandNo="320"/>
+        <noDataList useSrcNoData="1" bandNo="321"/>
+        <noDataList useSrcNoData="1" bandNo="322"/>
+        <noDataList useSrcNoData="1" bandNo="323"/>
+        <noDataList useSrcNoData="1" bandNo="324"/>
+        <noDataList useSrcNoData="1" bandNo="325"/>
+        <noDataList useSrcNoData="1" bandNo="326"/>
+        <noDataList useSrcNoData="1" bandNo="327"/>
+        <noDataList useSrcNoData="1" bandNo="328"/>
+        <noDataList useSrcNoData="1" bandNo="329"/>
+        <noDataList useSrcNoData="1" bandNo="330"/>
+        <noDataList useSrcNoData="1" bandNo="331"/>
+        <noDataList useSrcNoData="1" bandNo="332"/>
+        <noDataList useSrcNoData="1" bandNo="333"/>
+        <noDataList useSrcNoData="1" bandNo="334"/>
+        <noDataList useSrcNoData="1" bandNo="335"/>
+        <noDataList useSrcNoData="1" bandNo="336"/>
+        <noDataList useSrcNoData="1" bandNo="337"/>
+        <noDataList useSrcNoData="1" bandNo="338"/>
+        <noDataList useSrcNoData="1" bandNo="339"/>
+        <noDataList useSrcNoData="1" bandNo="340"/>
+        <noDataList useSrcNoData="1" bandNo="341"/>
+        <noDataList useSrcNoData="1" bandNo="342"/>
+        <noDataList useSrcNoData="1" bandNo="343"/>
+        <noDataList useSrcNoData="1" bandNo="344"/>
+        <noDataList useSrcNoData="1" bandNo="345"/>
+        <noDataList useSrcNoData="1" bandNo="346"/>
+        <noDataList useSrcNoData="1" bandNo="347"/>
+        <noDataList useSrcNoData="1" bandNo="348"/>
+        <noDataList useSrcNoData="1" bandNo="349"/>
+        <noDataList useSrcNoData="1" bandNo="350"/>
+        <noDataList useSrcNoData="1" bandNo="351"/>
+        <noDataList useSrcNoData="1" bandNo="352"/>
+        <noDataList useSrcNoData="1" bandNo="353"/>
+        <noDataList useSrcNoData="1" bandNo="354"/>
+        <noDataList useSrcNoData="1" bandNo="355"/>
+        <noDataList useSrcNoData="1" bandNo="356"/>
+        <noDataList useSrcNoData="1" bandNo="357"/>
+        <noDataList useSrcNoData="1" bandNo="358"/>
+        <noDataList useSrcNoData="1" bandNo="359"/>
+        <noDataList useSrcNoData="1" bandNo="360"/>
+        <noDataList useSrcNoData="1" bandNo="361"/>
+        <noDataList useSrcNoData="1" bandNo="362"/>
+        <noDataList useSrcNoData="1" bandNo="363"/>
+        <noDataList useSrcNoData="1" bandNo="364"/>
+        <noDataList useSrcNoData="1" bandNo="365"/>
+        <noDataList useSrcNoData="1" bandNo="366"/>
+        <noDataList useSrcNoData="1" bandNo="367"/>
+        <noDataList useSrcNoData="1" bandNo="368"/>
+        <noDataList useSrcNoData="1" bandNo="369"/>
+        <noDataList useSrcNoData="1" bandNo="370"/>
+        <noDataList useSrcNoData="1" bandNo="371"/>
+        <noDataList useSrcNoData="1" bandNo="372"/>
+        <noDataList useSrcNoData="1" bandNo="373"/>
+        <noDataList useSrcNoData="1" bandNo="374"/>
+        <noDataList useSrcNoData="1" bandNo="375"/>
+        <noDataList useSrcNoData="1" bandNo="376"/>
+        <noDataList useSrcNoData="1" bandNo="377"/>
+        <noDataList useSrcNoData="1" bandNo="378"/>
+        <noDataList useSrcNoData="1" bandNo="379"/>
+        <noDataList useSrcNoData="1" bandNo="380"/>
+        <noDataList useSrcNoData="1" bandNo="381"/>
+        <noDataList useSrcNoData="1" bandNo="382"/>
+        <noDataList useSrcNoData="1" bandNo="383"/>
+        <noDataList useSrcNoData="1" bandNo="384"/>
+        <noDataList useSrcNoData="1" bandNo="385"/>
+        <noDataList useSrcNoData="1" bandNo="386"/>
+        <noDataList useSrcNoData="1" bandNo="387"/>
+        <noDataList useSrcNoData="1" bandNo="388"/>
+        <noDataList useSrcNoData="1" bandNo="389"/>
+        <noDataList useSrcNoData="1" bandNo="390"/>
+        <noDataList useSrcNoData="1" bandNo="391"/>
+        <noDataList useSrcNoData="1" bandNo="392"/>
+        <noDataList useSrcNoData="1" bandNo="393"/>
+        <noDataList useSrcNoData="1" bandNo="394"/>
+        <noDataList useSrcNoData="1" bandNo="395"/>
+        <noDataList useSrcNoData="1" bandNo="396"/>
+        <noDataList useSrcNoData="1" bandNo="397"/>
+        <noDataList useSrcNoData="1" bandNo="398"/>
+        <noDataList useSrcNoData="1" bandNo="399"/>
+        <noDataList useSrcNoData="1" bandNo="400"/>
+        <noDataList useSrcNoData="1" bandNo="401"/>
+        <noDataList useSrcNoData="1" bandNo="402"/>
+        <noDataList useSrcNoData="1" bandNo="403"/>
+        <noDataList useSrcNoData="1" bandNo="404"/>
+        <noDataList useSrcNoData="1" bandNo="405"/>
+        <noDataList useSrcNoData="1" bandNo="406"/>
+        <noDataList useSrcNoData="1" bandNo="407"/>
+        <noDataList useSrcNoData="1" bandNo="408"/>
+        <noDataList useSrcNoData="1" bandNo="409"/>
+        <noDataList useSrcNoData="1" bandNo="410"/>
+        <noDataList useSrcNoData="1" bandNo="411"/>
+        <noDataList useSrcNoData="1" bandNo="412"/>
+        <noDataList useSrcNoData="1" bandNo="413"/>
+        <noDataList useSrcNoData="1" bandNo="414"/>
+        <noDataList useSrcNoData="1" bandNo="415"/>
+        <noDataList useSrcNoData="1" bandNo="416"/>
+        <noDataList useSrcNoData="1" bandNo="417"/>
+        <noDataList useSrcNoData="1" bandNo="418"/>
+        <noDataList useSrcNoData="1" bandNo="419"/>
+        <noDataList useSrcNoData="1" bandNo="420"/>
+        <noDataList useSrcNoData="1" bandNo="421"/>
+        <noDataList useSrcNoData="1" bandNo="422"/>
+        <noDataList useSrcNoData="1" bandNo="423"/>
+        <noDataList useSrcNoData="1" bandNo="424"/>
+        <noDataList useSrcNoData="1" bandNo="425"/>
+        <noDataList useSrcNoData="1" bandNo="426"/>
+        <noDataList useSrcNoData="1" bandNo="427"/>
+        <noDataList useSrcNoData="1" bandNo="428"/>
+        <noDataList useSrcNoData="1" bandNo="429"/>
+        <noDataList useSrcNoData="1" bandNo="430"/>
+        <noDataList useSrcNoData="1" bandNo="431"/>
+        <noDataList useSrcNoData="1" bandNo="432"/>
+        <noDataList useSrcNoData="1" bandNo="433"/>
+        <noDataList useSrcNoData="1" bandNo="434"/>
+        <noDataList useSrcNoData="1" bandNo="435"/>
+        <noDataList useSrcNoData="1" bandNo="436"/>
+        <noDataList useSrcNoData="1" bandNo="437"/>
+        <noDataList useSrcNoData="1" bandNo="438"/>
+        <noDataList useSrcNoData="1" bandNo="439"/>
+        <noDataList useSrcNoData="1" bandNo="440"/>
+        <noDataList useSrcNoData="1" bandNo="441"/>
+        <noDataList useSrcNoData="1" bandNo="442"/>
+        <noDataList useSrcNoData="1" bandNo="443"/>
+        <noDataList useSrcNoData="1" bandNo="444"/>
+        <noDataList useSrcNoData="1" bandNo="445"/>
+        <noDataList useSrcNoData="1" bandNo="446"/>
+        <noDataList useSrcNoData="1" bandNo="447"/>
+        <noDataList useSrcNoData="1" bandNo="448"/>
+        <noDataList useSrcNoData="1" bandNo="449"/>
+        <noDataList useSrcNoData="1" bandNo="450"/>
+        <noDataList useSrcNoData="1" bandNo="451"/>
+        <noDataList useSrcNoData="1" bandNo="452"/>
+        <noDataList useSrcNoData="1" bandNo="453"/>
+        <noDataList useSrcNoData="1" bandNo="454"/>
+        <noDataList useSrcNoData="1" bandNo="455"/>
+        <noDataList useSrcNoData="1" bandNo="456"/>
+        <noDataList useSrcNoData="1" bandNo="457"/>
+        <noDataList useSrcNoData="1" bandNo="458"/>
+        <noDataList useSrcNoData="1" bandNo="459"/>
+        <noDataList useSrcNoData="1" bandNo="460"/>
+        <noDataList useSrcNoData="1" bandNo="461"/>
+        <noDataList useSrcNoData="1" bandNo="462"/>
+        <noDataList useSrcNoData="1" bandNo="463"/>
+        <noDataList useSrcNoData="1" bandNo="464"/>
+        <noDataList useSrcNoData="1" bandNo="465"/>
+        <noDataList useSrcNoData="1" bandNo="466"/>
+        <noDataList useSrcNoData="1" bandNo="467"/>
+        <noDataList useSrcNoData="1" bandNo="468"/>
+        <noDataList useSrcNoData="1" bandNo="469"/>
+        <noDataList useSrcNoData="1" bandNo="470"/>
+        <noDataList useSrcNoData="1" bandNo="471"/>
+        <noDataList useSrcNoData="1" bandNo="472"/>
+        <noDataList useSrcNoData="1" bandNo="473"/>
+        <noDataList useSrcNoData="1" bandNo="474"/>
+        <noDataList useSrcNoData="1" bandNo="475"/>
+        <noDataList useSrcNoData="1" bandNo="476"/>
+        <noDataList useSrcNoData="1" bandNo="477"/>
+        <noDataList useSrcNoData="1" bandNo="478"/>
+        <noDataList useSrcNoData="1" bandNo="479"/>
+        <noDataList useSrcNoData="1" bandNo="480"/>
+        <noDataList useSrcNoData="1" bandNo="481"/>
+        <noDataList useSrcNoData="1" bandNo="482"/>
+        <noDataList useSrcNoData="1" bandNo="483"/>
+        <noDataList useSrcNoData="1" bandNo="484"/>
+        <noDataList useSrcNoData="1" bandNo="485"/>
+        <noDataList useSrcNoData="1" bandNo="486"/>
+        <noDataList useSrcNoData="1" bandNo="487"/>
+        <noDataList useSrcNoData="1" bandNo="488"/>
+        <noDataList useSrcNoData="1" bandNo="489"/>
+        <noDataList useSrcNoData="1" bandNo="490"/>
+        <noDataList useSrcNoData="1" bandNo="491"/>
+        <noDataList useSrcNoData="1" bandNo="492"/>
+        <noDataList useSrcNoData="1" bandNo="493"/>
+        <noDataList useSrcNoData="1" bandNo="494"/>
+        <noDataList useSrcNoData="1" bandNo="495"/>
+        <noDataList useSrcNoData="1" bandNo="496"/>
+        <noDataList useSrcNoData="1" bandNo="497"/>
+        <noDataList useSrcNoData="1" bandNo="498"/>
+        <noDataList useSrcNoData="1" bandNo="499"/>
+        <noDataList useSrcNoData="1" bandNo="500"/>
+        <noDataList useSrcNoData="1" bandNo="501"/>
+        <noDataList useSrcNoData="1" bandNo="502"/>
+        <noDataList useSrcNoData="1" bandNo="503"/>
+        <noDataList useSrcNoData="1" bandNo="504"/>
+        <noDataList useSrcNoData="1" bandNo="505"/>
+        <noDataList useSrcNoData="1" bandNo="506"/>
+        <noDataList useSrcNoData="1" bandNo="507"/>
+        <noDataList useSrcNoData="1" bandNo="508"/>
+        <noDataList useSrcNoData="1" bandNo="509"/>
+        <noDataList useSrcNoData="1" bandNo="510"/>
+        <noDataList useSrcNoData="1" bandNo="511"/>
+        <noDataList useSrcNoData="1" bandNo="512"/>
+        <noDataList useSrcNoData="1" bandNo="513"/>
+        <noDataList useSrcNoData="1" bandNo="514"/>
+        <noDataList useSrcNoData="1" bandNo="515"/>
+        <noDataList useSrcNoData="1" bandNo="516"/>
+        <noDataList useSrcNoData="1" bandNo="517"/>
+        <noDataList useSrcNoData="1" bandNo="518"/>
+        <noDataList useSrcNoData="1" bandNo="519"/>
+        <noDataList useSrcNoData="1" bandNo="520"/>
+        <noDataList useSrcNoData="1" bandNo="521"/>
+        <noDataList useSrcNoData="1" bandNo="522"/>
+        <noDataList useSrcNoData="1" bandNo="523"/>
+        <noDataList useSrcNoData="1" bandNo="524"/>
+        <noDataList useSrcNoData="1" bandNo="525"/>
+        <noDataList useSrcNoData="1" bandNo="526"/>
+        <noDataList useSrcNoData="1" bandNo="527"/>
+        <noDataList useSrcNoData="1" bandNo="528"/>
+        <noDataList useSrcNoData="1" bandNo="529"/>
+        <noDataList useSrcNoData="1" bandNo="530"/>
+        <noDataList useSrcNoData="1" bandNo="531"/>
+        <noDataList useSrcNoData="1" bandNo="532"/>
+        <noDataList useSrcNoData="1" bandNo="533"/>
+        <noDataList useSrcNoData="1" bandNo="534"/>
+        <noDataList useSrcNoData="1" bandNo="535"/>
+        <noDataList useSrcNoData="1" bandNo="536"/>
+        <noDataList useSrcNoData="1" bandNo="537"/>
+        <noDataList useSrcNoData="1" bandNo="538"/>
+        <noDataList useSrcNoData="1" bandNo="539"/>
+        <noDataList useSrcNoData="1" bandNo="540"/>
+        <noDataList useSrcNoData="1" bandNo="541"/>
+        <noDataList useSrcNoData="1" bandNo="542"/>
+        <noDataList useSrcNoData="1" bandNo="543"/>
+        <noDataList useSrcNoData="1" bandNo="544"/>
+        <noDataList useSrcNoData="1" bandNo="545"/>
+        <noDataList useSrcNoData="1" bandNo="546"/>
+        <noDataList useSrcNoData="1" bandNo="547"/>
+        <noDataList useSrcNoData="1" bandNo="548"/>
+        <noDataList useSrcNoData="1" bandNo="549"/>
+        <noDataList useSrcNoData="1" bandNo="550"/>
+        <noDataList useSrcNoData="1" bandNo="551"/>
+        <noDataList useSrcNoData="1" bandNo="552"/>
+        <noDataList useSrcNoData="1" bandNo="553"/>
+        <noDataList useSrcNoData="1" bandNo="554"/>
+        <noDataList useSrcNoData="1" bandNo="555"/>
+        <noDataList useSrcNoData="1" bandNo="556"/>
+        <noDataList useSrcNoData="1" bandNo="557"/>
+        <noDataList useSrcNoData="1" bandNo="558"/>
+        <noDataList useSrcNoData="1" bandNo="559"/>
+        <noDataList useSrcNoData="1" bandNo="560"/>
+        <noDataList useSrcNoData="1" bandNo="561"/>
+        <noDataList useSrcNoData="1" bandNo="562"/>
+        <noDataList useSrcNoData="1" bandNo="563"/>
+        <noDataList useSrcNoData="1" bandNo="564"/>
+        <noDataList useSrcNoData="1" bandNo="565"/>
+        <noDataList useSrcNoData="1" bandNo="566"/>
+        <noDataList useSrcNoData="1" bandNo="567"/>
+        <noDataList useSrcNoData="1" bandNo="568"/>
+        <noDataList useSrcNoData="1" bandNo="569"/>
+        <noDataList useSrcNoData="1" bandNo="570"/>
+        <noDataList useSrcNoData="1" bandNo="571"/>
+        <noDataList useSrcNoData="1" bandNo="572"/>
+        <noDataList useSrcNoData="1" bandNo="573"/>
+        <noDataList useSrcNoData="1" bandNo="574"/>
+        <noDataList useSrcNoData="1" bandNo="575"/>
+        <noDataList useSrcNoData="1" bandNo="576"/>
+        <noDataList useSrcNoData="1" bandNo="577"/>
+        <noDataList useSrcNoData="1" bandNo="578"/>
+        <noDataList useSrcNoData="1" bandNo="579"/>
+        <noDataList useSrcNoData="1" bandNo="580"/>
+        <noDataList useSrcNoData="1" bandNo="581"/>
+        <noDataList useSrcNoData="1" bandNo="582"/>
+        <noDataList useSrcNoData="1" bandNo="583"/>
+        <noDataList useSrcNoData="1" bandNo="584"/>
+        <noDataList useSrcNoData="1" bandNo="585"/>
+        <noDataList useSrcNoData="1" bandNo="586"/>
+        <noDataList useSrcNoData="1" bandNo="587"/>
+        <noDataList useSrcNoData="1" bandNo="588"/>
+        <noDataList useSrcNoData="1" bandNo="589"/>
+        <noDataList useSrcNoData="1" bandNo="590"/>
+        <noDataList useSrcNoData="1" bandNo="591"/>
+        <noDataList useSrcNoData="1" bandNo="592"/>
+        <noDataList useSrcNoData="1" bandNo="593"/>
+        <noDataList useSrcNoData="1" bandNo="594"/>
+        <noDataList useSrcNoData="1" bandNo="595"/>
+        <noDataList useSrcNoData="1" bandNo="596"/>
+        <noDataList useSrcNoData="1" bandNo="597"/>
+        <noDataList useSrcNoData="1" bandNo="598"/>
+        <noDataList useSrcNoData="1" bandNo="599"/>
+        <noDataList useSrcNoData="1" bandNo="600"/>
+        <noDataList useSrcNoData="1" bandNo="601"/>
+        <noDataList useSrcNoData="1" bandNo="602"/>
+        <noDataList useSrcNoData="1" bandNo="603"/>
+        <noDataList useSrcNoData="1" bandNo="604"/>
+        <noDataList useSrcNoData="1" bandNo="605"/>
+        <noDataList useSrcNoData="1" bandNo="606"/>
+        <noDataList useSrcNoData="1" bandNo="607"/>
+        <noDataList useSrcNoData="1" bandNo="608"/>
+        <noDataList useSrcNoData="1" bandNo="609"/>
+        <noDataList useSrcNoData="1" bandNo="610"/>
+        <noDataList useSrcNoData="1" bandNo="611"/>
+        <noDataList useSrcNoData="1" bandNo="612"/>
+        <noDataList useSrcNoData="1" bandNo="613"/>
+        <noDataList useSrcNoData="1" bandNo="614"/>
+        <noDataList useSrcNoData="1" bandNo="615"/>
+        <noDataList useSrcNoData="1" bandNo="616"/>
+        <noDataList useSrcNoData="1" bandNo="617"/>
+        <noDataList useSrcNoData="1" bandNo="618"/>
+        <noDataList useSrcNoData="1" bandNo="619"/>
+        <noDataList useSrcNoData="1" bandNo="620"/>
+        <noDataList useSrcNoData="1" bandNo="621"/>
+        <noDataList useSrcNoData="1" bandNo="622"/>
+        <noDataList useSrcNoData="1" bandNo="623"/>
+        <noDataList useSrcNoData="1" bandNo="624"/>
+        <noDataList useSrcNoData="1" bandNo="625"/>
+        <noDataList useSrcNoData="1" bandNo="626"/>
+        <noDataList useSrcNoData="1" bandNo="627"/>
+        <noDataList useSrcNoData="1" bandNo="628"/>
+        <noDataList useSrcNoData="1" bandNo="629"/>
+        <noDataList useSrcNoData="1" bandNo="630"/>
+        <noDataList useSrcNoData="1" bandNo="631"/>
+        <noDataList useSrcNoData="1" bandNo="632"/>
+        <noDataList useSrcNoData="1" bandNo="633"/>
+        <noDataList useSrcNoData="1" bandNo="634"/>
+        <noDataList useSrcNoData="1" bandNo="635"/>
+        <noDataList useSrcNoData="1" bandNo="636"/>
+        <noDataList useSrcNoData="1" bandNo="637"/>
+        <noDataList useSrcNoData="1" bandNo="638"/>
+        <noDataList useSrcNoData="1" bandNo="639"/>
+        <noDataList useSrcNoData="1" bandNo="640"/>
+        <noDataList useSrcNoData="1" bandNo="641"/>
+        <noDataList useSrcNoData="1" bandNo="642"/>
+        <noDataList useSrcNoData="1" bandNo="643"/>
+        <noDataList useSrcNoData="1" bandNo="644"/>
+        <noDataList useSrcNoData="1" bandNo="645"/>
+        <noDataList useSrcNoData="1" bandNo="646"/>
+        <noDataList useSrcNoData="1" bandNo="647"/>
+        <noDataList useSrcNoData="1" bandNo="648"/>
+        <noDataList useSrcNoData="1" bandNo="649"/>
+        <noDataList useSrcNoData="1" bandNo="650"/>
+        <noDataList useSrcNoData="1" bandNo="651"/>
+        <noDataList useSrcNoData="1" bandNo="652"/>
+        <noDataList useSrcNoData="1" bandNo="653"/>
+        <noDataList useSrcNoData="1" bandNo="654"/>
+        <noDataList useSrcNoData="1" bandNo="655"/>
+        <noDataList useSrcNoData="1" bandNo="656"/>
+        <noDataList useSrcNoData="1" bandNo="657"/>
+        <noDataList useSrcNoData="1" bandNo="658"/>
+        <noDataList useSrcNoData="1" bandNo="659"/>
+        <noDataList useSrcNoData="1" bandNo="660"/>
+        <noDataList useSrcNoData="1" bandNo="661"/>
+        <noDataList useSrcNoData="1" bandNo="662"/>
+        <noDataList useSrcNoData="1" bandNo="663"/>
+        <noDataList useSrcNoData="1" bandNo="664"/>
+        <noDataList useSrcNoData="1" bandNo="665"/>
+        <noDataList useSrcNoData="1" bandNo="666"/>
+        <noDataList useSrcNoData="1" bandNo="667"/>
+        <noDataList useSrcNoData="1" bandNo="668"/>
+        <noDataList useSrcNoData="1" bandNo="669"/>
+        <noDataList useSrcNoData="1" bandNo="670"/>
+        <noDataList useSrcNoData="1" bandNo="671"/>
+        <noDataList useSrcNoData="1" bandNo="672"/>
+        <noDataList useSrcNoData="1" bandNo="673"/>
+        <noDataList useSrcNoData="1" bandNo="674"/>
+        <noDataList useSrcNoData="1" bandNo="675"/>
+        <noDataList useSrcNoData="1" bandNo="676"/>
+        <noDataList useSrcNoData="1" bandNo="677"/>
+        <noDataList useSrcNoData="1" bandNo="678"/>
+        <noDataList useSrcNoData="1" bandNo="679"/>
+        <noDataList useSrcNoData="1" bandNo="680"/>
+        <noDataList useSrcNoData="1" bandNo="681"/>
+        <noDataList useSrcNoData="1" bandNo="682"/>
+        <noDataList useSrcNoData="1" bandNo="683"/>
+        <noDataList useSrcNoData="1" bandNo="684"/>
+        <noDataList useSrcNoData="1" bandNo="685"/>
+        <noDataList useSrcNoData="1" bandNo="686"/>
+        <noDataList useSrcNoData="1" bandNo="687"/>
+        <noDataList useSrcNoData="1" bandNo="688"/>
+        <noDataList useSrcNoData="1" bandNo="689"/>
+        <noDataList useSrcNoData="1" bandNo="690"/>
+        <noDataList useSrcNoData="1" bandNo="691"/>
+        <noDataList useSrcNoData="1" bandNo="692"/>
+        <noDataList useSrcNoData="1" bandNo="693"/>
+        <noDataList useSrcNoData="1" bandNo="694"/>
+        <noDataList useSrcNoData="1" bandNo="695"/>
+        <noDataList useSrcNoData="1" bandNo="696"/>
+        <noDataList useSrcNoData="1" bandNo="697"/>
+        <noDataList useSrcNoData="1" bandNo="698"/>
+        <noDataList useSrcNoData="1" bandNo="699"/>
+        <noDataList useSrcNoData="1" bandNo="700"/>
+        <noDataList useSrcNoData="1" bandNo="701"/>
+        <noDataList useSrcNoData="1" bandNo="702"/>
+        <noDataList useSrcNoData="1" bandNo="703"/>
+        <noDataList useSrcNoData="1" bandNo="704"/>
+        <noDataList useSrcNoData="1" bandNo="705"/>
+        <noDataList useSrcNoData="1" bandNo="706"/>
+        <noDataList useSrcNoData="1" bandNo="707"/>
+        <noDataList useSrcNoData="1" bandNo="708"/>
+        <noDataList useSrcNoData="1" bandNo="709"/>
+        <noDataList useSrcNoData="1" bandNo="710"/>
+        <noDataList useSrcNoData="1" bandNo="711"/>
+        <noDataList useSrcNoData="1" bandNo="712"/>
+        <noDataList useSrcNoData="1" bandNo="713"/>
+        <noDataList useSrcNoData="1" bandNo="714"/>
+        <noDataList useSrcNoData="1" bandNo="715"/>
+        <noDataList useSrcNoData="1" bandNo="716"/>
+        <noDataList useSrcNoData="1" bandNo="717"/>
+        <noDataList useSrcNoData="1" bandNo="718"/>
+        <noDataList useSrcNoData="1" bandNo="719"/>
+        <noDataList useSrcNoData="1" bandNo="720"/>
+        <noDataList useSrcNoData="1" bandNo="721"/>
+        <noDataList useSrcNoData="1" bandNo="722"/>
+        <noDataList useSrcNoData="1" bandNo="723"/>
+        <noDataList useSrcNoData="1" bandNo="724"/>
+        <noDataList useSrcNoData="1" bandNo="725"/>
+        <noDataList useSrcNoData="1" bandNo="726"/>
+        <noDataList useSrcNoData="1" bandNo="727"/>
+        <noDataList useSrcNoData="1" bandNo="728"/>
+        <noDataList useSrcNoData="1" bandNo="729"/>
+        <noDataList useSrcNoData="1" bandNo="730"/>
+        <noDataList useSrcNoData="1" bandNo="731"/>
+      </noData>
+      <map-layer-style-manager current="default">
+        <map-layer-style name="default"/>
+      </map-layer-style-manager>
+      <flags>
+        <Identifiable>1</Identifiable>
+        <Removable>1</Removable>
+        <Searchable>1</Searchable>
+        <Private>0</Private>
+      </flags>
+      <temporal mode="0" enabled="0" fetchMode="0">
+        <fixedRange>
+          <start></start>
+          <end></end>
+        </fixedRange>
+      </temporal>
+      <customproperties>
+        <property value="false" key="WMSBackgroundLayer"/>
+        <property value="false" key="WMSPublishDataSourceUrl"/>
+        <property value="0" key="embeddedWidgets/count"/>
+        <property value="Value" key="identify/format"/>
+      </customproperties>
+      <pipe>
+        <provider>
+          <resampling zoomedInResamplingMethod="nearestNeighbour" enabled="false" zoomedOutResamplingMethod="nearestNeighbour" maxOversampling="2"/>
+        </provider>
+        <rasterrenderer type="singlebandpseudocolor" classificationMax="21" classificationMin="4" band="731" alphaBand="-1" nodataColor="" opacity="1">
+          <rasterTransparency/>
+          <minMaxOrigin>
+            <limits>MinMax</limits>
+            <extent>WholeRaster</extent>
+            <statAccuracy>Estimated</statAccuracy>
+            <cumulativeCutLower>0.02</cumulativeCutLower>
+            <cumulativeCutUpper>0.98</cumulativeCutUpper>
+            <stdDevFactor>2</stdDevFactor>
+          </minMaxOrigin>
+          <rastershader>
+            <colorrampshader clip="0" minimumValue="4" colorRampType="INTERPOLATED" labelPrecision="4" classificationMode="1" maximumValue="21">
+              <colorramp name="[source]" type="gradient">
+                <Option type="Map">
+                  <Option name="color1" type="QString" value="215,25,28,255"/>
+                  <Option name="color2" type="QString" value="43,131,186,255"/>
+                  <Option name="discrete" type="QString" value="0"/>
+                  <Option name="rampType" type="QString" value="gradient"/>
+                  <Option name="stops" type="QString" value="0.25;253,174,97,255:0.5;255,255,191,255:0.75;171,221,164,255"/>
+                </Option>
+                <prop k="color1" v="215,25,28,255"/>
+                <prop k="color2" v="43,131,186,255"/>
+                <prop k="discrete" v="0"/>
+                <prop k="rampType" v="gradient"/>
+                <prop k="stops" v="0.25;253,174,97,255:0.5;255,255,191,255:0.75;171,221,164,255"/>
+              </colorramp>
+              <item value="4" label="4.0000" color="#d7191c" alpha="255"/>
+              <item value="8.25" label="8.2500" color="#fdae61" alpha="255"/>
+              <item value="12.5" label="12.5000" color="#ffffbf" alpha="255"/>
+              <item value="16.75" label="16.7500" color="#abdda4" alpha="255"/>
+              <item value="21" label="21.0000" color="#2b83ba" alpha="255"/>
+              <rampLegendSettings maximumLabel="" direction="0" useContinuousLegend="1" suffix="" orientation="2" prefix="" minimumLabel="">
+                <numericFormat id="basic">
+                  <Option type="Map">
+                    <Option name="decimal_separator" type="QChar" value=""/>
+                    <Option name="decimals" type="int" value="6"/>
+                    <Option name="rounding_type" type="int" value="0"/>
+                    <Option name="show_plus" type="bool" value="false"/>
+                    <Option name="show_thousand_separator" type="bool" value="true"/>
+                    <Option name="show_trailing_zeros" type="bool" value="false"/>
+                    <Option name="thousand_separator" type="QChar" value=""/>
+                  </Option>
+                </numericFormat>
+              </rampLegendSettings>
+            </colorrampshader>
+          </rastershader>
+        </rasterrenderer>
+        <brightnesscontrast gamma="1" contrast="0" brightness="0"/>
+        <huesaturation grayscaleMode="0" colorizeOn="0" colorizeGreen="128" colorizeBlue="128" colorizeRed="255" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+        <resamplingStage>resamplingFilter</resamplingStage>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer readOnly="0" maxScale="0" autoRefreshTime="0" hasScaleBasedVisibilityFlag="0" wkbType="MultiPolygon" refreshOnNotifyEnabled="0" simplifyAlgorithm="0" simplifyDrawingHints="1" simplifyDrawingTol="1" geometry="Polygon" styleCategories="AllStyleCategories" type="vector" minScale="100000000" refreshOnNotifyMessage="" simplifyLocal="1" simplifyMaxScale="1" autoRefreshEnabled="0" labelsEnabled="0">
+      <extent>
+        <xmin>-180</xmin>
+        <ymin>-90</ymin>
+        <xmax>180</xmax>
+        <ymax>83.62359619140625</ymax>
+      </extent>
+      <id>World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d</id>
+      <datasource>../../../GIS/World_Countries/World_Countries.shp</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>World_Countries</layername>
+      <srs>
+        <spatialrefsys>
+          <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+          <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+          <srsid>3452</srsid>
+          <srid>4326</srid>
+          <authid>EPSG:4326</authid>
+          <description>WGS 84</description>
+          <projectionacronym>longlat</projectionacronym>
+          <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+          <geographicflag>true</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <resourceMetadata>
+        <identifier></identifier>
+        <parentidentifier></parentidentifier>
+        <language></language>
+        <type>dataset</type>
+        <title></title>
+        <abstract></abstract>
+        <links/>
+        <fees></fees>
+        <encoding></encoding>
+        <crs>
+          <spatialrefsys>
+            <wkt></wkt>
+            <proj4></proj4>
+            <srsid>0</srsid>
+            <srid>0</srid>
+            <authid></authid>
+            <description></description>
+            <projectionacronym></projectionacronym>
+            <ellipsoidacronym></ellipsoidacronym>
+            <geographicflag>true</geographicflag>
+          </spatialrefsys>
+        </crs>
+        <extent/>
+      </resourceMetadata>
+      <provider encoding="windows-1252">ogr</provider>
+      <vectorjoins/>
+      <layerDependencies/>
+      <dataDependencies/>
+      <expressionfields/>
+      <map-layer-style-manager current="default">
+        <map-layer-style name="default"/>
+      </map-layer-style-manager>
+      <auxiliaryLayer/>
+      <flags>
+        <Identifiable>1</Identifiable>
+        <Removable>1</Removable>
+        <Searchable>1</Searchable>
+        <Private>0</Private>
+      </flags>
+      <temporal durationUnit="min" mode="0" startField="" accumulate="0" endExpression="" enabled="0" durationField="" startExpression="" endField="" fixedDuration="0">
+        <fixedRange>
+          <start></start>
+          <end></end>
+        </fixedRange>
+      </temporal>
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
+        <symbols>
+          <symbol name="0" type="fill" force_rhr="0" alpha="1" clip_to_extent="1">
+            <data_defined_properties>
+              <Option type="Map">
+                <Option name="name" type="QString" value=""/>
+                <Option name="properties"/>
+                <Option name="type" type="QString" value="collection"/>
+              </Option>
+            </data_defined_properties>
+            <layer class="SimpleFill" pass="0" enabled="1" locked="0">
+              <Option type="Map">
+                <Option name="border_width_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="color" type="QString" value="243,166,178,255"/>
+                <Option name="joinstyle" type="QString" value="bevel"/>
+                <Option name="offset" type="QString" value="0,0"/>
+                <Option name="offset_map_unit_scale" type="QString" value="3x:0,0,0,0,0,0"/>
+                <Option name="offset_unit" type="QString" value="MM"/>
+                <Option name="outline_color" type="QString" value="35,35,35,255"/>
+                <Option name="outline_style" type="QString" value="solid"/>
+                <Option name="outline_width" type="QString" value="0.26"/>
+                <Option name="outline_width_unit" type="QString" value="MM"/>
+                <Option name="style" type="QString" value="solid"/>
+              </Option>
+              <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="color" v="243,166,178,255"/>
+              <prop k="joinstyle" v="bevel"/>
+              <prop k="offset" v="0,0"/>
+              <prop k="offset_map_unit_scale" v="3x:0,0,0,0,0,0"/>
+              <prop k="offset_unit" v="MM"/>
+              <prop k="outline_color" v="35,35,35,255"/>
+              <prop k="outline_style" v="solid"/>
+              <prop k="outline_width" v="0.26"/>
+              <prop k="outline_width_unit" v="MM"/>
+              <prop k="style" v="solid"/>
+              <data_defined_properties>
+                <Option type="Map">
+                  <Option name="name" type="QString" value=""/>
+                  <Option name="properties"/>
+                  <Option name="type" type="QString" value="collection"/>
+                </Option>
+              </data_defined_properties>
+            </layer>
+          </symbol>
+        </symbols>
+        <rotation/>
+        <sizescale/>
+      </renderer-v2>
+      <customproperties/>
+      <blendMode>0</blendMode>
+      <featureBlendMode>0</featureBlendMode>
+      <layerOpacity>1</layerOpacity>
+      <geometryOptions geometryPrecision="0" removeDuplicateNodes="0">
+        <activeChecks type="StringList">
+          <Option type="QString" value=""/>
+        </activeChecks>
+        <checkConfiguration/>
+      </geometryOptions>
+      <legend type="default-vector"/>
+      <referencedLayers/>
+      <fieldConfiguration>
+        <field name="COUNTRY" configurationFlags="None">
+          <editWidget type="">
+            <config>
+              <Option/>
+            </config>
+          </editWidget>
+        </field>
+      </fieldConfiguration>
+      <aliases>
+        <alias index="0" name="" field="COUNTRY"/>
+      </aliases>
+      <defaults>
+        <default expression="" applyOnUpdate="0" field="COUNTRY"/>
+      </defaults>
+      <constraints>
+        <constraint unique_strength="0" notnull_strength="0" exp_strength="0" field="COUNTRY" constraints="0"/>
+      </constraints>
+      <constraintExpressions>
+        <constraint exp="" desc="" field="COUNTRY"/>
+      </constraintExpressions>
+      <expressionfields/>
+      <attributeactions>
+        <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
+      </attributeactions>
+      <attributetableconfig sortExpression="" actionWidgetStyle="dropDown" sortOrder="0">
+        <columns/>
+      </attributetableconfig>
+      <conditionalstyles>
+        <rowstyles/>
+        <fieldstyles/>
+      </conditionalstyles>
+      <storedexpressions/>
+      <editform tolerant="1"></editform>
+      <editforminit/>
+      <editforminitcodesource>0</editforminitcodesource>
+      <editforminitfilepath></editforminitfilepath>
+      <editforminitcode><![CDATA[]]></editforminitcode>
+      <featformsuppress>0</featformsuppress>
+      <editorlayout>generatedlayout</editorlayout>
+      <editable/>
+      <labelOnTop/>
+      <dataDefinedFieldProperties/>
+      <widgets/>
+      <previewExpression></previewExpression>
+      <mapTip></mapTip>
+    </maplayer>
+    <maplayer autoRefreshEnabled="0" minScale="1e+08" refreshOnNotifyMessage="" type="raster" styleCategories="AllStyleCategories" refreshOnNotifyEnabled="0" autoRefreshTime="0" maxScale="0" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>-180</xmin>
+        <ymin>-90</ymin>
+        <xmax>180</xmax>
+        <ymax>90</ymax>
+      </extent>
+      <id>mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542</id>
+      <datasource>../input/mask/mask_360-720-PAN_AMAZONIA.tif</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>mask_360-720-PAN_AMAZONIA</layername>
+      <srs>
+        <spatialrefsys>
+          <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+          <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+          <srsid>3452</srsid>
+          <srid>4326</srid>
+          <authid>EPSG:4326</authid>
+          <description>WGS 84</description>
+          <projectionacronym>longlat</projectionacronym>
+          <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+          <geographicflag>true</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <resourceMetadata>
+        <identifier></identifier>
+        <parentidentifier></parentidentifier>
+        <language></language>
+        <type></type>
+        <title></title>
+        <abstract></abstract>
+        <links/>
+        <fees></fees>
+        <encoding></encoding>
+        <crs>
+          <spatialrefsys>
+            <wkt></wkt>
+            <proj4></proj4>
+            <srsid>0</srsid>
+            <srid>0</srid>
+            <authid></authid>
+            <description></description>
+            <projectionacronym></projectionacronym>
+            <ellipsoidacronym></ellipsoidacronym>
+            <geographicflag>true</geographicflag>
+          </spatialrefsys>
+        </crs>
+        <extent/>
+      </resourceMetadata>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList useSrcNoData="1" bandNo="1"/>
+      </noData>
+      <map-layer-style-manager current="default">
+        <map-layer-style name="default"/>
+      </map-layer-style-manager>
+      <flags>
+        <Identifiable>1</Identifiable>
+        <Removable>1</Removable>
+        <Searchable>1</Searchable>
+        <Private>0</Private>
+      </flags>
+      <temporal mode="0" enabled="0" fetchMode="0">
+        <fixedRange>
+          <start></start>
+          <end></end>
+        </fixedRange>
+      </temporal>
+      <customproperties>
+        <property value="Value" key="identify/format"/>
+      </customproperties>
+      <pipe>
+        <provider>
+          <resampling zoomedInResamplingMethod="nearestNeighbour" enabled="false" zoomedOutResamplingMethod="nearestNeighbour" maxOversampling="2"/>
+        </provider>
+        <rasterrenderer type="singlebandgray" gradient="BlackToWhite" alphaBand="-1" nodataColor="" opacity="1" grayBand="1">
+          <rasterTransparency/>
+          <minMaxOrigin>
+            <limits>MinMax</limits>
+            <extent>WholeRaster</extent>
+            <statAccuracy>Estimated</statAccuracy>
+            <cumulativeCutLower>0.02</cumulativeCutLower>
+            <cumulativeCutUpper>0.98</cumulativeCutUpper>
+            <stdDevFactor>2</stdDevFactor>
+          </minMaxOrigin>
+          <contrastEnhancement>
+            <minValue>1</minValue>
+            <maxValue>1</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+          <rampLegendSettings maximumLabel="" direction="0" useContinuousLegend="1" suffix="" orientation="2" prefix="" minimumLabel="">
+            <numericFormat id="basic">
+              <Option type="Map">
+                <Option name="decimal_separator" type="QChar" value=""/>
+                <Option name="decimals" type="int" value="6"/>
+                <Option name="rounding_type" type="int" value="0"/>
+                <Option name="show_plus" type="bool" value="false"/>
+                <Option name="show_thousand_separator" type="bool" value="true"/>
+                <Option name="show_trailing_zeros" type="bool" value="false"/>
+                <Option name="thousand_separator" type="QChar" value=""/>
+              </Option>
+            </numericFormat>
+          </rampLegendSettings>
+        </rasterrenderer>
+        <brightnesscontrast gamma="1" contrast="0" brightness="0"/>
+        <huesaturation grayscaleMode="0" colorizeOn="0" colorizeGreen="128" colorizeBlue="128" colorizeRed="255" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+        <resamplingStage>resamplingFilter</resamplingStage>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer autoRefreshEnabled="0" minScale="1e+08" refreshOnNotifyMessage="" type="raster" styleCategories="AllStyleCategories" refreshOnNotifyEnabled="0" autoRefreshTime="0" maxScale="0" hasScaleBasedVisibilityFlag="0">
+      <extent>
+        <xmin>-79.5</xmin>
+        <ymin>-20.5</ymin>
+        <xmax>-44</xmax>
+        <ymax>10</ymax>
+      </extent>
+      <id>ocp_area_a592f5f7_219b_4d93_9af7_d7653fbd1da2</id>
+      <datasource>../outputs/r3/nc_outputs/ocp_area.nc4</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>ocp_area</layername>
+      <srs>
+        <spatialrefsys>
+          <wkt></wkt>
+          <proj4></proj4>
+          <srsid>0</srsid>
+          <srid>0</srid>
+          <authid></authid>
+          <description></description>
+          <projectionacronym></projectionacronym>
+          <ellipsoidacronym></ellipsoidacronym>
+          <geographicflag>false</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <resourceMetadata>
+        <identifier></identifier>
+        <parentidentifier></parentidentifier>
+        <language></language>
+        <type></type>
+        <title></title>
+        <abstract></abstract>
+        <links/>
+        <fees></fees>
+        <encoding></encoding>
+        <crs>
+          <spatialrefsys>
+            <wkt></wkt>
+            <proj4></proj4>
+            <srsid>0</srsid>
+            <srid>0</srid>
+            <authid></authid>
+            <description></description>
+            <projectionacronym></projectionacronym>
+            <ellipsoidacronym></ellipsoidacronym>
+            <geographicflag>false</geographicflag>
+          </spatialrefsys>
+        </crs>
+        <extent/>
+      </resourceMetadata>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList useSrcNoData="1" bandNo="1"/>
+        <noDataList useSrcNoData="1" bandNo="2"/>
+        <noDataList useSrcNoData="1" bandNo="3"/>
+        <noDataList useSrcNoData="1" bandNo="4"/>
+        <noDataList useSrcNoData="1" bandNo="5"/>
+        <noDataList useSrcNoData="1" bandNo="6"/>
+        <noDataList useSrcNoData="1" bandNo="7"/>
+        <noDataList useSrcNoData="1" bandNo="8"/>
+        <noDataList useSrcNoData="1" bandNo="9"/>
+        <noDataList useSrcNoData="1" bandNo="10"/>
+        <noDataList useSrcNoData="1" bandNo="11"/>
+        <noDataList useSrcNoData="1" bandNo="12"/>
+        <noDataList useSrcNoData="1" bandNo="13"/>
+        <noDataList useSrcNoData="1" bandNo="14"/>
+        <noDataList useSrcNoData="1" bandNo="15"/>
+        <noDataList useSrcNoData="1" bandNo="16"/>
+        <noDataList useSrcNoData="1" bandNo="17"/>
+        <noDataList useSrcNoData="1" bandNo="18"/>
+        <noDataList useSrcNoData="1" bandNo="19"/>
+        <noDataList useSrcNoData="1" bandNo="20"/>
+        <noDataList useSrcNoData="1" bandNo="21"/>
+        <noDataList useSrcNoData="1" bandNo="22"/>
+        <noDataList useSrcNoData="1" bandNo="23"/>
+        <noDataList useSrcNoData="1" bandNo="24"/>
+        <noDataList useSrcNoData="1" bandNo="25"/>
+        <noDataList useSrcNoData="1" bandNo="26"/>
+        <noDataList useSrcNoData="1" bandNo="27"/>
+        <noDataList useSrcNoData="1" bandNo="28"/>
+        <noDataList useSrcNoData="1" bandNo="29"/>
+        <noDataList useSrcNoData="1" bandNo="30"/>
+        <noDataList useSrcNoData="1" bandNo="31"/>
+        <noDataList useSrcNoData="1" bandNo="32"/>
+        <noDataList useSrcNoData="1" bandNo="33"/>
+        <noDataList useSrcNoData="1" bandNo="34"/>
+        <noDataList useSrcNoData="1" bandNo="35"/>
+        <noDataList useSrcNoData="1" bandNo="36"/>
+        <noDataList useSrcNoData="1" bandNo="37"/>
+        <noDataList useSrcNoData="1" bandNo="38"/>
+        <noDataList useSrcNoData="1" bandNo="39"/>
+        <noDataList useSrcNoData="1" bandNo="40"/>
+        <noDataList useSrcNoData="1" bandNo="41"/>
+        <noDataList useSrcNoData="1" bandNo="42"/>
+        <noDataList useSrcNoData="1" bandNo="43"/>
+        <noDataList useSrcNoData="1" bandNo="44"/>
+        <noDataList useSrcNoData="1" bandNo="45"/>
+        <noDataList useSrcNoData="1" bandNo="46"/>
+        <noDataList useSrcNoData="1" bandNo="47"/>
+        <noDataList useSrcNoData="1" bandNo="48"/>
+        <noDataList useSrcNoData="1" bandNo="49"/>
+        <noDataList useSrcNoData="1" bandNo="50"/>
+        <noDataList useSrcNoData="1" bandNo="51"/>
+        <noDataList useSrcNoData="1" bandNo="52"/>
+        <noDataList useSrcNoData="1" bandNo="53"/>
+        <noDataList useSrcNoData="1" bandNo="54"/>
+        <noDataList useSrcNoData="1" bandNo="55"/>
+        <noDataList useSrcNoData="1" bandNo="56"/>
+        <noDataList useSrcNoData="1" bandNo="57"/>
+        <noDataList useSrcNoData="1" bandNo="58"/>
+        <noDataList useSrcNoData="1" bandNo="59"/>
+        <noDataList useSrcNoData="1" bandNo="60"/>
+        <noDataList useSrcNoData="1" bandNo="61"/>
+        <noDataList useSrcNoData="1" bandNo="62"/>
+        <noDataList useSrcNoData="1" bandNo="63"/>
+        <noDataList useSrcNoData="1" bandNo="64"/>
+        <noDataList useSrcNoData="1" bandNo="65"/>
+        <noDataList useSrcNoData="1" bandNo="66"/>
+        <noDataList useSrcNoData="1" bandNo="67"/>
+        <noDataList useSrcNoData="1" bandNo="68"/>
+        <noDataList useSrcNoData="1" bandNo="69"/>
+        <noDataList useSrcNoData="1" bandNo="70"/>
+        <noDataList useSrcNoData="1" bandNo="71"/>
+        <noDataList useSrcNoData="1" bandNo="72"/>
+        <noDataList useSrcNoData="1" bandNo="73"/>
+        <noDataList useSrcNoData="1" bandNo="74"/>
+        <noDataList useSrcNoData="1" bandNo="75"/>
+        <noDataList useSrcNoData="1" bandNo="76"/>
+        <noDataList useSrcNoData="1" bandNo="77"/>
+        <noDataList useSrcNoData="1" bandNo="78"/>
+        <noDataList useSrcNoData="1" bandNo="79"/>
+        <noDataList useSrcNoData="1" bandNo="80"/>
+        <noDataList useSrcNoData="1" bandNo="81"/>
+        <noDataList useSrcNoData="1" bandNo="82"/>
+        <noDataList useSrcNoData="1" bandNo="83"/>
+        <noDataList useSrcNoData="1" bandNo="84"/>
+        <noDataList useSrcNoData="1" bandNo="85"/>
+        <noDataList useSrcNoData="1" bandNo="86"/>
+        <noDataList useSrcNoData="1" bandNo="87"/>
+        <noDataList useSrcNoData="1" bandNo="88"/>
+        <noDataList useSrcNoData="1" bandNo="89"/>
+        <noDataList useSrcNoData="1" bandNo="90"/>
+        <noDataList useSrcNoData="1" bandNo="91"/>
+        <noDataList useSrcNoData="1" bandNo="92"/>
+        <noDataList useSrcNoData="1" bandNo="93"/>
+        <noDataList useSrcNoData="1" bandNo="94"/>
+        <noDataList useSrcNoData="1" bandNo="95"/>
+        <noDataList useSrcNoData="1" bandNo="96"/>
+        <noDataList useSrcNoData="1" bandNo="97"/>
+        <noDataList useSrcNoData="1" bandNo="98"/>
+        <noDataList useSrcNoData="1" bandNo="99"/>
+        <noDataList useSrcNoData="1" bandNo="100"/>
+        <noDataList useSrcNoData="1" bandNo="101"/>
+        <noDataList useSrcNoData="1" bandNo="102"/>
+        <noDataList useSrcNoData="1" bandNo="103"/>
+        <noDataList useSrcNoData="1" bandNo="104"/>
+        <noDataList useSrcNoData="1" bandNo="105"/>
+        <noDataList useSrcNoData="1" bandNo="106"/>
+        <noDataList useSrcNoData="1" bandNo="107"/>
+        <noDataList useSrcNoData="1" bandNo="108"/>
+        <noDataList useSrcNoData="1" bandNo="109"/>
+        <noDataList useSrcNoData="1" bandNo="110"/>
+        <noDataList useSrcNoData="1" bandNo="111"/>
+        <noDataList useSrcNoData="1" bandNo="112"/>
+        <noDataList useSrcNoData="1" bandNo="113"/>
+        <noDataList useSrcNoData="1" bandNo="114"/>
+        <noDataList useSrcNoData="1" bandNo="115"/>
+        <noDataList useSrcNoData="1" bandNo="116"/>
+        <noDataList useSrcNoData="1" bandNo="117"/>
+        <noDataList useSrcNoData="1" bandNo="118"/>
+        <noDataList useSrcNoData="1" bandNo="119"/>
+        <noDataList useSrcNoData="1" bandNo="120"/>
+        <noDataList useSrcNoData="1" bandNo="121"/>
+        <noDataList useSrcNoData="1" bandNo="122"/>
+        <noDataList useSrcNoData="1" bandNo="123"/>
+        <noDataList useSrcNoData="1" bandNo="124"/>
+        <noDataList useSrcNoData="1" bandNo="125"/>
+        <noDataList useSrcNoData="1" bandNo="126"/>
+        <noDataList useSrcNoData="1" bandNo="127"/>
+        <noDataList useSrcNoData="1" bandNo="128"/>
+        <noDataList useSrcNoData="1" bandNo="129"/>
+        <noDataList useSrcNoData="1" bandNo="130"/>
+        <noDataList useSrcNoData="1" bandNo="131"/>
+        <noDataList useSrcNoData="1" bandNo="132"/>
+        <noDataList useSrcNoData="1" bandNo="133"/>
+        <noDataList useSrcNoData="1" bandNo="134"/>
+        <noDataList useSrcNoData="1" bandNo="135"/>
+        <noDataList useSrcNoData="1" bandNo="136"/>
+        <noDataList useSrcNoData="1" bandNo="137"/>
+        <noDataList useSrcNoData="1" bandNo="138"/>
+        <noDataList useSrcNoData="1" bandNo="139"/>
+        <noDataList useSrcNoData="1" bandNo="140"/>
+        <noDataList useSrcNoData="1" bandNo="141"/>
+        <noDataList useSrcNoData="1" bandNo="142"/>
+        <noDataList useSrcNoData="1" bandNo="143"/>
+        <noDataList useSrcNoData="1" bandNo="144"/>
+        <noDataList useSrcNoData="1" bandNo="145"/>
+        <noDataList useSrcNoData="1" bandNo="146"/>
+        <noDataList useSrcNoData="1" bandNo="147"/>
+        <noDataList useSrcNoData="1" bandNo="148"/>
+        <noDataList useSrcNoData="1" bandNo="149"/>
+        <noDataList useSrcNoData="1" bandNo="150"/>
+        <noDataList useSrcNoData="1" bandNo="151"/>
+        <noDataList useSrcNoData="1" bandNo="152"/>
+        <noDataList useSrcNoData="1" bandNo="153"/>
+        <noDataList useSrcNoData="1" bandNo="154"/>
+        <noDataList useSrcNoData="1" bandNo="155"/>
+        <noDataList useSrcNoData="1" bandNo="156"/>
+        <noDataList useSrcNoData="1" bandNo="157"/>
+        <noDataList useSrcNoData="1" bandNo="158"/>
+        <noDataList useSrcNoData="1" bandNo="159"/>
+        <noDataList useSrcNoData="1" bandNo="160"/>
+        <noDataList useSrcNoData="1" bandNo="161"/>
+        <noDataList useSrcNoData="1" bandNo="162"/>
+        <noDataList useSrcNoData="1" bandNo="163"/>
+        <noDataList useSrcNoData="1" bandNo="164"/>
+        <noDataList useSrcNoData="1" bandNo="165"/>
+        <noDataList useSrcNoData="1" bandNo="166"/>
+        <noDataList useSrcNoData="1" bandNo="167"/>
+        <noDataList useSrcNoData="1" bandNo="168"/>
+        <noDataList useSrcNoData="1" bandNo="169"/>
+        <noDataList useSrcNoData="1" bandNo="170"/>
+        <noDataList useSrcNoData="1" bandNo="171"/>
+        <noDataList useSrcNoData="1" bandNo="172"/>
+        <noDataList useSrcNoData="1" bandNo="173"/>
+        <noDataList useSrcNoData="1" bandNo="174"/>
+        <noDataList useSrcNoData="1" bandNo="175"/>
+        <noDataList useSrcNoData="1" bandNo="176"/>
+        <noDataList useSrcNoData="1" bandNo="177"/>
+        <noDataList useSrcNoData="1" bandNo="178"/>
+        <noDataList useSrcNoData="1" bandNo="179"/>
+        <noDataList useSrcNoData="1" bandNo="180"/>
+        <noDataList useSrcNoData="1" bandNo="181"/>
+        <noDataList useSrcNoData="1" bandNo="182"/>
+        <noDataList useSrcNoData="1" bandNo="183"/>
+        <noDataList useSrcNoData="1" bandNo="184"/>
+        <noDataList useSrcNoData="1" bandNo="185"/>
+        <noDataList useSrcNoData="1" bandNo="186"/>
+        <noDataList useSrcNoData="1" bandNo="187"/>
+        <noDataList useSrcNoData="1" bandNo="188"/>
+        <noDataList useSrcNoData="1" bandNo="189"/>
+        <noDataList useSrcNoData="1" bandNo="190"/>
+        <noDataList useSrcNoData="1" bandNo="191"/>
+        <noDataList useSrcNoData="1" bandNo="192"/>
+        <noDataList useSrcNoData="1" bandNo="193"/>
+        <noDataList useSrcNoData="1" bandNo="194"/>
+        <noDataList useSrcNoData="1" bandNo="195"/>
+        <noDataList useSrcNoData="1" bandNo="196"/>
+        <noDataList useSrcNoData="1" bandNo="197"/>
+        <noDataList useSrcNoData="1" bandNo="198"/>
+        <noDataList useSrcNoData="1" bandNo="199"/>
+        <noDataList useSrcNoData="1" bandNo="200"/>
+        <noDataList useSrcNoData="1" bandNo="201"/>
+        <noDataList useSrcNoData="1" bandNo="202"/>
+        <noDataList useSrcNoData="1" bandNo="203"/>
+        <noDataList useSrcNoData="1" bandNo="204"/>
+        <noDataList useSrcNoData="1" bandNo="205"/>
+        <noDataList useSrcNoData="1" bandNo="206"/>
+        <noDataList useSrcNoData="1" bandNo="207"/>
+        <noDataList useSrcNoData="1" bandNo="208"/>
+        <noDataList useSrcNoData="1" bandNo="209"/>
+        <noDataList useSrcNoData="1" bandNo="210"/>
+        <noDataList useSrcNoData="1" bandNo="211"/>
+        <noDataList useSrcNoData="1" bandNo="212"/>
+        <noDataList useSrcNoData="1" bandNo="213"/>
+        <noDataList useSrcNoData="1" bandNo="214"/>
+        <noDataList useSrcNoData="1" bandNo="215"/>
+        <noDataList useSrcNoData="1" bandNo="216"/>
+        <noDataList useSrcNoData="1" bandNo="217"/>
+        <noDataList useSrcNoData="1" bandNo="218"/>
+        <noDataList useSrcNoData="1" bandNo="219"/>
+        <noDataList useSrcNoData="1" bandNo="220"/>
+        <noDataList useSrcNoData="1" bandNo="221"/>
+        <noDataList useSrcNoData="1" bandNo="222"/>
+        <noDataList useSrcNoData="1" bandNo="223"/>
+        <noDataList useSrcNoData="1" bandNo="224"/>
+        <noDataList useSrcNoData="1" bandNo="225"/>
+        <noDataList useSrcNoData="1" bandNo="226"/>
+        <noDataList useSrcNoData="1" bandNo="227"/>
+        <noDataList useSrcNoData="1" bandNo="228"/>
+        <noDataList useSrcNoData="1" bandNo="229"/>
+        <noDataList useSrcNoData="1" bandNo="230"/>
+        <noDataList useSrcNoData="1" bandNo="231"/>
+        <noDataList useSrcNoData="1" bandNo="232"/>
+        <noDataList useSrcNoData="1" bandNo="233"/>
+        <noDataList useSrcNoData="1" bandNo="234"/>
+        <noDataList useSrcNoData="1" bandNo="235"/>
+        <noDataList useSrcNoData="1" bandNo="236"/>
+        <noDataList useSrcNoData="1" bandNo="237"/>
+        <noDataList useSrcNoData="1" bandNo="238"/>
+        <noDataList useSrcNoData="1" bandNo="239"/>
+        <noDataList useSrcNoData="1" bandNo="240"/>
+        <noDataList useSrcNoData="1" bandNo="241"/>
+        <noDataList useSrcNoData="1" bandNo="242"/>
+        <noDataList useSrcNoData="1" bandNo="243"/>
+        <noDataList useSrcNoData="1" bandNo="244"/>
+        <noDataList useSrcNoData="1" bandNo="245"/>
+        <noDataList useSrcNoData="1" bandNo="246"/>
+        <noDataList useSrcNoData="1" bandNo="247"/>
+        <noDataList useSrcNoData="1" bandNo="248"/>
+        <noDataList useSrcNoData="1" bandNo="249"/>
+        <noDataList useSrcNoData="1" bandNo="250"/>
+        <noDataList useSrcNoData="1" bandNo="251"/>
+        <noDataList useSrcNoData="1" bandNo="252"/>
+        <noDataList useSrcNoData="1" bandNo="253"/>
+        <noDataList useSrcNoData="1" bandNo="254"/>
+        <noDataList useSrcNoData="1" bandNo="255"/>
+        <noDataList useSrcNoData="1" bandNo="256"/>
+        <noDataList useSrcNoData="1" bandNo="257"/>
+        <noDataList useSrcNoData="1" bandNo="258"/>
+        <noDataList useSrcNoData="1" bandNo="259"/>
+        <noDataList useSrcNoData="1" bandNo="260"/>
+        <noDataList useSrcNoData="1" bandNo="261"/>
+        <noDataList useSrcNoData="1" bandNo="262"/>
+        <noDataList useSrcNoData="1" bandNo="263"/>
+        <noDataList useSrcNoData="1" bandNo="264"/>
+        <noDataList useSrcNoData="1" bandNo="265"/>
+        <noDataList useSrcNoData="1" bandNo="266"/>
+        <noDataList useSrcNoData="1" bandNo="267"/>
+        <noDataList useSrcNoData="1" bandNo="268"/>
+        <noDataList useSrcNoData="1" bandNo="269"/>
+        <noDataList useSrcNoData="1" bandNo="270"/>
+        <noDataList useSrcNoData="1" bandNo="271"/>
+        <noDataList useSrcNoData="1" bandNo="272"/>
+        <noDataList useSrcNoData="1" bandNo="273"/>
+        <noDataList useSrcNoData="1" bandNo="274"/>
+        <noDataList useSrcNoData="1" bandNo="275"/>
+        <noDataList useSrcNoData="1" bandNo="276"/>
+        <noDataList useSrcNoData="1" bandNo="277"/>
+        <noDataList useSrcNoData="1" bandNo="278"/>
+        <noDataList useSrcNoData="1" bandNo="279"/>
+        <noDataList useSrcNoData="1" bandNo="280"/>
+        <noDataList useSrcNoData="1" bandNo="281"/>
+        <noDataList useSrcNoData="1" bandNo="282"/>
+        <noDataList useSrcNoData="1" bandNo="283"/>
+        <noDataList useSrcNoData="1" bandNo="284"/>
+        <noDataList useSrcNoData="1" bandNo="285"/>
+        <noDataList useSrcNoData="1" bandNo="286"/>
+        <noDataList useSrcNoData="1" bandNo="287"/>
+        <noDataList useSrcNoData="1" bandNo="288"/>
+        <noDataList useSrcNoData="1" bandNo="289"/>
+        <noDataList useSrcNoData="1" bandNo="290"/>
+        <noDataList useSrcNoData="1" bandNo="291"/>
+        <noDataList useSrcNoData="1" bandNo="292"/>
+        <noDataList useSrcNoData="1" bandNo="293"/>
+        <noDataList useSrcNoData="1" bandNo="294"/>
+        <noDataList useSrcNoData="1" bandNo="295"/>
+        <noDataList useSrcNoData="1" bandNo="296"/>
+        <noDataList useSrcNoData="1" bandNo="297"/>
+        <noDataList useSrcNoData="1" bandNo="298"/>
+        <noDataList useSrcNoData="1" bandNo="299"/>
+        <noDataList useSrcNoData="1" bandNo="300"/>
+        <noDataList useSrcNoData="1" bandNo="301"/>
+        <noDataList useSrcNoData="1" bandNo="302"/>
+        <noDataList useSrcNoData="1" bandNo="303"/>
+        <noDataList useSrcNoData="1" bandNo="304"/>
+        <noDataList useSrcNoData="1" bandNo="305"/>
+        <noDataList useSrcNoData="1" bandNo="306"/>
+        <noDataList useSrcNoData="1" bandNo="307"/>
+        <noDataList useSrcNoData="1" bandNo="308"/>
+        <noDataList useSrcNoData="1" bandNo="309"/>
+        <noDataList useSrcNoData="1" bandNo="310"/>
+        <noDataList useSrcNoData="1" bandNo="311"/>
+        <noDataList useSrcNoData="1" bandNo="312"/>
+        <noDataList useSrcNoData="1" bandNo="313"/>
+        <noDataList useSrcNoData="1" bandNo="314"/>
+        <noDataList useSrcNoData="1" bandNo="315"/>
+        <noDataList useSrcNoData="1" bandNo="316"/>
+        <noDataList useSrcNoData="1" bandNo="317"/>
+        <noDataList useSrcNoData="1" bandNo="318"/>
+        <noDataList useSrcNoData="1" bandNo="319"/>
+        <noDataList useSrcNoData="1" bandNo="320"/>
+        <noDataList useSrcNoData="1" bandNo="321"/>
+        <noDataList useSrcNoData="1" bandNo="322"/>
+        <noDataList useSrcNoData="1" bandNo="323"/>
+        <noDataList useSrcNoData="1" bandNo="324"/>
+        <noDataList useSrcNoData="1" bandNo="325"/>
+        <noDataList useSrcNoData="1" bandNo="326"/>
+        <noDataList useSrcNoData="1" bandNo="327"/>
+        <noDataList useSrcNoData="1" bandNo="328"/>
+        <noDataList useSrcNoData="1" bandNo="329"/>
+        <noDataList useSrcNoData="1" bandNo="330"/>
+        <noDataList useSrcNoData="1" bandNo="331"/>
+        <noDataList useSrcNoData="1" bandNo="332"/>
+        <noDataList useSrcNoData="1" bandNo="333"/>
+        <noDataList useSrcNoData="1" bandNo="334"/>
+        <noDataList useSrcNoData="1" bandNo="335"/>
+        <noDataList useSrcNoData="1" bandNo="336"/>
+        <noDataList useSrcNoData="1" bandNo="337"/>
+        <noDataList useSrcNoData="1" bandNo="338"/>
+        <noDataList useSrcNoData="1" bandNo="339"/>
+        <noDataList useSrcNoData="1" bandNo="340"/>
+        <noDataList useSrcNoData="1" bandNo="341"/>
+        <noDataList useSrcNoData="1" bandNo="342"/>
+        <noDataList useSrcNoData="1" bandNo="343"/>
+        <noDataList useSrcNoData="1" bandNo="344"/>
+        <noDataList useSrcNoData="1" bandNo="345"/>
+        <noDataList useSrcNoData="1" bandNo="346"/>
+        <noDataList useSrcNoData="1" bandNo="347"/>
+        <noDataList useSrcNoData="1" bandNo="348"/>
+        <noDataList useSrcNoData="1" bandNo="349"/>
+        <noDataList useSrcNoData="1" bandNo="350"/>
+        <noDataList useSrcNoData="1" bandNo="351"/>
+        <noDataList useSrcNoData="1" bandNo="352"/>
+        <noDataList useSrcNoData="1" bandNo="353"/>
+        <noDataList useSrcNoData="1" bandNo="354"/>
+        <noDataList useSrcNoData="1" bandNo="355"/>
+        <noDataList useSrcNoData="1" bandNo="356"/>
+        <noDataList useSrcNoData="1" bandNo="357"/>
+        <noDataList useSrcNoData="1" bandNo="358"/>
+        <noDataList useSrcNoData="1" bandNo="359"/>
+        <noDataList useSrcNoData="1" bandNo="360"/>
+        <noDataList useSrcNoData="1" bandNo="361"/>
+        <noDataList useSrcNoData="1" bandNo="362"/>
+        <noDataList useSrcNoData="1" bandNo="363"/>
+        <noDataList useSrcNoData="1" bandNo="364"/>
+        <noDataList useSrcNoData="1" bandNo="365"/>
+        <noDataList useSrcNoData="1" bandNo="366"/>
+        <noDataList useSrcNoData="1" bandNo="367"/>
+        <noDataList useSrcNoData="1" bandNo="368"/>
+        <noDataList useSrcNoData="1" bandNo="369"/>
+        <noDataList useSrcNoData="1" bandNo="370"/>
+        <noDataList useSrcNoData="1" bandNo="371"/>
+        <noDataList useSrcNoData="1" bandNo="372"/>
+        <noDataList useSrcNoData="1" bandNo="373"/>
+        <noDataList useSrcNoData="1" bandNo="374"/>
+        <noDataList useSrcNoData="1" bandNo="375"/>
+        <noDataList useSrcNoData="1" bandNo="376"/>
+        <noDataList useSrcNoData="1" bandNo="377"/>
+        <noDataList useSrcNoData="1" bandNo="378"/>
+        <noDataList useSrcNoData="1" bandNo="379"/>
+        <noDataList useSrcNoData="1" bandNo="380"/>
+        <noDataList useSrcNoData="1" bandNo="381"/>
+        <noDataList useSrcNoData="1" bandNo="382"/>
+        <noDataList useSrcNoData="1" bandNo="383"/>
+        <noDataList useSrcNoData="1" bandNo="384"/>
+        <noDataList useSrcNoData="1" bandNo="385"/>
+        <noDataList useSrcNoData="1" bandNo="386"/>
+        <noDataList useSrcNoData="1" bandNo="387"/>
+        <noDataList useSrcNoData="1" bandNo="388"/>
+        <noDataList useSrcNoData="1" bandNo="389"/>
+        <noDataList useSrcNoData="1" bandNo="390"/>
+        <noDataList useSrcNoData="1" bandNo="391"/>
+        <noDataList useSrcNoData="1" bandNo="392"/>
+        <noDataList useSrcNoData="1" bandNo="393"/>
+        <noDataList useSrcNoData="1" bandNo="394"/>
+        <noDataList useSrcNoData="1" bandNo="395"/>
+        <noDataList useSrcNoData="1" bandNo="396"/>
+        <noDataList useSrcNoData="1" bandNo="397"/>
+        <noDataList useSrcNoData="1" bandNo="398"/>
+        <noDataList useSrcNoData="1" bandNo="399"/>
+        <noDataList useSrcNoData="1" bandNo="400"/>
+        <noDataList useSrcNoData="1" bandNo="401"/>
+        <noDataList useSrcNoData="1" bandNo="402"/>
+        <noDataList useSrcNoData="1" bandNo="403"/>
+        <noDataList useSrcNoData="1" bandNo="404"/>
+        <noDataList useSrcNoData="1" bandNo="405"/>
+        <noDataList useSrcNoData="1" bandNo="406"/>
+        <noDataList useSrcNoData="1" bandNo="407"/>
+        <noDataList useSrcNoData="1" bandNo="408"/>
+        <noDataList useSrcNoData="1" bandNo="409"/>
+        <noDataList useSrcNoData="1" bandNo="410"/>
+        <noDataList useSrcNoData="1" bandNo="411"/>
+        <noDataList useSrcNoData="1" bandNo="412"/>
+        <noDataList useSrcNoData="1" bandNo="413"/>
+        <noDataList useSrcNoData="1" bandNo="414"/>
+        <noDataList useSrcNoData="1" bandNo="415"/>
+        <noDataList useSrcNoData="1" bandNo="416"/>
+        <noDataList useSrcNoData="1" bandNo="417"/>
+        <noDataList useSrcNoData="1" bandNo="418"/>
+        <noDataList useSrcNoData="1" bandNo="419"/>
+        <noDataList useSrcNoData="1" bandNo="420"/>
+        <noDataList useSrcNoData="1" bandNo="421"/>
+        <noDataList useSrcNoData="1" bandNo="422"/>
+        <noDataList useSrcNoData="1" bandNo="423"/>
+        <noDataList useSrcNoData="1" bandNo="424"/>
+        <noDataList useSrcNoData="1" bandNo="425"/>
+        <noDataList useSrcNoData="1" bandNo="426"/>
+        <noDataList useSrcNoData="1" bandNo="427"/>
+        <noDataList useSrcNoData="1" bandNo="428"/>
+        <noDataList useSrcNoData="1" bandNo="429"/>
+        <noDataList useSrcNoData="1" bandNo="430"/>
+        <noDataList useSrcNoData="1" bandNo="431"/>
+        <noDataList useSrcNoData="1" bandNo="432"/>
+        <noDataList useSrcNoData="1" bandNo="433"/>
+        <noDataList useSrcNoData="1" bandNo="434"/>
+        <noDataList useSrcNoData="1" bandNo="435"/>
+        <noDataList useSrcNoData="1" bandNo="436"/>
+        <noDataList useSrcNoData="1" bandNo="437"/>
+        <noDataList useSrcNoData="1" bandNo="438"/>
+        <noDataList useSrcNoData="1" bandNo="439"/>
+        <noDataList useSrcNoData="1" bandNo="440"/>
+        <noDataList useSrcNoData="1" bandNo="441"/>
+        <noDataList useSrcNoData="1" bandNo="442"/>
+        <noDataList useSrcNoData="1" bandNo="443"/>
+        <noDataList useSrcNoData="1" bandNo="444"/>
+        <noDataList useSrcNoData="1" bandNo="445"/>
+        <noDataList useSrcNoData="1" bandNo="446"/>
+        <noDataList useSrcNoData="1" bandNo="447"/>
+        <noDataList useSrcNoData="1" bandNo="448"/>
+        <noDataList useSrcNoData="1" bandNo="449"/>
+        <noDataList useSrcNoData="1" bandNo="450"/>
+        <noDataList useSrcNoData="1" bandNo="451"/>
+        <noDataList useSrcNoData="1" bandNo="452"/>
+        <noDataList useSrcNoData="1" bandNo="453"/>
+        <noDataList useSrcNoData="1" bandNo="454"/>
+        <noDataList useSrcNoData="1" bandNo="455"/>
+        <noDataList useSrcNoData="1" bandNo="456"/>
+        <noDataList useSrcNoData="1" bandNo="457"/>
+        <noDataList useSrcNoData="1" bandNo="458"/>
+        <noDataList useSrcNoData="1" bandNo="459"/>
+        <noDataList useSrcNoData="1" bandNo="460"/>
+        <noDataList useSrcNoData="1" bandNo="461"/>
+        <noDataList useSrcNoData="1" bandNo="462"/>
+        <noDataList useSrcNoData="1" bandNo="463"/>
+        <noDataList useSrcNoData="1" bandNo="464"/>
+        <noDataList useSrcNoData="1" bandNo="465"/>
+        <noDataList useSrcNoData="1" bandNo="466"/>
+        <noDataList useSrcNoData="1" bandNo="467"/>
+        <noDataList useSrcNoData="1" bandNo="468"/>
+        <noDataList useSrcNoData="1" bandNo="469"/>
+        <noDataList useSrcNoData="1" bandNo="470"/>
+        <noDataList useSrcNoData="1" bandNo="471"/>
+        <noDataList useSrcNoData="1" bandNo="472"/>
+        <noDataList useSrcNoData="1" bandNo="473"/>
+        <noDataList useSrcNoData="1" bandNo="474"/>
+        <noDataList useSrcNoData="1" bandNo="475"/>
+        <noDataList useSrcNoData="1" bandNo="476"/>
+        <noDataList useSrcNoData="1" bandNo="477"/>
+        <noDataList useSrcNoData="1" bandNo="478"/>
+        <noDataList useSrcNoData="1" bandNo="479"/>
+        <noDataList useSrcNoData="1" bandNo="480"/>
+        <noDataList useSrcNoData="1" bandNo="481"/>
+        <noDataList useSrcNoData="1" bandNo="482"/>
+        <noDataList useSrcNoData="1" bandNo="483"/>
+        <noDataList useSrcNoData="1" bandNo="484"/>
+        <noDataList useSrcNoData="1" bandNo="485"/>
+        <noDataList useSrcNoData="1" bandNo="486"/>
+        <noDataList useSrcNoData="1" bandNo="487"/>
+        <noDataList useSrcNoData="1" bandNo="488"/>
+        <noDataList useSrcNoData="1" bandNo="489"/>
+        <noDataList useSrcNoData="1" bandNo="490"/>
+        <noDataList useSrcNoData="1" bandNo="491"/>
+        <noDataList useSrcNoData="1" bandNo="492"/>
+        <noDataList useSrcNoData="1" bandNo="493"/>
+        <noDataList useSrcNoData="1" bandNo="494"/>
+        <noDataList useSrcNoData="1" bandNo="495"/>
+        <noDataList useSrcNoData="1" bandNo="496"/>
+        <noDataList useSrcNoData="1" bandNo="497"/>
+        <noDataList useSrcNoData="1" bandNo="498"/>
+        <noDataList useSrcNoData="1" bandNo="499"/>
+        <noDataList useSrcNoData="1" bandNo="500"/>
+      </noData>
+      <map-layer-style-manager current="default">
+        <map-layer-style name="default"/>
+      </map-layer-style-manager>
+      <flags>
+        <Identifiable>1</Identifiable>
+        <Removable>1</Removable>
+        <Searchable>1</Searchable>
+        <Private>0</Private>
+      </flags>
+      <temporal mode="0" enabled="0" fetchMode="0">
+        <fixedRange>
+          <start></start>
+          <end></end>
+        </fixedRange>
+      </temporal>
+      <customproperties>
+        <property value="Value" key="identify/format"/>
+      </customproperties>
+      <pipe>
+        <provider>
+          <resampling zoomedInResamplingMethod="nearestNeighbour" enabled="false" zoomedOutResamplingMethod="nearestNeighbour" maxOversampling="2"/>
+        </provider>
+        <rasterrenderer type="multibandcolor" greenBand="2" alphaBand="-1" nodataColor="" opacity="1" redBand="1" blueBand="3">
+          <rasterTransparency/>
+          <minMaxOrigin>
+            <limits>CumulativeCut</limits>
+            <extent>WholeRaster</extent>
+            <statAccuracy>Estimated</statAccuracy>
+            <cumulativeCutLower>0.02</cumulativeCutLower>
+            <cumulativeCutUpper>0.98</cumulativeCutUpper>
+            <stdDevFactor>2</stdDevFactor>
+          </minMaxOrigin>
+          <redContrastEnhancement>
+            <minValue>0</minValue>
+            <maxValue>0.120083176609386</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </redContrastEnhancement>
+          <greenContrastEnhancement>
+            <minValue>0</minValue>
+            <maxValue>0.0187823267000304</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </greenContrastEnhancement>
+          <blueContrastEnhancement>
+            <minValue>0</minValue>
+            <maxValue>0</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </blueContrastEnhancement>
+        </rasterrenderer>
+        <brightnesscontrast gamma="1" contrast="0" brightness="0"/>
+        <huesaturation grayscaleMode="0" colorizeOn="0" colorizeGreen="128" colorizeBlue="128" colorizeRed="255" saturation="0" colorizeStrength="100"/>
+        <rasterresampler maxOversampling="2"/>
+        <resamplingStage>resamplingFilter</resamplingStage>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+  </projectlayers>
+  <layerorder>
+    <layer id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d"/>
+    <layer id="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542"/>
+    <layer id="NETCDF__ls_20150101_20161231__ls_96db2ce3_554e_4fd9_81fe_e120c920293e"/>
+    <layer id="ocp_area_a592f5f7_219b_4d93_9af7_d7653fbd1da2"/>
+  </layerorder>
+  <properties>
+    <Digitizing>
+      <AvoidIntersectionsMode type="int">0</AvoidIntersectionsMode>
+    </Digitizing>
+    <Gui>
+      <CanvasColorBluePart type="int">255</CanvasColorBluePart>
+      <CanvasColorGreenPart type="int">255</CanvasColorGreenPart>
+      <CanvasColorRedPart type="int">255</CanvasColorRedPart>
+      <SelectionColorAlphaPart type="int">255</SelectionColorAlphaPart>
+      <SelectionColorBluePart type="int">0</SelectionColorBluePart>
+      <SelectionColorGreenPart type="int">255</SelectionColorGreenPart>
+      <SelectionColorRedPart type="int">255</SelectionColorRedPart>
+    </Gui>
+    <Legend>
+      <filterByMap type="bool">false</filterByMap>
+    </Legend>
+    <Measure>
+      <Ellipsoid type="QString">EPSG:7030</Ellipsoid>
+    </Measure>
+    <Measurement>
+      <AreaUnits type="QString">m2</AreaUnits>
+      <DistanceUnits type="QString">meters</DistanceUnits>
+    </Measurement>
+    <PAL>
+      <CandidatesLinePerCM type="double">5</CandidatesLinePerCM>
+      <CandidatesPolygonPerCM type="double">2.5</CandidatesPolygonPerCM>
+      <DrawRectOnly type="bool">false</DrawRectOnly>
+      <DrawUnplaced type="bool">false</DrawUnplaced>
+      <PlacementEngineVersion type="int">1</PlacementEngineVersion>
+      <SearchMethod type="int">0</SearchMethod>
+      <ShowingAllLabels type="bool">false</ShowingAllLabels>
+      <ShowingCandidates type="bool">false</ShowingCandidates>
+      <ShowingPartialsLabels type="bool">true</ShowingPartialsLabels>
+      <TextFormat type="int">0</TextFormat>
+      <UnplacedColor type="QString">255,0,0,255</UnplacedColor>
+    </PAL>
+    <Paths>
+      <Absolute type="bool">false</Absolute>
+    </Paths>
+    <PositionPrecision>
+      <Automatic type="bool">true</Automatic>
+      <DecimalPlaces type="int">2</DecimalPlaces>
+    </PositionPrecision>
+    <SpatialRefSys>
+      <ProjectionsEnabled type="int">1</ProjectionsEnabled>
+    </SpatialRefSys>
+  </properties>
+  <dataDefinedServerProperties>
+    <Option type="Map">
+      <Option name="name" type="QString" value=""/>
+      <Option name="properties"/>
+      <Option name="type" type="QString" value="collection"/>
+    </Option>
+  </dataDefinedServerProperties>
+  <visibility-presets/>
+  <transformContext/>
+  <projectMetadata>
+    <identifier></identifier>
+    <parentidentifier></parentidentifier>
+    <language></language>
+    <type></type>
+    <title></title>
+    <abstract></abstract>
+    <links/>
+    <author>João Paulo Darela Filho</author>
+    <creation>2021-04-06T12:43:38</creation>
+  </projectMetadata>
+  <Annotations/>
+  <Layouts/>
+  <Bookmarks/>
+  <ProjectViewSettings UseProjectScales="0">
+    <Scales/>
+    <DefaultViewExtent ymax="1.57282033917630848" xmin="-74.48983173450253048" ymin="-16.44124216082365564" xmax="-45.89211726309877548">
+      <spatialrefsys>
+        <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+        <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+        <srsid>3452</srsid>
+        <srid>4326</srid>
+        <authid>EPSG:4326</authid>
+        <description>WGS 84</description>
+        <projectionacronym>longlat</projectionacronym>
+        <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+        <geographicflag>true</geographicflag>
+      </spatialrefsys>
+    </DefaultViewExtent>
+  </ProjectViewSettings>
+  <ProjectTimeSettings timeStep="1" frameRate="1" timeStepUnit="h" cumulativeTemporalRange="0"/>
+  <ProjectDisplaySettings>
+    <BearingFormat id="bearing">
+      <Option type="Map">
+        <Option name="decimal_separator" type="QChar" value=""/>
+        <Option name="decimals" type="int" value="6"/>
+        <Option name="direction_format" type="int" value="0"/>
+        <Option name="rounding_type" type="int" value="0"/>
+        <Option name="show_plus" type="bool" value="false"/>
+        <Option name="show_thousand_separator" type="bool" value="true"/>
+        <Option name="show_trailing_zeros" type="bool" value="false"/>
+        <Option name="thousand_separator" type="QChar" value=""/>
+      </Option>
+    </BearingFormat>
+  </ProjectDisplaySettings>
+</qgis>

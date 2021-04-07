@@ -195,7 +195,6 @@ class grd:
         self.cwin = None
 
         # OUTPUTS
-        # TODO
         self.soil_temp = None
         self.emaxm = None
         self.tsoil = None
@@ -467,7 +466,6 @@ class grd:
 
     def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN
-            TODO adapt to change climatic data/ maybe another method
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data
             co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
