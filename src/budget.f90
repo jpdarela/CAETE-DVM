@@ -40,7 +40,7 @@ contains
       use productivity
       use omp_lib
 
-      use photo, only: pft_area_frac, sto_resp
+      use photo
       use water, only: evpot2, penman, available_energy, runoff
 
       !     ----------------------------INPUTS-------------------------------
@@ -51,7 +51,7 @@ contains
       real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
       real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
-      real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_8),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
       real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
       real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
@@ -169,9 +169,11 @@ contains
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs
 
-      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs
+      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, dwood_aux, sla_aux
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
+      real(r_8), dimension(npls) :: height_aux, diameter_aux, crown_aux
+      real(r_8) :: max_height
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -180,6 +182,8 @@ contains
       ! create copies of some input variables (arrays) - ( they are passed by reference by standard)
       do i = 1,npls
          awood_aux(i) = dt(7,i)
+         dwood_aux(i) = dt(18,i)
+         sla_aux(i) = dt(19,i)
          cl1_pft(i) = cl1_in(i)
          ca1_pft(i) = ca1_in(i)
          cf1_pft(i) = cf1_in(i)
@@ -199,6 +203,11 @@ contains
 
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
+
+      call pls_allometry(dwood_aux, cl1_pft, cf1_pft, ca1_pft, awood_aux, height_aux, diameter_aux,&
+      &                   crown_aux)
+
+      max_height = maxval(height_aux(:))
 
       nlen = sum(run)    ! New length for the arrays in the main loop
       allocate(lp(nlen))
@@ -271,10 +280,10 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
-         call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
+         call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
-               &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
+               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
+               &, wue(p), c_def(p), vcmax(p), tra(p))
 
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 

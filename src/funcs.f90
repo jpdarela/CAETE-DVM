@@ -46,7 +46,8 @@ module photo
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
-        leap
+        leap                   ,&
+        pls_allometry
 
 contains
 
@@ -114,13 +115,13 @@ contains
    !=================================================================
    !=================================================================
 
-   function spec_leaf_area(tau_leaf) result(sla)
+   function spec_leaf_area(tau_leaf) result(sla_fix)
       ! based on JeDi DGVM
       use types, only : r_8
       !implicit none
 
       real(r_8),intent(in) :: tau_leaf  !years
-      real(r_8):: sla   !m2 gC-1
+      real(r_8):: sla_fix   !m2 gC-1
 
       real(r_8) :: n_tau_leaf, tl0
 
@@ -128,7 +129,7 @@ contains
 
       tl0 = (365.242D0 / 12.0D0) * (10.00D0 ** (2.00D0*n_tau_leaf))
 
-      sla = (3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
+      sla_fix = (3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
 
    end function spec_leaf_area
 
@@ -446,8 +447,8 @@ contains
    !=================================================================
    !=================================================================
 
-   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,cbio,&
-        & leaf_turnover,f1ab,vm, amax)
+   subroutine photosynthesis_rate(c_atm,temp,p0,ipar,c4,nbio,pbio,cbio,&
+        & sla,cawood1,height1,max_height,leaf_turnover,f1ab,vm,amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
@@ -458,12 +459,16 @@ contains
       ! I
       real(r_4),intent(in) :: temp  ! temp °C
       real(r_4),intent(in) :: p0    ! atm Pressure hPa
-      real(r_4),intent(in) :: ipar  ! mol Photons m-2 s-1
+      real(r_8),intent(in) :: ipar  ! mol Photons m-2 s-1
       real(r_8),intent(in) :: nbio, c_atm  ! gm-2, ppm
       real(r_8),intent(in) :: pbio, cbio  ! kg m-2
-      logical(l_1),intent(in) :: ll ! is light limited?
+      ! logical(l_1),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_8),intent(in) :: leaf_turnover   ! y
+      real(r_8),intent(in) :: height1
+      real(r_8),intent(in) :: max_height
+      real(r_8),intent(in) :: cawood1
+      real(r_8),intent(in) :: sla
       ! O
       real(r_8),intent(out) :: f1ab ! Gross CO2 Assimilation Rate mol m-2 s-1
       real(r_8),intent(out) :: vm   ! PLS Vcmax mol m-2 s-1
@@ -496,6 +501,30 @@ contains
       real(r_8) :: nbio2, pbio2, cbio_aux
       real(r_8) :: nmgg, pmgg
       real(r_8) :: coeffa, coeffb
+
+      !Internal Variables [LIGHT COMPETITION] ---------------------------------------
+      integer(i_4) :: n
+      real(r_8) :: index_leaf
+      integer(i_4) :: num_layer !number of layers according to max height in each grid-cel
+      real(r_8) :: layer_size !size of each layer in m. in each grid-cell
+      integer(i_4) :: last_with_pls
+      real(r_8) :: llight
+
+      type :: layer_array
+         real(r_8) :: sum_height
+         integer(i_4) :: num_height !!corresponds to the number of layers according max height of PLS.
+         real(r_8) :: mean_height !Mean of heights in a layer
+         real(r_8) :: layer_height !Height of respective layer of the floor (in m.)
+         real(r_8) :: sum_LAI !LAI sum in a layer
+         real(r_8) :: mean_LAI !mean LAI in a layer
+         real(r_8) :: beers_law !layer's light extinction
+         real(r_8) :: linc !layer's light incidence
+         real(r_8) :: lused !layer's light used (relates to light extinction - Beers Law)
+         real(r_8) :: lavai !light availability
+         integer(i_4) :: layer_id !identify layers
+      end type layer_array
+
+      type(layer_array), allocatable :: layer(:)
 
       ! Calculating Fraction of leaf Nitrogen that is lignin
       nbio2 = nbio !nrubisco(leaf_turnover, nbio)
@@ -530,6 +559,144 @@ contains
       if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
       if(vm_in .gt. p25) vm_in = p25
 
+         !========================= LIGHT COMPETITION =============================!
+      !         Code by: Bárbara Cardeli, Bianca Rius e Caio Fascina            !
+      !                               START                                     !
+
+      index_leaf = leaf_area_index(cbio, sla)
+
+      ! =================================================
+      !       LIGHT COMPETITION DYNAMIC. [LAYERS]
+      ! =================================================
+
+      num_layer = 0
+      layer_size = 0.0D0
+
+      num_layer = nint(max_height/5)
+      ! print*, 'num layer is', num_layer, 'max_height=', max_height
+
+      allocate(layer(1:num_layer))
+
+      layer_size = max_height/num_layer !length from one layer to another
+      ! print*, 'layer_size', layer_size
+     
+      last_with_pls=num_layer
+      !print*, 'LAST', last_with_pls
+
+      do n = 1,num_layer
+         layer(n)%layer_height = 0.0D0
+         layer(n)%layer_height=layer_size*n
+      end do
+
+      ! light1 = llight
+
+      do n = 1, num_layer
+         !Inicialize variables about layers dynamics
+         layer(n)%num_height = 0.0D0
+         layer(n)%sum_height = 0.0D0
+         layer(n)%mean_height = 0.0D0
+         layer(n)%sum_LAI = 0.0D0 
+      enddo
+
+      do n = 1, num_layer
+
+         if ((layer(n)%layer_height .ge. height1).and.&
+         &(layer(n-1)%layer_height .lt. height1)) then     
+            layer(n)%sum_height=&
+            &layer(n)%sum_height + height1
+            layer(n)%num_height=&
+            &layer(n)%num_height+1
+            layer(n)%sum_LAI=&    
+            &layer(n)%sum_LAI + index_leaf
+         end if
+
+         layer(n)%mean_height = layer(n)%sum_height/&
+         &layer(n)%num_height
+         if(layer(n)%sum_height .eq. 0.0D0) then
+            layer(n)%mean_height = 0.0D0
+         endif
+         layer(n)%mean_LAI=layer(n)%sum_LAI/&
+         &layer(n)%num_height
+         if(layer(n)%sum_LAI .eq. 0.0D0) then
+            layer(n)%mean_LAI = 0.0D0
+         end if
+      end do
+
+      ! ======================================================
+      !       LIGHT COMPETITION DYNAMIC. [EXTINCTION LIGHT]
+      ! ======================================================
+
+      !! INICIALIZE VARIABLES !!
+      do n = 1, num_layer
+         layer(n)%linc = 0.0D0
+         layer(n)%lavai = 0.0D0
+         layer(n)%lused = 0.0D0
+      enddo
+         
+      !=================== Beer's Law ========================
+      do n = num_layer,1,-1
+         layer(n)%beers_law = ipar*&
+         &(1-exp(-0.5*layer(n)%mean_LAI))
+      enddo
+      !=======================================================
+
+      ! ======================================================
+      !       LIGHT COMPETITION DYNAMIC. [LIGHTS DYNAMIC]
+      ! ======================================================
+
+      do n = num_layer,1,-1
+         if(n.eq.num_layer) then
+            layer(n)%linc = ipar
+         else
+            if(layer(n)%mean_height.gt.0.0D0) then
+               layer(n)%linc = layer(last_with_pls)%lavai
+               last_with_pls=n
+            else
+               continue
+            endif
+         endif
+         layer(n)%lused = layer(n)%linc*(1-exp(-0.5*layer(n)%mean_LAI))
+         layer(n)%lavai = layer(n)%linc - layer(n)%lused
+      enddo
+
+      ! ======================================================
+      !    LIGHT COMPET. PHOTOSYNTHESIS PUNISHMENT 
+      ! ======================================================
+
+      ! Identifying the layers and allocate each PLS to punishment photosyntesis.
+
+      !! INICIALIZE VARIABLES !!
+      do n = 1, num_layer
+         layer(n)%layer_id = 0.0D0
+         llight = 0.0D0
+      enddo
+
+      do n = num_layer, 1, -1
+         if (cawood1.eq.0.0D0) then
+            aux_ipar = ipar
+            llight = ipar
+         else
+            if (n.eq.num_layer) then 
+               layer(n)%layer_id = num_layer
+               if (height1.le.max_height.and.height1.gt.layer(n-1)%layer_height) then 
+                  llight = ipar
+                  aux_ipar = ipar
+                  ! print*, n, 'LL TOP=', llight, 'aux_ipar', aux_ipar,'ipar', ipar
+               endif
+            else
+               layer(n)%layer_id = layer(n+1)%layer_id-1  
+               if (height1.le.layer(n)%layer_height.and.height1.gt.layer(n-1)%layer_height) then
+                  llight = (layer(n)%lavai/ipar)
+                  aux_ipar = ipar - (ipar*llight) !limitation in % of IPAR total. 
+                  ! print*, n, 'LL ABOVE % =', llight, 'aux_ipar', aux_ipar, 'ipar', ipar
+                  ! print*, 'CAMADA', n, 'HEIGHT', height1
+               endif
+            endif 
+         endif  
+      enddo
+
+      !============================  END  ========================================================
+
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
          !Photo-respiration compensation point (Pa)
@@ -549,11 +716,11 @@ contains
          !Rubisco carboxilation limited photosynthesis rate (molCO2/m2/s)
          jc = vm_in*((ci-mgama)/(ci+(f2*(1.+(p3/f3)))))
          !Light limited photosynthesis rate (molCO2/m2/s)
-         if (ll) then
-            aux_ipar = ipar
-         else
-            aux_ipar = ipar - (ipar * 0.20)
-         endif
+         ! if (ll) then
+         !    aux_ipar = ipar
+         ! else
+         !    aux_ipar = ipar - (ipar * 0.20)
+         ! endif
          jl = p4*(1.0-p5)*aux_ipar*((ci-mgama)/(ci+(p6*mgama)))
          amax = jl
 
@@ -591,11 +758,11 @@ contains
          t25 = 273.15 + 25.0          ! K
          kp = kp25 * (2.1**(0.1*(tk-t25))) ! ppm
 
-         if (ll) then
-            aux_ipar = ipar
-         else
-            aux_ipar = ipar - (ipar * 0.20)
-         endif
+         ! if (ll) then
+         !    aux_ipar = ipar
+         ! else
+         !    aux_ipar = ipar - (ipar * 0.20)
+         ! endif
 
          ipar1 = aux_ipar * 1e6  ! µmol m-2 s-1 - 1e6 converts mol to µmol
 
@@ -1146,6 +1313,61 @@ contains
 
    !====================================================================
    !====================================================================
+
+   subroutine pls_allometry (dwood1, cleaf1, cfroot1, cawood1, awood, height, diameter,&
+      &crown_area)
+      !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
+      !and in TFSv.1 (Fyllas et al., 2014)
+
+      use types 
+      use global_par
+      use allometry_par
+
+      
+      integer(i_4),parameter :: npft = npls ! plss futuramente serao
+      real(r_8),dimension(npft),intent(in) :: cleaf1, cfroot1, cawood1, awood, dwood1
+      real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
+      real(r_8),dimension(npft) :: cleaf, cawood, cfroot, dwood, height_2
+      integer(i_4) :: p
+
+      
+      ! ============================
+      dwood = dwood1
+      cleaf = cleaf1
+      cfroot = cfroot1
+      cawood = cawood1
+      ! ============================
+    
+      do p = 1, npft !INICIALIZE OUTPUTS VARIABLES
+         height(p) = 0.0D0
+         height_2(p) = 0.0D0 !TFS TEST
+         diameter(p) = 0.0D0
+         crown_area(p) = 0.0D0
+      enddo
+
+      !PLS DIAMETER (in m.)
+      do p = 1, npft !to grasses
+         if(awood(p) .le. 0.0D0) then
+            height(p) = 0.0D0 !in m.
+            height_2(p) = 0.0D0 !TFS test
+            diameter(p) = 0.0D0 !in m.
+            crown_area(p) = 0.0D0 !in m2.
+            dwood(p) = 0.0D0 !in g/cm-3 - is transfor to g/m-3 in diameter equation.
+         else
+            diameter(p) = (4*(cawood(p)*1.0D3)/(dwood(p)*1D7)*pi*k_allom2)&
+            &**(1/(2+k_allom3))
+            height(p) = k_allom2*(diameter(p)**k_allom3)
+            crown_area(p) = k_allom1*(diameter(p)**krp)
+
+            !--------------------------- TEST -----------------------------!
+            height_2(p) = 61.7*(1-exp(-0.0352*((diameter(p)*100)**0.694))) !TFS.v1 equation (Fyllas et al., 2014)
+         endif
+
+         ! print*, 'HEIGHT_TFS=', height_2(p), 'cawood', cawood(p), p
+         !print*, 'HEIGHT_LPJ=', height(p), 'cawood', cawood(p), p
+
+      enddo
+   end subroutine pls_allometry
 
 end module photo
 

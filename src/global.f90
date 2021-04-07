@@ -38,15 +38,15 @@ module global_par
    real(r_4),parameter,public :: rcmax = 5000.0                  ! ResistÊncia estomática máxima s/m
    real(r_4),parameter,public :: rcmin = 100                     ! ResistÊncia estomática mínima s/m
    real(r_8),parameter,public :: cmin = 1.0D-6                   ! Minimum to survive kg m-2
-   ! real(r_4),parameter,public :: wmax = 500.0                    ! Maximum water soil capacity (Kg m-2)
+   ! real(r_4),parameter,public :: wmax = 500.0                  ! Maximum water soil capacity (Kg m-2)
 
    real(r_8),parameter,public :: csru = 0.5D0                    ! Root attribute
    real(r_8),parameter,public :: alfm = 1.391D0                  ! Root attribute
    real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
-   integer(i_4),parameter,public :: npls = 1500                    ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
-   integer(i_4),parameter,public :: ntraits = 17                 ! Number of traits for each PLS
+   integer(i_4),parameter,public :: npls = 500                   ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: ntraits = 19                 ! Number of traits for each PLS
 
 end module global_par
 
@@ -85,3 +85,24 @@ module photo_par
         e_vpm = 60592.0D0    ,&          ! Arrhenius eq. constant
         kp25 = 82.0D0                    ! µmol mol-1 (ppm)  MM constant PEPcase at
 end module photo_par
+
+module allometry_par
+   use types, only : r_8
+   implicit none
+
+   real(r_8), public, parameter ::       &
+         k_allom1 = 100.0     ,&          !allometric constant (Table 3; Sitch et al., 2003)
+         k_allom2 = 36.0      ,&
+         k_allom3 = 0.22      ,&
+         dw = 1.3             ,&          !value for testing purpose (DW will be a variant trait) g/cm-3
+         spec_leaf = 132      ,&          ! cm2/g - value for testing purpose (SLA is already calculate in the model; SLA will be a variant trait)
+         klatosa = 6000.0     ,&   
+         ltor = 0.77302587552347657 ,&    !ratio between increment in leaf and root
+         tol = 0.0000001      ,&
+         pi = 3.1415926536    ,&
+         krp = 1.6            ,&            !allometric constant (Table 3; Sitch et al., 2003)
+         turnover_rate_sapwood = 0.05  ,&       !fix value for allometry/allocation calculus (Table1, Sitch et al., 2003)
+         turnover_rate = 0.5                !fix value for leaf and root turnover (Table 1, Sitch et al., 2003)
+end module allometry_par
+
+
