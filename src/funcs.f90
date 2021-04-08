@@ -72,22 +72,22 @@ contains
    !=================================================================
    !=================================================================
 
-   function gross_ph(f1,cleaf,sla) result(ph)
+   function gross_ph(f1,cleaf,sla_var) result(ph)
       ! Returns gross photosynthesis rate (kgC m-2 y-1) (GPP)
       use types, only: r_4, r_8
       !implicit none
 
       real(r_8),intent(in) :: f1    !molCO2 m-2 s-1
       real(r_8),intent(in) :: cleaf !kgC m-2
-      real(r_8),intent(in) :: sla   !m2 gC-1
+      real(r_8),intent(in) :: sla_var   !m2 gC-1
       real(r_4) :: ph
 
       real(r_8) :: f4sun, f1in
       real(r_8) :: f4shade
 
       f1in = f1
-      f4sun = f_four(1,cleaf,sla)
-      f4shade = f_four(2,cleaf,sla)
+      f4sun = f_four(1,cleaf,sla_var)
+      f4shade = f_four(2,cleaf,sla_var)
 
       ph = real((0.012D0*31557600.0D0*f1in*f4sun*f4shade), r_4)
       if(ph .lt. 0.0) ph = 0.0
@@ -96,18 +96,18 @@ contains
    !=================================================================
    !=================================================================
 
-   function leaf_area_index(cleaf, sla) result(lai)
+   function leaf_area_index(cleaf, sla_var) result(lai)
       ! Returns Leaf Area Index m2 m-2
 
       use types, only: r_8
       !implicit none
 
       real(r_8),intent(in) :: cleaf !kgC m-2
-      real(r_8),intent(in) :: sla   !m2 gC-1
+      real(r_8),intent(in) :: sla_var   !m2 gC-1
       real(r_8) :: lai
 
 
-      lai  = cleaf * 1.0D3 * sla  ! Converts cleaf from (KgC m-2) to (gCm-2)
+      lai  = cleaf * 1.0D3 * sla_var  ! Converts cleaf from (KgC m-2) to (gCm-2)
       if(lai .lt. 0.0D0) lai = 0.0D0
 
    end function leaf_area_index
@@ -136,7 +136,7 @@ contains
    !=================================================================
    !=================================================================
 
-   function f_four(fs,cleaf,sla) result(lai_ss)
+   function f_four(fs,cleaf,sla_var) result(lai_ss)
       ! Function used to scale LAI from leaf to canopy level (2 layers)
       use types, only: i_4, r_4, r_8
       use photo_par, only: p26, p27
@@ -150,14 +150,14 @@ contains
       ! Any other number returns sunlai (not scaled to canopy)
 
       real(r_8),intent(in) :: cleaf ! carbon in leaf (kg m-2)
-      real(r_8),intent(in) :: sla   ! specific leaf area (m2 gC-1)
+      real(r_8),intent(in) :: sla_var   ! specific leaf area (m2 gC-1)
       real(r_8) :: lai_ss           ! leaf area index (m2 m-2)
 
       real(r_8) :: lai
       real(r_8) :: sunlai
       real(r_8) :: shadelai
 
-      lai = leaf_area_index(cleaf,sla)
+      lai = leaf_area_index(cleaf,sla_var)
 
       sunlai = (1.0D0-(dexp(-p26*lai)))/p26
       shadelai = lai - sunlai
@@ -448,7 +448,7 @@ contains
    !=================================================================
 
    subroutine photosynthesis_rate(c_atm,temp,p0,ipar,c4,nbio,pbio,cbio,&
-        & sla,cawood1,height1,max_height,leaf_turnover,f1ab,vm,amax)
+        & sla_var,cawood1,height1,max_height,f1ab,vm,amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
@@ -464,11 +464,11 @@ contains
       real(r_8),intent(in) :: pbio, cbio  ! kg m-2
       ! logical(l_1),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
-      real(r_8),intent(in) :: leaf_turnover   ! y
+      ! real(r_8),intent(in) :: leaf_turnover   ! y
       real(r_8),intent(in) :: height1
       real(r_8),intent(in) :: max_height
       real(r_8),intent(in) :: cawood1
-      real(r_8),intent(in) :: sla
+      real(r_8),intent(in) :: sla_var
       ! O
       real(r_8),intent(out) :: f1ab ! Gross CO2 Assimilation Rate mol m-2 s-1
       real(r_8),intent(out) :: vm   ! PLS Vcmax mol m-2 s-1
@@ -559,11 +559,11 @@ contains
       if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
       if(vm_in .gt. p25) vm_in = p25
 
-         !========================= LIGHT COMPETITION =============================!
+      !========================= LIGHT COMPETITION =============================!
       !         Code by: Bárbara Cardeli, Bianca Rius e Caio Fascina            !
       !                               START                                     !
 
-      index_leaf = leaf_area_index(cbio, sla)
+      index_leaf = leaf_area_index(cbio, sla_var)
 
       ! =================================================
       !       LIGHT COMPETITION DYNAMIC. [LAYERS]
@@ -591,7 +591,7 @@ contains
       ! light1 = llight
 
       do n = 1, num_layer
-         !Inicialize variables about layers dynamics
+         !Inicialize variables relates layers dynamics
          layer(n)%num_height = 0.0D0
          layer(n)%sum_height = 0.0D0
          layer(n)%mean_height = 0.0D0

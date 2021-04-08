@@ -97,6 +97,7 @@ contains
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
+      ! real(r_8),dimension(npls),intent(out) :: height_pft     !height pls in m. to each grid-cell 
       real(r_8),dimension(3,npls),intent(out) :: delta_cveg_1
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
@@ -164,6 +165,7 @@ contains
       real(r_8),dimension(:,:),allocatable :: lit_nut_content  ! d0=6 g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
+      ! real(r_8),dimension(:),allocatable :: height_int
 
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
@@ -172,7 +174,7 @@ contains
       real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, dwood_aux, sla_aux
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
-      real(r_8), dimension(npls) :: height_aux, diameter_aux, crown_aux
+      real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux
       real(r_8) :: max_height
       !     START
       !     --------------
@@ -191,6 +193,7 @@ contains
          dwood(i) = dwood_in(i)
          droot(i) = droot_in(i)
          uptk_costs(i) = uptk_costs_in(i)
+         ! height_int(i) = height_aux(i)
          do j = 1,3
             sto_budg(j,i) = sto_budg_in(j,i)
          enddo
@@ -258,6 +261,7 @@ contains
       allocate(cf2(nlen))
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
+      ! allocate(height_int(nlen))
 
       !     Maximum evapotranspiration   (emax)
       !     =================================
@@ -409,6 +413,7 @@ contains
       limitation_status_1(:,:) = 0
       uptk_strat_1(:,:) = 0
       npp2pay_1(:) = 0.0
+      ! height_pft(:) = 0.0D0
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
 
@@ -435,6 +440,7 @@ contains
       cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
       litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
       c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. isnan(npp2pay))
+      ! height_pft = sum(height_aux * ocp_coeffs, mask= .not. isnan(height_aux))
 
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
       cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
@@ -495,6 +501,8 @@ contains
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
+         ! height_pft(ri) = height_int(p)
+
       enddo
 
       ! deallocate(w)
@@ -541,6 +549,7 @@ contains
       deallocate(cf2)
       deallocate(ca2)
       deallocate(day_storage)
+      ! deallocate(height_int)
 
    end subroutine daily_budget
 

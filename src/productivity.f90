@@ -113,7 +113,7 @@ contains
 ! rate (molCO2/m2/s)
 
     call photosynthesis_rate(catm,temp,p0,ipar,c4_int,n2cl,&
-         & p2cl,cl1_prod,sla1,ca1_prod,height1,max_height,tleaf,f1a,vm_out,jl_out)
+         & p2cl,cl1_prod,sla1,ca1_prod,height1,max_height,f1a,vm_out,jl_out)
 
 
     ! VPD
