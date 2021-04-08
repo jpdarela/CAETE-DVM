@@ -31,7 +31,7 @@ contains
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
 
 
       use types
@@ -97,7 +97,7 @@ contains
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
-      ! real(r_8),dimension(npls),intent(out) :: height_pft     !height pls in m. to each grid-cell 
+      real(r_8),intent(out) :: height
       real(r_8),dimension(3,npls),intent(out) :: delta_cveg_1
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
@@ -105,6 +105,7 @@ contains
       real(r_8),dimension(npls),intent(out) ::  npp2pay_1 ! C costs of N/P uptake
       real(r_8),dimension(3),intent(out) :: cp
       real(r_8),intent(out) :: c_cost_cwm
+
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri, i, j
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
@@ -165,7 +166,7 @@ contains
       real(r_8),dimension(:,:),allocatable :: lit_nut_content  ! d0=6 g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
-      ! real(r_8),dimension(:),allocatable :: height_int
+      real(r_8),dimension(:), allocatable :: height_int
 
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
@@ -193,7 +194,6 @@ contains
          dwood(i) = dwood_in(i)
          droot(i) = droot_in(i)
          uptk_costs(i) = uptk_costs_in(i)
-         ! height_int(i) = height_aux(i)
          do j = 1,3
             sto_budg(j,i) = sto_budg_in(j,i)
          enddo
@@ -211,6 +211,7 @@ contains
       &                   crown_aux)
 
       max_height = maxval(height_aux(:))
+      ! print*, 'max_height', max_height
 
       nlen = sum(run)    ! New length for the arrays in the main loop
       allocate(lp(nlen))
@@ -261,7 +262,7 @@ contains
       allocate(cf2(nlen))
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
-      ! allocate(height_int(nlen))
+      allocate(height_int(nlen))
 
       !     Maximum evapotranspiration   (emax)
       !     =================================
@@ -290,6 +291,9 @@ contains
                &, wue(p), c_def(p), vcmax(p), tra(p))
 
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
+
+         height_int(p) = height_aux(ri)
+         ! print*, 'height', height_aux(ri), 'height_int', height_int(p)
 
          ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
@@ -382,6 +386,7 @@ contains
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
       epavg = emax !mm/day
+      
 
       ! FILL OUTPUT DATA
       evavg = 0.0D0
@@ -413,7 +418,7 @@ contains
       limitation_status_1(:,:) = 0
       uptk_strat_1(:,:) = 0
       npp2pay_1(:) = 0.0
-      ! height_pft(:) = 0.0D0
+      height = 0.0D0
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
 
@@ -440,11 +445,14 @@ contains
       cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
       litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
       c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. isnan(npp2pay))
-      ! height_pft = sum(height_aux * ocp_coeffs, mask= .not. isnan(height_aux))
 
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
       cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
+
+      height = sum(height_int * ocp_coeffs, mask= .not. isnan(height_int))
+
+      ! print*, 'height [output]=', height_pft_1, 'coeff', ocp_coeffs
 
       ! FILTER BAD VALUES
       do p = 1,2
@@ -492,7 +500,6 @@ contains
 
       do p = 1, nlen
          ri = lp(p)
-
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)
@@ -501,8 +508,7 @@ contains
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
-         ! height_pft(ri) = height_int(p)
-
+         ! print*, 'HEIGHT FIM BUDGET='
       enddo
 
       ! deallocate(w)
@@ -549,7 +555,7 @@ contains
       deallocate(cf2)
       deallocate(ca2)
       deallocate(day_storage)
-      ! deallocate(height_int)
+      deallocate(height_int)
 
    end subroutine daily_budget
 

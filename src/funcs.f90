@@ -1364,7 +1364,7 @@ contains
          endif
 
          ! print*, 'HEIGHT_TFS=', height_2(p), 'cawood', cawood(p), p
-         !print*, 'HEIGHT_LPJ=', height(p), 'cawood', cawood(p), p
+         ! print*, 'HEIGHT_LPJ=', height(p)
 
       enddo
    end subroutine pls_allometry

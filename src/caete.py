@@ -126,7 +126,7 @@ def catch_out_budget(out):
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
            "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
-           "limitation_status", "uptk_strat", 'cp', 'c_cost_cwm']
+           "limitation_status", "uptk_strat", "cp", "c_cost_cwm", "height_pft"]
 
     return dict(zip(lst, out))
 
@@ -239,6 +239,7 @@ class grd:
         self.lim_status = None
         self.uptake_strategy = None
         self.carbon_costs = None
+        self.height_pft = None
 
         # WATER POOLS
         # Water content for each soil layer
@@ -337,12 +338,12 @@ class grd:
         self.storage_pool = np.zeros(shape=(3, n), order='F')
         self.ls = np.zeros(shape=(n,), order='F')
         self.carbon_costs = np.zeros(shape=(n,), order='F')
-
         self.area = np.zeros(shape=(npls, n), order='F')
         self.lim_status = np.zeros(
             shape=(3, npls, n), dtype=np.dtype('int16'), order='F')
         self.uptake_strategy = np.zeros(
             shape=(2, npls, n), dtype=np.dtype('int32'), order='F')
+        self.height_pft = np.zeros(shape=(n,), order='F')
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -400,6 +401,7 @@ class grd:
                      'ls': self.ls,
                      'lim_status': self.lim_status,
                      'c_cost': self.carbon_costs,
+                     'height_pft': self.height_pft,
                      'u_strat': self.uptake_strategy,
                      'storage_pool': self.storage_pool,
                      'calendar': self.calendar,    # Calendar name
@@ -451,6 +453,7 @@ class grd:
         self.lim_status = None
         self.carbon_costs = None,
         self.uptake_strategy = None
+        self.height_pft = None
 
         return to_pickle
 
@@ -965,6 +968,7 @@ class grd:
                     self.cleaf[step]=daily_output['cp'][0]
                     self.cawood[step]=daily_output['cp'][1]
                     self.cfroot[step]=daily_output['cp'][2]
+                    self.height_pft[step]=daily_output['height_pft']
                     self.hresp[step]=soil_out['hr']
                     self.csoil[:, step]=soil_out['cs']
                     self.inorg_n[step]=self.sp_in_n
@@ -979,6 +983,7 @@ class grd:
                                     step]=daily_output['limitation_status'][:, self.vp_lsid]
                     self.uptake_strategy[:, self.vp_lsid,
                                          step]=daily_output['uptk_strat'][:, self.vp_lsid]
+                    
             if save:
                 if s > 0:
                     while True:

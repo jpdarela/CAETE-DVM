@@ -141,6 +141,7 @@ def get_var_metadata(var):
               'upt_stratP6': ['P uptake via ROOT ECM Ptase activity - rem-ap', 'Time fraction', 'upt_stratP6'],
               'upt_stratP7': ['P uptake via AM Ptase activity - amap', 'Time fraction', 'upt_stratP7'],
               'upt_stratP8': ['P uptake via exudates activity - em0x', 'Time fraction', 'upt_stratP8'],
+              'height_pft': ['Plant Life Strategy height', 'm', 'height_pft'],
               'g1': ['CWM- G1 param for Stomat.Resist  model', 'unitless', 'g1'],
               'resopfrac': ['CWM- Leaf resorpton fractio', '%', 'resopfrac'],
               'tleaf': ['CWM- leaf turnover time', 'years', 'tleaf'],
@@ -645,7 +646,7 @@ def create_ncG3(table, interval, nc_out):
 
     vars = ["rcm", "runom", "evapm", "wsoil", "cleaf", "cawood",
             "cfroot", "litter_l", "cwd", "litter_fr", "litter_n",
-            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost"]
+            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost", "height_pft"]
 
     dates = time_queries(interval)
     dm1 = len(dates)
@@ -684,6 +685,7 @@ def create_ncG3(table, interval, nc_out):
     sto2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     sto3 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     c_cost = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    height_pft = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
 
     print("\nQuerying data from file FOR", end=': ')
     for v in vars:
@@ -732,6 +734,8 @@ def create_ncG3(table, interval, nc_out):
             out['grid_y'], out['grid_x'], out['sto3'])
         c_cost[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['c_cost'])
+        height_pft[i, :, :] = assemble_layer(
+            out['grid_y'], out['grid_x'], out['height_pft'])
         print_progress(i + 1,
                        len(dates),
                        prefix='Progress:',
@@ -746,11 +750,11 @@ def create_ncG3(table, interval, nc_out):
 
     vars = ["rcm", "runom", "evapm", "wsoil", "cleaf", "cawood",
             "cfroot", "litter_l", "cwd", "litter_fr", "litter_n",
-            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost"]
+            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost", "height_pft"]
 
     arr = (rcm, runom, evapm, wsoil, cleaf, cawood, cfroot,
            litter_l, cwd, litter_fr, litter_n, litter_p,
-           sto1, sto2, sto3, c_cost)
+           sto1, sto2, sto3, c_cost, height_pft)
 
     var_attrs = get_var_metadata(vars)
     write_daily_output(arr, vars, var_attrs, time_index, nc_out)

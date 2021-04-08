@@ -56,7 +56,8 @@ G3_1d = ["rcm",
          "litter_l",
          "cwd",
          "litter_fr",
-         "c_cost"]
+         "c_cost",
+         "height_pft"]
 
 G3_3d = ['storage_pool', ]
 
@@ -97,6 +98,7 @@ class run_g1(tb.IsDescription):
     pupt1 = tb.Float32Col(dflt=0.0, pos=21)
     pupt2 = tb.Float32Col(dflt=0.0, pos=22)
     pupt3 = tb.Float32Col(dflt=0.0, pos=23)
+    
 
 
 class run_g2(tb.IsDescription):
@@ -157,6 +159,7 @@ class run_g3(tb.IsDescription):
     sto2 = tb.Float32Col(dflt=0.0, pos=22)
     sto3 = tb.Float32Col(dflt=0.0, pos=23)
     c_cost = tb.Float32Col(dflt=0.0, pos=24)
+    height_pft = tb.Float32Col(dflt=0.0, pos=25)
 
 
 class PLS_temp(tb.IsDescription):
