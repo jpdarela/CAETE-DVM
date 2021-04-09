@@ -689,7 +689,6 @@ contains
                   llight = (layer(n)%lavai/ipar)
                   aux_ipar = ipar - (ipar*llight) !limitation in % of IPAR total. 
                   ! print*, n, 'LL ABOVE % =', llight, 'aux_ipar', aux_ipar, 'ipar', ipar
-                  ! print*, 'CAMADA', n, 'HEIGHT', height1
                endif
             endif 
          endif  
@@ -723,6 +722,7 @@ contains
          ! endif
          jl = p4*(1.0-p5)*aux_ipar*((ci-mgama)/(ci+(p6*mgama)))
          amax = jl
+         ! print*, 'AMAX_c3=', amax, 'IPAR_c3=', ipar, 'AUX_IPAR_c3', aux_ipar
 
          ! Transport limited photosynthesis rate (molCO2/m2/s) (RuBP) (re)generation
          ! ---------------------------------------------------
@@ -752,6 +752,7 @@ contains
          return
       else
          !===========================-C4 PHOTOSYNTHESIS-=============================
+         
          !  USE PHOTO_PAR
          ! ! from Chen et al. 1994
          tk = temp + 273.15           ! K

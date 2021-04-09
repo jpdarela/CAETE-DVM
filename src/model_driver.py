@@ -70,8 +70,8 @@ if not sombrero:
         zone = 'c'
 
 if zone == 'c':
-    y0, y1 = 175, 180#186
-    x0, x1 = 235, 238#241
+    y0, y1 = 175, 176#186
+    x0, x1 = 235, 236#241
     folder = "central"
 
 elif zone == 's':
