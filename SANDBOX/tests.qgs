@@ -1,5 +1,5 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis version="3.18.1-Zürich" saveUserFull="João Paulo Darela Filho" projectname="" saveUser="jdarela" saveDateTime="2021-04-07T17:40:55">
+<qgis saveUserFull="João Paulo Darela Filho" version="3.18.1-Zürich" projectname="" saveDateTime="2021-04-07T18:37:33" saveUser="jdarela">
   <homePath path=""/>
   <title></title>
   <autotransaction active="0"/>
@@ -20,16 +20,19 @@
   </projectCrs>
   <layer-tree-group>
     <customproperties/>
-    <layer-tree-layer source="../outputs/r4/nc_outputs/ocp_area.nc4" id="ocp_area_161cedc4_9336_4587_b25a_4d5e9f22b250" legend_split_behavior="0" providerKey="gdal" expanded="1" legend_exp="" patch_size="-1,-1" name="ocp_area" checked="Qt::Unchecked">
+    <layer-tree-layer patch_size="-1,-1" id="ocp_area_161cedc4_9336_4587_b25a_4d5e9f22b250" providerKey="gdal" checked="Qt::Unchecked" legend_exp="" source="../outputs/r4/nc_outputs/ocp_area.nc4" name="ocp_area" legend_split_behavior="0" expanded="1">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer source="NETCDF:&quot;/home/jdarela/Desktop/caete/CAETE-DVM/outputs/r4/nc_outputs/ls_20150101-20161231.nc4&quot;:ls" id="NETCDF__ls_20150101_20161231__ls_5b50cf3a_9de5_4cc8_9880_f9733b4eb670" legend_split_behavior="0" providerKey="gdal" expanded="1" legend_exp="" patch_size="-1,-1" name="NETCDF:&quot;ls_20150101-20161231&quot;:ls" checked="Qt::Checked">
+    <layer-tree-layer patch_size="-1,-1" id="NETCDF__crs_caete__Band1_df38ffd6_3679_4b25_b53d_c09ac837b24a" providerKey="gdal" checked="Qt::Unchecked" legend_exp="" source="NETCDF:&quot;/home/jdarela/Desktop/caete/CAETE-DVM/outputs/r4/crs_caete.nc4&quot;:Band1" name="NETCDF:&quot;crs_caete&quot;:Band1" legend_split_behavior="0" expanded="1">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer source="../input/mask/mask_360-720-PAN_AMAZONIA.tif" id="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542" legend_split_behavior="0" providerKey="gdal" expanded="0" legend_exp="" patch_size="-1,-1" name="mask_360-720-PAN_AMAZONIA" checked="Qt::Unchecked">
+    <layer-tree-layer patch_size="-1,-1" id="NETCDF__ls_20150101_20161231__ls_5b50cf3a_9de5_4cc8_9880_f9733b4eb670" providerKey="gdal" checked="Qt::Unchecked" legend_exp="" source="NETCDF:&quot;/home/jdarela/Desktop/caete/CAETE-DVM/outputs/r4/nc_outputs/ls_20150101-20161231.nc4&quot;:ls" name="NETCDF:&quot;ls_20150101-20161231&quot;:ls" legend_split_behavior="0" expanded="0">
       <customproperties/>
     </layer-tree-layer>
-    <layer-tree-layer source="../../../GIS/World_Countries/World_Countries.shp" id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" legend_split_behavior="0" providerKey="ogr" expanded="1" legend_exp="" patch_size="-1,-1" name="World_Countries" checked="Qt::Checked">
+    <layer-tree-layer patch_size="-1,-1" id="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542" providerKey="gdal" checked="Qt::Unchecked" legend_exp="" source="../input/mask/mask_360-720-PAN_AMAZONIA.tif" name="mask_360-720-PAN_AMAZONIA" legend_split_behavior="0" expanded="0">
+      <customproperties/>
+    </layer-tree-layer>
+    <layer-tree-layer patch_size="-1,-1" id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" providerKey="ogr" checked="Qt::Checked" legend_exp="" source="../../../GIS/World_Countries/World_Countries.shp" name="World_Countries" legend_split_behavior="0" expanded="1">
       <customproperties/>
     </layer-tree-layer>
     <custom-order enabled="0">
@@ -37,11 +40,12 @@
       <item>mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542</item>
       <item>NETCDF__ls_20150101_20161231__ls_5b50cf3a_9de5_4cc8_9880_f9733b4eb670</item>
       <item>ocp_area_161cedc4_9336_4587_b25a_4d5e9f22b250</item>
+      <item>NETCDF__crs_caete__Band1_df38ffd6_3679_4b25_b53d_c09ac837b24a</item>
     </custom-order>
   </layer-tree-group>
-  <snapping-settings tolerance="12" enabled="0" mode="2" self-snapping="0" minScale="0" type="1" scaleDependencyMode="0" maxScale="0" intersection-snapping="0" unit="1">
+  <snapping-settings intersection-snapping="0" type="1" maxScale="0" unit="1" self-snapping="0" enabled="0" minScale="0" scaleDependencyMode="0" tolerance="12" mode="2">
     <individual-layer-settings>
-      <layer-setting tolerance="12" enabled="0" id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" units="1" minScale="0" type="1" maxScale="0"/>
+      <layer-setting type="1" maxScale="0" id="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" enabled="0" minScale="0" tolerance="12" units="1"/>
     </individual-layer-settings>
   </snapping-settings>
   <relations/>
@@ -51,7 +55,7 @@
     <extent>
       <xmin>-75.75706527003129054</xmin>
       <ymin>-25.27656224314599598</ymin>
-      <xmax>-33.8226902700310248</xmax>
+      <xmax>-33.82269027003101769</xmax>
       <ymax>10.75156275685393581</ymax>
     </extent>
     <rotation>0</rotation>
@@ -73,55 +77,35 @@
   </mapcanvas>
   <projectModels/>
   <legend updateDrawingOrder="true">
-    <legendlayer drawingOrder="-1" showFeatureCount="0" open="true" name="ocp_area" checked="Qt::Unchecked">
-      <filegroup open="true" hidden="false">
-        <legendlayerfile isInOverview="0" layerid="ocp_area_161cedc4_9336_4587_b25a_4d5e9f22b250" visible="0"/>
+    <legendlayer open="true" checked="Qt::Unchecked" showFeatureCount="0" drawingOrder="-1" name="ocp_area">
+      <filegroup hidden="false" open="true">
+        <legendlayerfile layerid="ocp_area_161cedc4_9336_4587_b25a_4d5e9f22b250" visible="0" isInOverview="0"/>
       </filegroup>
     </legendlayer>
-    <legendlayer drawingOrder="-1" showFeatureCount="0" open="true" name="NETCDF:&quot;ls_20150101-20161231&quot;:ls" checked="Qt::Checked">
-      <filegroup open="true" hidden="false">
-        <legendlayerfile isInOverview="0" layerid="NETCDF__ls_20150101_20161231__ls_5b50cf3a_9de5_4cc8_9880_f9733b4eb670" visible="1"/>
+    <legendlayer open="true" checked="Qt::Unchecked" showFeatureCount="0" drawingOrder="-1" name="NETCDF:&quot;crs_caete&quot;:Band1">
+      <filegroup hidden="false" open="true">
+        <legendlayerfile layerid="NETCDF__crs_caete__Band1_df38ffd6_3679_4b25_b53d_c09ac837b24a" visible="0" isInOverview="0"/>
       </filegroup>
     </legendlayer>
-    <legendlayer drawingOrder="-1" showFeatureCount="0" open="false" name="mask_360-720-PAN_AMAZONIA" checked="Qt::Unchecked">
-      <filegroup open="false" hidden="false">
-        <legendlayerfile isInOverview="0" layerid="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542" visible="0"/>
+    <legendlayer open="false" checked="Qt::Unchecked" showFeatureCount="0" drawingOrder="-1" name="NETCDF:&quot;ls_20150101-20161231&quot;:ls">
+      <filegroup hidden="false" open="false">
+        <legendlayerfile layerid="NETCDF__ls_20150101_20161231__ls_5b50cf3a_9de5_4cc8_9880_f9733b4eb670" visible="0" isInOverview="0"/>
       </filegroup>
     </legendlayer>
-    <legendlayer drawingOrder="-1" showFeatureCount="0" open="true" name="World_Countries" checked="Qt::Checked">
-      <filegroup open="true" hidden="false">
-        <legendlayerfile isInOverview="0" layerid="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" visible="1"/>
+    <legendlayer open="false" checked="Qt::Unchecked" showFeatureCount="0" drawingOrder="-1" name="mask_360-720-PAN_AMAZONIA">
+      <filegroup hidden="false" open="false">
+        <legendlayerfile layerid="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542" visible="0" isInOverview="0"/>
+      </filegroup>
+    </legendlayer>
+    <legendlayer open="true" checked="Qt::Checked" showFeatureCount="0" drawingOrder="-1" name="World_Countries">
+      <filegroup hidden="false" open="true">
+        <legendlayerfile layerid="World_Countries_b505557a_3af2_4304_a402_b6ca54d82b9d" visible="1" isInOverview="0"/>
       </filegroup>
     </legendlayer>
   </legend>
   <mapViewDocks/>
   <mapViewDocks3D/>
-  <mapcanvas annotationsVisible="1" name="mAreaCanvas">
-    <units>degrees</units>
-    <extent>
-      <xmin>0</xmin>
-      <ymin>0</ymin>
-      <xmax>0</xmax>
-      <ymax>0</ymax>
-    </extent>
-    <rotation>0</rotation>
-    <destinationsrs>
-      <spatialrefsys>
-        <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
-        <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
-        <srsid>3452</srsid>
-        <srid>4326</srid>
-        <authid>EPSG:4326</authid>
-        <description>WGS 84</description>
-        <projectionacronym>longlat</projectionacronym>
-        <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
-        <geographicflag>true</geographicflag>
-      </spatialrefsys>
-    </destinationsrs>
-    <rendermaptile>0</rendermaptile>
-    <expressionContextScope/>
-  </mapcanvas>
-  <main-annotation-layer autoRefreshTime="0" autoRefreshEnabled="0" refreshOnNotifyMessage="" refreshOnNotifyEnabled="0" type="annotation">
+  <main-annotation-layer refreshOnNotifyMessage="" type="annotation" autoRefreshTime="0" autoRefreshEnabled="0" refreshOnNotifyEnabled="0">
     <id>Annotations_43489599_92eb_4ed6_abb9_2810379906cc</id>
     <datasource></datasource>
     <keywordList>
@@ -138,7 +122,7 @@
         <description></description>
         <projectionacronym></projectionacronym>
         <ellipsoidacronym></ellipsoidacronym>
-        <geographicflag>false</geographicflag>
+        <geographicflag>true</geographicflag>
       </spatialrefsys>
     </srs>
     <resourceMetadata>
@@ -161,7 +145,7 @@
           <description></description>
           <projectionacronym></projectionacronym>
           <ellipsoidacronym></ellipsoidacronym>
-          <geographicflag>false</geographicflag>
+          <geographicflag>true</geographicflag>
         </spatialrefsys>
       </crs>
       <extent/>
@@ -171,7 +155,120 @@
     <blendMode>0</blendMode>
   </main-annotation-layer>
   <projectlayers>
-    <maplayer autoRefreshTime="0" autoRefreshEnabled="0" refreshOnNotifyMessage="" hasScaleBasedVisibilityFlag="0" minScale="1e+08" refreshOnNotifyEnabled="0" type="raster" styleCategories="AllStyleCategories" maxScale="0">
+    <maplayer refreshOnNotifyMessage="" type="raster" maxScale="0" minScale="1e+08" autoRefreshTime="0" hasScaleBasedVisibilityFlag="0" styleCategories="AllStyleCategories" autoRefreshEnabled="0" refreshOnNotifyEnabled="0">
+      <extent>
+        <xmin>-79.5</xmin>
+        <ymin>-20.5</ymin>
+        <xmax>-44</xmax>
+        <ymax>10</ymax>
+      </extent>
+      <id>NETCDF__crs_caete__Band1_df38ffd6_3679_4b25_b53d_c09ac837b24a</id>
+      <datasource>NETCDF:"../outputs/r4/crs_caete.nc4":Band1</datasource>
+      <keywordList>
+        <value></value>
+      </keywordList>
+      <layername>NETCDF:"crs_caete":Band1</layername>
+      <srs>
+        <spatialrefsys>
+          <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
+          <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
+          <srsid>3452</srsid>
+          <srid>4326</srid>
+          <authid>EPSG:4326</authid>
+          <description>WGS 84</description>
+          <projectionacronym>longlat</projectionacronym>
+          <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+          <geographicflag>true</geographicflag>
+        </spatialrefsys>
+      </srs>
+      <resourceMetadata>
+        <identifier></identifier>
+        <parentidentifier></parentidentifier>
+        <language></language>
+        <type></type>
+        <title></title>
+        <abstract></abstract>
+        <links/>
+        <fees></fees>
+        <encoding></encoding>
+        <crs>
+          <spatialrefsys>
+            <wkt></wkt>
+            <proj4></proj4>
+            <srsid>0</srsid>
+            <srid>0</srid>
+            <authid></authid>
+            <description></description>
+            <projectionacronym></projectionacronym>
+            <ellipsoidacronym></ellipsoidacronym>
+            <geographicflag>false</geographicflag>
+          </spatialrefsys>
+        </crs>
+        <extent/>
+      </resourceMetadata>
+      <provider>gdal</provider>
+      <noData>
+        <noDataList useSrcNoData="1" bandNo="1"/>
+      </noData>
+      <map-layer-style-manager current="default">
+        <map-layer-style name="default"/>
+      </map-layer-style-manager>
+      <flags>
+        <Identifiable>1</Identifiable>
+        <Removable>1</Removable>
+        <Searchable>1</Searchable>
+        <Private>0</Private>
+      </flags>
+      <temporal fetchMode="0" enabled="0" mode="0">
+        <fixedRange>
+          <start></start>
+          <end></end>
+        </fixedRange>
+      </temporal>
+      <customproperties>
+        <property key="identify/format" value="Value"/>
+      </customproperties>
+      <pipe>
+        <provider>
+          <resampling maxOversampling="2" zoomedInResamplingMethod="nearestNeighbour" zoomedOutResamplingMethod="nearestNeighbour" enabled="false"/>
+        </provider>
+        <rasterrenderer alphaBand="-1" gradient="BlackToWhite" type="singlebandgray" grayBand="1" nodataColor="" opacity="1">
+          <rasterTransparency/>
+          <minMaxOrigin>
+            <limits>MinMax</limits>
+            <extent>WholeRaster</extent>
+            <statAccuracy>Estimated</statAccuracy>
+            <cumulativeCutLower>0.02</cumulativeCutLower>
+            <cumulativeCutUpper>0.98</cumulativeCutUpper>
+            <stdDevFactor>2</stdDevFactor>
+          </minMaxOrigin>
+          <contrastEnhancement>
+            <minValue>13</minValue>
+            <maxValue>196</maxValue>
+            <algorithm>StretchToMinimumMaximum</algorithm>
+          </contrastEnhancement>
+          <rampLegendSettings maximumLabel="" minimumLabel="" orientation="2" useContinuousLegend="1" suffix="" direction="0" prefix="">
+            <numericFormat id="basic">
+              <Option type="Map">
+                <Option type="QChar" value="" name="decimal_separator"/>
+                <Option type="int" value="6" name="decimals"/>
+                <Option type="int" value="0" name="rounding_type"/>
+                <Option type="bool" value="false" name="show_plus"/>
+                <Option type="bool" value="true" name="show_thousand_separator"/>
+                <Option type="bool" value="false" name="show_trailing_zeros"/>
+                <Option type="QChar" value="" name="thousand_separator"/>
+              </Option>
+            </numericFormat>
+          </rampLegendSettings>
+        </rasterrenderer>
+        <brightnesscontrast brightness="0" gamma="1" contrast="0"/>
+        <huesaturation saturation="0" colorizeOn="0" colorizeRed="255" colorizeBlue="128" colorizeStrength="100" grayscaleMode="0" colorizeGreen="128"/>
+        <rasterresampler maxOversampling="2"/>
+        <resamplingStage>resamplingFilter</resamplingStage>
+      </pipe>
+      <blendMode>0</blendMode>
+    </maplayer>
+    <maplayer refreshOnNotifyMessage="" type="raster" maxScale="0" minScale="1e+08" autoRefreshTime="0" hasScaleBasedVisibilityFlag="0" styleCategories="AllStyleCategories" autoRefreshEnabled="0" refreshOnNotifyEnabled="0">
       <extent>
         <xmin>-79.5</xmin>
         <ymin>-20.5</ymin>
@@ -194,7 +291,7 @@
           <description></description>
           <projectionacronym></projectionacronym>
           <ellipsoidacronym></ellipsoidacronym>
-          <geographicflag>false</geographicflag>
+          <geographicflag>true</geographicflag>
         </spatialrefsys>
       </srs>
       <resourceMetadata>
@@ -226,11 +323,11 @@
             <description></description>
             <projectionacronym></projectionacronym>
             <ellipsoidacronym></ellipsoidacronym>
-            <geographicflag>false</geographicflag>
+            <geographicflag>true</geographicflag>
           </spatialrefsys>
         </crs>
         <extent>
-          <spatial maxx="0" miny="0" crs="" minx="0" minz="0" maxy="0" maxz="0" dimensions="2"/>
+          <spatial minx="0" dimensions="2" maxy="0" maxz="0" crs="" maxx="0" minz="0" miny="0"/>
           <temporal>
             <period>
               <start></start>
@@ -989,16 +1086,16 @@
         </fixedRange>
       </temporal>
       <customproperties>
-        <property value="false" key="WMSBackgroundLayer"/>
-        <property value="false" key="WMSPublishDataSourceUrl"/>
-        <property value="0" key="embeddedWidgets/count"/>
-        <property value="Value" key="identify/format"/>
+        <property key="WMSBackgroundLayer" value="false"/>
+        <property key="WMSPublishDataSourceUrl" value="false"/>
+        <property key="embeddedWidgets/count" value="0"/>
+        <property key="identify/format" value="Value"/>
       </customproperties>
       <pipe>
         <provider>
-          <resampling enabled="false" maxOversampling="2" zoomedOutResamplingMethod="nearestNeighbour" zoomedInResamplingMethod="nearestNeighbour"/>
+          <resampling maxOversampling="2" zoomedInResamplingMethod="nearestNeighbour" zoomedOutResamplingMethod="nearestNeighbour" enabled="false"/>
         </provider>
-        <rasterrenderer opacity="1" alphaBand="-1" band="731" nodataColor="" classificationMin="12" type="singlebandpseudocolor" classificationMax="196">
+        <rasterrenderer alphaBand="-1" classificationMin="12" band="731" type="singlebandpseudocolor" nodataColor="" opacity="1" classificationMax="196">
           <rasterTransparency/>
           <minMaxOrigin>
             <limits>MinMax</limits>
@@ -1009,14 +1106,14 @@
             <stdDevFactor>2</stdDevFactor>
           </minMaxOrigin>
           <rastershader>
-            <colorrampshader colorRampType="INTERPOLATED" minimumValue="12" labelPrecision="4" clip="0" maximumValue="196" classificationMode="1">
+            <colorrampshader minimumValue="12" maximumValue="196" colorRampType="INTERPOLATED" labelPrecision="4" clip="0" classificationMode="1">
               <colorramp type="gradient" name="[source]">
                 <Option type="Map">
-                  <Option value="215,25,28,255" type="QString" name="color1"/>
-                  <Option value="43,131,186,255" type="QString" name="color2"/>
-                  <Option value="0" type="QString" name="discrete"/>
-                  <Option value="gradient" type="QString" name="rampType"/>
-                  <Option value="0.25;253,174,97,255:0.5;255,255,191,255:0.75;171,221,164,255" type="QString" name="stops"/>
+                  <Option type="QString" value="215,25,28,255" name="color1"/>
+                  <Option type="QString" value="43,131,186,255" name="color2"/>
+                  <Option type="QString" value="0" name="discrete"/>
+                  <Option type="QString" value="gradient" name="rampType"/>
+                  <Option type="QString" value="0.25;253,174,97,255:0.5;255,255,191,255:0.75;171,221,164,255" name="stops"/>
                 </Option>
                 <prop k="color1" v="215,25,28,255"/>
                 <prop k="color2" v="43,131,186,255"/>
@@ -1024,35 +1121,35 @@
                 <prop k="rampType" v="gradient"/>
                 <prop k="stops" v="0.25;253,174,97,255:0.5;255,255,191,255:0.75;171,221,164,255"/>
               </colorramp>
-              <item value="13" label="13.0000" color="#d7191c" alpha="255"/>
-              <item value="58.75" label="58.7500" color="#fdae61" alpha="255"/>
-              <item value="104.5" label="104.5000" color="#ffffbf" alpha="255"/>
-              <item value="150.25" label="150.2500" color="#abdda4" alpha="255"/>
-              <item value="196" label="196.0000" color="#2b83ba" alpha="255"/>
-              <rampLegendSettings suffix="" useContinuousLegend="1" maximumLabel="" minimumLabel="" orientation="2" prefix="" direction="0">
+              <item alpha="255" label="13.0000" color="#d7191c" value="13"/>
+              <item alpha="255" label="58.7500" color="#fdae61" value="58.75"/>
+              <item alpha="255" label="104.5000" color="#ffffbf" value="104.5"/>
+              <item alpha="255" label="150.2500" color="#abdda4" value="150.25"/>
+              <item alpha="255" label="196.0000" color="#2b83ba" value="196"/>
+              <rampLegendSettings maximumLabel="" minimumLabel="" orientation="2" useContinuousLegend="1" suffix="" direction="0" prefix="">
                 <numericFormat id="basic">
                   <Option type="Map">
-                    <Option value="" type="QChar" name="decimal_separator"/>
-                    <Option value="6" type="int" name="decimals"/>
-                    <Option value="0" type="int" name="rounding_type"/>
-                    <Option value="false" type="bool" name="show_plus"/>
-                    <Option value="true" type="bool" name="show_thousand_separator"/>
-                    <Option value="false" type="bool" name="show_trailing_zeros"/>
-                    <Option value="" type="QChar" name="thousand_separator"/>
+                    <Option type="QChar" value="" name="decimal_separator"/>
+                    <Option type="int" value="6" name="decimals"/>
+                    <Option type="int" value="0" name="rounding_type"/>
+                    <Option type="bool" value="false" name="show_plus"/>
+                    <Option type="bool" value="true" name="show_thousand_separator"/>
+                    <Option type="bool" value="false" name="show_trailing_zeros"/>
+                    <Option type="QChar" value="" name="thousand_separator"/>
                   </Option>
                 </numericFormat>
               </rampLegendSettings>
             </colorrampshader>
           </rastershader>
         </rasterrenderer>
-        <brightnesscontrast contrast="0" gamma="1" brightness="0"/>
-        <huesaturation grayscaleMode="0" colorizeRed="255" colorizeStrength="100" saturation="0" colorizeOn="0" colorizeBlue="128" colorizeGreen="128"/>
+        <brightnesscontrast brightness="0" gamma="1" contrast="0"/>
+        <huesaturation saturation="0" colorizeOn="0" colorizeRed="255" colorizeBlue="128" colorizeStrength="100" grayscaleMode="0" colorizeGreen="128"/>
         <rasterresampler maxOversampling="2"/>
         <resamplingStage>resamplingFilter</resamplingStage>
       </pipe>
       <blendMode>0</blendMode>
     </maplayer>
-    <maplayer styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" wkbType="MultiPolygon" simplifyAlgorithm="0" simplifyDrawingTol="1" simplifyDrawingHints="1" type="vector" minScale="100000000" autoRefreshTime="0" labelsEnabled="0" autoRefreshEnabled="0" maxScale="0" simplifyMaxScale="1" geometry="Polygon" refreshOnNotifyMessage="" refreshOnNotifyEnabled="0" simplifyLocal="1" readOnly="0">
+    <maplayer wkbType="MultiPolygon" simplifyDrawingHints="1" simplifyMaxScale="1" hasScaleBasedVisibilityFlag="0" styleCategories="AllStyleCategories" autoRefreshEnabled="0" autoRefreshTime="0" maxScale="0" simplifyAlgorithm="0" minScale="100000000" labelsEnabled="0" type="vector" simplifyLocal="1" readOnly="0" refreshOnNotifyEnabled="0" refreshOnNotifyMessage="" geometry="Polygon" simplifyDrawingTol="1">
       <extent>
         <xmin>-180</xmin>
         <ymin>-90</ymin>
@@ -1098,7 +1195,7 @@
             <description></description>
             <projectionacronym></projectionacronym>
             <ellipsoidacronym></ellipsoidacronym>
-            <geographicflag>false</geographicflag>
+            <geographicflag>true</geographicflag>
           </spatialrefsys>
         </crs>
         <extent/>
@@ -1118,35 +1215,35 @@
         <Searchable>1</Searchable>
         <Private>0</Private>
       </flags>
-      <temporal enabled="0" mode="0" endField="" endExpression="" startField="" accumulate="0" startExpression="" durationField="" fixedDuration="0" durationUnit="min">
+      <temporal endExpression="" endField="" durationField="" fixedDuration="0" enabled="0" startExpression="" durationUnit="min" accumulate="0" mode="0" startField="">
         <fixedRange>
           <start></start>
           <end></end>
         </fixedRange>
       </temporal>
-      <renderer-v2 enableorderby="0" type="singleSymbol" forceraster="0" symbollevels="0">
+      <renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0">
         <symbols>
-          <symbol clip_to_extent="1" alpha="1" force_rhr="0" type="fill" name="0">
+          <symbol alpha="1" type="fill" clip_to_extent="1" force_rhr="0" name="0">
             <data_defined_properties>
               <Option type="Map">
-                <Option value="" type="QString" name="name"/>
+                <Option type="QString" value="" name="name"/>
                 <Option name="properties"/>
-                <Option value="collection" type="QString" name="type"/>
+                <Option type="QString" value="collection" name="type"/>
               </Option>
             </data_defined_properties>
-            <layer locked="0" enabled="1" pass="0" class="SimpleFill">
+            <layer enabled="1" class="SimpleFill" locked="0" pass="0">
               <Option type="Map">
-                <Option value="3x:0,0,0,0,0,0" type="QString" name="border_width_map_unit_scale"/>
-                <Option value="243,166,178,255" type="QString" name="color"/>
-                <Option value="bevel" type="QString" name="joinstyle"/>
-                <Option value="0,0" type="QString" name="offset"/>
-                <Option value="3x:0,0,0,0,0,0" type="QString" name="offset_map_unit_scale"/>
-                <Option value="MM" type="QString" name="offset_unit"/>
-                <Option value="35,35,35,255" type="QString" name="outline_color"/>
-                <Option value="solid" type="QString" name="outline_style"/>
-                <Option value="0.26" type="QString" name="outline_width"/>
-                <Option value="MM" type="QString" name="outline_width_unit"/>
-                <Option value="solid" type="QString" name="style"/>
+                <Option type="QString" value="3x:0,0,0,0,0,0" name="border_width_map_unit_scale"/>
+                <Option type="QString" value="243,166,178,255" name="color"/>
+                <Option type="QString" value="bevel" name="joinstyle"/>
+                <Option type="QString" value="0,0" name="offset"/>
+                <Option type="QString" value="3x:0,0,0,0,0,0" name="offset_map_unit_scale"/>
+                <Option type="QString" value="MM" name="offset_unit"/>
+                <Option type="QString" value="35,35,35,255" name="outline_color"/>
+                <Option type="QString" value="solid" name="outline_style"/>
+                <Option type="QString" value="0.26" name="outline_width"/>
+                <Option type="QString" value="MM" name="outline_width_unit"/>
+                <Option type="QString" value="solid" name="style"/>
               </Option>
               <prop k="border_width_map_unit_scale" v="3x:0,0,0,0,0,0"/>
               <prop k="color" v="243,166,178,255"/>
@@ -1161,9 +1258,9 @@
               <prop k="style" v="solid"/>
               <data_defined_properties>
                 <Option type="Map">
-                  <Option value="" type="QString" name="name"/>
+                  <Option type="QString" value="" name="name"/>
                   <Option name="properties"/>
-                  <Option value="collection" type="QString" name="type"/>
+                  <Option type="QString" value="collection" name="type"/>
                 </Option>
               </data_defined_properties>
             </layer>
@@ -1178,14 +1275,14 @@
       <layerOpacity>1</layerOpacity>
       <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
         <activeChecks type="StringList">
-          <Option value="" type="QString"/>
+          <Option type="QString" value=""/>
         </activeChecks>
         <checkConfiguration/>
       </geometryOptions>
       <legend type="default-vector"/>
       <referencedLayers/>
       <fieldConfiguration>
-        <field name="COUNTRY" configurationFlags="None">
+        <field configurationFlags="None" name="COUNTRY">
           <editWidget type="">
             <config>
               <Option/>
@@ -1194,20 +1291,20 @@
         </field>
       </fieldConfiguration>
       <aliases>
-        <alias name="" field="COUNTRY" index="0"/>
+        <alias field="COUNTRY" index="0" name=""/>
       </aliases>
       <defaults>
-        <default applyOnUpdate="0" expression="" field="COUNTRY"/>
+        <default field="COUNTRY" expression="" applyOnUpdate="0"/>
       </defaults>
       <constraints>
-        <constraint constraints="0" exp_strength="0" unique_strength="0" notnull_strength="0" field="COUNTRY"/>
+        <constraint field="COUNTRY" unique_strength="0" exp_strength="0" constraints="0" notnull_strength="0"/>
       </constraints>
       <constraintExpressions>
-        <constraint exp="" field="COUNTRY" desc=""/>
+        <constraint field="COUNTRY" exp="" desc=""/>
       </constraintExpressions>
       <expressionfields/>
       <attributeactions>
-        <defaultAction value="{00000000-0000-0000-0000-000000000000}" key="Canvas"/>
+        <defaultAction key="Canvas" value="{00000000-0000-0000-0000-000000000000}"/>
       </attributeactions>
       <attributetableconfig sortOrder="0" sortExpression="" actionWidgetStyle="dropDown">
         <columns/>
@@ -1231,7 +1328,7 @@
       <previewExpression></previewExpression>
       <mapTip></mapTip>
     </maplayer>
-    <maplayer autoRefreshTime="0" autoRefreshEnabled="0" refreshOnNotifyMessage="" hasScaleBasedVisibilityFlag="0" minScale="1e+08" refreshOnNotifyEnabled="0" type="raster" styleCategories="AllStyleCategories" maxScale="0">
+    <maplayer refreshOnNotifyMessage="" type="raster" maxScale="0" minScale="1e+08" autoRefreshTime="0" hasScaleBasedVisibilityFlag="0" styleCategories="AllStyleCategories" autoRefreshEnabled="0" refreshOnNotifyEnabled="0">
       <extent>
         <xmin>-180</xmin>
         <ymin>-90</ymin>
@@ -1277,7 +1374,7 @@
             <description></description>
             <projectionacronym></projectionacronym>
             <ellipsoidacronym></ellipsoidacronym>
-            <geographicflag>false</geographicflag>
+            <geographicflag>true</geographicflag>
           </spatialrefsys>
         </crs>
         <extent/>
@@ -1302,13 +1399,13 @@
         </fixedRange>
       </temporal>
       <customproperties>
-        <property value="Value" key="identify/format"/>
+        <property key="identify/format" value="Value"/>
       </customproperties>
       <pipe>
         <provider>
-          <resampling enabled="false" maxOversampling="2" zoomedOutResamplingMethod="nearestNeighbour" zoomedInResamplingMethod="nearestNeighbour"/>
+          <resampling maxOversampling="2" zoomedInResamplingMethod="nearestNeighbour" zoomedOutResamplingMethod="nearestNeighbour" enabled="false"/>
         </provider>
-        <rasterrenderer grayBand="1" opacity="1" alphaBand="-1" nodataColor="" type="singlebandgray" gradient="BlackToWhite">
+        <rasterrenderer alphaBand="-1" gradient="BlackToWhite" type="singlebandgray" grayBand="1" nodataColor="" opacity="1">
           <rasterTransparency/>
           <minMaxOrigin>
             <limits>MinMax</limits>
@@ -1323,28 +1420,28 @@
             <maxValue>1</maxValue>
             <algorithm>StretchToMinimumMaximum</algorithm>
           </contrastEnhancement>
-          <rampLegendSettings suffix="" useContinuousLegend="1" maximumLabel="" minimumLabel="" orientation="2" prefix="" direction="0">
+          <rampLegendSettings maximumLabel="" minimumLabel="" orientation="2" useContinuousLegend="1" suffix="" direction="0" prefix="">
             <numericFormat id="basic">
               <Option type="Map">
-                <Option value="" type="QChar" name="decimal_separator"/>
-                <Option value="6" type="int" name="decimals"/>
-                <Option value="0" type="int" name="rounding_type"/>
-                <Option value="false" type="bool" name="show_plus"/>
-                <Option value="true" type="bool" name="show_thousand_separator"/>
-                <Option value="false" type="bool" name="show_trailing_zeros"/>
-                <Option value="" type="QChar" name="thousand_separator"/>
+                <Option type="QChar" value="" name="decimal_separator"/>
+                <Option type="int" value="6" name="decimals"/>
+                <Option type="int" value="0" name="rounding_type"/>
+                <Option type="bool" value="false" name="show_plus"/>
+                <Option type="bool" value="true" name="show_thousand_separator"/>
+                <Option type="bool" value="false" name="show_trailing_zeros"/>
+                <Option type="QChar" value="" name="thousand_separator"/>
               </Option>
             </numericFormat>
           </rampLegendSettings>
         </rasterrenderer>
-        <brightnesscontrast contrast="0" gamma="1" brightness="0"/>
-        <huesaturation grayscaleMode="0" colorizeRed="255" colorizeStrength="100" saturation="0" colorizeOn="0" colorizeBlue="128" colorizeGreen="128"/>
+        <brightnesscontrast brightness="0" gamma="1" contrast="0"/>
+        <huesaturation saturation="0" colorizeOn="0" colorizeRed="255" colorizeBlue="128" colorizeStrength="100" grayscaleMode="0" colorizeGreen="128"/>
         <rasterresampler maxOversampling="2"/>
         <resamplingStage>resamplingFilter</resamplingStage>
       </pipe>
       <blendMode>0</blendMode>
     </maplayer>
-    <maplayer autoRefreshTime="0" autoRefreshEnabled="0" refreshOnNotifyMessage="" hasScaleBasedVisibilityFlag="0" minScale="1e+08" refreshOnNotifyEnabled="0" type="raster" styleCategories="AllStyleCategories" maxScale="0">
+    <maplayer refreshOnNotifyMessage="" type="raster" maxScale="0" minScale="1e+08" autoRefreshTime="0" hasScaleBasedVisibilityFlag="0" styleCategories="AllStyleCategories" autoRefreshEnabled="0" refreshOnNotifyEnabled="0">
       <extent>
         <xmin>-79.5</xmin>
         <ymin>-20.5</ymin>
@@ -1367,7 +1464,7 @@
           <description></description>
           <projectionacronym></projectionacronym>
           <ellipsoidacronym></ellipsoidacronym>
-          <geographicflag>false</geographicflag>
+          <geographicflag>true</geographicflag>
         </spatialrefsys>
       </srs>
       <resourceMetadata>
@@ -1390,7 +1487,7 @@
             <description></description>
             <projectionacronym></projectionacronym>
             <ellipsoidacronym></ellipsoidacronym>
-            <geographicflag>false</geographicflag>
+            <geographicflag>true</geographicflag>
           </spatialrefsys>
         </crs>
         <extent/>
@@ -7414,13 +7511,13 @@
         </fixedRange>
       </temporal>
       <customproperties>
-        <property value="Value" key="identify/format"/>
+        <property key="identify/format" value="Value"/>
       </customproperties>
       <pipe>
         <provider>
-          <resampling enabled="false" maxOversampling="2" zoomedOutResamplingMethod="nearestNeighbour" zoomedInResamplingMethod="nearestNeighbour"/>
+          <resampling maxOversampling="2" zoomedInResamplingMethod="nearestNeighbour" zoomedOutResamplingMethod="nearestNeighbour" enabled="false"/>
         </provider>
-        <rasterrenderer greenBand="2" opacity="1" alphaBand="-1" redBand="1" nodataColor="" blueBand="3" type="multibandcolor">
+        <rasterrenderer alphaBand="-1" type="multibandcolor" greenBand="2" nodataColor="" redBand="1" opacity="1" blueBand="3">
           <rasterTransparency/>
           <minMaxOrigin>
             <limits>CumulativeCut</limits>
@@ -7446,8 +7543,8 @@
             <algorithm>StretchToMinimumMaximum</algorithm>
           </blueContrastEnhancement>
         </rasterrenderer>
-        <brightnesscontrast contrast="0" gamma="1" brightness="0"/>
-        <huesaturation grayscaleMode="0" colorizeRed="255" colorizeStrength="100" saturation="0" colorizeOn="0" colorizeBlue="128" colorizeGreen="128"/>
+        <brightnesscontrast brightness="0" gamma="1" contrast="0"/>
+        <huesaturation saturation="0" colorizeOn="0" colorizeRed="255" colorizeBlue="128" colorizeStrength="100" grayscaleMode="0" colorizeGreen="128"/>
         <rasterresampler maxOversampling="2"/>
         <resamplingStage>resamplingFilter</resamplingStage>
       </pipe>
@@ -7459,6 +7556,7 @@
     <layer id="mask_360_720_PAN_AMAZONIA_aef46cca_455b_4ff8_b21a_dc295c661542"/>
     <layer id="NETCDF__ls_20150101_20161231__ls_5b50cf3a_9de5_4cc8_9880_f9733b4eb670"/>
     <layer id="ocp_area_161cedc4_9336_4587_b25a_4d5e9f22b250"/>
+    <layer id="NETCDF__crs_caete__Band1_df38ffd6_3679_4b25_b53d_c09ac837b24a"/>
   </layerorder>
   <properties>
     <Digitizing>
@@ -7509,9 +7607,9 @@
   </properties>
   <dataDefinedServerProperties>
     <Option type="Map">
-      <Option value="" type="QString" name="name"/>
+      <Option type="QString" value="" name="name"/>
       <Option name="properties"/>
-      <Option value="collection" type="QString" name="type"/>
+      <Option type="QString" value="collection" name="type"/>
     </Option>
   </dataDefinedServerProperties>
   <visibility-presets/>
@@ -7532,7 +7630,7 @@
   <Bookmarks/>
   <ProjectViewSettings UseProjectScales="0">
     <Scales/>
-    <DefaultViewExtent xmin="-75.75706527003129054" xmax="-33.8226902700310248" ymin="-34.38821092588162998" ymax="19.86321143958956981">
+    <DefaultViewExtent xmin="-83.38759224143491622" ymin="-25.27656224314599598" ymax="10.75156275685393581" xmax="-26.19216329862739556">
       <spatialrefsys>
         <wkt>GEOGCRS["WGS 84",DATUM["World Geodetic System 1984",ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",0.0174532925199433]],USAGE[SCOPE["unknown"],AREA["World"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]</wkt>
         <proj4>+proj=longlat +datum=WGS84 +no_defs</proj4>
@@ -7546,18 +7644,18 @@
       </spatialrefsys>
     </DefaultViewExtent>
   </ProjectViewSettings>
-  <ProjectTimeSettings frameRate="1" cumulativeTemporalRange="0" timeStepUnit="h" timeStep="1"/>
+  <ProjectTimeSettings frameRate="1" timeStep="1" timeStepUnit="h" cumulativeTemporalRange="0"/>
   <ProjectDisplaySettings>
     <BearingFormat id="bearing">
       <Option type="Map">
-        <Option value="" type="QChar" name="decimal_separator"/>
-        <Option value="6" type="int" name="decimals"/>
-        <Option value="0" type="int" name="direction_format"/>
-        <Option value="0" type="int" name="rounding_type"/>
-        <Option value="false" type="bool" name="show_plus"/>
-        <Option value="true" type="bool" name="show_thousand_separator"/>
-        <Option value="false" type="bool" name="show_trailing_zeros"/>
-        <Option value="" type="QChar" name="thousand_separator"/>
+        <Option type="QChar" value="" name="decimal_separator"/>
+        <Option type="int" value="6" name="decimals"/>
+        <Option type="int" value="0" name="direction_format"/>
+        <Option type="int" value="0" name="rounding_type"/>
+        <Option type="bool" value="false" name="show_plus"/>
+        <Option type="bool" value="true" name="show_thousand_separator"/>
+        <Option type="bool" value="false" name="show_trailing_zeros"/>
+        <Option type="QChar" value="" name="thousand_separator"/>
       </Option>
     </BearingFormat>
   </ProjectDisplaySettings>
