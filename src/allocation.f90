@@ -392,8 +392,8 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.030D0
-      mult_factor_p  = 0.005D0
+      mult_factor_n  = 0.020D0
+      mult_factor_p  = 0.003D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²
 

@@ -140,17 +140,17 @@ def table_gen(NPLS, fpath=None):
     def calc_ratios(pool):
 
         # TODO increase ranges to left
-        pool_n2c = np.linspace(0.001, 0.04, 500)
-        pool_p2c = np.linspace(0.3e-5, 0.005, 500)  # TODO
+        pool_n2c = np.linspace(0.0005, 0.06, 1000)
+        pool_p2c = np.linspace(0.2e-5, 0.008, 1000)  # TODO
 
         if pool == 'leaf' or pool == 'root':
             pass
         else:
-            pool_n2c /= 100.0
-            pool_p2c /= 100.0
+            pool_n2c /= 11.37
+            pool_p2c /= 11.37
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 3.0) and ((a / b) <= 50.0)]
+            (a / b) >= 2.0) and ((a / b) <= 60.0)]
         assert len(x) > 0, "zero len"
         shuffle(x)
         return x
@@ -160,13 +160,13 @@ def table_gen(NPLS, fpath=None):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 3000000
+    r_ceil = 30000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime = np.random.uniform(0.08333333333333333, 5, r_ceil)
+    rtime = np.random.uniform(0.08333333333333333, 4, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -188,7 +188,7 @@ def table_gen(NPLS, fpath=None):
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(0.08333333333333333, 150.0, r_ceil)
+    rtime_wood = np.random.uniform(0.08333333333333333, 80.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
@@ -211,14 +211,14 @@ def table_gen(NPLS, fpath=None):
     # # # COMBINATIONS
     # # # Random samples from  distributions (g1, tleaf ...)
     # # # Random variables
-    g1 = np.random.uniform(1.0, 20.0, NPLS)
+    g1 = np.random.uniform(1.0, 15.0, NPLS)
     # g1 = vec_ranging(np.random.beta(1.2, 2, NPLS), 1.0, 15.0) # dimensionles
     # # vcmax = np.random.uniform(3e-5, 100e-5,N) # molCO2 m-2 s-1
     resorption = np.random.uniform(0.3, 0.6, NPLS)
 
     # # C4 STYLE
     c4 = np.zeros((NPLS,), dtype=np.float64)
-    n123 = ceil(alloc_g.shape[0] * 0.70)
+    n123 = ceil(alloc_g.shape[0] * 0.60)
     c4[0: n123 - 1] = 1.0
 
     # # Nitrogen and Phosphorus content in carbon pools

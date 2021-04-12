@@ -30,7 +30,6 @@ __descr__ = """RUN CAETÊ"""
 FUNCALLS = 0
 
 
-
 def check_start():
     while True:
         i = input("---RUN IN SOMBRERO(y/n): ")
@@ -43,6 +42,7 @@ def check_start():
         else:
             pass
     return r
+
 
 # Check sombrero
 sombrero = check_start()
@@ -62,7 +62,7 @@ folder = "central"
 
 if not sombrero:
     zone = input("Select a zone [c: central, s: south, e: east, nw: NW]: ")
-    if zone in ['c','s','e','nw']:
+    if zone in ['c', 's', 'e', 'nw']:
         print("Running in the zone:", zone)
         pass
     else:
@@ -106,6 +106,7 @@ map_subwp = np.load("../input/soil/swp.npy")
 tsoil = (map_ws, map_fc, map_wp)
 ssoil = (map_subws, map_subfc, map_subwp)
 
+# Hydraulics
 theta_sat = np.load("../input/hydra/theta_sat.npy")
 psi_sat = np.load("../input/hydra/psi_sat.npy")
 soil_texture = np.load("../input/hydra/soil_text.npy")
@@ -189,13 +190,13 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19790101', '19891231', spinup=2,
-                   fix_co2='1983', save=False, nutri_cycle=False)
+    grid.run_caete('19790101', '19791231', spinup=2,
+                   fix_co2='1983', save=False)
     return grid
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '19881231', spinup=45,
+    grid.run_caete('19790101', '19891231', spinup=45,
                    fix_co2='1983', save=False)
     return grid
 
