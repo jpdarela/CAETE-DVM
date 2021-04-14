@@ -834,6 +834,10 @@ class grd:
                 # Organic C N & P
                 self.sp_csoil = soil_out['cs']
                 self.sp_snc = soil_out['snc']
+                idx = np.where(self.sp_snc < 0.0)[0]
+                if len(idx) > 0:
+                    for i in idx:
+                        self.sp_snc[i] = 0.0
 
                 # UPDATE ORGANIC POOLS
                 self.sp_organic_n = self.sp_snc[:2].sum()

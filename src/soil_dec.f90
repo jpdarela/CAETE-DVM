@@ -410,7 +410,7 @@ contains
       if (theta > 1.0) aux = 1.0
 
       inter = (k_a * aux) - (k_b * aux**2)
-      retval = max(inter, 0.01) ! Residual decay
+      retval = max(inter, 0.001) ! Residual decay
 
    end function water_effect
 
