@@ -166,11 +166,11 @@ def table_gen(NPLS, fpath=None):
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
     rtime = np.random.uniform(0.08333333333333333, 5, r_ceil)
-    print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
+    print("CREATE GRASSY STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         dwood = 0.0
-        sla_var = np.random.uniform(0.015, 0.040, NPLS)
+        sla_var = np.random.uniform(0.009, 0.040, NPLS)
         allocatio = plsa_grass[np.random.randint(0, plsa_grass.shape[0])]
         restime[0] = rtime[np.random.randint(0, r_ceil)]
         restime[1] = 0.0
@@ -192,7 +192,7 @@ def table_gen(NPLS, fpath=None):
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         dwood = np.random.uniform(0.5, 0.9, NPLS)
-        sla_var = np.random.uniform(0.015, 0.040, NPLS)
+        sla_var = np.random.uniform(0.009, 0.040, NPLS)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
         restime[0] = rtime[np.random.randint(0, r_ceil)]
         restime[1] = rtime_wood[np.random.randint(0, r_ceil)]
@@ -246,6 +246,8 @@ def table_gen(NPLS, fpath=None):
     pdia = np.random.uniform(0.01, 0.05, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)[0]
+
+
     # return woods
 
     for i in woods:
