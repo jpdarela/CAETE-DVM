@@ -14,7 +14,7 @@ pls_path = Path(
 # Experiment - No eCO2 - HISTORICAL
 
 # new outputs folder
-dump_folder = Path("r1_exp_eCO2")
+dump_folder = Path("r2_exp_eCO2")
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
