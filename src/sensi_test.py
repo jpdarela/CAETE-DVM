@@ -10,8 +10,8 @@ from h52nc import h52nc
 # run_path = Path("/home/barbara/Documentos/CAETE_FORKED_LIGHT_MODULE/CAETE-DVM/outputs/teste_co2/RUN_teste_co2_.pkz")
 # pls_path = Path("/home/barbara/Documentos/CAETE_FORKED_LIGHT_MODULE/CAETE-DVM/outputs/teste_co2/pls_attrs.csv")
 
-run_path = Path("/d/c1/homes/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/RUN_run1_1k_.pkz")
-pls_path = Path("/d/c1/homes/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/pls_attrs.csv")
+run_path = Path("/home/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/RUN_run1_1k_.pkz")
+pls_path = Path("/home/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/pls_attrs.csv")
 
 # Experiment - No eCO2 - HISTORICAL
 
