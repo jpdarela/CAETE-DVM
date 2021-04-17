@@ -8,8 +8,8 @@ import joblib
 from post_processing import write_h5
 from h52nc import h52nc
 
-run_path = Path("~/caete/CAETE-DVM/outputs/run1_1k/RUN_run1_1k_.pkz")
-pls_path = Path("~/caete/CAETE-DVM/outputs/run1_1k/pls_attrs.csv")
+run_path = Path("barbara@sombrero.cpa.unicamp.br:~/caete/CAETE-DVM/outputs/run1_1k/RUN_run1_1k_.pkz")
+pls_path = Path("barbara@sombrero.cpa.unicamp.br:~/caete/CAETE-DVM/outputs/run1_1k/pls_attrs.csv")
 
 # Experiment - No eCO2 - HISTORICAL
 
