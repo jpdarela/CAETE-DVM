@@ -16,7 +16,7 @@ pls_path = Path("/home/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/pls_
 # Experiment - No eCO2 - HISTORICAL
 
 # new outputs folder
-dump_folder = Path("r1_co2")
+dump_folder = Path("eco2_r1")
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
