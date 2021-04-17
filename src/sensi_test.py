@@ -7,13 +7,13 @@ import joblib
 from post_processing import write_h5
 from h52nc import h52nc
 
-run_path = Path("/d/c1/homes/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/RUN_run1_1k_.pkz")
-pls_path = Path("/d/c1/homes/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/pls_attrs.csv")
+run_path = Path("/c1/homes/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/RUN_run1_1k_.pkz")
+pls_path = Path("/c1/homes/amazonfaceme/barbara/caete/CAETE-DVM/outputs/run1_1k/pls_attrs.csv")
 
 # Experiment - No eCO2 - HISTORICAL
 
 # new outputs folder
-dump_folder = Path("run_co2_light")
+dump_folder = Path("run1_co2")
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
