@@ -24,7 +24,7 @@ for gridcell in init_conditions:
 
 
 def fun(gridcell):
-    gridcell.run_caete("19790101", "20161231", fix_co2=600)
+    gridcell.run_caete("19790101", "20161231", fix_co2=600.0)
 
 
 n_proc = mp.cpu_count() // 2
