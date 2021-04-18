@@ -606,6 +606,48 @@ class grd:
         self.run_counter = 0
         self.experiments += 1
 
+    def change_clim_input(self, input_fpath, stime_i, co2):
+
+        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
+        assert self.input_fpath.exists()
+
+        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+            self.data = pkl.load(fh)
+
+        self.flush_data = 0
+
+        self.pr = self.data['pr']
+        self.ps = self.data['ps']
+        self.rsds = self.data['rsds']
+        self.tas = self.data['tas']
+        self.rhs = self.data['hurs']
+
+        # SOIL AND NUTRIENTS
+        self.input_nut = []
+        self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
+        for nut in self.nutlist:
+            self.input_nut.append(self.data[nut])
+        self.soil_dict = dict(zip(self.nutlist, self.input_nut))
+        self.data = None
+
+        # TIME
+        self.stime = copy.deepcopy(stime_i)
+        self.calendar = self.stime['calendar']
+        self.time_index = self.stime['time_index']
+        self.time_unit = self.stime['units']
+        self.ssize = self.time_index.size
+        self.sind = int(self.time_index[0])
+        self.eind = int(self.time_index[-1])
+        self.start_date = cftime.num2date(
+            self.time_index[0], self.time_unit, calendar=self.calendar)
+        self.end_date = cftime.num2date(
+            self.time_index[-1], self.time_unit, calendar=self.calendar)
+
+        # Prepare co2 inputs (we have annually means)
+        self.co2_data = copy.deepcopy(co2)
+
+        return None
+
     def run_caete(self, start_date, end_date, spinup=0, fix_co2=None, save=True, nutri_cycle=True):
         """ start_date [str]   "yyyymmdd" Start model execution
 
