@@ -1,3 +1,20 @@
+# Copyright 2017- LabTerra
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.)
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# AUTHOR: JP Darela
+
 import os
 from pathlib import Path
 
@@ -30,10 +47,16 @@ def catch_stime(stime_file):
     run_breaks = rbrk[int(data[3].strip())]
 
 
+####
+# READ values to  GLOBAL VARIABLES:
+catch_stime("stime.txt")
+
+
 def custom_rbrk(tp):
-    """tp - tuple of strings in the pattern: ('yyyymmdd', 'yyyymmdd')"""
+    """tp - list containing tuple(s) of strings in the pattern: [('yyyymmdd', 'yyyymmdd'),]"""
     global run_breaks
-    run_breaks = [tp, ]
+    run_breaks = tp
+
 
 def build_strd(strd):
     return f"""(date == b'{strd}')"""
@@ -196,8 +219,7 @@ def create_lband(res=0.5):
     return lat, latbnd, lon, lonbnd
 
 
-def write_daily_output(arr, var, flt_attrs, time_index, nc_out,
-                       experiment=EXPERIMENT):
+def write_daily_output(arr, var, flt_attrs, time_index, nc_out):
 
     NO_DATA = [-9999.0, -9999.0]
 
@@ -255,7 +277,7 @@ def write_daily_output(arr, var, flt_attrs, time_index, nc_out,
             # rootgrp
             rootgrp.description = flt_attrs[v][0] + " from CAETÊ-CNP OUTPUT"
             rootgrp.source = "CAETE model outputs - darelafilho@gmail.com"
-            rootgrp.experiment = experiment
+            rootgrp.experiment = EXPERIMENT
 
             # time
             time.units = time_units
@@ -293,8 +315,7 @@ def write_daily_output(arr, var, flt_attrs, time_index, nc_out,
                            suffix='Complete')
 
 
-def write_snap_output(arr, var, flt_attrs, time_index, nc_out,
-                      experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+def write_snap_output(arr, var, flt_attrs, time_index, nc_out):
 
     NO_DATA = [-9999.0, -9999.0]
 
@@ -332,7 +353,7 @@ def write_snap_output(arr, var, flt_attrs, time_index, nc_out,
             # rootgrp
             rootgrp.description = flt_attrs[v][0] + " from CAETÊ-CNP OUTPUT"
             rootgrp.source = "CAETE model outputs - darelafilho@gmail.com"
-            rootgrp.experiment = experiment
+            rootgrp.experiment = EXPERIMENT
 
             # time
             time.units = time_units
@@ -365,8 +386,7 @@ def write_snap_output(arr, var, flt_attrs, time_index, nc_out,
                            suffix='Complete')
 
 
-def write_area_output(arr, time_index, nc_out,
-                      experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+def write_area_output(arr, time_index, nc_out):
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
@@ -405,7 +425,7 @@ def write_area_output(arr, time_index, nc_out,
         rootgrp.description = "Ocupation coefficients of Plant Life Strategies" + \
             " from CAETÊ-CNP OUTPUT"
         rootgrp.source = "CAETE model outputs"
-        rootgrp.experiment = experiment
+        rootgrp.experiment = EXPERIMENT
 
         # time
         time.units = time_units
@@ -800,7 +820,7 @@ def lim_data(table, nc_out):
         sdate = str2cf_date(interval[1])
         time_index.append(int(cftime.date2num(sdate, TIME_UNITS, CALENDAR)))
 
-        out = table.read_where(build_strds(interval[0]))
+        out = table.read_where(build_strds(interval[1]))
         leaf_nolim[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['leaf_nolim'])
         leaf_lim_n[i, :, :] = assemble_layer(
@@ -889,7 +909,7 @@ def ustrat_data(table, nc_out):
     elif out_data:
         print(f"Saving outputs in {nc_out.resolve()}")
 
-    dm1 = len(run_breaks)
+    dm1 = len(run_breaks) + 1
 
     upt_stratN0 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     upt_stratN1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -912,7 +932,7 @@ def ustrat_data(table, nc_out):
         sdate = str2cf_date(interval[1])
         time_index.append(int(cftime.date2num(sdate, TIME_UNITS, CALENDAR)))
 
-        out = table.read_where(build_strds(interval[0]))
+        out = table.read_where(build_strds(interval[1]))
         upt_stratN0[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['upt_stratN0'])
         upt_stratN1[i, :, :] = assemble_layer(
@@ -1249,8 +1269,3 @@ def h52nc(input_file, dump_nc_folder):
     ccc(snap_table, pls_table, dump_nc_folder)
 
     h5f.close()
-
-
-####
-# READ values to  GLOBAL VARIABLES:
-catch_stime("stime.txt")

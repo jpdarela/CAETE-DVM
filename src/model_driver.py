@@ -1,3 +1,21 @@
+# ! Copyright 2017- LabTerra
+
+# !     This program is free software: you can redistribute it and/or modify
+# !     it under the terms of the GNU General Public License as published by
+# !     the Free Software Foundation, either version 3 of the License, or
+# !     (at your option) any later version.)
+
+# !     This program is distributed in the hope that it will be useful,
+# !     but WITHOUT ANY WARRANTY; without even the implied warranty of
+# !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# !     GNU General Public License for more details.
+
+# !     You should have received a copy of the GNU General Public License
+# !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ! AUTHOR: JP Darela
+
+
 #       ____    _    _____ _____ _/\__
 #      / ___|  / \  | ____|_   _| ____|
 #     | |     / _ \ |  _|   | | |  _|
@@ -44,8 +62,9 @@ def check_start():
 # Check sombrero
 sombrero = check_start()
 
-# Set folder to store outputs
-outf = input("Give a name to your run: ")
+print("Set the folder to store outputs:")
+outf = input(
+    "Give a name to your run (ASCII letters and numbers only. No spaces): ")
 dump_folder = Path(f'../outputs/{outf}').resolve()
 nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
 print(
@@ -197,7 +216,7 @@ else:
     with open("stime.txt", 'w') as fh:
         fh.writelines([f"{stime['units']}\n",
                        f"{stime['calendar']}\n",
-                       "historical-ISIMIP2b\n",
+                       f"historical-ISIMIP2b-TEST-{folder}\n",
                        f"{rbrk_index}\n"])
 
 # FUNCTIONAL TRAITS DATA

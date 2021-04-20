@@ -1,3 +1,21 @@
+# ! Copyright 2017- LabTerra
+
+# !     This program is free software: you can redistribute it and/or modify
+# !     it under the terms of the GNU General Public License as published by
+# !     the Free Software Foundation, either version 3 of the License, or
+# !     (at your option) any later version.)
+
+# !     This program is distributed in the hope that it will be useful,
+# !     but WITHOUT ANY WARRANTY; without even the implied warranty of
+# !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# !     GNU General Public License for more details.
+
+# !     You should have received a copy of the GNU General Public License
+# !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ! AUTHOR: JP Darela
+
+
 import warnings
 import numpy as np
 from math import log as ln
@@ -152,6 +170,55 @@ class soil_water:
             runoff2 = 0.0
 
         return runoff1 + runoff2
+
+# TODO include old model
+#  ! WATER BALANCE - GABRIEL
+#  !     Precipitation
+#  !     =============
+#  psnow = 0.0
+#  prain = 0.0
+#  if (temp.lt.tsnow) then
+#     psnow = prec
+#  else
+#     prain = prec
+#  endif
+#  !     Snow budget
+#  !     ===========
+#  smelt(p) = 2.63 + 2.55*temp + 0.0912*temp*prain !Snowmelt (mm/day)
+#  smelt(p) = amax1(smelt(p),0.)
+#  smelt(p) = amin1(smelt(p),s(p)+psnow)
+#  ds(p) = psnow - smelt(p)
+#  s(p) = s(p) + ds(p)
+
+#  !     Water budget
+#  !     ============
+#  if (soil_temp .le. tice) then !Frozen soil
+#     g(p) = g(p) + w(p) !Soil moisture freezes
+#     w(p) = 0.0
+#     roff(p) = smelt(p) + prain !mm/day
+#     evap(p) = 0.0
+
+#  else                !Non-frozen soil
+#     w(p) = w(p) + g(p)
+#     g(p) = 0.0
+#     rimelt(p) = 0.0
+#     if (w(p).gt.wmax) then
+#        rimelt(p) = w(p) - wmax !Runoff due to soil ice melting
+#        w(p) = wmax
+#     endif
+
+#     roff(p) = runoff(w(p)/wmax)       !Soil moisture runoff (roff, mm/day)
+
+#     evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
+#     dw(p) = prain + smelt(p) - evap(p) - roff(p)
+#     w(p) = w(p) + dw(p)
+#     if (w(p).gt.wmax) then
+#        roff(p) = roff(p) + (w(p) - wmax)
+#        w(p) = wmax
+#     endif
+#     if (w(p).lt.0.) w(p) = 0.
+#     roff(p) = roff(p) + rimelt(p) !Total runoff
+#  endif
 
 
 if __name__ == "__main__":
