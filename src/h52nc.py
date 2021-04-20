@@ -9,11 +9,31 @@ from netCDF4 import Dataset as dt
 
 from post_processing import cf_date2str, str2cf_date
 from caete_module import global_par as gp
-from caete import NO_DATA, print_progress, run_breaks
+from caete import NO_DATA, print_progress, rbrk
 
-TIME_UNITS = u"days since 1850-01-01 00:00:00"
-CALENDAR = u"standard"
 
+# GLOBAL VARIABLES
+TIME_UNITS = ""
+CALENDAR = ""
+EXPERIMENT = ""
+run_breaks = 0
+
+
+def catch_stime(stime_file):
+
+    global TIME_UNITS, CALENDAR, EXPERIMENT, run_breaks
+    with open(stime_file, 'r') as fh:
+        data = fh.readlines()
+    TIME_UNITS = data[0].strip()
+    CALENDAR = data[1].strip()
+    EXPERIMENT = data[2].strip()
+    run_breaks = rbrk[int(data[3].strip())]
+
+
+def custom_rbrk(tp):
+    """tp - tuple of strings in the pattern: ('yyyymmdd', 'yyyymmdd')"""
+    global run_breaks
+    run_breaks = [tp, ]
 
 def build_strd(strd):
     return f"""(date == b'{strd}')"""
@@ -177,15 +197,7 @@ def create_lband(res=0.5):
 
 
 def write_daily_output(arr, var, flt_attrs, time_index, nc_out,
-                       experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
-
-    def _azzmble(in_arr):
-        d0 = in_arr.shape[0]
-        out_arr = np.ma.masked_all((d0, 360, 720), dtype=np.float32)
-        out_arr.fill(NO_DATA[0])
-        out_arr.fill_value = NO_DATA[0]
-        out_arr[:, 160:221, 201:272] = in_arr.copy()
-        return out_arr
+                       experiment=EXPERIMENT):
 
     NO_DATA = [-9999.0, -9999.0]
 
@@ -1237,3 +1249,8 @@ def h52nc(input_file, dump_nc_folder):
     ccc(snap_table, pls_table, dump_nc_folder)
 
     h5f.close()
+
+
+####
+# READ values to  GLOBAL VARIABLES:
+catch_stime("stime.txt")

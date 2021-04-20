@@ -18,11 +18,8 @@ from netCDF4 import Dataset
 import numpy as np
 
 import caete
-from caete import grd, mask, npls, print_progress, run_breaks
+from caete import grd, mask, npls, print_progress, rbrk
 import plsgen as pls
-
-from post_processing import write_h5
-from h52nc import h52nc
 
 __author__ = "João Paulo Darela Filho"
 __descr__ = """RUN CAETÊ"""
@@ -141,21 +138,43 @@ if sombrero:
             pass
     # SELECT MODEL -HISTORICAL SPINUP + RUN
     s_data = Path("/home/amazonfaceme/shared_data").resolve()
-    model_root = Path(os.path.join(s_data, Path(clim_list[climatology])))
+    model_root = Path(os.path.join(s_data, Path(clim_list[climatology - 1])))
     if climatology == 1:
-        clim_and_soil_data = model_root
-        clim_metadata = Path(os.path.join(s_data, clim_and_soil_data,
-                                  "ISIMIP_HISTORICAL_METADATA.pbz2"))
+        clim_metadata = Path(os.path.join(s_data, model_root,
+                                          "ISIMIP_HISTORICAL_METADATA.pbz2"))
         input_path = model_root
+        with bz2.BZ2File(clim_metadata, mode='r') as fh:
+            clim_metadata = pkl.load(fh)
 
+        stime = copy.deepcopy(clim_metadata[0])
+        del clim_metadata
+        # # open co2 data
+        with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh:
+            co2_data = fh.readlines()
+        run_breaks = rbrk[0]
+        rbrk_index = 0
 
     else:
         clim_and_soil_data = Path(os.path.join(model_root, Path("historical")))
-        clim_metadata = Path(os.path.join(clim_and_soil_data, f"{clim_list[climatology]}-historical_METADATA.pbz2"))
+        clim_metadata = Path(os.path.join(
+            clim_and_soil_data, f"{clim_list[climatology - 1]}-historical_METADATA.pbz2"))
+        with bz2.BZ2File(clim_metadata, mode='r') as fh:
+            clim_metadata = pkl.load(fh)
+
+        stime = copy.deepcopy(clim_metadata[0])
+        del clim_metadata
         input_path = clim_and_soil_data
+        # open co2 data
+        with open(os.path.join(model_root, f"co2-{clim_list[climatology - 1]}-historical.txt")) as fh:
+            co2_data = fh.readlines()
+        run_breaks = rbrk[1]
+        rbrk_index = 1
 
-
-
+    with open("stime.txt", 'w') as fh:
+        fh.writelines([f"{stime['units']}\n",
+                       f"{stime['calendar']}\n",
+                       f"{clim_list[climatology - 1]}-ISIMIP2b-hist\n",
+                       f"{rbrk_index}\n"])
 else:
     # HISTORICAL OBSERVED DATA
     s_data = Path("../input").resolve()
@@ -163,204 +182,209 @@ else:
 
     input_path = Path(os.path.join(s_data, clim_and_soil_data))
     clim_metadata = Path(os.path.join(s_data, clim_and_soil_data,
-                                  "ISIMIP_HISTORICAL_METADATA.pbz2"))
+                                      "ISIMIP_HISTORICAL_METADATA.pbz2"))
+    with bz2.BZ2File(clim_metadata, mode='r') as fh:
+        clim_metadata = pkl.load(fh)
+
+    stime = copy.deepcopy(clim_metadata[0])
+    del clim_metadata
+    # # open co2 data
+    with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh:
+        co2_data = fh.readlines()
+    run_breaks = rbrk[0]
+    rbrk_index = 0
+
+    with open("stime.txt", 'w') as fh:
+        fh.writelines([f"{stime['units']}\n",
+                       f"{stime['calendar']}\n",
+                       "historical-ISIMIP2b\n",
+                       f"{rbrk_index}\n"])
+
+# FUNCTIONAL TRAITS DATA
+pls_table = pls.table_gen(npls, dump_folder)
+
+# # Create the gridcell objects
+if sombrero:
+    # Running in all gridcells of mask
+    grid_mn = []
+    for Y in range(360):
+        for X in range(720):
+            if not mask[Y, X]:
+                grid_mn.append(grd(X, Y, outf))
+
+else:
+    grid_mn = []
+    for Y in range(y0, y1):
+        for X in range(x0, x1):
+            if not mask[Y, X]:
+                grid_mn.append(grd(X, Y, outf))
 
 
-# # Open time attributes
-# clim_metadata = Path(os.path.join(s_data, clim_and_soil_data,
-#                                   "ISIMIP_HISTORICAL_METADATA.pbz2"))
-# with bz2.BZ2File(clim_metadata, mode='r') as fh:
-#     clim_metadata = pkl.load(fh)
-
-# stime = copy.deepcopy(clim_metadata[0])
-# del clim_metadata
-
-# # open co2 data
-# with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh:
-#     co2_data = fh.readlines()
-
-# # FUNCTIONAL TRAITS DATA
-# pls_table = pls.table_gen(npls, dump_folder)
-
-# # # Create the gridcell objects
-# if sombrero:
-#     # Running in all gridcells of mask
-#     grid_mn = []
-#     for Y in range(360):
-#         for X in range(720):
-#             if not mask[Y, X]:
-#                 grid_mn.append(grd(X, Y, outf))
-
-# else:
-#     grid_mn = []
-#     for Y in range(y0, y1):
-#         for X in range(x0, x1):
-#             if not mask[Y, X]:
-#                 grid_mn.append(grd(X, Y, outf))
+def apply_init(grid):
+    grid.init_caete_dyn(input_path, stime, co2_data,
+                        pls_table, tsoil, ssoil, hsoil)
+    return grid
 
 
-# def apply_init(grid):
-#     grid.init_caete_dyn(input_path, stime, co2_data,
-#                         pls_table, tsoil, ssoil, hsoil)
-#     return grid
+def chunks(lst, chunck_size):
+    shuffle(lst)
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), chunck_size):
+        yield lst[i:i + chunck_size]
 
 
-# def chunks(lst, chunck_size):
-#     shuffle(lst)
-#     """Yield successive n-sized chunks from lst."""
-#     for i in range(0, len(lst), chunck_size):
-#         yield lst[i:i + chunck_size]
+# # START GRIDCELLS
+print("Starting gridcells")
+print_progress(0, len(grid_mn), prefix='Progress:', suffix='Complete')
+for i, g in enumerate(grid_mn):
+    apply_init(g)
+    print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
 
-# # # START GRIDCELLS
-# print("Starting gridcells")
-# print_progress(0, len(grid_mn), prefix='Progress:', suffix='Complete')
-# for i, g in enumerate(grid_mn):
-#     apply_init(g)
-#     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
+# DEFINE HARVERSTERS - funcs that will apply grd methods(run the CAETÊ model) over the instanvces
+def apply_spin(grid):
+    """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
+    w, ll, cwd, rl, lnc = grid.bdg_spinup(
+        start_date="19790101", end_date="19830101")
+    grid.sdc_spinup(w, ll, cwd, rl, lnc)
+    return grid
 
 
-# # DEFINE HARVERSTERS - funcs that will apply grd methods(run the CAETÊ model) over the instanvces
-# def apply_spin(grid):
-#     """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
-#     w, ll, cwd, rl, lnc = grid.bdg_spinup(
-#         start_date="19790101", end_date="19830101")
-#     grid.sdc_spinup(w, ll, cwd, rl, lnc)
-#     return grid
+def apply_fun(grid):
+    grid.run_caete('19790101', '19791231', spinup=2,
+                   fix_co2='1983', save=False)
+    return grid
 
 
-# def apply_fun(grid):
-#     grid.run_caete('19790101', '19791231', spinup=2,
-#                    fix_co2='1983', save=False)
-#     return grid
+def apply_fun0(grid):
+    grid.run_caete('19790101', '19891231', spinup=45,
+                   fix_co2='1983', save=False)
+    return grid
 
 
-# def apply_fun0(grid):
-#     grid.run_caete('19790101', '19891231', spinup=45,
-#                    fix_co2='1983', save=False)
-#     return grid
+def zip_gridtime(grd_pool, interval):
+    res = []
+    for i, j in enumerate(grd_pool):
+        res.append((j, interval[i % len(interval)]))
+    return res
 
 
-# def zip_gridtime(grd_pool, interval):
-#     res = []
-#     for i, j in enumerate(grd_pool):
-#         res.append((j, interval[i % len(interval)]))
-#     return res
+def apply_funX(grid, brk):
+    grid.run_caete(brk[0], brk[1])
+    return grid
 
 
-# def apply_funX(grid, brk):
-#     grid.run_caete(brk[0], brk[1])
-#     return grid
+def apply_fun_eCO2(grid, brk):
+    grid.run_caete(brk[0], brk[1], fix_co2=600.0)
+    return grid
 
 
-# def apply_fun_eCO2(grid, brk):
-#     grid.run_caete(brk[0], brk[1], fix_co2=600.0)
-#     return grid
+# Garbage collection
+#
+del pls_table
+del co2_data
+del stime
 
 
-# # Garbage collection
-# #
-# del pls_table
-# del co2_data
-# del stime
+if __name__ == "__main__":
 
+    output_path = Path("../outputs").resolve()
 
-# if __name__ == "__main__":
+    if output_path.exists():
+        pass
+    else:
+        from os import mkdir
+        mkdir(output_path)
 
-#     output_path = Path("../outputs").resolve()
+    import time
 
-#     if output_path.exists():
-#         pass
-#     else:
-#         from os import mkdir
-#         mkdir(output_path)
+    from post_processing import write_h5
+    from h52nc import h52nc
 
-#     import time
+    n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count()
 
-#     n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count()
+    fh = open('logfile.log', mode='w')
+    print("START: ", time.ctime())
+    fh.writelines(time.ctime(),)
+    fh.writelines("\n\n",)
+    fh.writelines("SOIL SPINUP...\n",)
+    start = time.time()
+    print("SOIL SPINUP...")
 
-#     fh = open('logfile.log', mode='w')
-#     print("START: ", time.ctime())
-#     fh.writelines(time.ctime(),)
-#     fh.writelines("\n\n",)
-#     fh.writelines("SOIL SPINUP...\n",)
-#     start = time.time()
-#     print("SOIL SPINUP...")
+    # SOIL SPINUP
+    with mp.Pool(processes=n_proc) as p:
+        _spinup_ = p.map(apply_spin, grid_mn)
+    end_spinup = time.time() - start
+    fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
+    del grid_mn
 
-#     # SOIL SPINUP
-#     with mp.Pool(processes=n_proc) as p:
-#         _spinup_ = p.map(apply_spin, grid_mn)
-#     end_spinup = time.time() - start
-#     fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
-#     del grid_mn
+    # MAIN SPINUP
+    def applyXy(fun, input):
+        global FUNCALLS
+        FUNCALLS += 1
+        fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
+        print(f"MODEL EXEC - RUN {FUNCALLS}")
+        with mp.Pool(processes=n_proc) as p:
+            # reserve 2 funcalls for the main spinup
+            if FUNCALLS > 2:
+                result = p.starmap(fun, input)
+            else:
+                result = p.map(fun, input)
+                # # Divide in chunks to leverage the work
+                # result = []
+                # for l in chunks(input, n_proc * 2):
+                #     r1 = p.map(fun, input)
+                # result += r1
+        end_spinup = time.time() - start
+        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+        return result
 
-#     # MAIN SPINUP
-#     def applyXy(fun, input):
-#         global FUNCALLS
-#         FUNCALLS += 1
-#         fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
-#         print(f"MODEL EXEC - RUN {FUNCALLS}")
-#         with mp.Pool(processes=n_proc) as p:
-#             # reserve 2 funcalls for the main spinup
-#             if FUNCALLS > 2:
-#                 result = p.starmap(fun, input)
-#             else:
-#                 result = p.map(fun, input)
-#                 # # Divide in chunks to leverage the work
-#                 # result = []
-#                 # for l in chunks(input, n_proc * 2):
-#                 #     r1 = p.map(fun, input)
-#                 # result += r1
-#         end_spinup = time.time() - start
-#         fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
-#         return result
+    print("Applying main spinup. This process can take hours (RUN 1 & 2)")
 
-#     print("Applying main spinup. This process can take hours (RUN 1 & 2)")
+    # The first 2 calls of applyXy are reserved to the MAIN spinup
+    # These 2 calls will use the method map of the Pool(multiprocessing)
+    # the remaining calls will use the starmap method
+    result = applyXy(apply_fun, _spinup_)
+    del _spinup_
 
-#     # The first 2 calls of applyXy are reserved to the MAIN spinup
-#     # These 2 calls will use the method map of the Pool(multiprocessing)
-#     # the remaining calls will use the starmap method
-#     result = applyXy(apply_fun, _spinup_)
-#     del _spinup_
+    result1 = applyXy(apply_fun0, result)
+    del result
 
-#     result1 = applyXy(apply_fun0, result)
-#     del result
+    # Save Ground 0
+    g0_path = Path(os.path.join(
+        dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
+    with open(g0_path, 'wb') as fh2:
+        print(f"Saving gridcells with init state in: {g0_path}\n")
+        joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
-#     # Save Ground 0
-#     g0_path = Path(os.path.join(
-#         dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
-#     with open(g0_path, 'wb') as fh2:
-#         print(f"Saving gridcells with init state in: {g0_path}\n")
-#         joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
+    result = result1
+    del result1
+    # result has the gridcells with total aptitude to run
 
-#     result = result1
-#     del result1
-#     # result has the gridcells with total aptitude to run
+    # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
+    # if FACE_EXPERIMENT == 'y':
+    #     interval_1 = run_breaks[:11] 1979-2000
+    #     interval_2 = run_breaks[11:] 2001-1016
+    #     for i, brk in enumerate(interval_1):
+    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #         result = zip_gridtime(result, (brk,))
+    #         result = applyXy(apply_funX, result)
+    #     for i, brk in enumerate(interval_2):
+    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #         result = zip_gridtime(result, (brk,))
+    #         result = applyXy(apply_fun_eCO2, result)
+    # else:
+    for i, brk in enumerate(run_breaks):
+        print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+        result = zip_gridtime(result, (brk,))
+        result = applyXy(apply_funX, result)
 
-#     # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
-#     # if FACE_EXPERIMENT == 'y':
-#     #     interval_1 = run_breaks[:11] 1979-2000
-#     #     interval_2 = run_breaks[11:] 2001-1016
-#     #     for i, brk in enumerate(interval_1):
-#     #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-#     #         result = zip_gridtime(result, (brk,))
-#     #         result = applyXy(apply_funX, result)
-#     #     for i, brk in enumerate(interval_2):
-#     #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-#     #         result = zip_gridtime(result, (brk,))
-#     #         result = applyXy(apply_fun_eCO2, result)
-#     # else:
-#     for i, brk in enumerate(run_breaks):
-#         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-#         result = zip_gridtime(result, (brk,))
-#         result = applyXy(apply_funX, result)
+    fh.close()
 
-#     fh.close()
-
-#     print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
-#     print("Saving db - This will take some hours\n")
-#     write_h5(dump_folder)
-#     print("\n\nSaving netCDF4 files")
-#     h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
-#     h52nc(h5path, nc_outputs)
-#     print(time.ctime())
+    print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
+    print("Saving db - This will take some hours\n")
+    write_h5(dump_folder)
+    print("\n\nSaving netCDF4 files")
+    h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
+    h52nc(h5path, nc_outputs)
+    print(time.ctime())
