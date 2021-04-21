@@ -946,6 +946,7 @@ class grd:
                             f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
 
                     self.sp_so_p -= self.pupt[1, step]
+
                     try:
                         t1 = np.all(self.sp_snc > 0.0)
                     except:
@@ -969,9 +970,20 @@ class grd:
                         self.nupt[1, step] = 0.0
 
                     total_on = self.sp_snc[:4].sum()
-                    frsn = [i / total_on for i in self.sp_snc[:4]]
+
+                    if total_on > 0.0:
+                        frsn = [i / total_on for i in self.sp_snc[:4]]
+                    else:
+                        frsn = [0.0, 0.0, 0.0, 0.0]
+
                     for i, fr in enumerate(frsn):
                         self.sp_snc[i] -= self.nupt[1, step] * fr
+
+                    idx = np.where(self.sp_snc < 0.0)[0]
+                    if len(idx) > 0:
+                        for i in idx:
+                            self.sp_snc[i] = 0.0
+
                     self.sp_organic_n = self.sp_snc[:2].sum()
                     self.sp_sorganic_n = self.sp_snc[2:4].sum()
 
@@ -985,9 +997,18 @@ class grd:
                             f"PuptkO  < max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
                         self.pupt[2, step] = 0.0
                     total_op = self.sp_snc[4:].sum()
-                    frsp = [i / total_op for i in self.sp_snc[4:]]
+                    if total_op > 0.0:
+                        frsp = [i / total_op for i in self.sp_snc[4:]]
+                    else:
+                        frsp = [0.0, 0.0, 0.0, 0.0]
                     for i, fr in enumerate(frsp):
                         self.sp_snc[i + 4] -= self.pupt[2, step] * fr
+
+                    idx = np.where(self.sp_snc < 0.0)[0]
+                    if len(idx) > 0:
+                        for i in idx:
+                            self.sp_snc[i] = 0.0
+
                     self.sp_organic_p = self.sp_snc[4:6].sum()
                     self.sp_sorganic_p = self.sp_snc[6:].sum()
 
@@ -1195,7 +1216,7 @@ class grd:
             lnco.append(daily_output['lnc'])
 
         f = np.array
-        def x(a): return a * 0.75
+        def x(a): return a * 1.75
         return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 
     def sdc_spinup(self, water, ll, cwd, rl, lnc):

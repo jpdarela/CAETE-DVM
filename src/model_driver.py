@@ -276,7 +276,7 @@ def apply_fun(grid):
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '19891231', spinup=45,
+    grid.run_caete('19790101', '19891231', spinup=35,
                    fix_co2='1983', save=False)
     return grid
 

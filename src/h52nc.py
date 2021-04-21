@@ -820,7 +820,7 @@ def lim_data(table, nc_out):
         sdate = str2cf_date(interval[1])
         time_index.append(int(cftime.date2num(sdate, TIME_UNITS, CALENDAR)))
 
-        out = table.read_where(build_strds(interval[1]))
+        out = table.read_where(build_strds(interval[0]))
         leaf_nolim[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['leaf_nolim'])
         leaf_lim_n[i, :, :] = assemble_layer(
@@ -932,7 +932,7 @@ def ustrat_data(table, nc_out):
         sdate = str2cf_date(interval[1])
         time_index.append(int(cftime.date2num(sdate, TIME_UNITS, CALENDAR)))
 
-        out = table.read_where(build_strds(interval[1]))
+        out = table.read_where(build_strds(interval[0]))
         upt_stratN0[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['upt_stratN0'])
         upt_stratN1[i, :, :] = assemble_layer(
