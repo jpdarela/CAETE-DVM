@@ -21,6 +21,7 @@ import shutil
 import multiprocessing as mp
 from pathlib import Path
 import joblib
+import numpy as np
 from post_processing import write_h5
 import h52nc
 
@@ -30,21 +31,24 @@ run_path = Path(
 pls_path = Path(
     "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
 
-# Experiment - No eCO2 - HISTORICAL
+# Experiment - Half precipitation - HISTORICAL
 
 # new outputs folder
-dump_folder = Path("r11_exp_NOeCO2_HIST")
+dump_folder = Path("r11_exp_half_prec_HIST")
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
 
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
+    gridcell.pr -= gridcell.pr * 0.5
+    # prevent negative values
+    gridcell.pr[np.where(gridcell.pr < 0.0)[0]] = 0.0
+    assert np.all(gridcell.pr >= 0.0)
 
-h52nc.EXPERIMENT = "No_eCO2-HISTORICAL"
+h52nc.EXPERIMENT = "Half_prec_-HISTORICAL"
 from caete import run_breaks_hist as rb
 # h52nc.custom_rbrk(rb)
-
 
 def zip_gridtime(grd_pool, interval):
     res = []
@@ -54,7 +58,7 @@ def zip_gridtime(grd_pool, interval):
 
 
 def apply_funX(grid, brk):
-    grid.run_caete(brk[0], brk[1], fix_co2="1983")
+    grid.run_caete(brk[0], brk[1])
     return grid
 
 
