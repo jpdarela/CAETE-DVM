@@ -271,13 +271,13 @@ def apply_spin(grid):
 
 def apply_fun(grid):
     grid.run_caete('19790101', '19791231', spinup=2,
-                   fix_co2='1983', save=False)
+                   fix_co2='1983', save=True)
     return grid
 
 
 def apply_fun0(grid):
     grid.run_caete('19790101', '19891231', spinup=35,
-                   fix_co2='1983', save=False)
+                   fix_co2='1983', save=True)
     return grid
 
 
@@ -369,41 +369,41 @@ if __name__ == "__main__":
     result1 = applyXy(apply_fun0, result)
     del result
 
-    # Save Ground 0
-    g0_path = Path(os.path.join(
-        dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
-    with open(g0_path, 'wb') as fh2:
-        print(f"Saving gridcells with init state in: {g0_path}\n")
-        joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
+    # # Save Ground 0
+    # g0_path = Path(os.path.join(
+    #     dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
+    # with open(g0_path, 'wb') as fh2:
+    #     print(f"Saving gridcells with init state in: {g0_path}\n")
+    #     joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
-    result = result1
-    del result1
-    # result has the gridcells with total aptitude to run
+    # result = result1
+    # del result1
+    # # result has the gridcells with total aptitude to run
 
-    # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
-    # if FACE_EXPERIMENT == 'y':
-    #     interval_1 = run_breaks[:11] 1979-2000
-    #     interval_2 = run_breaks[11:] 2001-1016
-    #     for i, brk in enumerate(interval_1):
-    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-    #         result = zip_gridtime(result, (brk,))
-    #         result = applyXy(apply_funX, result)
-    #     for i, brk in enumerate(interval_2):
-    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-    #         result = zip_gridtime(result, (brk,))
-    #         result = applyXy(apply_fun_eCO2, result)
-    # else:
-    for i, brk in enumerate(run_breaks):
-        print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-        result = zip_gridtime(result, (brk,))
-        result = applyXy(apply_funX, result)
+    # # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
+    # # if FACE_EXPERIMENT == 'y':
+    # #     interval_1 = run_breaks[:11] 1979-2000
+    # #     interval_2 = run_breaks[11:] 2001-1016
+    # #     for i, brk in enumerate(interval_1):
+    # #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    # #         result = zip_gridtime(result, (brk,))
+    # #         result = applyXy(apply_funX, result)
+    # #     for i, brk in enumerate(interval_2):
+    # #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    # #         result = zip_gridtime(result, (brk,))
+    # #         result = applyXy(apply_fun_eCO2, result)
+    # # else:
+    # for i, brk in enumerate(run_breaks):
+    #     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #     result = zip_gridtime(result, (brk,))
+    #     result = applyXy(apply_funX, result)
 
-    fh.close()
+    # fh.close()
 
-    print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
-    print("Saving db - This will take some hours\n")
-    write_h5(dump_folder)
-    print("\n\nSaving netCDF4 files")
-    h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
-    h52nc(h5path, nc_outputs)
-    print(time.ctime())
+    # print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
+    # print("Saving db - This will take some hours\n")
+    # write_h5(dump_folder)
+    # print("\n\nSaving netCDF4 files")
+    # h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
+    # h52nc(h5path, nc_outputs)
+    # print(time.ctime())
