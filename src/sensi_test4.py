@@ -43,9 +43,8 @@ for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
     gridcell.tas += 4
 
-h52nc.EXPERIMENT = "eCO2-600ppm-HISTORICAL"
+h52nc.set_historical_stime()
 from caete import run_breaks_hist as rb
-# h52nc.custom_rbrk(rb)
 
 
 def zip_gridtime(grd_pool, interval):
@@ -55,24 +54,12 @@ def zip_gridtime(grd_pool, interval):
     return res
 
 
-# def apply_funX(grid, brk):
-#     grid.run_caete(brk[0], brk[1])
-#     return grid
-
-
 def apply_funFACE(grid, brk):
     grid.run_caete(brk[0], brk[1], fix_co2=600)
     return grid
 
 
 n_proc = mp.cpu_count() // 2
-
-
-# for i, brk in enumerate(rb1):
-#     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-#     init_conditions = zip_gridtime(init_conditions, (brk,))
-#     with mp.Pool(processes=n_proc) as p:
-#         init_conditions = p.starmap(apply_funX, init_conditions)
 
 print("\nSTART FACE EXPERIMENT\n")
 for i, brk in enumerate(rb):

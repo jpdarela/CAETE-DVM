@@ -24,18 +24,19 @@ import joblib
 from post_processing import write_h5
 import h52nc
 
-afex_treat = input("N, P ou NP: ")
-afex_treat = afex_treat.upper()
-
-assert afex_treat in ['N','P','NP']
+while True:
+    afex_treat = input("N, P ou NP: ")
+    afex_treat = afex_treat.upper()
+    if afex_treat in ['N', 'P', 'NP']:
+        break
 
 with open("afex.cfg", mode='w') as fh:
-    fh.writelines([f"{afex_treat}\n",])
+    fh.writelines([f"{afex_treat}\n", ])
 
 run_path = Path(
-    "/home/jdarela/Desktop/caete/CAETE-DVM/outputs/r1/RUN_r1_.pkz")
+    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/RUN_r11_.pkz")
 pls_path = Path(
-    "/home/jdarela/Desktop/caete/CAETE-DVM/outputs/r1/pls_attrs.csv")
+    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
 
 # Experiment - AFEX X
 
@@ -48,6 +49,7 @@ with open(run_path, 'rb') as fh:
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
 
+h52nc.set_historical_stime(new_descr=False)
 h52nc.EXPERIMENT = f"AFEX_{afex_treat}"
 from caete import run_breaks_hist as rb
 # h52nc.custom_rbrk(rb)
@@ -65,7 +67,7 @@ def apply_funX(grid, brk):
     return grid
 
 
-n_proc = mp.cpu_count() #// 2
+n_proc = mp.cpu_count()  # // 2
 
 for i, brk in enumerate(rb):
     print(f"Applying model to the interval {brk[0]}-{brk[1]}")

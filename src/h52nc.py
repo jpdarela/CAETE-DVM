@@ -47,6 +47,16 @@ def catch_stime(stime_file):
     run_breaks = rbrk[int(data[3].strip())]
 
 
+def set_historical_stime(new_descr=True):
+
+    global TIME_UNITS, CALENDAR, EXPERIMENT, run_breaks
+    TIME_UNITS = "days since 1860-01-01 00:00:00"
+    CALENDAR = "proleptic-gregorian"
+    if new_descr:
+        EXPERIMENT = input("Experiment description (for netcdf metadata): ")
+    run_breaks = rbrk[0]
+
+
 ####
 # READ values to  GLOBAL VARIABLES:
 catch_stime("stime.txt")
