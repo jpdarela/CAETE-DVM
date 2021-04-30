@@ -226,11 +226,6 @@ class grd:
         self.tas = None
         self.rhs = None
 
-        # Spinup data
-        self.clin = None
-        self.cfin = None
-        self.cwin = None
-
         # OUTPUTS
         self.soil_temp = None
         self.emaxm = None
@@ -591,7 +586,7 @@ class grd:
 
         # # # SOIL
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 1.0
-        self.sp_snc = np.zeros(shape=(8,), order='F')
+        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.1
         self.sp_available_p = self.soil_dict['ap']
         self.sp_available_n = 0.2 * self.soil_dict['tn']
         self.sp_in_n = 0.5 * self.soil_dict['tn']
@@ -677,7 +672,15 @@ class grd:
 
         return None
 
-    def run_caete(self, start_date, end_date, spinup=0, fix_co2=None, save=True, nutri_cycle=True):
+    def run_caete(self,
+                  start_date,
+                  end_date,
+                  spinup=0,
+                  fix_co2=None,
+                  save=True,
+                  nutri_cycle=True,
+                  afex=False):
+                  
         """ start_date [str]   "yyyymmdd" Start model execution
 
             end_date   [str]   "yyyymmdd" End model execution
@@ -791,6 +794,21 @@ class grd:
 
                 # Update soil temperature
                 self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
+
+                # AFEX
+                if count_days == 364 and afex:
+                    with open("afex.cfg", 'r') as afex_cfg:
+                        afex_exp = afex_cfg.readlines()
+                    afex_exp = afex_exp[0].strip()
+                    if afex_exp == 'N':
+                        # (12.5 g m-2 y-1 == 125 kg ha-1 y-1)
+                        self.sp_available_n += 12.5
+                    elif afex_exp == 'P':
+                        # (5 g m-2 y-1 == 50 kg ha-1 y-1)
+                        self.sp_available_p += 5.0
+                    elif afex_exp == 'NP':
+                        self.sp_available_n += 12.5
+                        self.sp_available_p += 5.0
 
                 # INFLATe VARS
                 sto = np.zeros(shape=(3, npls), order='F')
