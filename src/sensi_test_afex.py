@@ -27,6 +27,8 @@ import h52nc
 afex_treat = input("N, P ou NP: ")
 afex_treat = afex_treat.upper()
 
+assert afex_treat in ['N','P','NP']
+
 with open("afex.cfg", mode='w') as fh:
     fh.writelines([f"{afex_treat}\n",])
 
