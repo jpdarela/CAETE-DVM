@@ -26,53 +26,53 @@ from post_processing import write_h5
 import h52nc
 
 
-run_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/RUN_r11_.pkz")
-pls_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
+# run_path = Path(
+#     "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/RUN_r11_.pkz")
+# pls_path = Path(
+#     "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
 
 # Experiment -FACE 1995 onward 600 ppm - HISTORICAL
 
 # new outputs folder
 dump_folder = Path("r11_exp_eCO2_600_HIST")
 
-with open(run_path, 'rb') as fh:
-    init_conditions = joblib.load(fh)
+# with open(run_path, 'rb') as fh:
+#     init_conditions = joblib.load(fh)
 
-for gridcell in init_conditions:
-    gridcell.clean_run(dump_folder, "init_cond")
-    gridcell.tas += 4
+# for gridcell in init_conditions:
+#     gridcell.clean_run(dump_folder, "init_cond")
+#     gridcell.tas += 4
 
 h52nc.set_historical_stime()
 from caete import run_breaks_hist as rb
 
 
-def zip_gridtime(grd_pool, interval):
-    res = []
-    for i, j in enumerate(grd_pool):
-        res.append((j, interval[i % len(interval)]))
-    return res
+# def zip_gridtime(grd_pool, interval):
+#     res = []
+#     for i, j in enumerate(grd_pool):
+#         res.append((j, interval[i % len(interval)]))
+#     return res
 
 
-def apply_funFACE(grid, brk):
-    grid.run_caete(brk[0], brk[1], fix_co2=600)
-    return grid
+# def apply_funFACE(grid, brk):
+#     grid.run_caete(brk[0], brk[1], fix_co2=600)
+#     return grid
 
 
-n_proc = mp.cpu_count() // 2
+# n_proc = mp.cpu_count() // 2
 
-print("\nSTART FACE EXPERIMENT\n")
-for i, brk in enumerate(rb):
-    print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-    init_conditions = zip_gridtime(init_conditions, (brk,))
-    with mp.Pool(processes=n_proc) as p:
-        init_conditions = p.starmap(apply_funFACE, init_conditions)
+# print("\nSTART FACE EXPERIMENT\n")
+# for i, brk in enumerate(rb):
+#     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+#     init_conditions = zip_gridtime(init_conditions, (brk,))
+#     with mp.Pool(processes=n_proc) as p:
+#         init_conditions = p.starmap(apply_funFACE, init_conditions)
 
 to_write = Path(os.path.join(Path("../outputs"), dump_folder)).resolve()
-attrs = Path(os.path.join(to_write, Path("pls_attrs.csv"))).resolve()
+# attrs = Path(os.path.join(to_write, Path("pls_attrs.csv"))).resolve()
 h5path = Path(os.path.join(to_write, Path('CAETE.h5'))).resolve()
 nc_outputs = Path(os.path.join(to_write, Path('nc_outputs')))
 
-shutil.copy(pls_path, attrs)
-write_h5(to_write)
+# shutil.copy(pls_path, attrs)
+# write_h5(to_write)
 h52nc.h52nc(h5path, nc_outputs)
