@@ -33,15 +33,28 @@ while True:
 with open("afex.cfg", mode='w') as fh:
     fh.writelines([f"{afex_treat}\n", ])
 
+while True:
+    run = input("Select the base run (h for help): ")
+    av_run = os.listdir("/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/")
+
+    if run in av_run:
+        break
+
+    if run.lower() == 'h':
+        print("\nAvailable base runs are: ")
+        for r in av_run:
+            print(f"\tRun name: {r}")
+        print("\n")
+
 run_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/RUN_r11_.pkz")
+    f"/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/{run}/RUN_{run}_.pkz")
 pls_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
+    f"/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/{run}/pls_attrs.csv")
 
 # Experiment - AFEX X
 
 # new outputs folder
-dump_folder = Path(f"r1_afex_{afex_treat}")
+dump_folder = Path(f"{run}_afex_{afex_treat}")
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
@@ -53,6 +66,10 @@ h52nc.set_historical_stime(new_descr=False)
 h52nc.EXPERIMENT = f"AFEX_{afex_treat}"
 from caete import run_breaks_hist as rb
 # h52nc.custom_rbrk(rb)
+
+print(f"Calendar is {h52nc.CALENDAR}")
+print(f"Time_UNITS  are {h52nc.TIME_UNITS}")
+print(f"EXPERIMENT is {h52nc.EXPERIMENT}")
 
 
 def zip_gridtime(grd_pool, interval):
@@ -67,7 +84,7 @@ def apply_funX(grid, brk):
     return grid
 
 
-n_proc = mp.cpu_count()  # // 2
+n_proc = mp.cpu_count() // 2
 
 for i, brk in enumerate(rb):
     print(f"Applying model to the interval {brk[0]}-{brk[1]}")

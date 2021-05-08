@@ -41,11 +41,10 @@ with open(run_path, 'rb') as fh:
 
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
-    gridcell.tas += 4
 
 h52nc.EXPERIMENT = "FACE_1995_eCO2-600ppm-HISTORICAL"
 from caete import run_breaks_hist as rb
-# h52nc.custom_rbrk(rb)
+h52nc.custom_rbrk(rb)
 
 
 def zip_gridtime(grd_pool, interval):
