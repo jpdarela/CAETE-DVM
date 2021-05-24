@@ -224,11 +224,11 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
     # least_significant_digit=None, _new=True)
 
     postp = os.path.join(Path(out_dir), Path("CAETE.h5"))
-    with tb.open_file(postp, mode="w", driver='H5FD_CORE', title="CAETÊ outputs") as h5file:
+    with tb.open_file(postp, mode="w", title="CAETÊ outputs") as h5file:
 
         group_run = h5file.create_group(
             "/", f'RUN{RUN}', f'CAETÊ outputs tables Run {RUN}')
-        exp_rows = 2749 * 365 * 36
+        exp_rows = 2749 * 365 * 100
         table_g1 = h5file.create_table(
             group_run, 'Outputs_G1', tt.run_g1, "out vars of g1",
             filters=h5_opt, expectedrows=exp_rows)

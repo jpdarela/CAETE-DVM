@@ -1239,7 +1239,7 @@ def h52nc(input_file, dump_nc_folder):
     import time
 
     ip = Path(input_file).resolve()
-    print(f"Loading file: {ip}", end='---')
+    print(f"Loading file: {ip}", end='-')
     h5f = tb.open_file(ip, mode='a', driver="H5FD_CORE")
     print('Loaded')
 
