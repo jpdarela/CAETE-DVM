@@ -210,7 +210,7 @@ def get_var_metadata(var):
               'awood_p2c': ['CWM- wood tissues P:C', 'g g-1', 'awood_p2c'],
               'froot_p2c': ['CWM- fine root P:C', 'g g-1', 'froot_p2c'],
               'amp': ['CWM- Percentage of fine root colonized by AM', '%', 'amp'],
-              'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia'],
+              'pdia': ['CWM- NPP alocated to N fixers', 'fraction_of_npp', 'pdia'],
               'ls': ['Living Plant Life Strategies', 'unitless', 'ls']}
 
     out = {}
