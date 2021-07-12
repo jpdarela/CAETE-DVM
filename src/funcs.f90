@@ -1315,7 +1315,7 @@ contains
    !====================================================================
    !====================================================================
 
-   subroutine pls_allometry (dwood1, cleaf1, cfroot1, cawood1, awood, height, diameter,&
+   subroutine pls_allometry (dt, cawood1, nind, height, diameter,&
       &crown_area)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
       !and in TFSv.1 (Fyllas et al., 2014)
@@ -1324,49 +1324,43 @@ contains
       use global_par
       use allometry_par
 
-      
-      integer(i_4),parameter :: npft = npls ! plss futuramente serao
-      real(r_8),dimension(npft),intent(in) :: cleaf1, cfroot1, cawood1, awood, dwood1
-      real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
-      real(r_8),dimension(npft) :: cleaf, cawood, cfroot, dwood, height_2
+      integer(i_4),parameter :: npft = npls 
       integer(i_4) :: p
+      real(r_8),dimension(ntraits, npls),intent(in) :: dt
+      real(r_8),dimension(npft),intent(in) :: cawood1
+      real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
+      integer(i_4),dimension(npft),intent(out) :: nind
+      real(r_8),dimension(npft) :: cawood, dwood, awood
 
       
       ! ============================
-      dwood = dwood1
-      cleaf = cleaf1
-      cfroot = cfroot1
+      dwood = dt(18,:)
       cawood = cawood1
       ! ============================
     
       do p = 1, npft !INICIALIZE OUTPUTS VARIABLES
          height(p) = 0.0D0
-         height_2(p) = 0.0D0 !TFS TEST
          diameter(p) = 0.0D0
          crown_area(p) = 0.0D0
+         nind(p) = 0.0D0
       enddo
 
       !PLS DIAMETER (in m.)
       do p = 1, npft !to grasses
          if(awood(p) .le. 0.0D0) then
             height(p) = 0.0D0 !in m.
-            height_2(p) = 0.0D0 !TFS test
             diameter(p) = 0.0D0 !in m.
             crown_area(p) = 0.0D0 !in m2.
-            dwood(p) = 0.0D0 !in g/cm-3 - is transfor to g/m-3 in diameter equation.
+            dwood(p) = 0.0D0
+            nind(p) = 0.0D0
          else
             diameter(p) = (4*(cawood(p)*1.0D3)/(dwood(p)*1D7)*pi*k_allom2)&
             &**(1/(2+k_allom3))
             height(p) = k_allom2*(diameter(p)**k_allom3)
             crown_area(p) = k_allom1*(diameter(p)**krp)
-
-            !--------------------------- TEST -----------------------------!
-            height_2(p) = 61.7*(1-exp(-0.0352*((diameter(p)*100)**0.694))) !TFS.v1 equation (Fyllas et al., 2014)
+            nind(p) = nint(diameter(p)**(-1.6))
+            print*, 'nind_funcs', nind(p), 'diameter', diameter(p), p
          endif
-
-         ! print*, 'HEIGHT_TFS=', height_2(p), 'cawood', cawood(p), p
-         ! print*, 'HEIGHT_LPJ=', height(p)
-
       enddo
    end subroutine pls_allometry
 

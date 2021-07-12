@@ -276,6 +276,8 @@ class grd:
         self.vp_cleaf = None
         self.vp_croot = None
         self.vp_cwood = None
+        self.vp_csap = None
+        self.vp_cheart = None
         self.vp_dcl = None
         self.vp_dca = None
         self.vp_dcf = None
@@ -283,6 +285,7 @@ class grd:
         self.vp_wdl = None
         self.vp_sto = None
         self.vp_lsid = None
+        self.vp_nind = None
 
         # Hydraulics
         self.theta_sat = None
@@ -554,6 +557,8 @@ class grd:
         # Biomass
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
             1.0, self.pls_table)
+        self.vp_nind = m.pls_allometry(self.pls_table, self.vp_cwood)
+
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
         self.vp_lsid = np.where(a > 0.0)[0]

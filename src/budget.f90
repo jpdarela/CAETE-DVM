@@ -176,6 +176,7 @@ contains
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
       real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux
+      integer(i_4), dimension(npls) :: nind_aux
       real(r_8) :: max_height
       !     START
       !     --------------
@@ -207,7 +208,7 @@ contains
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
 
-      call pls_allometry(dwood_aux, cl1_pft, cf1_pft, ca1_pft, awood_aux, height_aux, diameter_aux,&
+      call pls_allometry(dt, ca1_pft, nind_aux, height_aux, diameter_aux,&
       &                   crown_aux)
 
       max_height = maxval(height_aux(:))
