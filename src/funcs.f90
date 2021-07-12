@@ -1359,7 +1359,6 @@ contains
             height(p) = k_allom2*(diameter(p)**k_allom3)
             crown_area(p) = k_allom1*(diameter(p)**krp)
             nind(p) = nint(diameter(p)**(-1.6))
-            print*, 'nind_funcs', nind(p), 'diameter', diameter(p), p
          endif
       enddo
    end subroutine pls_allometry

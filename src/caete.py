@@ -561,6 +561,9 @@ class grd:
 
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
+        self.vp_csap = 0.05*self.vp_cwood
+        self.vp_cheart = 0.95*self.vp_cwood
+
         self.vp_lsid = np.where(a > 0.0)[0]
         self.ls = self.vp_lsid.size
         del a, b, c, d
@@ -736,6 +739,8 @@ class grd:
                 cleaf = np.zeros(npls, order='F')
                 cwood = np.zeros(npls, order='F')
                 croot = np.zeros(npls, order='F')
+                csap = np.zeros(npls, order='F')
+                cheart = np.zeros(npls, order='F')
                 dcl = np.zeros(npls, order='F')
                 dca = np.zeros(npls, order='F')
                 dcf = np.zeros(npls, order='F')
@@ -751,6 +756,8 @@ class grd:
                     cleaf[n] = self.vp_cleaf[c]
                     cwood[n] = self.vp_cwood[c]
                     croot[n] = self.vp_croot[c]
+                    csap[n] = self.vp_csap[c]
+                    cheart[n] = self.vp_cheart[c]
                     dcl[n] = self.vp_dcl[c]
                     dca[n] = self.vp_dca[c]
                     dcf[n] = self.vp_dcf[c]
@@ -761,10 +768,10 @@ class grd:
                 out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                          self.soil_temp, temp[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
-                                         ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
+                                         ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot, csap, cheart,
                                          dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
-                del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
+                del sto, cleaf, cwood, croot, csap, cheart, dcl, dca, dcf, uptk_costs
                 # Create a dict with the function output
                 daily_output = catch_out_budget(out)
 
@@ -1084,6 +1091,8 @@ class grd:
         cleaf=self.vp_cleaf
         cwood=self.vp_cwood
         croot=self.vp_croot
+        csap=self.vp_csap
+        cheart=self.vp_cheart
         dcl=self.vp_dcl
         dca=self.vp_dca
         dcf=self.vp_dcf
@@ -1114,7 +1123,7 @@ class grd:
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                      self.sp_snc[:4].sum(
                                      ), self.sp_so_p, self.sp_snc[4:].sum(),
-                                     co2, sto, cleaf, cwood, croot,
+                                     co2, sto, cleaf, cwood, croot, csap, cheart,
                                      dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
             # Create a dict with the function output
