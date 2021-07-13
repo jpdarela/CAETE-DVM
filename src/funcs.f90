@@ -47,7 +47,8 @@ module photo
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
         leap                   ,&
-        pls_allometry
+        pls_allometry          ,& ! (s), tree diameter (m), height (m), crown area (m2) and average individual number equations.
+        foliage_projective        ! (f), foliage projective cover (PLS) and fractional projective cover (grid-cell)
 
 contains
 
@@ -1318,7 +1319,6 @@ contains
    subroutine pls_allometry (dt, cawood1, nind, height, diameter,&
       &crown_area)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
-      !and in TFSv.1 (Fyllas et al., 2014)
 
       use types 
       use global_par
@@ -1362,6 +1362,35 @@ contains
          endif
       enddo
    end subroutine pls_allometry
+
+   subroutine foliage_projective (diameter,crown_area,nind,lai,fpc_ind,fpc_grid)
+      !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
+
+      use types 
+      use global_par
+      use allometry_par
+
+      integer(i_4),parameter :: npft = npls 
+      integer(i_4) :: p
+      real(r_8),dimension(npft),intent(in) :: diameter, crown_area, lai
+      integer(i_4),dimension(npft),intent(in) :: nind
+      real(r_8),dimension(npft),intent(out) :: fpc_ind, fpc_grid
+
+      print*, 'inputs =', '1', diameter, '2', crown_area, '3', lai
+
+      do p = 1, npft
+         fpc_ind(p) = 0.0D0
+         fpc_grid(p) = 0.0D0
+      enddo
+
+      do p = 1, npft
+         fpc_ind(p) = (1-exp(-0.5*lai(p)))
+         fpc_grid(p) = crown_area(p)*nind(p)*fpc_ind(p)
+
+         print*, 'FPC_INDIVIDUAL =', fpc_ind(p)
+      enddo
+
+   end subroutine foliage_projective
 
 end module photo
 
