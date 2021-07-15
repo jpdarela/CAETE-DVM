@@ -26,7 +26,8 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
-        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in, ch1_in,dleaf_in, dwood_in&
+        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in&
+        &, ch1_in,dleaf_in, dwood_in&
         &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
@@ -177,9 +178,10 @@ contains
       real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, dwood_aux, sla_aux
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
-      real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux
+      real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux, fpcind_aux, fpcgrid_aux
       integer(i_4), dimension(npls) :: nind_aux
       real(r_8) :: max_height
+      real(r_8) :: fpc_sum
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -287,6 +289,13 @@ contains
          sr = 0.0D0
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
+
+         call foliage_projective (crown_aux(p), laia(p), nind_aux(p), fpcind_aux(p), fpcgrid_aux(p))
+
+         fpc_sum = (fpcgrid_aux(p)+fpcgrid_aux(p+1))
+         print*, 'fpc_sum', fpc_sum, 'fpcgrid', fpcgrid_aux(p), 'nind', nind_aux(p), p 
+
+         ! print*, 'FPC_BUDGET', fpcgrid_aux(p)
 
          call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
