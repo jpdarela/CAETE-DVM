@@ -24,33 +24,29 @@ program test_caete
    subroutine test_budg()
 
       real(r_8),dimension(ntraits,npls) :: dt
-      real(r_4),dimension(npls) :: w1   !Initial (previous month last day) soil moisture storage (mm)
-      real(r_4),dimension(npls) :: g1   !Initial soil ice storage (mm)
-      real(r_4),dimension(npls) :: s1   !Initial overland snow storage (mm)
+      real(r_8) :: w2,w1             !Finiparal (last day) soil moisture storage (mm)
       real(r_4) :: ts                   ! Soil temperature (oC)
       real(r_4) :: temp                 ! Surface air temperature (oC)
       real(r_4) :: prec                 ! Precipitation (mm/day)
       real(r_4) :: p0                   ! Surface pressure (mb)
-      real(r_4) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_8) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4) :: rh                   ! Relative humidity
       real(r_4) :: mineral_n            ! Solution N NOx/NaOH gm-2
       real(r_4) :: labile_p             ! solution P O4P  gm-2
       real(r_8) :: on, sop, op          ! Organic N, isoluble inorganic P, Organic P g m-2
-      real(r_8) :: catm                 ! ATM CO2 concentration ppm
+      real(r_8) :: catm,wmax_in                 ! ATM CO2 concentration ppm
 
-      real(r_8),dimension(3,npls)  :: sto_budg ! Rapid Storage Pool (C,N,P)  g m-2
-      real(r_8),dimension(npls) :: cl1_pft  ! initial BIOMASS cleaf compartment kgm-2
-      real(r_8),dimension(npls) :: cf1_pft  !                 froot
-      real(r_8),dimension(npls) :: ca1_pft  !                 cawood
-      real(r_8),dimension(npls) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
-      real(r_8),dimension(npls) :: droot  ! k gm-2
-      real(r_8),dimension(npls) :: dwood  ! k gm-2
-      real(r_8),dimension(npls) :: uptk_costs ! g m-2
+      real(r_8),dimension(3,npls)  :: sto_budg_in ! Rapid Storage Pool (C,N,P)  g m-2
+      real(r_8),dimension(npls) :: cl1_in  ! initial BIOMASS cleaf compartment kgm-2
+      real(r_8),dimension(npls) :: cf1_in  !                 froot
+      real(r_8),dimension(npls) :: ca1_in  !                 cawood
+      real(r_8),dimension(npls) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+      real(r_8),dimension(npls) :: droot_in  ! k gm-2
+      real(r_8),dimension(npls) :: dwood_in  ! k gm-2
+      real(r_8),dimension(npls) :: uptk_costs_in ! g m-2
 
       !# out
       real(r_4) :: epavg          !Maximum evapotranspiration (mm/day)
-      real(r_8) :: smavg          !Snowmelt Daily average (mm/day)
-      real(r_8) :: ruavg          !Runoff Daily average (mm/day)
       real(r_8) :: evavg          !Actual evapotranspiration Daily average (mm/day)
       real(r_8) :: phavg          !Daily photosynthesis (Kg m-2 y-1)
       real(r_8) :: aravg          !Daily autotrophic respiration (Kg m-2 y-1)
@@ -73,9 +69,8 @@ program test_caete
       real(r_8),dimension(6) :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
 
       ! FULL OUTPUT
-      real(r_4),dimension(npls) :: w2             !Final (last day) soil moisture storage (mm)
-      real(r_4),dimension(npls) :: g2             !Final soil ice storage (mm)
-      real(r_4),dimension(npls) :: s2             !Final overland snow storage (mm)
+     
+      
       real(r_8),dimension(npls) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
       real(r_8),dimension(npls) :: cawoodavg_pft  !
       real(r_8),dimension(npls) :: cfrootavg_pft  !
@@ -85,7 +80,8 @@ program test_caete
       integer(i_2),dimension(3,npls) :: limitation_status_1
       integer(i_4),dimension(2,npls) :: uptk_strat_1
       real(r_8),dimension(npls) ::  npp2pay_1
-      real(r_8),dimension(3) :: wp, cp
+      real(r_8),dimension(3) :: cp
+      real(r_8) :: c_cost_cwm, height
 
       integer(i_4) :: i,j
 
@@ -103,9 +99,6 @@ program test_caete
       close(11)
 
       print*, size(dt)
-      w1 = 0.01
-      g1 = 0.0
-      s1 = 0.0
       ts = 23
       temp = 25.0
       prec = 2.5
@@ -118,40 +111,37 @@ program test_caete
       op = 4.0
       sop = 11.0
       catm = 400.0
-      sto_budg(:,:) = 0.0D0
-      cl1_pft(:) = 2.0D0
-      cf1_pft(:) = 2.0D0
-      ca1_pft(1) = 0.0D0
-      ca1_pft(2:) = 10.0D0
-      dleaf(:) = 0.0D0
-      droot(:) = 0.0D0
-      dwood(:) = 0.0D0
-      uptk_costs(:) = 0.0D0
+      sto_budg_in(:,:) = 0.0D0
+      cl1_in(:) = 2.0D0
+      cf1_in(:) = 2.0D0
+      ca1_in(1) = 0.0D0
+      ca1_in(2:) = 10.0D0
+      dleaf_in(:) = 0.0D0
+      droot_in(:) = 0.0D0
+      dleaf_in(:) = 0.0D0
+      uptk_costs_in(:) = 0.0D0
 
       do j = 1, 100
-         call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-         &, mineral_n, labile_p, on, sop, op, catm, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
-         &, droot, uptk_costs, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg&
+         call daily_budget(dt,w1, w2, ts, temp, p0, ipar, rh&
+         &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, dleaf_in, dwood_in&
+         &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
          &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
          &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
          &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-         &, delta_cveg_1, limitation_status_1, uptk_strat_1, wp, cp)
+         &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
 
-         w1 = real(w2, kind=r_4)
-         g1 = real(g2, kind=r_4)
-         s1 = real(s2, kind=r_4)
-         sto_budg = storage_out_bdgt_1
-         cl1_pft = cleafavg_pft
-         cf1_pft = cfrootavg_pft
-         ca1_pft = cawoodavg_pft
-         dleaf = delta_cveg_1(1,:)
-         droot = delta_cveg_1(2,:)
-         dwood = delta_cveg_1(3,:)
-         uptk_costs = npp2pay_1
+        
+         sto_budg_in = storage_out_bdgt_1
+         cl1_in = cleafavg_pft
+         cf1_in = cfrootavg_pft
+         ca1_in = cawoodavg_pft
+         dleaf_in = delta_cveg_1(1,:)
+         droot_in = delta_cveg_1(2,:)
+         dleaf_in = delta_cveg_1(3,:)
+         uptk_costs_in = npp2pay_1
 
          print*, uptk_strat_1(1,:)
          print*, uptk_strat_1(2,:)
-         print*, w1
          print*,nppavg
       enddo
 
