@@ -14,7 +14,7 @@ program test_caete
    print *,
    print *, "Testing/debugging bdgt"
 
-    !call test_c3()
+   call test_c3()
    call test_budg()
 
    contains
@@ -169,7 +169,7 @@ program test_caete
          cs = cs_out
          snc_in = snc
 
-         print *, snc,"<- snc"
+         print *, snc,"TESTE"
          print *, hr,"<- hr"
          print *, nmin, pmin, "<- N & P"
          print *, cs,"<- cs"
