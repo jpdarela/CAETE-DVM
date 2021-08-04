@@ -25,23 +25,27 @@ module budget
 
 contains
 
- 
+   ! TO RUN DEBUG ONLY 
+
+   ! subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
+   !    &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in&
+   !    &, dleaf_in, dwood_in&
+   !    &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
+   !    &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
+   !    &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
+   !    &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
+   !    &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
+
+   ! TO RUN ALL MODEL ONLY
+
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
-      &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in&
-      &, dleaf_in, dwood_in&
-      &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
-      &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
-      &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
-      &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-      &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
-!  subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
-      !   &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in&
-      !   &, ch1_in,dleaf_in, dwood_in&
-      !   &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
-      !   &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
-      !   &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
-      !   &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-      !   &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
+        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in&
+        &, ch1_in,dleaf_in, dwood_in&
+        &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
+        &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
+        &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
+        &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
 
 
       use types
@@ -73,8 +77,8 @@ contains
       real(r_8),dimension(npls),intent(in) :: cl1_in  ! initial BIOMASS cleaf compartment kgm-2
       real(r_8),dimension(npls),intent(in) :: cf1_in  !                 froot
       real(r_8),dimension(npls),intent(in) :: ca1_in  !                 cawood
-      ! real(r_8),dimension(npls),intent(in) :: cs1_in
-      ! real(r_8),dimension(npls),intent(in) :: ch1_in
+      real(r_8),dimension(npls),intent(in) :: cs1_in
+      real(r_8),dimension(npls),intent(in) :: ch1_in
       real(r_8),dimension(npls),intent(in) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2
       real(r_8),dimension(npls),intent(in) :: dwood_in  ! k gm-2
@@ -299,13 +303,6 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
-         ! call foliage_projective (crown_aux(p), laia(p), nind_aux(p), fpcind_aux(p), fpcgrid_aux(p))
-
-         ! fpc_sum = (fpcgrid_aux(p)+fpcgrid_aux(p+1))
-         ! print*, 'fpc_sum', fpc_sum, 'fpcgrid', fpcgrid_aux(p), 'nind', nind_aux(p), p 
-
-         ! print*, 'FPC_BUDGET', fpcgrid_aux(p)
-
          call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
                &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
@@ -315,6 +312,13 @@ contains
 
          height_int(p) = height_aux(ri)
          ! print*, 'height', height_aux(ri), 'height_int', height_int(p)
+
+         ! call foliage_projective (crown_aux(p), laia(p), nind_aux(p), fpcind_aux(p), fpcgrid_aux(p))
+
+         ! fpc_sum = (fpcgrid_aux(p)+fpcgrid_aux(p+1))
+         ! print*, 'fpc_sum', fpc_sum, 'fpcgrid', fpcgrid_aux(p), 'nind', nind_aux(p), p 
+
+         ! print*, 'FPC_BUDGET', fpcgrid_aux(p)
 
          ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
