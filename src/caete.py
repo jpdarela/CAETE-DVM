@@ -557,7 +557,7 @@ class grd:
         # Biomass
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
             1.0, self.pls_table)
-        self.vp_nind = m.pls_allometry(self.pls_table, self.vp_cwood)
+        self.vp_nind = m.pls_allometry(self.pls_table, self.vp_cwood,self.pls_table[6, :])
 
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
