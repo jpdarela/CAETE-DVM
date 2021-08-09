@@ -20,7 +20,8 @@ G1_1d = ['emaxm',
          'cue',
          'cdef',
          'vcmax',
-         'specific_la']
+         'specific_la',
+         'ls']
 
 G1_2d = ['nupt', ]
 
@@ -55,7 +56,8 @@ G3_1d = ["rcm",
          "litter_l",
          "cwd",
          "litter_fr",
-         "c_cost"]
+         "c_cost",
+         "height_pft"]
 
 G3_3d = ['storage_pool', ]
 
@@ -65,7 +67,7 @@ G3 = G3_1d + G3_3d + G3_6d
 
 PLS_head = ['PLS_id', 'g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
-            'amp', 'pdia']
+            'amp', 'pdia', 'dwood', 'sla_var']
 
 
 class run_g1(tb.IsDescription):
@@ -90,11 +92,13 @@ class run_g1(tb.IsDescription):
     cdef = tb.Float32Col(dflt=0.0, pos=15)
     vcmax = tb.Float32Col(dflt=0.0, pos=16)
     specific_la = tb.Float32Col(dflt=0.0, pos=17)
-    nupt1 = tb.Float32Col(dflt=0.0, pos=18)
-    nupt2 = tb.Float32Col(dflt=0.0, pos=19)
-    pupt1 = tb.Float32Col(dflt=0.0, pos=20)
-    pupt2 = tb.Float32Col(dflt=0.0, pos=21)
-    pupt3 = tb.Float32Col(dflt=0.0, pos=22)
+    ls = tb.Float32Col(dflt=0.0, pos=18)
+    nupt1 = tb.Float32Col(dflt=0.0, pos=19)
+    nupt2 = tb.Float32Col(dflt=0.0, pos=20)
+    pupt1 = tb.Float32Col(dflt=0.0, pos=21)
+    pupt2 = tb.Float32Col(dflt=0.0, pos=22)
+    pupt3 = tb.Float32Col(dflt=0.0, pos=23)
+    
 
 
 class run_g2(tb.IsDescription):
@@ -155,6 +159,7 @@ class run_g3(tb.IsDescription):
     sto2 = tb.Float32Col(dflt=0.0, pos=22)
     sto3 = tb.Float32Col(dflt=0.0, pos=23)
     c_cost = tb.Float32Col(dflt=0.0, pos=24)
+    height_pft = tb.Float32Col(dflt=0.0, pos=25)
 
 
 class PLS_temp(tb.IsDescription):
@@ -177,7 +182,8 @@ class PLS_temp(tb.IsDescription):
     froot_p2c = tb.Float32Col(dflt=0.0, pos=15)
     amp = tb.Float32Col(dflt=0.0, pos=16)
     pdia = tb.Float32Col(dflt=0.0, pos=17)
-
+    dwood = tb.Float32Col(dflt=0.0, pos=18)
+    sla_var = tb.Float32Col(dflt=0.0, pos=19)
 
 class spin_snapshots(tb.IsDescription):
 

@@ -11,8 +11,8 @@ from post_processing import cf_date2str, str2cf_date
 from caete_module import global_par as gp
 from caete import NO_DATA, print_progress, run_breaks
 
-TIME_UNITS = u"days since 1979-01-01"
-CALENDAR = u"proleptic_gregorian"
+TIME_UNITS = u"days since 1850-01-01 00:00:00"
+CALENDAR = u"standard"
 
 
 def build_strd(strd):
@@ -69,27 +69,27 @@ def get_var_metadata(var):
               'tas': ['sur_temperature_2m', 'celcius', 'tas'],
               'tsoil': ['soil_temperature', 'celcius', 'soil_temp'],
               'pr': ['precipitation', 'Kg m-2 month-1', 'pr'],
-              'litter_l': ['Litter C flux - leaf', 'g m-2', 'll'],
-              'cwd': ['Litter C flux - wood', 'g m-2', 'cwd'],
-              'litter_fr': ['Litter C flux fine root', 'g m-2', 'lr'],
-              'litter_n': ['Litter Nitrogen Flux', 'g m-2', 'ln'],
-              'litter_p': ['Litter phosphorus flux', 'g m-2', 'lp'],
+              'litter_l': ['Litter C flux - leaf', 'g m-2 day-1', 'll'],
+              'cwd': ['Litter C flux - wood', 'g m-2 day-1', 'cwd'],
+              'litter_fr': ['Litter C flux fine root', 'g m-2 day-1', 'lr'],
+              'litter_n': ['Litter Nitrogen Flux', 'g m-2 day-1', 'ln'],
+              'litter_p': ['Litter phosphorus flux', 'g m-2 day-1', 'lp'],
               'sto_c': ['PLant Reserve Carbon', 'g m-2', 'sto_c'],
               'sto_n': ['Pant Reserve Nitrogen', 'g m-2', 'sto_n'],
               'sto_p': ['Plant Reserve Phosphorus', 'g m-2', 'sto_p'],
               'c_cost': ['Carbon costs of Nutrients Uptake', 'g m-2 day-1', 'cc'],
               'wsoil': ['soil_water_content-wsoil', 'kg m-2', 'mrso'],
-              'evapm': ['evapotranpiration', 'kg m-2 day-1', 'et'],
-              'emaxm': ['potent. evapotranpiration', 'kg m-2 day-1', 'etpot'],
+              'evapm': ['evapotranspiration', 'kg m-2 day-1', 'et'],
+              'emaxm': ['potent. evapotrasnpiration', 'kg m-2 day-1', 'etpot'],
               'runom': ['total_runoff', 'kg m-2 day-1', 'mrro'],
               'aresp': ['autothrophic respiration', 'kg m-2 year-1', 'ar'],
-              'photo': ['photosynthesis', 'kg m-2 year-1', 'ph'],
+              'photo': ['gross primary productivity', 'kg m-2 year-1', 'gpp'],
               'npp': ['net primary productivity', 'kg m-2 year-1', 'npp'],
-              'lai': ['Leaf Area Index', 'm2 m-2', 'LAI'],
+              'lai': ['Leaf Area Index - LAI - BIG LEAF', 'm2 m-2', 'lai'],
               'rcm': ['stomatal resistence', 's m-1', 'rcm'],
               'hresp': ['Soil heterothrophic respiration', 'g m-2 day-1', 'hr'],
-              'nupt': ['Nitrogen uptake', 'g m-2', 'nupt'],
-              'pupt': ['Phosphorus uptake', 'g m-2', 'pupt'],
+              'nupt': ['Nitrogen uptake', 'g m-2 day-1', 'nupt'],
+              'pupt': ['Phosphorus uptake', 'g m-2 day-1', 'pupt'],
               'csoil': ['Soil Organic Carbon', 'g m-2', 'csoil'],
               'org_n': ['Soil Organic Nitrogen', 'g m-2', 'org_n'],
               'org_p': ['Soil Organic Phosphorus', 'g m-2', 'org_p'],
@@ -102,7 +102,7 @@ def get_var_metadata(var):
               'rg': ['growth respiration', 'kg m-2 year-1', 'rg'],
               'wue': ['water use efficiency', 'unitless', 'wue'],
               'vcmax': ['maximum RuBisCo activity', 'mol m-2 s-1', 'vcmax'],
-              'sla': ['specfic leaf area', 'm-2 g-1', 'SLA'],
+              'sla': ['specfic leaf area', 'm2 g-1', 'sla'],
               'cue': ['Carbon use efficiency', 'unitless', 'cue'],
               'cawood': ['C in woody tissues', 'kg m-2', 'cawood'],
               'cfroot': ['C in fine roots', 'kg m-2', 'cfroot'],
@@ -127,20 +127,21 @@ def get_var_metadata(var):
               'root_colim_p': ['colim P R', 'Time fraction', 'root_colim_p'],
               'root_colim_np': ['colim NP R', 'Time fraction', 'root_colim_np'],
               'upt_stratN0': ['passive N uptake', 'Time fraction', 'upt_stratN0'],
-              'upt_stratN1': ['nma', 'Time fraction', 'upt_stratN1'],
-              'upt_stratN2': ['nme', 'Time fraction', 'upt_stratN2'],
-              'upt_stratN3': ['am', 'Time fraction', 'upt_stratN3'],
-              'upt_stratN4': ['em', 'Time fraction', 'upt_stratN4'],
-              'upt_stratN6': ['am0', 'Time fraction', 'upt_stratN6'],
+              'upt_stratN1': ['active N uptake via AM ROOT surface - nma', 'Time fraction', 'upt_stratN1'],
+              'upt_stratN2': ['active N uptake via ECM ROOT surface - nme', 'Time fraction', 'upt_stratN2'],
+              'upt_stratN3': ['active N uptake via AM surface - am', 'Time fraction', 'upt_stratN3'],
+              'upt_stratN4': ['active N uptake via ECM surface - em', 'Time fraction', 'upt_stratN4'],
+              'upt_stratN6': ['N uptake via ECM NITROGENASE activity - em0', 'Time fraction', 'upt_stratN6'],
               'upt_stratP0': ['passive P uptake', 'Time fraction', 'upt_stratP0'],
-              'upt_stratP1': ['nma', 'Time fraction', 'upt_stratP1'],
-              'upt_stratP2': ['nme', 'Time fraction', 'upt_stratP2'],
-              'upt_stratP3': ['am', 'Time fraction', 'upt_stratP3'],
-              'upt_stratP4': ['em', 'Time fraction', 'upt_stratP4'],
-              'upt_stratP5': ['ram-ap', 'Time fraction', 'upt_stratP5'],
-              'upt_stratP6': ['rem-ap', 'Time fraction', 'upt_stratP6'],
-              'upt_stratP7': ['amap', 'Time fraction', 'upt_stratP7'],
-              'upt_stratP8': ['em0x', 'Time fraction', 'upt_stratP8'],
+              'upt_stratP1': ['active P uptake via AM ROOT surface - nma', 'Time fraction', 'upt_stratP1'],
+              'upt_stratP2': ['active P uptake via ECM ROOT surface - nme', 'Time fraction', 'upt_stratP2'],
+              'upt_stratP3': ['active P uptake via AM surface - am', 'Time fraction', 'upt_stratP3'],
+              'upt_stratP4': ['active P uptake via ECMM surface - em', 'Time fraction', 'upt_stratP4'],
+              'upt_stratP5': ['P uptake via ROOT AM Ptase activity - ram-ap', 'Time fraction', 'upt_stratP5'],
+              'upt_stratP6': ['P uptake via ROOT ECM Ptase activity - rem-ap', 'Time fraction', 'upt_stratP6'],
+              'upt_stratP7': ['P uptake via AM Ptase activity - amap', 'Time fraction', 'upt_stratP7'],
+              'upt_stratP8': ['P uptake via exudates activity - em0x', 'Time fraction', 'upt_stratP8'],
+              'height_pft': ['Plant Life Strategy height', 'm', 'height_pft'],
               'g1': ['CWM- G1 param for Stomat.Resist  model', 'unitless', 'g1'],
               'resopfrac': ['CWM- Leaf resorpton fractio', '%', 'resopfrac'],
               'tleaf': ['CWM- leaf turnover time', 'years', 'tleaf'],
@@ -157,7 +158,10 @@ def get_var_metadata(var):
               'awood_p2c': ['CWM- wood tissues P:C', 'g g-1', 'awood_p2c'],
               'froot_p2c': ['CWM- fine root P:C', 'g g-1', 'froot_p2c'],
               'amp': ['CWM- Percentage of fine root colonized by AM', '%', 'amp'],
-              'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia']}
+              'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia'],
+              'ls': ['Living Plant Life Strategies', 'unitless', 'ls'],
+              'dwood': ['Wood Density', 'g/cm-3', 'dwood'],
+              'sla_var': ['Specific Leaf Area (variant)', 'm2/g', 'sla_var']}
 
     out = {}
     for v in var:
@@ -165,40 +169,74 @@ def get_var_metadata(var):
     return out
 
 
-def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTORICAL ISIMIP"):
+def create_lband(res=0.5):
+    lon = np.arange(-179.75, 180, res, dtype=np.float64)[201:272]
+    lat = np.arange(89.75, -90, -res, dtype=np.float64)[160:221][::-1]
+    half = res / 2.0
+    latbnd = np.array([[l - half, l + half] for l in lat])
+    lonbnd = np.array([[l - half, l + half] for l in lon])
+
+    return lat, latbnd, lon, lonbnd
+
+
+def write_daily_output(arr, var, flt_attrs, time_index, nc_out,
+                       experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
+
+    def _azzmble(in_arr):
+        d0 = in_arr.shape[0]
+        out_arr = np.ma.masked_all((d0, 360, 720), dtype=np.float32)
+        out_arr.fill(NO_DATA[0])
+        out_arr.fill_value = NO_DATA[0]
+        out_arr[:, 160:221, 201:272] = in_arr.copy()
+        return out_arr
 
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
     calendar = CALENDAR
-    nc_out = Path("../nc_outputs")
+    # Prepare lat/lon
+    geo_v = create_lband()
 
-    start = cftime.date2num(str2cf_date(interval[0]), time_units, calendar)
-    stop = cftime.date2num(str2cf_date(interval[1]), time_units, calendar)
+    lat = geo_v[0]
+    lat_bnds = geo_v[1]
+    lon = geo_v[2]
+    lon_bnds = geo_v[3]
 
-    time_dim = np.arange(start, stop + 1, dtype=np.int32)
+    # tbnds = np.zeros(shape=(time_index.size, 2))
+    # tbnds[:, 0] = time_index
+    # tbnds[:, 1] = time_index + 1.0
 
-    longitude_0 = np.arange(-179.75, 180, 0.5)[201:272]
-    latitude_0 = np.arange(89.75, -90, -0.5)[160:221]
+    t0 = cf_date2str(cftime.num2date(time_index[0], time_units, calendar))
+    tf = cf_date2str(cftime.num2date(time_index[-1], time_units, calendar))
+
     print("\nSaving netCDF4 files")
     print_progress(0, len(var), prefix='Progress:', suffix='Complete')
-
     for i, v in enumerate(var):
         nc_filename = os.path.join(nc_out, Path(
-            f'{v}_{interval[0]}-{interval[1]}.nc4'))
+            f'{v}_{t0}-{tf}.nc4'))
         with dt(nc_filename, mode='w', format='NETCDF4') as rootgrp:
             # dimensions  & variables
 
-            rootgrp.createDimension("latitude", latitude_0.size)
-            rootgrp.createDimension("longitude", longitude_0.size)
+            rootgrp.createDimension("latitude", lat.size)
+            rootgrp.createDimension("longitude", lon.size)
+            rootgrp.createDimension("bnds", size=2)
             rootgrp.createDimension("time", None)
 
-            time = rootgrp.createVariable(varname="time", datatype=np.int32,
-                                          dimensions=("time",))
+            # BOUNDS
+            # TB = rootgrp.createVariable(
+            #     "time_bnds", tbnds.dtype, ("time", "bnds"))
+            YB = rootgrp.createVariable(
+                "lat_bnds", lat_bnds.dtype, ("latitude", "bnds"))
+            XB = rootgrp.createVariable(
+                "lon_bnds", lon_bnds.dtype, ("longitude", "bnds"))
+            # nb = rootgrp.createVariable("nb", int, ("nb",))
+
+            time = rootgrp.createVariable("time", np.float64, ("time",))
+
             latitude = rootgrp.createVariable(
-                varname="latitude", datatype=np.float32, dimensions=("latitude",))
+                "latitude", lat.dtype, ("latitude",))
             longitude = rootgrp.createVariable(
-                varname="longitude", datatype=np.float32, dimensions=("longitude",))
+                "longitude", lon.dtype, ("longitude",))
             var_ = rootgrp.createVariable(varname=flt_attrs[v][2], datatype=np.float32,
                                           dimensions=(
                                               "time", "latitude", "longitude",),
@@ -214,17 +252,24 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
             time.units = time_units
             time.calendar = calendar
             time.axis = 'T'
+            time[...] = time_index
+            # TB[...] = tbnds
 
             # lat
             latitude.units = u"degrees_north"
             latitude.long_name = u"latitude"
             latitude.standart_name = u"latitude"
             latitude.axis = u'Y'
+            latitude[...] = lat
+            YB[...] = lat_bnds
+
             # lon
             longitude.units = "degrees_east"
             longitude.long_name = "longitude"
             longitude.standart_name = "longitude"
             longitude.axis = u'X'
+            longitude[...] = lon
+            XB[...] = lon_bnds
             # var
             var_.long_name = flt_attrs[v][0]
             var_.units = flt_attrs[v][1]
@@ -232,22 +277,20 @@ def write_daily_output(arr, var, flt_attrs, interval, experiment="TEST RUN HISTO
             var_.missing_value = NO_DATA[0]
 
             # WRITING DATA
-            longitude[:] = longitude_0
-            latitude[:] = latitude_0
-            time[:] = time_dim
+            out_arr = np.fliplr(arr[i])
             var_[:, :, :] = np.ma.masked_array(
-                arr[i], mask=arr[i] == NO_DATA[0])
+                out_arr, mask=out_arr == NO_DATA[0])
             print_progress(i + 1, len(var), prefix='Progress:',
                            suffix='Complete')
 
 
-def write_snap_output(arr, var, flt_attrs, time_index, experiment="TEST RUN HISTORICAL ISIMIP"):
+def write_snap_output(arr, var, flt_attrs, time_index, nc_out,
+                      experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
 
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
     calendar = CALENDAR
-    nc_out = Path("../nc_outputs")
 
     time_dim = time_index
 
@@ -313,12 +356,12 @@ def write_snap_output(arr, var, flt_attrs, time_index, experiment="TEST RUN HIST
                            suffix='Complete')
 
 
-def write_area_output(arr, time_index, experiment="TEST RUN HISTORICAL ISIMIP"):
+def write_area_output(arr, time_index, nc_out,
+                      experiment="HISTORICAL RUN ISIMIP - WATCH+WFDEI"):
     NO_DATA = [-9999.0, -9999.0]
 
     time_units = TIME_UNITS
     calendar = CALENDAR
-    nc_out = Path("../nc_outputs")
 
     time_dim = time_index
 
@@ -388,19 +431,30 @@ def write_area_output(arr, time_index, experiment="TEST RUN HISTORICAL ISIMIP"):
         var_[:, :, :, :] = np.ma.masked_array(arr, mask=arr == NO_DATA[0])
 
 
-def create_ncG1(table, interval):
-    nc_out = Path("../nc_outputs")
+def create_ncG1(table, interval, nc_out):
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     vars = ['photo', 'aresp', 'npp', 'lai', 'wue', 'cue',
-            'vcmax', 'sla', 'nupt', 'pupt']
+            'vcmax', 'sla', 'nupt', 'pupt', 'ls']
 
     dates = time_queries(interval)
     dm1 = len(dates)
+    time_units = TIME_UNITS
+    calendar = CALENDAR
+
+    sdate = str2cf_date(interval[0])
+    edate = str2cf_date(interval[1])
+    start = cftime.date2num(sdate, time_units, calendar)
+    stop = cftime.date2num(edate, time_units, calendar)
+
+    time_index = np.arange(start, stop + 1, dtype=np.float64)
+    print("dm1 = ", dm1, 'time_axis  = ', time_index.size)
+    print('day0 = ', cftime.num2date(start, time_units, calendar))
+    print('dayf = ', cftime.num2date(stop, time_units, calendar))
 
     photo = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     aresp = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -410,6 +464,7 @@ def create_ncG1(table, interval):
     cue = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     vcmax = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     specific_la = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    ls = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     nupt1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     nupt2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     pupt1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -439,6 +494,8 @@ def create_ncG1(table, interval):
             out['grid_y'], out['grid_x'], out['vcmax'])
         specific_la[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['specific_la'])
+        ls[i, :, :] = assemble_layer(
+            out['grid_y'], out['grid_x'], out['ls'])
         nupt1[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['nupt1'])
         nupt2[i, :, :] = assemble_layer(
@@ -460,27 +517,39 @@ def create_ncG1(table, interval):
     np.place(pupt1, mask=pupt2 == -9999.0, vals=NO_DATA)
 
     vars = ['photo', 'aresp', 'npp', 'lai', 'wue', 'cue',
-            'vcmax', 'sla', 'nupt', 'pupt']
+            'vcmax', 'sla', 'nupt', 'pupt', 'ls']
 
     arr = (photo, aresp, npp, lai, wue, cue, vcmax,
-           specific_la, nupt1, pupt1)
+           specific_la, nupt1, pupt1, ls)
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, interval)
+    write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
 
-def create_ncG2(table, interval):
-    nc_out = Path("../nc_outputs")
+def create_ncG2(table, interval, nc_out):
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
-    vars = ['csoil', 'total_n', 'total_p', 'org_n', 'org_p',
-            'inorg_n', 'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
+    vars = ['csoil', 'org_n', 'org_p', 'inorg_n',
+            'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
 
     dates = time_queries(interval)
     dm1 = len(dates)
+
+    time_units = TIME_UNITS
+    calendar = CALENDAR
+
+    sdate = str2cf_date(interval[0])
+    edate = str2cf_date(interval[1])
+    start = cftime.date2num(sdate, time_units, calendar)
+    stop = cftime.date2num(edate, time_units, calendar)
+
+    time_index = np.arange(start, stop + 1, dtype=np.float64)
+    print("dm1 = ", dm1, 'time_axis  = ', time_index.size)
+    print('day0 = ', cftime.num2date(start, time_units, calendar))
+    print('dayf = ', cftime.num2date(stop, time_units, calendar))
 
     csoil1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     csoil2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -565,23 +634,35 @@ def create_ncG2(table, interval):
             'inorg_p', 'sorbed_p', 'hresp', 'nmin', 'pmin']
     arr = (csoil, org_n, org_p, inorg_n, inorg_p, sorbed_p, hresp, nmin, pmin)
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, interval)
+    write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
 
-def create_ncG3(table, interval):
-    nc_out = Path("../nc_outputs")
+def create_ncG3(table, interval, nc_out):
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     vars = ["rcm", "runom", "evapm", "wsoil", "cleaf", "cawood",
             "cfroot", "litter_l", "cwd", "litter_fr", "litter_n",
-            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost"]
+            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost", "height_pft"]
 
     dates = time_queries(interval)
     dm1 = len(dates)
+
+    time_units = TIME_UNITS
+    calendar = CALENDAR
+
+    sdate = str2cf_date(interval[0])
+    edate = str2cf_date(interval[1])
+    start = cftime.date2num(sdate, time_units, calendar)
+    stop = cftime.date2num(edate, time_units, calendar)
+
+    time_index = np.arange(start, stop + 1, dtype=np.float64)
+    print("dm1 = ", dm1, 'time_axis  = ', time_index.size)
+    print('day0 = ', cftime.num2date(start, time_units, calendar))
+    print('dayf = ', cftime.num2date(stop, time_units, calendar))
 
     rcm = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     runom = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -604,6 +685,7 @@ def create_ncG3(table, interval):
     sto2 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     sto3 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     c_cost = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    height_pft = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
 
     print("\nQuerying data from file FOR", end=': ')
     for v in vars:
@@ -652,6 +734,8 @@ def create_ncG3(table, interval):
             out['grid_y'], out['grid_x'], out['sto3'])
         c_cost[i, :, :] = assemble_layer(
             out['grid_y'], out['grid_x'], out['c_cost'])
+        height_pft[i, :, :] = assemble_layer(
+            out['grid_y'], out['grid_x'], out['height_pft'])
         print_progress(i + 1,
                        len(dates),
                        prefix='Progress:',
@@ -666,24 +750,23 @@ def create_ncG3(table, interval):
 
     vars = ["rcm", "runom", "evapm", "wsoil", "cleaf", "cawood",
             "cfroot", "litter_l", "cwd", "litter_fr", "litter_n",
-            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost"]
+            "litter_p", "sto_c", "sto_n", "sto_p", "c_cost", "height_pft"]
 
     arr = (rcm, runom, evapm, wsoil, cleaf, cawood, cfroot,
            litter_l, cwd, litter_fr, litter_n, litter_p,
-           sto1, sto2, sto3, c_cost)
+           sto1, sto2, sto3, c_cost, height_pft)
 
     var_attrs = get_var_metadata(vars)
-    write_daily_output(arr, vars, var_attrs, interval)
+    write_daily_output(arr, vars, var_attrs, time_index, nc_out)
 
 
-def lim_data(table):
-
-    nc_out = Path("../nc_outputs")
+def lim_data(table, nc_out):
+    print("\n EXTRACTING NUTRIENT LIMITATION INFORMATION")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     dm1 = len(run_breaks)
 
@@ -789,11 +872,11 @@ def lim_data(table):
 
     flt_attrs = get_var_metadata(vars)
     print("Saving growth limitation outputs")
-    write_snap_output(arr, vars, flt_attrs, time_index)
+    write_snap_output(arr, vars, flt_attrs, time_index, nc_out)
 
 
-def ustrat_data(table):
-    nc_out = Path("../nc_outputs")
+def ustrat_data(table, nc_out):
+    print("\n EXTRACTING N/P UPTAKE STRATEGY INFORMATION")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
         print(f"Creating output folder at{nc_out.resolve()}")
@@ -889,17 +972,16 @@ def ustrat_data(table):
 
     flt_attrs = get_var_metadata(vars)
     print("Saving uptake strategy outputs")
-    write_snap_output(arr, vars, flt_attrs, time_index)
+    write_snap_output(arr, vars, flt_attrs, time_index, nc_out)
 
 
-def ccc(table, pls_table):
-
-    nc_out = Path("../nc_outputs")
+def ccc(table, pls_table, nc_out):
+    print("\n EXTRACTING TRAITS CWM INFORMATION")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     dm1 = len(run_breaks) + 1
     g1 = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
@@ -919,6 +1001,8 @@ def ccc(table, pls_table):
     froot_p2c = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     amp = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     pdia = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    dwood = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    sla_var = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
 
     time_index = []
     pls_array = pls_table.read_where("PLS_id >= 0")
@@ -965,6 +1049,10 @@ def ccc(table, pls_table):
                                         out['area_0'], pls_array['amp'])
             pdia[i, :, :] = assemble_cwm(
                 out['grid_y'], out['grid_x'], out['area_0'], pls_array['pdia'])
+            dwood[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['dwood'])
+            sla_var[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['sla_var'])
 
             g1[i + 1, :, :] = assemble_cwm(out['grid_y'],
                                            out['grid_x'], out['area_f'], pls_array['g1'])
@@ -1000,6 +1088,10 @@ def ccc(table, pls_table):
                                             out['area_f'], pls_array['amp'])
             pdia[i + 1, :, :] = assemble_cwm(
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['pdia'])
+            dwood[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['dwood'])
+            sla_var[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['sla_var'])
         else:
             afdate = str2cf_date(interval[1])
             time_index.append(
@@ -1036,6 +1128,13 @@ def ccc(table, pls_table):
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['froot_p2c'])
             amp[i + 1, :, :] = assemble_cwm(out['grid_y'], out['grid_x'],
                                             out['area_f'], pls_array['amp'])
+            pdia[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['pdia'])
+            dwood[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['dwood'])
+            sla_var[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['sla_var'])
+
 
     arr = [g1,
            resopfrac,
@@ -1053,7 +1152,9 @@ def ccc(table, pls_table):
            awood_p2c,
            froot_p2c,
            amp,
-           pdia]
+           pdia,
+           dwood,
+           sla_var]
 
     vars = ['g1',
             'resopfrac',
@@ -1071,20 +1172,21 @@ def ccc(table, pls_table):
             'awood_p2c',
             'froot_p2c',
             'amp',
-            'pdia']
+            'pdia',
+            'dwood',
+            'sla_var']
 
     flt_attrs = get_var_metadata(vars)
-    write_snap_output(arr, vars, flt_attrs, time_index)
+    write_snap_output(arr, vars, flt_attrs, time_index, nc_out)
 
 
-def create_nc_area(table):
-
-    nc_out = Path("../nc_outputs")
+def create_nc_area(table, nc_out):
+    print("\n EXTRACTING PLS ABUNDANCE INFORMATION")
     out_data = True if nc_out.exists() else os.mkdir(nc_out)
     if out_data is None:
-        print(f"Creating output folder at{nc_out.resolve()}")
+        print(f"\n\nCreating output folder at{nc_out.resolve()}")
     elif out_data:
-        print(f"Saving outputs in {nc_out.resolve()}")
+        print(f"\n\nSaving outputs in {nc_out.resolve()}")
 
     dm1 = len(run_breaks) + 1
 
@@ -1112,57 +1214,51 @@ def create_nc_area(table):
             area[i + 1, :, :,
                  :] = assemble_layer_area(out['grid_y'], out['grid_x'], out['area_f'])
 
-    write_area_output(area, time_index)
+    write_area_output(area, time_index, nc_out)
 
 
-def h52nc(input_file):
+def h52nc(input_file, dump_nc_folder):
 
     import time
 
-    interval1 = (run_breaks[0][0], '19891231')
-    interval2 = ('19900101', '19991231')
-    interval3 = ('20000101', run_breaks[-1][-1])
-
-
-    print("Loading file...")
-    h5f = tb.open_file(input_file, mode='a', driver="H5FD_CORE")
+    ip = Path(input_file).resolve()
+    print(f"Loading file: {ip}", end='---')
+    h5f = tb.open_file(ip, mode='a', driver="H5FD_CORE")
     print('Loaded')
 
     g1_table = h5f.root.RUN0.Outputs_G1
     print('Creating Sorted table for g1', time.ctime())
-    index_dt = g1_table.cols.date.create_csindex()
+    index_dt1 = g1_table.cols.date.create_csindex()
     t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
     # t1d = h5f.root.RUN0.indexedT1date
 
     g2_table = h5f.root.RUN0.Outputs_G2
     print('Creating Sorted table for g2', time.ctime())
-    index_dt = g2_table.cols.date.create_csindex()
+    index_dt2 = g2_table.cols.date.create_csindex()
     t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
     # t2d = h5f.root.RUN0.indexedT2date
 
     g3_table = h5f.root.RUN0.Outputs_G3
     print('Creating Sorted table for g3', time.ctime())
-    index_dt = g3_table.cols.date.create_csindex()
+    index_dt3 = g3_table.cols.date.create_csindex()
     t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
     # t3d = h5f.root.RUN0.indexedT3date
 
+    for interval in run_breaks:
+        create_ncG1(t1d, interval, dump_nc_folder)
+        create_ncG2(t2d, interval, dump_nc_folder)
+        create_ncG3(t3d, interval, dump_nc_folder)
 
-    create_ncG1(t1d, interval1)
-    create_ncG1(t1d, interval2)
-    create_ncG1(t1d, interval3)
-    create_ncG2(t2d, interval1)
-    create_ncG2(t2d, interval2)
-    create_ncG2(t2d, interval3)
-    create_ncG3(t3d, interval1)
-    create_ncG3(t3d, interval2)
-    create_ncG3(t3d, interval3)
+    # t1d.remove()
+    # t2d.remove()
+    # t3d.remove()
 
     snap_table = h5f.root.RUN0.spin_snapshot
-    lim_data(snap_table)
-    ustrat_data(snap_table)
-    create_nc_area(snap_table)
+    lim_data(snap_table, dump_nc_folder)
+    ustrat_data(snap_table, dump_nc_folder)
+    create_nc_area(snap_table, dump_nc_folder)
 
     pls_table = h5f.root.RUN0.PLS
-    ccc(snap_table, pls_table)
+    ccc(snap_table, pls_table, dump_nc_folder)
 
     h5f.close()

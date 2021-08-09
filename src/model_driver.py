@@ -3,15 +3,17 @@
 #     | |     / _ \ |  _|   | | |  _|
 #     | |___ / ___ \| |___  | | | |___
 #      \____/_/   \_\_____| |_| |_____|
+
 import os
+import sys
 import _pickle as pkl
 import bz2
 import copy
 import multiprocessing as mp
-from os import mkdir
 from pathlib import Path
-import joblib
+from random import shuffle
 
+import joblib
 from netCDF4 import Dataset
 import numpy as np
 
@@ -28,6 +30,7 @@ __descr__ = """RUN CAETÊ"""
 FUNCALLS = 0
 
 
+
 def check_start():
     while True:
         i = input("---RUN IN SOMBRERO(y/n): ")
@@ -41,8 +44,53 @@ def check_start():
             pass
     return r
 
-
+# Check sombrero
 sombrero = check_start()
+
+# Set folder to store outputs
+outf = input("Give a name to your run: ")
+dump_folder = Path(f'../outputs/{outf}').resolve()
+nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
+print(
+    f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
+print(f"The final netCDF files will be stored at: {nc_outputs}\n")
+
+zone = ""
+y0, y1 = 0, 0
+x0, x1 = 0, 0
+folder = "central"
+
+if not sombrero:
+    zone = input("Select a zone [c: central, s: south, e: east, nw: NW]: ")
+    if zone in ['c','s','e','nw']:
+        print("Running in the zone:", zone)
+        pass
+    else:
+        print("Running in the zone: c")
+        zone = 'c'
+
+if zone == 'c':
+    y0, y1 = 175, 176 #186 #176
+    x0, x1 = 235, 236 #241 #236
+    folder = "central"
+
+elif zone == 's':
+    y0, y1 = 200, 211
+    x0, x1 = 225, 231
+    folder = "south"
+
+elif zone == 'nw':
+    y0, y1 = 168, 175
+    x0, x1 = 225, 230
+    folder = "north_west"
+
+elif zone == 'e':
+    y0, y1 = 190, 201
+    x0, x1 = 255, 261
+    folder = "east"
+else:
+    assert sombrero
+
 
 # Water saturation, field capacity & wilting point
 # Topsoil
@@ -58,13 +106,19 @@ map_subwp = np.load("../input/soil/swp.npy")
 tsoil = (map_ws, map_fc, map_wp)
 ssoil = (map_subws, map_subfc, map_subwp)
 
+theta_sat = np.load("../input/hydra/theta_sat.npy")
+psi_sat = np.load("../input/hydra/psi_sat.npy")
+soil_texture = np.load("../input/hydra/soil_text.npy")
+
+hsoil = (theta_sat, psi_sat, soil_texture)
+
 # Select the location of input climate and soil data (for each grid cell )
 if sombrero:
     s_data = Path("/home/amazonfaceme/shared_data").resolve()
     clim_and_soil_data = Path("HISTORICAL-RUN")
 else:
     s_data = Path("../input").resolve()
-    clim_and_soil_data = Path("caete_input")
+    clim_and_soil_data = Path(folder)
 
 
 # Shared data among grid cells
@@ -85,7 +139,7 @@ with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh
     co2_data = fh.readlines()
 
 # FUNCTIONAL TRAITS DATA
-pls_table = pls.table_gen(npls)
+pls_table = pls.table_gen(npls, dump_folder)
 
 # # Create the gridcell objects
 if sombrero:
@@ -94,19 +148,27 @@ if sombrero:
     for Y in range(360):
         for X in range(720):
             if not mask[Y, X]:
-                grid_mn.append(grd(X, Y))
+                grid_mn.append(grd(X, Y, outf))
 
 else:
     grid_mn = []
-    for Y in range(168, 171):
-        for X in range(225, 228):
+    for Y in range(y0, y1):
+        for X in range(x0, x1):
             if not mask[Y, X]:
-                grid_mn.append(grd(X, Y))
+                grid_mn.append(grd(X, Y, outf))
 
 
 def apply_init(grid):
-    grid.init_caete_dyn(input_path, stime, co2_data, pls_table, tsoil, ssoil)
+    grid.init_caete_dyn(input_path, stime, co2_data,
+                        pls_table, tsoil, ssoil, hsoil)
     return grid
+
+
+def chunks(lst, chunck_size):
+    shuffle(lst)
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), chunck_size):
+        yield lst[i:i + chunck_size]
 
 
 # # START GRIDCELLS
@@ -150,6 +212,11 @@ def apply_funX(grid, brk):
     return grid
 
 
+def apply_fun_eCO2(grid, brk):
+    grid.run_caete(brk[0], brk[1], fix_co2=600.0)
+    return grid
+
+
 # Garbage collection
 #
 del pls_table
@@ -164,11 +231,12 @@ if __name__ == "__main__":
     if output_path.exists():
         pass
     else:
+        from os import mkdir
         mkdir(output_path)
 
     import time
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else 128
+    n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count()
 
     fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())
@@ -197,6 +265,11 @@ if __name__ == "__main__":
                 result = p.starmap(fun, input)
             else:
                 result = p.map(fun, input)
+                # # Divide in chunks to leverage the work
+                # result = []
+                # for l in chunks(input, n_proc * 2):
+                #     r1 = p.map(fun, input)
+                # result += r1
         end_spinup = time.time() - start
         fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
         return result
@@ -213,12 +286,29 @@ if __name__ == "__main__":
     del result
 
     # Save Ground 0
-    with open("RUN0.pkz", 'wb') as fh2:
-        print("Saving gridcells with init state in RUN0.pkz")
+    g0_path = Path(os.path.join(
+        dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
+    with open(g0_path, 'wb') as fh2:
+        print(f"Saving gridcells with init state in: {g0_path}\n")
         joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
     result = result1
     del result1
+    # result has the gridcells with total aptitude to run
+
+    # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
+    # if FACE_EXPERIMENT == 'y':
+    #     interval_1 = run_breaks[:11] 1979-2000
+    #     interval_2 = run_breaks[11:] 2001-1016
+    #     for i, brk in enumerate(interval_1):
+    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #         result = zip_gridtime(result, (brk,))
+    #         result = applyXy(apply_funX, result)
+    #     for i, brk in enumerate(interval_2):
+    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
+    #         result = zip_gridtime(result, (brk,))
+    #         result = applyXy(apply_fun_eCO2, result)
+    # else:
     for i, brk in enumerate(run_breaks):
         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
         result = zip_gridtime(result, (brk,))
@@ -226,9 +316,10 @@ if __name__ == "__main__":
 
     fh.close()
 
-    print(time.ctime())
-    print("Saving db - This will take some hours")
-    write_h5()
-    print("\n\nSaving netCDF4 files")
-    h52nc("../outputs/CAETE.h5")
-    print(time.ctime())
+    # print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
+    # print("Saving db - This will take some hours\n")
+    # write_h5(dump_folder)
+    # print("\n\nSaving netCDF4 files")
+    # h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
+    # h52nc(h5path, nc_outputs)
+    # print(time.ctime())

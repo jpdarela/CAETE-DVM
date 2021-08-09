@@ -25,13 +25,27 @@ module budget
 
 contains
 
+   ! TO RUN DEBUG ONLY 
+
+   ! subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
+   !    &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in&
+   !    &, dleaf_in, dwood_in&
+   !    &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
+   !    &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
+   !    &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
+   !    &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
+   !    &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
+
+   ! TO RUN ALL MODEL ONLY
+
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
-        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, dleaf_in, dwood_in&
+        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in&
+        &, ch1_in,dleaf_in, dwood_in&
         &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
+        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
 
 
       use types
@@ -40,7 +54,7 @@ contains
       use productivity
       use omp_lib
 
-      use photo, only: pft_area_frac, sto_resp
+      use photo
       use water, only: evpot2, penman, available_energy, runoff
 
       !     ----------------------------INPUTS-------------------------------
@@ -51,7 +65,7 @@ contains
       real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
       real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
-      real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_8),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
       real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
       real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
@@ -63,6 +77,8 @@ contains
       real(r_8),dimension(npls),intent(in) :: cl1_in  ! initial BIOMASS cleaf compartment kgm-2
       real(r_8),dimension(npls),intent(in) :: cf1_in  !                 froot
       real(r_8),dimension(npls),intent(in) :: ca1_in  !                 cawood
+      real(r_8),dimension(npls),intent(in) :: cs1_in
+      real(r_8),dimension(npls),intent(in) :: ch1_in
       real(r_8),dimension(npls),intent(in) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2
       real(r_8),dimension(npls),intent(in) :: dwood_in  ! k gm-2
@@ -80,7 +96,7 @@ contains
       real(r_8),intent(out) :: f5avg          !Daily canopy resistence s/m
       real(r_8),intent(out) :: rmavg          !maintenance/growth respiration (Kg m-2 y-1)
       real(r_8),intent(out) :: rgavg          !maintenance/growth respiration (Kg m-2 y-1)
-      real(r_8),intent(out) :: wueavg         ! Water use efficiency
+      real(r_8),intent(out) :: wueavg         ! Water use efficiency real(r_8),dimension(npls) :: w2,w1             !Final (last day) soil moisture storage (mm)
       real(r_8),intent(out) :: cueavg         ! [0-1]
       real(r_8),intent(out) :: vcmax_1          ! µmol m-2 s-1
       real(r_8),intent(out) :: specific_la_1    ! m2 g(C)-1
@@ -97,6 +113,7 @@ contains
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
+      real(r_8),intent(out) :: height
       real(r_8),dimension(3,npls),intent(out) :: delta_cveg_1
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
@@ -104,6 +121,7 @@ contains
       real(r_8),dimension(npls),intent(out) ::  npp2pay_1 ! C costs of N/P uptake
       real(r_8),dimension(3),intent(out) :: cp
       real(r_8),intent(out) :: c_cost_cwm
+
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri, i, j
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
@@ -164,14 +182,19 @@ contains
       real(r_8),dimension(:,:),allocatable :: lit_nut_content  ! d0=6 g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
+      real(r_8),dimension(:), allocatable :: height_int
 
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs
 
-      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs
+      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, dwood_aux, sla_aux
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
+      real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux !, fpcind_aux, fpcgrid_aux
+      integer(i_4), dimension(npls) :: nind_aux
+      real(r_8) :: max_height
+      ! real(r_8) :: fpc_sum
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -180,6 +203,8 @@ contains
       ! create copies of some input variables (arrays) - ( they are passed by reference by standard)
       do i = 1,npls
          awood_aux(i) = dt(7,i)
+         dwood_aux(i) = dt(18,i)
+         sla_aux(i) = dt(19,i)
          cl1_pft(i) = cl1_in(i)
          ca1_pft(i) = ca1_in(i)
          cf1_pft(i) = cf1_in(i)
@@ -199,6 +224,12 @@ contains
 
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
+
+      call pls_allometry(dt, ca1_pft,awood_aux, nind_aux, height_aux, diameter_aux,&
+      &                   crown_aux)
+
+      max_height = maxval(height_aux(:))
+      ! print*, 'max_height', max_height
 
       nlen = sum(run)    ! New length for the arrays in the main loop
       allocate(lp(nlen))
@@ -249,6 +280,7 @@ contains
       allocate(cf2(nlen))
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
+      allocate(height_int(nlen))
 
       !     Maximum evapotranspiration   (emax)
       !     =================================
@@ -271,12 +303,22 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
-         call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
+         call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
-               &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
+               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
+               &, wue(p), c_def(p), vcmax(p), tra(p))
 
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
+
+         height_int(p) = height_aux(ri)
+         ! print*, 'height', height_aux(ri), 'height_int', height_int(p)
+
+         ! call foliage_projective (crown_aux(p), laia(p), nind_aux(p), fpcind_aux(p), fpcgrid_aux(p))
+
+         ! fpc_sum = (fpcgrid_aux(p)+fpcgrid_aux(p+1))
+         ! print*, 'fpc_sum', fpc_sum, 'fpcgrid', fpcgrid_aux(p), 'nind', nind_aux(p), p 
+
+         ! print*, 'FPC_BUDGET', fpcgrid_aux(p)
 
          ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
@@ -315,7 +357,7 @@ contains
          storage_out_bdgt(:,p) = day_storage(:,p)
 
          ! Calculate storage GROWTH respiration
-         sr = 0.45D0 * growth_stoc ! g m-2
+         sr = 0.25D0 * growth_stoc ! g m-2
          if(sr .gt. 1.0D2) sr = 0.0D0
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
@@ -369,6 +411,7 @@ contains
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
       epavg = emax !mm/day
+      
 
       ! FILL OUTPUT DATA
       evavg = 0.0D0
@@ -400,6 +443,7 @@ contains
       limitation_status_1(:,:) = 0
       uptk_strat_1(:,:) = 0
       npp2pay_1(:) = 0.0
+      height = 0.0D0
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
 
@@ -430,6 +474,10 @@ contains
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
       cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
+
+      height = sum(height_int * ocp_coeffs, mask= .not. isnan(height_int))
+
+      ! print*, 'height [output]=', height_pft_1, 'coeff', ocp_coeffs
 
       ! FILTER BAD VALUES
       do p = 1,2
@@ -477,7 +525,6 @@ contains
 
       do p = 1, nlen
          ri = lp(p)
-
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)
@@ -486,6 +533,7 @@ contains
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
+         ! print*, 'HEIGHT FIM BUDGET='
       enddo
 
       ! deallocate(w)
@@ -532,6 +580,7 @@ contains
       deallocate(cf2)
       deallocate(ca2)
       deallocate(day_storage)
+      deallocate(height_int)
 
    end subroutine daily_budget
 

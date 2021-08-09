@@ -239,7 +239,7 @@ module carbon_costs
       ccn(am) = cc_active(kan, amp * av_n, kanc, amp * croot)
       ccn(em) = cc_active(ken, ecm * av_n, kenc, ecm * croot)
       ccn(Am0) =  1.0D15 ! cc_active(kan, amp * on, kenc, amp * croot)
-      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot)
+      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot) + 0.05
    end subroutine active_costn
 
 
@@ -265,8 +265,8 @@ module carbon_costs
 
       real(r_8), parameter :: kp   = 0.7D0  ,&
                             & kcp  = 1.0D0  ,& ! PArameters from FUN3.0 source code (modified)
-                            & kap  = 0.8D0  ,& ! AkP<-0.1 #AM cost
-                            & kapc = 1.2D0  ,& ! AkCp<-0.5 #AM cost
+                            & kap  = 0.7D0  ,& ! AkP<-0.1 #AM cost
+                            & kapc = 1.1D0  ,& ! AkCp<-0.5 #AM cost
                             & kep  = 0.7D0  ,& ! EkP<-0.05 #ECM cost
                             & kepc = 1.3D0     ! EkCp<-1.0 #ECM cost
 
@@ -298,7 +298,7 @@ module carbon_costs
 
       ! !Costs of Mycorrhizal AP/exudates
       ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
-      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 2.0
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 0.8 ! Artificial increasing of c costs
    end subroutine active_costp
 
 
@@ -435,7 +435,7 @@ module carbon_costs
       ! Insoluble inorg p pool = (8)
    end subroutine prep_out_p
 
-
+!!!!### TO BE IMPLEMENTED ... C costs of AP enzymatic activity + Nitrogenase + exudates
    subroutine ap_actvity1(c_xm, strat, cc_array, ezc_ap)
       real(r_8), intent(in) :: c_xm ! g m-2 C expended on P uptake
       integer(i_4), intent(in) :: strat ! index for the active costs array

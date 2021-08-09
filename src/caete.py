@@ -23,6 +23,7 @@ import os
 import sys
 import copy
 import _pickle as pkl
+import random as rd
 from threading import Thread
 from time import sleep
 from pathlib import Path
@@ -33,18 +34,33 @@ from joblib import load, dump
 import cftime
 import numpy as np
 from numpy import log as ln
-
+from hydro_caete import soil_water
 from caete_module import global_par as gp
 from caete_module import budget as model
 from caete_module import water as st
 from caete_module import photo as m
 from caete_module import soil_dec
 
+NO_DATA = [-9999.0, -9999.0]
 
+print(f"RUNNING CAETÊ WITH {gp.npls} PLANT LIFE STRATEGIES")
 # GLOBAL
 out_ext = ".pkz"
 npls = gp.npls
-mask = np.load("../input/mask/mask_raisg-360-720.npy")
+
+while True:
+    maskp = input("TWO MASK OPTIONS: AMAZON BIOME (a); PAN-AMAZON (b): ")
+    if maskp == 'b':
+        mask = np.load("../input/mask/mask_raisg-360-720.npy")
+        break
+    if maskp == 'a':
+        mask = np.load("../input/mask/mask_BIOMA.npy")
+        break
+
+Pan_Amazon_RECTANGLE = "y = 160:221 x = 201:272"
+
+Pan_Amazon_CORNERS = {'ulc': (201, 160),
+                      'lrc': (271, 220)}
 
 run_breaks = [('19790101', '19801231'),
               ('19810101', '19821231'),
@@ -63,15 +79,8 @@ run_breaks = [('19790101', '19801231'),
               ('20070101', '20081231'),
               ('20090101', '20101231'),
               ('20110101', '20121231'),
-              ('20130101', '20141231')]
-
-TIME_UNITS = u"days since 1979-01-01"
-CALENDAR = u"proleptic_gregorian"
-NO_DATA = [-9999.0, -9999.0]
-
-longitude_0 = np.arange(-179.75, 180, 0.5)[201:272]
-latitude_0 = np.arange(89.75, -90, -0.5)[160:221]
-
+              ('20130101', '20141231'),
+              ('20150101', '20161231')]
 
 warnings.simplefilter("default")
 
@@ -125,7 +134,7 @@ def catch_out_budget(out):
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
            "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
-           "limitation_status", "uptk_strat", 'cp', 'c_cost_cwm']
+           "limitation_status", "uptk_strat", "cp", "c_cost_cwm", "height_pft"]
 
     return dict(zip(lst, out))
 
@@ -136,73 +145,16 @@ def catch_out_carbon3(out):
     return dict(zip(lst, out))
 
 
-def B_func(Th33, Th1500):
-    """calculates the coefficient of moisture-tension, used for water flux estimation"""
-
-    if Th33 <= 0.0:
-        Th33 = 0.4
-        rwarn("Th33  < 0")
-    if np.isneginf(Th33) or np.isposinf(Th33) or not Th33 == Th33:
-        Th33 = 0.4
-        rwarn("Th33 is NaN or inf")
-
-    if Th1500 <= 0.0:
-        Th1500 = 0.2
-        rwarn("Th1500  <= 0")
-    if np.isneginf(Th1500) or np.isposinf(Th1500) or not Th1500 == Th1500:
-        Th1500 = 0.2
-        rwarn("Th1500 is NaN or inf")
-
-    D = ln(Th33) - ln(Th1500)
-    B = (ln(1500) - ln(33)) / D
-
-    def lbd_func(C):
-        """processes the data from B_func, returning the slope of logarithmic tension-moisture curve"""
-        if C == 0:
-            return 0.0
-        lbd = 1 / C
-        return lbd
-
-    return lbd_func(B)
-
-
-def ksat_func(ThS, Th33, lbd):
-    """soil conductivity in saturated condition. Output in mm/h"""
-    if ThS < Th33:
-        rwarn("sat <= fc IN ksat_func")
-    # assert ThS > Th33, "sat <= fc IN ksat_func"
-    ksat = 1930 * (ThS - Th33) ** (3 - lbd)
-    return ksat
-
-
-def kth_func(Th, ThS, lbd, ksat):
-    """soil conductivity in unsaturated condition. Output in mm/h"""
-    if Th < 0.0:
-        rwarn("water content < 0 IN kth_func")
-        Th = 0.0
-    # assert Th >= 0, "water content < 0 IN kth_func"
-    if lbd == 0:
-        return 0
-    if ThS == 0:
-        return 0
-    if Th < 0:
-        Th = 0.0
-    kth = ksat * (Th / ThS) ** (3 + (2 / lbd))
-
-    return kth
-
-
-# MODEL
-
 class grd:
 
     """
     Defines the gridcell object - This object stores all the input data,
     the data comming from model runs for each grid point, all the state variables and all the metadata
     describing the life cycle of the gridcell and the filepaths to the generated model outputs
+    This class also provide several methods to apply the CAETÊ model with proper formated climatic and soil variables
     """
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, dump_folder):
         """Construct the gridcell object"""
 
         # CELL Identifiers
@@ -215,13 +167,16 @@ class grd:
         self.pos = (int(self.x), int(self.y))
         self.pls_table = None   # will receive the np.array with functional traits data
         self.outputs = {}       # dict, store filepaths of output data
+        self.realized_runs = []
+        self.experiments = 1
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
         self.neighbours = None
 
         self.ls = None          # Number of surviving plss//
 
-        self.out_dir = Path("../outputs/gridcell{}/".format(self.xyname))
+        self.out_dir = Path(
+            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
         self.flush_data = None
 
         # Time attributes
@@ -292,32 +247,14 @@ class grd:
         self.lim_status = None
         self.uptake_strategy = None
         self.carbon_costs = None
+        self.height_pft = None
 
         # WATER POOLS
-
         # Water content for each soil layer
         self.wp_water_upper_mm = None  # mm
         self.wp_water_lower_mm = None  # mm
-        self.wp_water_upper = None  # vol/vol
-        self.wp_water_lower = None  # vol/vol
         # Saturation point
-        self.wp_sat_water_upper_ratio = None  # vol/vol
-        self.wp_sat_water_lower_ratio = None  # vol/vol
-        self.wp_sat_water_upper_mm = None  # mm
-        self.wp_sat_water_lower_mm = None  # mm
-        # Wilting point and field capacity (upper layer)
-        self.wp_wilting_point_upper = None  # vol/vol
-        self.wp_field_capacity_upper = None  # vol/vol
-        # Wilting point and field capacity (lower layer)
-        self.wp_wilting_point_lower = None  # vol/vol
-        self.wp_field_capacity_lower = None  # vol/vol
-        # Maximum water content for the entire grid cell
         self.wmax_mm = None  # mm
-        # CONSTANTS
-        self.lbd_up = None
-        self.ksat_up = None
-        self.lbd_lo = None
-        self.ksat_lo = None
 
         # SOIL POOLS
         self.input_nut = None
@@ -339,6 +276,8 @@ class grd:
         self.vp_cleaf = None
         self.vp_croot = None
         self.vp_cwood = None
+        self.vp_csap = None
+        self.vp_cheart = None
         self.vp_dcl = None
         self.vp_dca = None
         self.vp_dcf = None
@@ -346,6 +285,12 @@ class grd:
         self.vp_wdl = None
         self.vp_sto = None
         self.vp_lsid = None
+        self.vp_nind = None
+
+        # Hydraulics
+        self.theta_sat = None
+        self.psi_sat = None
+        self.soil_texture = None
 
     def _allocate_output_nosave(self, n):
         """allocate space for some tracked variables during spinup
@@ -404,12 +349,12 @@ class grd:
         self.storage_pool = np.zeros(shape=(3, n), order='F')
         self.ls = np.zeros(shape=(n,), order='F')
         self.carbon_costs = np.zeros(shape=(n,), order='F')
-
         self.area = np.zeros(shape=(npls, n), order='F')
         self.lim_status = np.zeros(
             shape=(3, npls, n), dtype=np.dtype('int16'), order='F')
         self.uptake_strategy = np.zeros(
             shape=(2, npls, n), dtype=np.dtype('int32'), order='F')
+        self.height_pft = np.zeros(shape=(n,), order='F')
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -467,6 +412,7 @@ class grd:
                      'ls': self.ls,
                      'lim_status': self.lim_status,
                      'c_cost': self.carbon_costs,
+                     'height_pft': self.height_pft,
                      'u_strat': self.uptake_strategy,
                      'storage_pool': self.storage_pool,
                      'calendar': self.calendar,    # Calendar name
@@ -518,6 +464,7 @@ class grd:
         self.lim_status = None
         self.carbon_costs = None,
         self.uptake_strategy = None
+        self.height_pft = None
 
         return to_pickle
 
@@ -532,7 +479,7 @@ class grd:
             dump(data_obj, fh, compress=('zlib', 3), protocol=4)
         self.flush_data = 0
 
-    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil):
+    def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN
             TODO adapt to change climatic data/ maybe another method
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data
@@ -563,6 +510,7 @@ class grd:
             self.input_nut.append(self.data[nut])
         self.soil_dict = dict(zip(self.nutlist, self.input_nut))
         self.data = None
+
         # TIME
         self.stime = copy.deepcopy(stime_i)
         self.calendar = self.stime['calendar']
@@ -589,56 +537,35 @@ class grd:
 
         # STATE
         # Water
-        self.wp_water_upper = np.float64(0.1)  # vol/vol
-        self.wp_water_lower = np.float64(0.1)  # vol/vol
+        ws1 = tsoil[0][self.y, self.x].copy()
+        fc1 = tsoil[1][self.y, self.x].copy()
+        wp1 = tsoil[2][self.y, self.x].copy()
 
-        self.wp_water_upper_mm = self.wp_water_upper * 300.0
-        self.wp_water_lower_mm = self.wp_water_lower * 700.0
+        ws2 = ssoil[0][self.y, self.x].copy()
+        fc2 = ssoil[1][self.y, self.x].copy()
+        wp2 = ssoil[2][self.y, self.x].copy()
 
-        self.wp_sat_water_upper_ratio = tsoil[0][self.y, self.x].copy()
-        self.wp_field_capacity_upper = tsoil[1][self.y, self.x].copy()
-        self.wp_wilting_point_upper = tsoil[2][self.y, self.x].copy()
-        msg = f"wp_negative UPPER-{self.xyname}"
-        assert self.wp_wilting_point_upper > 0.0, msg
-        msg = f"Ufc > wsat-{self.xyname}"
-        assert self.wp_sat_water_upper_ratio > self.wp_field_capacity_upper, msg
-        msg = f"Ufc < wp-{self.xyname}"
-        assert self.wp_field_capacity_upper > self.wp_wilting_point_upper, msg
+        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.wp_water_upper_mm = self.swp.w1
+        self.wp_water_lower_mm = self.swp.w2
+        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
 
-        self.wp_sat_water_lower_ratio = ssoil[0][self.y, self.x].copy()
-        self.wp_field_capacity_lower = ssoil[1][self.y, self.x].copy()
-        self.wp_wilting_point_lower = ssoil[2][self.y, self.x].copy()
-        msg = f"wp_negative LOWER-{self.xyname}"
-        assert self.wp_wilting_point_lower > 0.0, msg
-        msg = f"Sfc > wsat-{self.xyname}"
-        assert self.wp_sat_water_lower_ratio > self.wp_field_capacity_lower, msg
-        msg = f"Sfc < wp-{self.xyname}"
-        assert self.wp_field_capacity_lower > self.wp_wilting_point_lower, msg
-
-        self.wp_sat_water_upper_mm = self.wp_sat_water_upper_ratio * 300.0
-        self.wp_sat_water_lower_mm = self.wp_sat_water_lower_ratio * 700.0
-
-        self.wmax_mm = np.float64(
-            self.wp_sat_water_upper_mm + self.wp_sat_water_lower_mm)
-
-        self.lbd_up = B_func(self.wp_field_capacity_upper,
-                             self.wp_wilting_point_upper)
-
-        self.ksat_up = ksat_func(self.wp_sat_water_upper_ratio,
-                                 self.wp_field_capacity_upper, self.lbd_up)
-
-        self.lbd_lo = B_func(self.wp_field_capacity_lower,
-                             self.wp_wilting_point_lower)
-
-        self.ksat_lo = ksat_func(self.wp_sat_water_lower_ratio,
-                                 self.wp_field_capacity_lower, self.lbd_lo)
+        self.theta_sat = hsoil[0][self.y, self.x].copy()
+        self.psi_sat = hsoil[1][self.y, self.x].copy()
+        self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
             1.0, self.pls_table)
+        self.vp_nind = m.pls_allometry(self.pls_table, self.vp_cwood,self.pls_table[6, :])
+
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
+        self.vp_csap = 0.05*self.vp_cwood
+        self.vp_cheart = 0.95*self.vp_cwood
+
         self.vp_lsid = np.where(a > 0.0)[0]
+        self.ls = self.vp_lsid.size
         del a, b, c, d
         self.vp_dcl = np.zeros(shape=(npls,), order='F')
         self.vp_dca = np.zeros(shape=(npls,), order='F')
@@ -666,88 +593,31 @@ class grd:
 
         return None
 
-    def update_gridcell_input(self):
-        pass
+    def clean_run(self, dump_folder, save_id):
+        abort = False
+        mem = str(self.out_dir)
+        self.out_dir = Path(
+            "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
+        try:
+            os.makedirs(str(self.out_dir), exist_ok=False)
+        except FileExistsError:
+            abort = True
+            print(
+                f"Folder {dump_folder} already exists. You cannot orerwrite its contents")
+        finally:
+            assert self.out_dir.exists(), f"Failed to create {self.out_dir}"
 
-    def insert_pls(self):
-        pass
+        if abort:
+            print("A exception was occurred ABORTING")
+            self.out_dir = Path(mem)
+            print(
+                f"Returning the original grd_{self.xyname}.out_dir to {self.out_dir}")
+            return None
 
-    def _update_pool(self, prain, evapo):
-        """Calculates upper and lower soil water pools for the grid cell,
-        as well as the grid runoff and the water fluxes between layers"""
-
-        # evapo adaptation to use in both layers
-        ev1 = evapo * 0.3
-        ev2 = evapo - ev1
-        # conversion from mm to ratio v/v for evapo and prain
-        evap_upper = (ev1 / 300.0)
-        evap_lower = (ev2 / 700.0)
-
-        pr = prain / 300.0
-
-        # rainfall addition to upper water content
-        self.wp_water_upper += pr
-
-        # runoff initial values
-        runoff = 0.0  # mm
-        runoff1 = 0.0
-        runoff2 = 0.0
-
-        # POOL 1 - 0-30 cm
-        if self.wp_water_upper > self.wp_sat_water_upper_ratio:
-            # saturated condition (runoff and flux)
-            runoff1 += self.wp_water_upper - self.wp_sat_water_upper_ratio
-            runoff1 = runoff1 * 300.0      # conversion to mm
-            runoff += runoff1
-            self.wp_water_upper = self.wp_sat_water_upper_ratio
-            flux1_mm = self.ksat_up * 24.0  # output in mm/day
-        else:
-            # unsaturated condition (no runoff)
-            flux1_mm = kth_func(self.wp_water_upper,
-                                self.wp_sat_water_upper_ratio, self.lbd_up, self.ksat_up) * 24
-
-        # POOL 2 30-100 cm
-        if self.wp_water_lower > self.wp_sat_water_lower_ratio:
-            # saturated condition (runoff and flux)
-            runoff2 += self.wp_water_lower - self.wp_sat_water_lower_ratio
-            runoff2 = runoff2 * 700.0       # conversion to mm
-            runoff += runoff2
-            self.wp_water_lower = self.wp_sat_water_lower_ratio
-            flux2_mm = kth_func(self.wp_water_lower,
-                                self.wp_sat_water_lower_ratio, self.lbd_lo, self.ksat_lo) * 24
-        else:
-            # unsaturated condition (no runoff)
-            flux2_mm = kth_func(self.wp_water_lower,
-                                self.wp_sat_water_lower_ratio, self.lbd_lo, self.ksat_lo) * 24
-
-        # flux convertion for each layer, from mm to v/v
-
-        flux1_tol1 = flux1_mm / 300.0   # because of the difference in depth,
-        flux1_tol2 = flux1_mm / 700.0   # the layer flux assumes a different value
-        # in ratio v/v for each layer from the same value in mm
-        flux2 = flux2_mm / 700.0
-
-        # Water pool update
-
-        self.wp_water_upper -= (evap_upper + flux1_tol1)
-        self.wp_water_lower += flux1_tol2
-        self.wp_water_lower -= (flux2 + evap_lower)
-
-        # asserts the water content is never less than zero
-        self.wp_water_upper = np.float64(
-            0.0) if self.wp_water_upper < 0.0 else self.wp_water_upper
-        self.wp_water_lower = np.float64(
-            0.0) if self.wp_water_lower < 0.0 else self.wp_water_lower
-
-        self.wp_water_upper_mm = self.wp_water_upper * 300.0  # conversion to mm
-        self.wp_water_lower_mm = self.wp_water_lower * 700.0
-
-        self.wp_water_upper_mm = np.float64(
-            0.0) if self.wp_water_upper_mm < 0.0 else self.wp_water_upper_mm
-        self.wp_water_lower_mm = np.float64(
-            0.0) if self.wp_water_lower_mm < 0.0 else self.wp_water_lower_mm
-
-        return runoff
+        self.realized_runs.append((save_id, self.outputs.copy()))
+        self.outputs = {}
+        self.run_counter = 0
+        self.experiments += 1
 
     def run_caete(self, start_date, end_date, spinup=0, fix_co2=None, save=True, nutri_cycle=True):
         """ start_date [str]   "yyyymmdd" Start model execution
@@ -869,6 +739,8 @@ class grd:
                 cleaf = np.zeros(npls, order='F')
                 cwood = np.zeros(npls, order='F')
                 croot = np.zeros(npls, order='F')
+                csap = np.zeros(npls, order='F')
+                cheart = np.zeros(npls, order='F')
                 dcl = np.zeros(npls, order='F')
                 dca = np.zeros(npls, order='F')
                 dcf = np.zeros(npls, order='F')
@@ -878,12 +750,14 @@ class grd:
                 sto[1, self.vp_lsid] = self.vp_sto[1, :]
                 sto[2, self.vp_lsid] = self.vp_sto[2, :]
                 # Just Check the integrity of the data
-                assert self.vp_lsid.size == self.vp_cleaf.size, 'different shapes'
+                assert self.vp_lsid.size == self.vp_cleaf.size, 'different array sizes'
                 c = 0
                 for n in self.vp_lsid:
                     cleaf[n] = self.vp_cleaf[c]
                     cwood[n] = self.vp_cwood[c]
                     croot[n] = self.vp_croot[c]
+                    csap[n] = self.vp_csap[c]
+                    cheart[n] = self.vp_cheart[c]
                     dcl[n] = self.vp_dcl[c]
                     dca[n] = self.vp_dca[c]
                     dcf[n] = self.vp_dcf[c]
@@ -894,10 +768,10 @@ class grd:
                 out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                          self.soil_temp, temp[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
-                                         ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
+                                         ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot, csap, cheart,
                                          dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
-                del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
+                del sto, cleaf, cwood, croot, csap, cheart, dcl, dca, dcf, uptk_costs
                 # Create a dict with the function output
                 daily_output = catch_out_budget(out)
 
@@ -905,128 +779,172 @@ class grd:
                 self.vp_ocp = daily_output['ocpavg'][self.vp_lsid]
                 self.ls[step] = self.vp_lsid.size
 
+                if self.vp_lsid.size < 1 and not save:
+                    self.vp_lsid = np.sort(
+                        np.array(
+                            rd.sample(list(np.arange(gp.npls)), gp.npls // 2)))
+                    rwarn(
+                        f"Gridcell {self.xyname} has less than 1 living Plant Life Strategies - Re-populating")
+                    # REPOPULATE]
+                    # UPDATE vegetation pools
+                    self.vp_cleaf=np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    self.vp_cwood=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_croot=np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    awood=self.pls_table[6, :]
+                    for i0, i in enumerate(self.vp_lsid):
+                        if awood[i] > 0.0:
+                            self.vp_cwood[i0]=0.5
+
+                    self.vp_dcl=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dca=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_dcf=np.zeros(shape=(self.vp_lsid.size,))
+                    self.vp_sto=np.zeros(shape=(3, self.vp_lsid.size))
+                    self.sp_uptk_costs=np.zeros(shape=(self.vp_lsid.size,))
+
+                    self.vp_ocp=np.zeros(shape=(self.vp_lsid.size,))
+                    del awood
+                    self.ls[step]=self.vp_lsid.size
+                else:
+                    if self.vp_lsid.size < 1:
+                        rwarn(f"Gridcell {self.xyname} has less \
+                                than 1 living Plant Life Strategies")
+                    # UPDATE vegetation pools
+                    self.vp_cleaf=daily_output['cleafavg_pft'][self.vp_lsid]
+                    self.vp_cwood=daily_output['cawoodavg_pft'][self.vp_lsid]
+                    self.vp_croot=daily_output['cfrootavg_pft'][self.vp_lsid]
+                    self.vp_dcl=daily_output['delta_cveg'][0][self.vp_lsid]
+                    self.vp_dca=daily_output['delta_cveg'][1][self.vp_lsid]
+                    self.vp_dcf=daily_output['delta_cveg'][2][self.vp_lsid]
+                    self.vp_sto=daily_output['stodbg'][:, self.vp_lsid]
+                    self.sp_uptk_costs=daily_output['npp2pay'][self.vp_lsid]
+
                 # UPDATE STATE VARIABLES
                 # WATER CWM
-                self.runom[step] = self._update_pool(
+                self.runom[step]=self.swp._update_pool(
                     prec[step], daily_output['evavg'])
-
-                # UPDATE vegetation pools ! ABLE TO USE SPARSE MATRICES
-                self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
-                self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
-                self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
-                self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
-                self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
-                self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
-                self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
-                self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
+                self.swp.w1=np.float64(
+                    0.0) if self.swp.w1 < 0.0 else self.swp.w1
+                self.swp.w2=np.float64(
+                    0.0) if self.swp.w2 < 0.0 else self.swp.w2
+                self.wp_water_upper_mm=self.swp.w1
+                self.wp_water_lower_mm=self.swp.w2
 
                 # Plant uptake and Carbon costs of nutrient uptake
-                self.nupt[:, step] = daily_output['nupt']
-                self.pupt[:, step] = daily_output['pupt']
+                self.nupt[:, step]=daily_output['nupt']
+                self.pupt[:, step]=daily_output['pupt']
                 for i in range(3):
-                    self.storage_pool[i, step] = np.sum(
+                    self.storage_pool[i, step]=np.sum(
                         self.vp_ocp * self.vp_sto[i])
 
                 # OUTPUTS for SOIL CWM
-                self.litter_l[step] = daily_output['litter_l']
-                self.cwd[step] = daily_output['cwd']
-                self.litter_fr[step] = daily_output['litter_fr']
-                self.lnc[:, step] = daily_output['lnc']
-                wtot = self.wp_water_upper_mm + self.wp_water_lower_mm
-                s_out = soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
+                self.litter_l[step]=daily_output['litter_l']
+                self.cwd[step]=daily_output['cwd']
+                self.litter_fr[step]=daily_output['litter_fr']
+                self.lnc[:, step]=daily_output['lnc']
+                wtot=self.wp_water_upper_mm + self.wp_water_lower_mm
+                s_out=soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
                                          self.cwd[step], self.litter_fr[step], self.lnc[:, step],
                                          self.sp_csoil, self.sp_snc)
 
-                soil_out = catch_out_carbon3(s_out)
+                soil_out=catch_out_carbon3(s_out)
 
                 # Organic C N & P
-                self.sp_csoil = soil_out['cs']
-                self.sp_snc = soil_out['snc']
+                self.sp_csoil=soil_out['cs']
+                self.sp_snc=soil_out['snc']
 
                 # UPDATE ORGANIC POOLS
-                self.sp_organic_n = self.sp_snc[:2].sum()
-                self.sp_sorganic_n = self.sp_snc[2:4].sum()
-                self.sp_organic_p = self.sp_snc[4:6].sum()
-                self.sp_sorganic_p = self.sp_snc[6:].sum()
+                self.sp_organic_n=self.sp_snc[:2].sum()
+                self.sp_sorganic_n=self.sp_snc[2:4].sum()
+                self.sp_organic_p=self.sp_snc[4:6].sum()
+                self.sp_sorganic_p=self.sp_snc[6:].sum()
 
-                # INCLUDE MINERALIZED NUTRIENTS
                 # IF NUTRICYCLE:
                 if nutri_cycle:
                     self.sp_available_p += soil_out['pmin']
                     self.sp_available_n += soil_out['nmin']
-
                     # NUTRIENT DINAMICS
                     # Inorganic N
                     self.sp_in_n += self.sp_available_n + self.sp_so_n
-                    self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
-                    self.sp_available_n = soil_dec.solution_n_equil(
+                    self.sp_so_n=soil_dec.sorbed_n_equil(self.sp_in_n)
+                    self.sp_available_n=soil_dec.solution_n_equil(
                         self.sp_in_n)
                     self.sp_in_n -= self.sp_so_n + self.sp_available_n
 
                     # Inorganic P
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
-                    self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
-                    self.sp_available_p = soil_dec.solution_p_equil(
+                    self.sp_so_p=soil_dec.sorbed_p_equil(self.sp_in_p)
+                    self.sp_available_p=soil_dec.solution_p_equil(
                         self.sp_in_p)
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
 
                     # Sorbed P
-                    if self.pupt[1, step] > 0.05:
+                    if self.pupt[1, step] > 0.75:
                         rwarn(
-                            f"Puptk_SO > soP_max - 729 | in spin{s}, step{step} - {self.pupt[1, step]}")
-                        self.pupt[1, step] = 0.0
+                            f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                        self.pupt[1, step]=0.0
 
                     if self.pupt[1, step] > self.sp_so_p:
                         rwarn(
-                            f"Puptk_SO > soP_pool - 731 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                            f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
 
                     self.sp_so_p -= self.pupt[1, step]
-
-                    t1 = np.all(self.sp_snc > 0.0)
+                    try:
+                        t1=np.all(self.sp_snc > 0.0)
+                    except:
+                        if self.sp_snc is None:
+                            self.sp_snc=np.zeros(shape=8,)
+                            t1=True
+                        elif self.sp_snc is not None:
+                            t1=True
+                        rwarn(f"Exception while handling sp_snc pool")
                     if not t1:
-                        self.snc[np.where(self.snc < 0)] = 0.0
+                        self.sp_snc[np.where(self.sp_snc < 0)[0]]=0.0
                     # ORGANIC nutrients uptake
                     # N
                     if self.nupt[1, step] < 0.0:
                         rwarn(
-                            f"NuptkO < 0 - 745 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                        self.nupt[1, step] = 0.0
-                    if self.nupt[1, step] > 1.5:
+                            f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                        self.nupt[1, step]=0.0
+                    if self.nupt[1, step] > 2.5:
                         rwarn(
-                            f"NuptkO  > max - 749 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                        self.nupt[1, step] = 0.0
+                            f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                        self.nupt[1, step]=0.0
 
-                    total_on = self.sp_snc[:4].sum()
-                    frsn = [i / total_on for i in self.sp_snc[:4]]
+                    total_on=self.sp_snc[:4].sum()
+                    frsn=[i / total_on for i in self.sp_snc[:4]]
                     for i, fr in enumerate(frsn):
                         self.sp_snc[i] -= self.nupt[1, step] * fr
-                    self.sp_organic_n = self.sp_snc[:2].sum()
-                    self.sp_sorganic_n = self.sp_snc[2:4].sum()
+                    self.sp_organic_n=self.sp_snc[:2].sum()
+                    self.sp_sorganic_n=self.sp_snc[2:4].sum()
 
                     # P
                     if self.pupt[2, step] < 0.0:
                         rwarn(
-                            f"PuptkO < 0 - 759 | in spin{s}, step{step} - {self.pupt[2, step]}")
-                        self.pupt[2, step] = 0.0
+                            f"PuptkO < 0 - 1020 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                        self.pupt[2, step]=0.0
                     if self.pupt[2, step] > 1.0:
                         rwarn(
-                            f"PuptkO  < max - 763 | in spin{s}, step{step} - {self.pupt[2, step]}")
-                        self.pupt[2, step] = 0.0
-                    total_op = self.sp_snc[4:].sum()
-                    frsp = [i / total_op for i in self.sp_snc[4:]]
+                            f"PuptkO  < max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                        self.pupt[2, step]=0.0
+                    total_op=self.sp_snc[4:].sum()
+                    frsp=[i / total_op for i in self.sp_snc[4:]]
                     for i, fr in enumerate(frsp):
                         self.sp_snc[i + 4] -= self.pupt[2, step] * fr
-                    self.sp_organic_p = self.sp_snc[4:6].sum()
-                    self.sp_sorganic_p = self.sp_snc[6:].sum()
+                    self.sp_organic_p=self.sp_snc[4:6].sum()
+                    self.sp_sorganic_p=self.sp_snc[6:].sum()
 
                     # Raise some warnings
                     if self.sp_organic_n < 0.0:
+                        self.sp_organic_n=0.0
                         rwarn(f"ON negative in spin{s}, step{step}")
                     if self.sp_sorganic_n < 0.0:
+                        self.sp_sorganic_n=0.0
                         rwarn(f"SON negative in spin{s}, step{step}")
                     if self.sp_organic_p < 0.0:
+                        self.sp_organic_p=0.0
                         rwarn(f"OP negative in spin{s}, step{step}")
                     if self.sp_sorganic_p < 0.0:
+                        self.sp_sorganic_p=0.0
                         rwarn(f"SOP negative in spin{s}, step{step}")
 
                     # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
@@ -1034,13 +952,13 @@ class grd:
                     if self.pupt[0, step] > 1e2:
                         rwarn(
                             f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
-                        self.pupt[0, step] = 0.0
+                        self.pupt[0, step]=0.0
                     self.sp_available_p -= self.pupt[0, step]
 
                     if self.nupt[0, step] > 1e3:
                         rwarn(
                             f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
-                        self.nupt[0, step] = 0.0
+                        self.nupt[0, step]=0.0
                     self.sp_available_n -= self.nupt[0, step]
 
                 # END SOIL NUTRIENT DYNAMICS
@@ -1048,42 +966,44 @@ class grd:
                 # # # Process (cwm) & store (np.array) outputs
                 if save:
                     assert self.save == True
-                    self.carbon_costs[step] = daily_output['c_cost_cwm']
+                    self.carbon_costs[step]=daily_output['c_cost_cwm']
                     self.emaxm.append(daily_output['epavg'])
                     self.tsoil.append(self.soil_temp)
-                    self.photo[step] = daily_output['phavg']
-                    self.aresp[step] = daily_output['aravg']
-                    self.npp[step] = daily_output['nppavg']
-                    self.lai[step] = daily_output['laiavg']
-                    self.rcm[step] = daily_output['rcavg']
-                    self.f5[step] = daily_output['f5avg']
-                    self.evapm[step] = daily_output['evavg']
-                    self.wsoil[step] = self.wp_water_upper_mm
-                    self.swsoil[step] = self.wp_water_lower_mm
-                    self.rm[step] = daily_output['rmavg']
-                    self.rg[step] = daily_output['rgavg']
-                    self.wue[step] = daily_output['wueavg']
-                    self.cue[step] = daily_output['cueavg']
-                    self.cdef[step] = daily_output['c_defavg']
-                    self.vcmax[step] = daily_output['vcmax']
-                    self.specific_la[step] = daily_output['specific_la']
-                    self.cleaf[step] = daily_output['cp'][0]
-                    self.cawood[step] = daily_output['cp'][1]
-                    self.cfroot[step] = daily_output['cp'][2]
-                    self.hresp[step] = soil_out['hr']
-                    self.csoil[:, step] = soil_out['cs']
-                    self.inorg_n[step] = self.sp_in_n
-                    self.inorg_p[step] = self.sp_in_p
-                    self.sorbed_n[step] = self.sp_so_n
-                    self.sorbed_p[step] = self.sp_so_p
-                    self.snc[:, step] = soil_out['snc']
-                    self.nmin[step] = self.sp_available_n
-                    self.pmin[step] = self.sp_available_p
-                    self.area[self.vp_lsid, step] = self.vp_ocp
+                    self.photo[step]=daily_output['phavg']
+                    self.aresp[step]=daily_output['aravg']
+                    self.npp[step]=daily_output['nppavg']
+                    self.lai[step]=daily_output['laiavg']
+                    self.rcm[step]=daily_output['rcavg']
+                    self.f5[step]=daily_output['f5avg']
+                    self.evapm[step]=daily_output['evavg']
+                    self.wsoil[step]=self.wp_water_upper_mm
+                    self.swsoil[step]=self.wp_water_lower_mm
+                    self.rm[step]=daily_output['rmavg']
+                    self.rg[step]=daily_output['rgavg']
+                    self.wue[step]=daily_output['wueavg']
+                    self.cue[step]=daily_output['cueavg']
+                    self.cdef[step]=daily_output['c_defavg']
+                    self.vcmax[step]=daily_output['vcmax']
+                    self.specific_la[step]=daily_output['specific_la']
+                    self.cleaf[step]=daily_output['cp'][0]
+                    self.cawood[step]=daily_output['cp'][1]
+                    self.cfroot[step]=daily_output['cp'][2]
+                    self.height_pft[step]=daily_output['height_pft']
+                    self.hresp[step]=soil_out['hr']
+                    self.csoil[:, step]=soil_out['cs']
+                    self.inorg_n[step]=self.sp_in_n
+                    self.inorg_p[step]=self.sp_in_p
+                    self.sorbed_n[step]=self.sp_so_n
+                    self.sorbed_p[step]=self.sp_so_p
+                    self.snc[:, step]=soil_out['snc']
+                    self.nmin[step]=self.sp_available_n
+                    self.pmin[step]=self.sp_available_p
+                    self.area[self.vp_lsid, step]=self.vp_ocp
                     self.lim_status[:, self.vp_lsid,
-                                    step] = daily_output['limitation_status'][:, self.vp_lsid]
+                                    step]=daily_output['limitation_status'][:, self.vp_lsid]
                     self.uptake_strategy[:, self.vp_lsid,
-                                         step] = daily_output['uptk_strat'][:, self.vp_lsid]
+                                         step]=daily_output['uptk_strat'][:, self.vp_lsid]
+                    
             if save:
                 if s > 0:
                     while True:
@@ -1092,9 +1012,9 @@ class grd:
                         else:
                             break
 
-                self.flush_data = self._flush_output(
+                self.flush_data=self._flush_output(
                     'spin', (start_index, end_index))
-                sv = Thread(target=self._save_output, args=(self.flush_data,))
+                sv=Thread(target=self._save_output, args=(self.flush_data,))
                 sv.start()
         if save:
             while True:
@@ -1109,7 +1029,7 @@ class grd:
         - Side effect - Start soil water pools pools """
 
         assert self.filled, "The gridcell has no input data"
-        self.budget_spinup = True
+        self.budget_spinup=True
 
         def find_co2(year):
             for i in self.co2_data:
@@ -1117,9 +1037,9 @@ class grd:
                     return float(i.split('\t')[1].strip())
 
         def find_index(start, end):
-            result = []
-            num = np.arange(self.ssize)
-            ind = np.arange(self.sind, self.eind + 1)
+            result=[]
+            num=np.arange(self.ssize)
+            ind=np.arange(self.sind, self.eind + 1)
             for r, i in zip(num, ind):
                 if i == start:
                     result.append(r)
@@ -1129,9 +1049,9 @@ class grd:
             return result
 
         # Define start and end dates
-        start = cftime.real_datetime(int(start_date[:4]), int(
+        start=cftime.real_datetime(int(start_date[:4]), int(
             start_date[4:6]), int(start_date[6:]))
-        end = cftime.real_datetime(int(end_date[:4]), int(
+        end=cftime.real_datetime(int(end_date[:4]), int(
             end_date[4:6]), int(end_date[6:]))
         # Check dates sanity
         assert start < end, "start > end"
@@ -1139,75 +1059,79 @@ class grd:
         assert end <= self.end_date
 
         # Define time index
-        start_index = int(cftime.date2num(
+        start_index=int(cftime.date2num(
             start, self.time_unit, self.calendar))
-        end_index = int(cftime.date2num(end, self.time_unit, self.calendar))
+        end_index=int(cftime.date2num(end, self.time_unit, self.calendar))
 
-        lb, hb = find_index(start_index, end_index)
-        steps = np.arange(lb, hb + 1)
-        day_indexes = np.arange(start_index, end_index + 1)
+        lb, hb=find_index(start_index, end_index)
+        steps=np.arange(lb, hb + 1)
+        day_indexes=np.arange(start_index, end_index + 1)
 
         # Catch climatic input and make conversions
-        temp = self.tas[lb: hb + 1] - 273.15  # ! K to °C
-        prec = self.pr[lb: hb + 1] * 86400  # kg m-2 s-1 to  mm/day
+        temp=self.tas[lb: hb + 1] - 273.15  # ! K to °C
+        prec=self.pr[lb: hb + 1] * 86400  # kg m-2 s-1 to  mm/day
         # transforamando de Pascal pra mbar (hPa)
-        p_atm = self.ps[lb: hb + 1] * 0.01
+        p_atm=self.ps[lb: hb + 1] * 0.01
         # W m-2 to mol m-2 s-1 ! 0.5 converts RSDS to PAR
-        ipar = self.rsds[lb: hb + 1] * 0.5 / 2.18e5
-        ru = self.rhs[lb: hb + 1] / 100.0
+        ipar=self.rsds[lb: hb + 1] * 0.5 / 2.18e5
+        ru=self.rhs[lb: hb + 1] / 100.0
 
-        year0 = start.year
-        co2 = find_co2(year0)
-        count_days = start.dayofyr - 2
-        loop = 0
-        next_year = 0
-        wo = []
-        llo = []
-        cwdo = []
-        rlo = []
-        lnco = []
+        year0=start.year
+        co2=find_co2(year0)
+        count_days=start.dayofyr - 2
+        loop=0
+        next_year=0
+        wo=[]
+        llo=[]
+        cwdo=[]
+        rlo=[]
+        lnco=[]
 
-        sto = self.vp_sto
-        cleaf = self.vp_cleaf
-        cwood = self.vp_cwood
-        croot = self.vp_croot
-        dcl = self.vp_dcl
-        dca = self.vp_dca
-        dcf = self.vp_dcf
-        uptk_costs = np.zeros(npls, order='F')
+        sto=self.vp_sto
+        cleaf=self.vp_cleaf
+        cwood=self.vp_cwood
+        croot=self.vp_croot
+        csap=self.vp_csap
+        cheart=self.vp_cheart
+        dcl=self.vp_dcl
+        dca=self.vp_dca
+        dcf=self.vp_dcf
+        uptk_costs=np.zeros(npls, order='F')
 
         for step in range(steps.size):
             loop += 1
             count_days += 1
             # CAST CO2 ATM CONCENTRATION
-            days = 366 if m.leap(year0) == 1 else 365
+            days=366 if m.leap(year0) == 1 else 365
             if count_days == days:
-                count_days = 0
-                year0 = cftime.num2date(day_indexes[step],
+                count_days=0
+                year0=cftime.num2date(day_indexes[step],
                                         self.time_unit, self.calendar).year
-                co2 = find_co2(year0)
-                next_year = (find_co2(year0 + 1) - co2) / days
+                co2=find_co2(year0)
+                next_year=(find_co2(year0 + 1) - co2) / days
 
             elif loop == 1 and count_days < days:
-                year0 = start.year
-                next_year = (find_co2(year0 + 1) - co2) / \
+                year0=start.year
+                next_year=(find_co2(year0 + 1) - co2) / \
                     (days - count_days)
 
             co2 += next_year
-            self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
+            self.soil_temp=st.soil_temp(self.soil_temp, temp[step])
 
-            out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
+            out=model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                      self.soil_temp, temp[step], p_atm[step],
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                      self.sp_snc[:4].sum(
                                      ), self.sp_so_p, self.sp_snc[4:].sum(),
-                                     co2, sto, cleaf, cwood, croot,
+                                     co2, sto, cleaf, cwood, croot, csap, cheart,
                                      dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
             # Create a dict with the function output
-            daily_output = catch_out_budget(out)
-            runoff = self._update_pool(prec[step], daily_output['evavg'])
+            daily_output=catch_out_budget(out)
+            runoff=self.swp._update_pool(prec[step], daily_output['evavg'])
 
+            self.wp_water_upper_mm=self.swp.w1
+            self.wp_water_lower_mm=self.swp.w2
             # UPDATE vegetation pools
 
             wo.append(np.float64(self.wp_water_upper_mm + self.wp_water_lower_mm))
@@ -1216,7 +1140,7 @@ class grd:
             rlo.append(daily_output['litter_fr'])
             lnco.append(daily_output['lnc'])
 
-        f = np.array
+        f=np.array
         def x(a): return a * 0.75
         return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 
@@ -1225,9 +1149,9 @@ class grd:
 
         for x in range(100000):
 
-            s_out = soil_dec.carbon3(self.soil_temp, water / self.wmax_mm, ll, cwd, rl, lnc,
+            s_out=soil_dec.carbon3(self.soil_temp, water / self.wmax_mm, ll, cwd, rl, lnc,
                                      self.sp_csoil, self.sp_snc)
 
-            soil_out = catch_out_carbon3(s_out)
-            self.sp_csoil = soil_out['cs']
-            self.sp_snc = soil_out['snc']
+            soil_out=catch_out_carbon3(s_out)
+            self.sp_csoil=soil_out['cs']
+            self.sp_snc=soil_out['snc']

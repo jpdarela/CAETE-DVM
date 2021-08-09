@@ -28,11 +28,11 @@ module soil_dec
    public :: water_effect     ! Soil water content effect on C decay
    public :: sorbed_p_equil   ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
    public :: solution_p_equil
-   public :: sorbed_n_equil   ! Fucntion that caculates the equilibrium between Mineralized N and Sorbed P
+   public :: sorbed_n_equil   ! Fucntion that caculates the equilibrium between Mineralized N and Sorbed N
    public :: solution_n_equil
    public :: leaching
    public :: add_pool
-   
+
 contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&

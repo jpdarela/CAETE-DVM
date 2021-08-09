@@ -46,7 +46,9 @@ module photo
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
-        leap
+        leap                   ,&
+        pls_allometry          ,& ! (s), tree diameter (m), height (m), crown area (m2) and average individual number equations.
+        foliage_projective           
 
 contains
 
@@ -71,22 +73,22 @@ contains
    !=================================================================
    !=================================================================
 
-   function gross_ph(f1,cleaf,sla) result(ph)
+   function gross_ph(f1,cleaf,sla_var) result(ph)
       ! Returns gross photosynthesis rate (kgC m-2 y-1) (GPP)
       use types, only: r_4, r_8
       !implicit none
 
       real(r_8),intent(in) :: f1    !molCO2 m-2 s-1
       real(r_8),intent(in) :: cleaf !kgC m-2
-      real(r_8),intent(in) :: sla   !m2 gC-1
+      real(r_8),intent(in) :: sla_var   !m2 gC-1
       real(r_4) :: ph
 
       real(r_8) :: f4sun, f1in
       real(r_8) :: f4shade
 
       f1in = f1
-      f4sun = f_four(1,cleaf,sla)
-      f4shade = f_four(2,cleaf,sla)
+      f4sun = f_four(1,cleaf,sla_var)
+      f4shade = f_four(2,cleaf,sla_var)
 
       ph = real((0.012D0*31557600.0D0*f1in*f4sun*f4shade), r_4)
       if(ph .lt. 0.0) ph = 0.0
@@ -95,18 +97,18 @@ contains
    !=================================================================
    !=================================================================
 
-   function leaf_area_index(cleaf, sla) result(lai)
+   function leaf_area_index(cleaf, sla_var) result(lai)
       ! Returns Leaf Area Index m2 m-2
 
       use types, only: r_8
       !implicit none
 
       real(r_8),intent(in) :: cleaf !kgC m-2
-      real(r_8),intent(in) :: sla   !m2 gC-1
+      real(r_8),intent(in) :: sla_var   !m2 gC-1
       real(r_8) :: lai
 
 
-      lai  = cleaf * 1.0D3 * sla  ! Converts cleaf from (KgC m-2) to (gCm-2)
+      lai  = cleaf * 1.0D3 * sla_var  ! Converts cleaf from (KgC m-2) to (gCm-2)
       if(lai .lt. 0.0D0) lai = 0.0D0
 
    end function leaf_area_index
@@ -114,32 +116,28 @@ contains
    !=================================================================
    !=================================================================
 
-   function spec_leaf_area(tau_leaf) result(sla)
+   function spec_leaf_area(tau_leaf) result(sla_fix)
       ! based on JeDi DGVM
       use types, only : r_8
       !implicit none
 
       real(r_8),intent(in) :: tau_leaf  !years
-      real(r_8) :: sla   !m2 gC-1
+      real(r_8):: sla_fix   !m2 gC-1
 
-      real(r_8) :: leaf_t_months
-      real(r_8) :: leaf_t_coeff
-      real(r_8) :: leaf_turnover
+      real(r_8) :: n_tau_leaf, tl0
 
-      leaf_t_months = tau_leaf*12.0D0 ! turnover time in months
-      leaf_t_coeff = leaf_t_months/100.0D0 !1 - 100 months == ~ 1/12 to 8.3 years (TRY-kattge et al. 2011; Jedi-Pavlick 2012)
+      n_tau_leaf = (tau_leaf - 0.08333333)/(8.33333333 - 0.08333333)
 
-      ! leaf_turnover =  (365.0/12.0) * exp(2.6*leaf_t_coeff)
-      leaf_turnover =  (365.242D0/12.0D0) * (10.00D0 ** (2.00D0*leaf_t_coeff))
+      tl0 = (365.242D0 / 12.0D0) * (10.00D0 ** (2.00D0*n_tau_leaf))
 
-      ! sla = (3e-2 * (365.0/leaf_turnover)**(-1.02))
-      sla = (3D-2 * (365.2420D0/leaf_turnover)**(-0.460D0))
+      sla_fix = (3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
+
    end function spec_leaf_area
 
    !=================================================================
    !=================================================================
 
-   function f_four(fs,cleaf,sla) result(lai_ss)
+   function f_four(fs,cleaf,sla_var) result(lai_ss)
       ! Function used to scale LAI from leaf to canopy level (2 layers)
       use types, only: i_4, r_4, r_8
       use photo_par, only: p26, p27
@@ -153,14 +151,14 @@ contains
       ! Any other number returns sunlai (not scaled to canopy)
 
       real(r_8),intent(in) :: cleaf ! carbon in leaf (kg m-2)
-      real(r_8),intent(in) :: sla   ! specific leaf area (m2 gC-1)
+      real(r_8),intent(in) :: sla_var   ! specific leaf area (m2 gC-1)
       real(r_8) :: lai_ss           ! leaf area index (m2 m-2)
 
       real(r_8) :: lai
       real(r_8) :: sunlai
       real(r_8) :: shadelai
 
-      lai = leaf_area_index(cleaf,sla)
+      lai = leaf_area_index(cleaf,sla_var)
 
       sunlai = (1.0D0-(dexp(-p26*lai)))/p26
       shadelai = lai - sunlai
@@ -170,6 +168,7 @@ contains
       if (fs .eq. 90) then
          return
       endif
+
       if (fs .eq. 20) then
          lai_ss = shadelai
          return
@@ -248,7 +247,7 @@ contains
    function canopy_resistence(vpd_in,f1_in,g1,ca) result(rc2_in)
       ! return stomatal resistence based on Medlyn et al. 2011a
       ! Coded by Helena Alves do Prado
-
+      use global_par, only: rcmin, rcmax
       use types, only: r_4 ,r_8
 
 
@@ -278,40 +277,45 @@ contains
       gs = 0.003 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0e6)/ca) ! mol m-2 s-1
       gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
       rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
+
+      if(rc2_in .ge. rcmax) rc2_in = rcmax
+      if(rc2_in .lt. rcmin) rc2_in = rcmin
+
    end function canopy_resistence
 
    !=================================================================
    !=================================================================
 
    function stomatal_conductance(vpd_in,f1_in,g1,ca) result(gs)
-    ! return stomatal resistence based on Medlyn et al. 2011a
-    ! Coded by Helena Alves do Prado
+      ! return stomatal resistence based on Medlyn et al. 2011a
+      ! Coded by Helena Alves do Prado
 
-    use types, only: r_4 ,r_8
+      use types, only: r_4 ,r_8
 
-    !implicit none
+      !implicit none
 
-    real(r_4),intent(in) :: f1_in    !Photosynthesis (molCO2/m2/s)
-    real(r_4),intent(in) :: vpd_in   !hPa
-    real(r_4),intent(in) :: g1       ! model m (slope) (sqrt(kPa))
-    real(r_8),intent(in) :: ca
-    real(r_8) :: gs       !Canopy conductance (molCO2 m-2 s-1)
-    !     Internal
-    !     --------
-    real(r_8) :: D1       !sqrt(kPA)
-    real(r_4) :: vapour_p_d
+      real(r_4),intent(in) :: f1_in    !Photosynthesis (molCO2/m2/s)
+      real(r_4),intent(in) :: vpd_in   !hPa
+      real(r_4),intent(in) :: g1       ! model m (slope) (sqrt(kPa))
+      real(r_8),intent(in) :: ca
+      real(r_8) :: gs       !Canopy conductance (molCO2 m-2 s-1)
+      !     Internal
+      !     --------
+      real(r_8) :: D1       !sqrt(kPA)
+      real(r_4) :: vapour_p_d
 
-    vapour_p_d = vpd_in
-    ! Assertions
-    if(vpd_in .le. 0.0) vapour_p_d = 0.001
-    if(vpd_in .gt. 4.0) vapour_p_d = 4.0
-    ! print *, 'vpd going mad in canopy_resistence'
-    ! stop
-    ! endif
+      vapour_p_d = vpd_in
+      ! Assertions
+      if(vpd_in .le. 0.0) vapour_p_d = 0.001
+      if(vpd_in .gt. 4.0) vapour_p_d = 4.0
+      ! print *, 'vpd going mad in canopy_resistence'
+      ! stop
+      ! endif
 
-    D1 = sqrt(vapour_p_d)
-    gs = 1.6 * (1.0 + (g1/D1)) * (f1_in/ca) !mol m-2 s-1
- end function stomatal_conductance
+      D1 = sqrt(vapour_p_d)
+      gs = 1.6 * (1.0 + (g1/D1)) * (f1_in/ca) !mol m-2 s-1
+
+   end function stomatal_conductance
 
  !=================================================================
  !=================================================================
@@ -365,8 +369,8 @@ contains
    end function transpiration
 
 
-   !=================================================================
-   !=================================================================
+!=================================================================
+!=================================================================
 
    function vapor_p_defcit(t,rh) result(vpd_0)
       use types
@@ -389,6 +393,7 @@ contains
       vpd_ac = es * rh       ! RESULT in hPa == mbar! we want kPa (DIVIDE by 10.)
       !Vapor Pressure Deficit
       vpd_0 = (es - vpd_ac) / 10.
+
    end function vapor_p_defcit
 
 !=================================================================
@@ -420,41 +425,29 @@ contains
          rnpp = max( 0.0D0, (available_n * pot_npp_pool) / nupt_pot)
       endif
 
-      end subroutine realized_npp
+   end subroutine realized_npp
 
-   !=================================================================
-   !=================================================================
-
-   function nrubisco(leaf_t,nbio_in) result(nb)
+!=================================================================
+!=================================================================
+  
+   function nrubisco(leaf_t,n_in) result(nb)
       use types
       real(r_8), intent(in) :: leaf_t
-      real(r_8), intent(in) :: nbio_in
-      real(r_8) :: nb
-      real(r_8) :: tl0, tlm, tl
-      real(r_8) :: auxmax = 0.3D0, auxmin = 0.00D0
+      real(r_8), intent(in) :: n_in
+      real(r_8) :: nb, tl
+      real(r_8) :: e = 2.718281828459045D0
 
-      ! These values need to be taken from the table of PLSs
-      ! Minimum and maximum time of C residence in CVEG pool
-      ! tl = (auxmax - auxmin) / (tlm -tl0) * (tl - tlm) + auxmin
+      tl = e**(-(leaf_t + 1.2)) + 0.04
 
-      ! new_v = (new_max - new_min) / (old_max -
-      ! old_min) * (v - old_min) + new_mi
-      tl0 = spec_leaf_area(1.0D0/12.0D0)
-      tlm = spec_leaf_area(8.33333333333D0)
-      tl = spec_leaf_area(leaf_t)
-
-      ! tl = (((tl-tl0)/(tlm-tl0))*(auxmax-auxmin)+auxmin)
-      tl = 1.0D0 - (auxmax - auxmin) / (tlm -tl0) * (tl - tl0) + auxmin
-
-      nb = tl * nbio_in ! Leaf nitrogen that is rubisco
+      nb = tl * n_in
 
    end function nrubisco
 
-   !=================================================================
+!=================================================================
    !=================================================================
 
-   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,&
-        & leaf_turnover,f1ab,vm, amax)
+   subroutine photosynthesis_rate(c_atm,temp,p0,ipar,c4,nbio,pbio,cbio,&
+        & sla_var,cawood1,height1,max_height,f1ab,vm,amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
@@ -465,12 +458,16 @@ contains
       ! I
       real(r_4),intent(in) :: temp  ! temp °C
       real(r_4),intent(in) :: p0    ! atm Pressure hPa
-      real(r_4),intent(in) :: ipar  ! mol Photons m-2 s-1
+      real(r_8),intent(in) :: ipar  ! mol Photons m-2 s-1
       real(r_8),intent(in) :: nbio, c_atm  ! gm-2, ppm
-      real(r_8),intent(in) :: pbio  ! gm-2
-      logical(l_1),intent(in) :: ll ! is light limited?
+      real(r_8),intent(in) :: pbio, cbio  ! kg m-2
+      ! logical(l_1),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
-      real(r_8),intent(in) :: leaf_turnover   ! y
+      ! real(r_8),intent(in) :: leaf_turnover   ! y
+      real(r_8),intent(in) :: height1
+      real(r_8),intent(in) :: max_height
+      real(r_8),intent(in) :: cawood1
+      real(r_8),intent(in) :: sla_var
       ! O
       real(r_8),intent(out) :: f1ab ! Gross CO2 Assimilation Rate mol m-2 s-1
       real(r_8),intent(out) :: vm   ! PLS Vcmax mol m-2 s-1
@@ -500,25 +497,203 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: vm_nutri
-      real(r_8) :: nbio2, pbio2, xbio
+      real(r_8) :: nbio2, pbio2, cbio_aux
+      real(r_8) :: nmgg, pmgg
+      real(r_8) :: coeffa, coeffb
+
+      !Internal Variables [LIGHT COMPETITION] ---------------------------------------
+      integer(i_4) :: n
+      real(r_8) :: index_leaf
+      integer(i_4) :: num_layer !number of layers according to max height in each grid-cel
+      real(r_8) :: layer_size !size of each layer in m. in each grid-cell
+      integer(i_4) :: last_with_pls
+      real(r_8) :: llight
+
+      type :: layer_array
+         real(r_8) :: sum_height
+         integer(i_4) :: num_height !!corresponds to the number of layers according max height of PLS.
+         real(r_8) :: mean_height !Mean of heights in a layer
+         real(r_8) :: layer_height !Height of respective layer of the floor (in m.)
+         real(r_8) :: sum_LAI !LAI sum in a layer
+         real(r_8) :: mean_LAI !mean LAI in a layer
+         real(r_8) :: beers_law !layer's light extinction
+         real(r_8) :: linc !layer's light incidence
+         real(r_8) :: lused !layer's light used (relates to light extinction - Beers Law)
+         real(r_8) :: lavai !light availability
+         integer(i_4) :: layer_id !identify layers
+      end type layer_array
+
+      type(layer_array), allocatable :: layer(:)
 
       ! Calculating Fraction of leaf Nitrogen that is lignin
-      xbio = nrubisco(leaf_turnover,nbio)
-      nbio2 = xbio
-      pbio2 = pbio
+      nbio2 = nbio !nrubisco(leaf_turnover, nbio)
+      pbio2 = pbio !nrubisco(leaf_turnover, pbio)
 
       if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
       if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
 
+      ! ! ! Calculation of reference carboxilation rate of rubisco
+      ! !### WALKER et al. 2014
+      ! vm_nutri = 3.946D0 + (0.921D0 * dlog(nbio2)) - (0.121D0 * dlog(pbio2))
+      ! vm_nutri = vm_nutri + (0.282D0 * dlog(nbio2) * dlog(pbio2))
+      ! vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
 
-      ! Calculation of reference carboxilation rate of rubisco
-      vm_nutri = 3.946D0 + (0.921D0 * dlog(nbio2)) - (0.121D0 * dlog(pbio2))
-      vm_nutri = vm_nutri + (0.282D0 * dlog(nbio2) * dlog(pbio2))
-      vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
+      ! !### DOMINGUES et al. 2010
+      cbio_aux = cbio
+      if(cbio .le. 0.0D0) cbio_aux = 0.01
+
+      nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      coeffa = 1.57D0
+      coeffb = 0.55D0
+
+      vm_nutri = coeffa + (coeffb * dlog10(nmgg))
+      vm =  10**vm_nutri * 1D-6
+      if(vm + 1 .eq. vm) vm = p25 - 5.0D-5
+      if(vm .gt. p25) vm = p25
 
 
       ! Rubisco Carboxilation Rate - temperature dependence
       vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0)))
+      if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
+      if(vm_in .gt. p25) vm_in = p25
+
+      !========================= LIGHT COMPETITION =============================!
+      !         Code by: Bárbara Cardeli, Bianca Rius e Caio Fascina            !
+      !                               START                                     !
+
+      index_leaf = leaf_area_index(cbio, sla_var)
+
+      ! =================================================
+      !       LIGHT COMPETITION DYNAMIC. [LAYERS]
+      ! =================================================
+
+      num_layer = 0
+      layer_size = 0.0D0
+
+      num_layer = nint(max_height/5)
+      ! print*, 'num layer is', num_layer, 'max_height=', max_height
+
+      allocate(layer(1:num_layer))
+
+      layer_size = max_height/num_layer !length from one layer to another
+      ! print*, 'layer_size', layer_size
+     
+      last_with_pls=num_layer
+      !print*, 'LAST', last_with_pls
+
+      do n = 1,num_layer
+         layer(n)%layer_height = 0.0D0
+         layer(n)%layer_height=layer_size*n
+      end do
+
+      ! light1 = llight
+
+      do n = 1, num_layer
+         !Inicialize variables relates layers dynamics
+         layer(n)%num_height = 0.0D0
+         layer(n)%sum_height = 0.0D0
+         layer(n)%mean_height = 0.0D0
+         layer(n)%sum_LAI = 0.0D0 
+      enddo
+
+      do n = 1, num_layer
+
+         if ((layer(n)%layer_height .ge. height1).and.&
+         &(layer(n-1)%layer_height .lt. height1)) then     
+            layer(n)%sum_height=&
+            &layer(n)%sum_height + height1
+            layer(n)%num_height=&
+            &layer(n)%num_height+1
+            layer(n)%sum_LAI=&    
+            &layer(n)%sum_LAI + index_leaf
+         end if
+
+         layer(n)%mean_height = layer(n)%sum_height/&
+         &layer(n)%num_height
+         if(layer(n)%sum_height .eq. 0.0D0) then
+            layer(n)%mean_height = 0.0D0
+         endif
+         layer(n)%mean_LAI=layer(n)%sum_LAI/&
+         &layer(n)%num_height
+         if(layer(n)%sum_LAI .eq. 0.0D0) then
+            layer(n)%mean_LAI = 0.0D0
+         end if
+      end do
+
+      ! ======================================================
+      !       LIGHT COMPETITION DYNAMIC. [EXTINCTION LIGHT]
+      ! ======================================================
+
+      !! INICIALIZE VARIABLES !!
+      do n = 1, num_layer
+         layer(n)%linc = 0.0D0
+         layer(n)%lavai = 0.0D0
+         layer(n)%lused = 0.0D0
+      enddo
+         
+      !=================== Beer's Law ========================
+      do n = num_layer,1,-1
+         layer(n)%beers_law = ipar*&
+         &(1-exp(-0.5*layer(n)%mean_LAI))
+      enddo
+      !=======================================================
+
+      ! ======================================================
+      !       LIGHT COMPETITION DYNAMIC. [LIGHTS DYNAMIC]
+      ! ======================================================
+
+      do n = num_layer,1,-1
+         if(n.eq.num_layer) then
+            layer(n)%linc = ipar
+         else
+            if(layer(n)%mean_height.gt.0.0D0) then
+               layer(n)%linc = layer(last_with_pls)%lavai
+               last_with_pls=n
+            else
+               continue
+            endif
+         endif
+         layer(n)%lused = layer(n)%linc*(1-exp(-0.5*layer(n)%mean_LAI))
+         layer(n)%lavai = layer(n)%linc - layer(n)%lused
+      enddo
+
+      ! ======================================================
+      !    LIGHT COMPET. PHOTOSYNTHESIS PUNISHMENT 
+      ! ======================================================
+
+      ! Identifying the layers and allocate each PLS to punishment photosyntesis.
+
+      !! INICIALIZE VARIABLES !!
+      do n = 1, num_layer
+         layer(n)%layer_id = 0.0D0
+         llight = 0.0D0
+      enddo
+
+      do n = num_layer, 1, -1
+         if (cawood1.eq.0.0D0) then
+            aux_ipar = ipar
+            llight = ipar
+         else
+            if (n.eq.num_layer) then 
+               layer(n)%layer_id = num_layer
+               if (height1.le.max_height.and.height1.gt.layer(n-1)%layer_height) then 
+                  llight = ipar
+                  aux_ipar = ipar
+                  ! print*, n, 'LL TOP=', llight, 'aux_ipar', aux_ipar,'ipar', ipar
+               endif
+            else
+               layer(n)%layer_id = layer(n+1)%layer_id-1  
+               if (height1.le.layer(n)%layer_height.and.height1.gt.layer(n-1)%layer_height) then
+                  llight = (layer(n)%lavai/ipar)
+                  aux_ipar = ipar - (ipar*llight) !limitation in % of IPAR total. 
+                  ! print*, n, 'LL ABOVE % =', llight, 'aux_ipar', aux_ipar, 'ipar', ipar
+               endif
+            endif 
+         endif  
+      enddo
+
+      !============================  END  ========================================================
 
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
@@ -539,13 +714,14 @@ contains
          !Rubisco carboxilation limited photosynthesis rate (molCO2/m2/s)
          jc = vm_in*((ci-mgama)/(ci+(f2*(1.+(p3/f3)))))
          !Light limited photosynthesis rate (molCO2/m2/s)
-         if (ll) then
-            aux_ipar = ipar
-         else
-            aux_ipar = ipar - (ipar * 0.20)
-         endif
+         ! if (ll) then
+         !    aux_ipar = ipar
+         ! else
+         !    aux_ipar = ipar - (ipar * 0.20)
+         ! endif
          jl = p4*(1.0-p5)*aux_ipar*((ci-mgama)/(ci+(p6*mgama)))
          amax = jl
+         ! print*, 'AMAX_c3=', amax, 'IPAR_c3=', ipar, 'AUX_IPAR_c3', aux_ipar
 
          ! Transport limited photosynthesis rate (molCO2/m2/s) (RuBP) (re)generation
          ! ---------------------------------------------------
@@ -556,47 +732,37 @@ contains
          b = (-1.)*(jc+jl)
          c = jc*jl
          delta = (b**2)-4.0*a*c
-         ! if(delta .eq. 0.0)then
-         !    jp = (-b) / (2 * a)
-         ! else if(delta .gt. 0.0) then
          jp1 = (-b-(sqrt(delta)))/(2.0*a)
          jp2 = (-b+(sqrt(delta)))/(2.0*a)
          jp = dmin1(jp1,jp2)
-         ! else
-         !    jp = 0.0
-         ! endif
 
          !Leaf level gross photosynthesis (minimum between jc, jl and je)
          !---------------------------------------------------------------
          b2 = (-1.)*(jp+je)
          c2 = jp*je
          delta2 = (b2**2)-4.0*a2*c2
-         ! if(delta2 .eq. 0.0)then
-         !    f1a = (-b2) / (2.0 * a2)
-         ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0d0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0d0*a2)
          f1a = dmin1(j1,j2)
-         ! else
-         !    f1a = 0.0
-         ! endif
+
 
          f1ab = f1a
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
          return
       else
          !===========================-C4 PHOTOSYNTHESIS-=============================
+         
          !  USE PHOTO_PAR
          ! ! from Chen et al. 1994
          tk = temp + 273.15           ! K
          t25 = 273.15 + 25.0          ! K
          kp = kp25 * (2.1**(0.1*(tk-t25))) ! ppm
 
-         if (ll) then
-            aux_ipar = ipar
-         else
-            aux_ipar = ipar - (ipar * 0.20)
-         endif
+         ! if (ll) then
+         !    aux_ipar = ipar
+         ! else
+         !    aux_ipar = ipar - (ipar * 0.20)
+         ! endif
 
          ipar1 = aux_ipar * 1e6  ! µmol m-2 s-1 - 1e6 converts mol to µmol
 
@@ -628,15 +794,10 @@ contains
          b2 = (-1.)*(jcl+je)
          c2 = jcl*je
          delta2 = (b2**2)-4.0*a2*c2
-         ! if(delta2 .eq. 0.0)then
-         !    f1a = (-b2) / (2.0 * a2)
-         ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0*a2)
          f1a = dmin1(j1,j2)
-         ! else
-         !    f1a = 0.0
-         ! endif
+
 
          f1ab = f1a
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
@@ -919,42 +1080,41 @@ contains
   !===================================================================
 
    function sto_resp(temp, sto_mr) result(rm)
-    use types, only: r_4,r_8
-    !implicit none
+      use types, only: r_4,r_8
+      !implicit none
 
-      real(r_4), intent(in) :: temp
-      real(r_8), dimension(3), intent(in) :: sto_mr
-      real(r_8) :: rm
+         real(r_4), intent(in) :: temp
+         real(r_8), dimension(3), intent(in) :: sto_mr
+         real(r_8) :: rm
 
-      real(r_8) :: stoc,ston
+         real(r_8) :: stoc,ston
 
-    !   Autothrophic respiration
-    !   ========================
+      !   Autothrophic respiration
+      !   ========================
 
-    stoc = sto_mr(1)
-    ston = sto_mr(2)
-   !  print*, ston
+      stoc = sto_mr(1)
+      ston = sto_mr(2)
+      !  print*, ston
 
-    if(stoc .le. 0.0D0) then
-       rm = 0.0D0
-       return
-    endif
+      if(stoc .le. 0.0D0) then
+         rm = 0.0D0
+         return
+      endif
 
-    if(ston .lt. 0.0D0) then
-      ston = 1.0D0/300.0D0
-    else
-      ston = ston/stoc
-    endif
+      if(ston .lt. 0.0D0) then
+         ston = 1.0D0/300.0D0
+      else
+         ston = ston/stoc
+      endif
 
-    rm = ((ston * stoc) * 27.0D0 * dexp(0.07D0*temp))
+      rm = ((ston * stoc) * 27.0D0 * dexp(0.07D0*temp))
 
-    if (rm .lt. 0) then
-       rm = 0.0
-    endif
-    return
+      if (rm .lt. 0) then
+         rm = 0.0
+      endif
+      return
 
-
- end function sto_resp
+   end function sto_resp
 
 
    !====================================================================
@@ -1153,6 +1313,77 @@ contains
    !====================================================================
    !====================================================================
 
+   subroutine pls_allometry (dt, cawood1,awood, nind, height, diameter,&
+      &crown_area)
+      !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
+
+      use types 
+      use global_par
+      use allometry_par
+
+      integer(i_4),parameter :: npft = npls 
+      integer(i_4) :: p
+      real(r_8),dimension(ntraits, npls),intent(in) :: dt
+      real(r_8),dimension(npft),intent(in) :: cawood1, awood
+      real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
+      integer(i_4),dimension(npft),intent(out) :: nind
+      real(r_8),dimension(npft) :: cawood, dwood
+
+      
+      ! ============================
+      dwood = dt(18,:)
+      cawood = cawood1
+      ! ============================
+    
+      do p = 1, npft !INICIALIZE OUTPUTS VARIABLES
+         height(p) = 0.0D0
+         diameter(p) = 0.0D0
+         crown_area(p) = 0.0D0
+         nind(p) = 0.0D0
+      enddo
+
+      !PLS DIAMETER (in m.)
+      do p = 1, npft !to grasses
+         if(awood(p) .le. 0.0D0) then
+            height(p) = 0.0D0 !in m.
+            diameter(p) = 0.0D0 !in m.
+            crown_area(p) = 0.0D0 !in m2.
+            dwood(p) = 0.0D0
+            nind(p) = 0.0D0
+         else
+            diameter(p) = (4*(cawood(p)*1.0D3)/(dwood(p)*1D7)*pi*k_allom2)&
+            &**(1/(2+k_allom3))
+            height(p) = k_allom2*(diameter(p)**k_allom3)
+            crown_area(p) = k_allom1*(diameter(p)**krp)
+            nind(p) = nint(diameter(p)**(-1.6))
+         endif
+      enddo
+      
+   end subroutine pls_allometry
+
+
+   subroutine foliage_projective (crown_area, lai, nind, fpc_ind, fpc_grid)
+      !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
+
+      use types 
+      use global_par
+
+      real(r_8), intent(in) :: crown_area, lai
+      integer(i_4), intent(in) :: nind
+      real(r_8), intent(out) :: fpc_ind, fpc_grid
+      real(r_8) :: ca, leaf_index
+      real(r_8) :: fpcgrid_sum
+
+      !====================================================
+      ca = crown_area !rename inputs - CA in m2
+      leaf_index = lai !rename inputs - leaf_area in m2/m2
+      !====================================================
+
+      fpc_ind = (1-exp(-0.5*12))
+      fpc_grid = ca*nind*fpc_ind
+
+   end subroutine foliage_projective
+
 end module photo
 
 
@@ -1178,206 +1409,206 @@ contains
   !=================================================================
   !=================================================================
 
-  subroutine soil_temp_sub(temp, tsoil)
-  ! Calcula a temperatura do solo. Aqui vamos mudar no futuro!
-  ! a tsoil deve ter relacao com a et realizada...
-  ! a profundidade do solo (H) e o coef de difusao (DIFFU) devem ser
-  ! variaveis (MAPA DE SOLO?; agua no solo?)
-  use types
-  use global_par
-  !implicit none
-  integer(i_4),parameter :: m = 1095
+   subroutine soil_temp_sub(temp, tsoil)
+      ! Calcula a temperatura do solo. Aqui vamos mudar no futuro!
+      ! a tsoil deve ter relacao com a et realizada...
+      ! a profundidade do solo (H) e o coef de difusao (DIFFU) devem ser
+      ! variaveis (MAPA DE SOLO?; agua no solo?)
+      use types
+      use global_par
+      !implicit none
+      integer(i_4),parameter :: m = 1095
 
-  real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
-  real(r_4), intent(out) :: tsoil
+      real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
+      real(r_4), intent(out) :: tsoil
 
-  ! internal vars
+      ! internal vars
 
-  integer(i_4) :: n, k
-  real(r_4) :: t0 = 0.0
-  real(r_4) :: t1 = 0.0
+      integer(i_4) :: n, k
+      real(r_4) :: t0 = 0.0
+      real(r_4) :: t1 = 0.0
 
-  tsoil = -9999.0
+      tsoil = -9999.0
 
-  do n=1,m !run to attain equilibrium
-     k = mod(n,12)
-     if (k.eq.0) k = 12
-     t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp(k)
-     tsoil = (t0 + t1)/2.0
-     t0 = t1
-  enddo
-  end subroutine soil_temp_sub
-
-  !=================================================================
-  !=================================================================
-
-  function soil_temp(t0,temp) result(tsoil)
-    use types
-    use global_par, only: h, tau, diffu
-    !implicit none
-
-    real(r_4),intent( in) :: temp
-    real(r_4),intent( in) :: t0
-    real(r_4) :: tsoil
-
-    real(r_4) :: t1 = 0.0
-
-    t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp
-    tsoil = (t0 + t1)/2.0
-  end function soil_temp
+      do n=1,m !run to attain equilibrium
+         k = mod(n,12)
+         if (k.eq.0) k = 12
+         t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp(k)
+         tsoil = (t0 + t1)/2.0
+         t0 = t1
+      enddo
+   end subroutine soil_temp_sub
 
   !=================================================================
   !=================================================================
 
-  function penman (spre,temp,ur,rn,rc2) result(evap)
-    use types, only: r_4
-    use global_par, only: rcmin, rcmax
-    use photo, only: tetens
-    !implicit none
+   function soil_temp(t0,temp) result(tsoil)
+      use types
+      use global_par, only: h, tau, diffu
+      !implicit none
 
+      real(r_4),intent( in) :: temp
+      real(r_4),intent( in) :: t0
+      real(r_4) :: tsoil
 
-    real(r_4),intent(in) :: spre                 !Surface pressure (mbar)
-    real(r_4),intent(in) :: temp                 !Temperature (°C)
-    real(r_4),intent(in) :: ur                   !Relative humidity (0-1)
-    real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
-    real(r_4),intent(in) :: rc2                  !Canopy resistence (s/m)
+      real(r_4) :: t1 = 0.0
 
-    real(r_4) :: evap                            !Evapotranspiration (mm/day)
-    !     Parameters
-    !     ----------
-    real(r_4) :: ra, h5, t1, t2, es, es1, es2, delta_e, delta
-    real(r_4) :: gama, gama2
-
-
-    ra = rcmin
-    h5 = 0.0275               !mb-1
-
-    !     Delta
-    !     -----
-    t1 = temp + 1.
-    t2 = temp - 1.
-    es1 = tetens(t1)       !Saturation partial pressure of water vapour at temperature T
-    es2 = tetens(t2)
-
-    delta = (es1-es2)/(t1-t2) !mbar/oC
-    !
-    !     Delta_e
-    !     -------
-    es = tetens (temp)
-    delta_e = es*(1. - ur)    !mbar
-
-    if ((delta_e.ge.(1./h5)-0.5).or.(rc2.ge.rcmax)) evap = 0.
-    if ((delta_e.lt.(1./h5)-0.5).or.(rc2.lt.rcmax)) then
-       !     Gama and gama2
-       !     --------------
-       gama  = spre*(1004.)/(2.45e6*0.622)
-       gama2 = gama*(ra + rc2)/ra
-
-       !     Real evapotranspiration
-       !     -----------------------
-       evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
-       evap = evap*(86400./2.45e6) !mm/day
-       evap = amax1(evap,0.)  !Eliminates condensation
-    endif
-  end function penman
+      t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp
+      tsoil = (t0 + t1)/2.0
+   end function soil_temp
 
   !=================================================================
   !=================================================================
 
-  function available_energy(temp) result(ae)
-    use types, only: r_4
-    !implicit none
+   function penman (spre,temp,ur,rn,rc2) result(evap)
+      use types, only: r_4
+      use global_par, only: rcmin, rcmax
+      use photo, only: tetens
+      !implicit none
 
-    real(r_4),intent(in) :: temp
-    real(r_4) :: ae
 
-    ae = 2.895 * temp + 52.326 !from NCEP-NCAR Reanalysis data
-  end function  available_energy
+      real(r_4),intent(in) :: spre                 !Surface pressure (mbar)
+      real(r_4),intent(in) :: temp                 !Temperature (°C)
+      real(r_4),intent(in) :: ur                   !Relative humidity (0-1)
+      real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
+      real(r_4),intent(in) :: rc2                  !Canopy resistence (s/m)
+
+      real(r_4) :: evap                            !Evapotranspiration (mm/day)
+      !     Parameters
+      !     ----------
+      real(r_4) :: ra, h5, t1, t2, es, es1, es2, delta_e, delta
+      real(r_4) :: gama, gama2
+
+
+      ra = rcmin
+      h5 = 0.0275               !mb-1
+
+      !     Delta
+      !     -----
+      t1 = temp + 1.
+      t2 = temp - 1.
+      es1 = tetens(t1)       !Saturation partial pressure of water vapour at temperature T
+      es2 = tetens(t2)
+
+      delta = (es1-es2)/(t1-t2) !mbar/oC
+      !
+      !     Delta_e
+      !     -------
+      es = tetens (temp)
+      delta_e = es*(1. - ur)    !mbar
+
+      if ((delta_e.ge.(1./h5)-0.5).or.(rc2.ge.rcmax)) evap = 0.
+      if ((delta_e.lt.(1./h5)-0.5).or.(rc2.lt.rcmax)) then
+         !     Gama and gama2
+         !     --------------
+         gama  = spre*(1004.)/(2.45e6*0.622)
+         gama2 = gama*(ra + rc2)/ra
+
+         !     Real evapotranspiration
+         !     -----------------------
+         evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
+         evap = evap*(86400./2.45e6) !mm/day
+         evap = amax1(evap,0.)  !Eliminates condensation
+      endif
+   end function penman
 
   !=================================================================
   !=================================================================
 
-  function runoff(wa) result(roff)
-    use types, only: r_4
-    !implicit none
+   function available_energy(temp) result(ae)
+      use types, only: r_4
+      !implicit none
 
-    real(r_4),intent(in) :: wa
-    real(r_4):: roff
+      real(r_4),intent(in) :: temp
+      real(r_4) :: ae
 
-    !  roff = 38.*((w/wmax)**11.) ! [Eq. 10]
-    roff = 11.5*((wa)**6.6) !from NCEP-NCAR Reanalysis data
-  end function  runoff
+      ae = 2.895 * temp + 52.326 !from NCEP-NCAR Reanalysis data
+   end function  available_energy
 
   !=================================================================
   !=================================================================
 
-  function evpot2 (spre,temp,ur,rn) result(evap)
-    use types, only: r_4
-    use global_par, only: rcmin, rcmax
-    use photo, only: tetens
-    !implicit none
+   function runoff(wa) result(roff)
+      use types, only: r_4
+      !implicit none
 
-    !Commments from CPTEC-PVM2 code
-!    c Entradas
-!c --------
-!c spre   = pressao aa supeficie (mb)
-!c temp   = temperatura (oC)
-!c ur     = umidade relativa  (0-1,adimensional)
-!c rn     = saldo de radiacao (W m-2)
-!c
-!c Saida
-!c -----
-!c evap  = evapotranspiracao potencial sem estresse (mm/dia)
+      real(r_4),intent(in) :: wa
+      real(r_4):: roff
 
-    !     Inputs
+      !  roff = 38.*((w/wmax)**11.) ! [Eq. 10]
+      roff = 11.5*((wa)**6.6) !from NCEP-NCAR Reanalysis data
+   end function  runoff
 
-    real(r_4),intent(in) :: spre                 !Surface pressure (mb)
-    real(r_4),intent(in) :: temp                 !Temperature (oC)
-    real(r_4),intent(in) :: ur                   !Relative humidity (0-1,dimensionless)
-    real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
-    !     Output
-    !     ------
-    !
-    real(r_4) :: evap                 !Evapotranspiration (mm/day)
-    !     Parameters
-    !     ----------
-    real(r_4) :: ra, t1, t2, es, es1, es2, delta_e, delta
-    real(r_4) :: gama, gama2, rc
+  !=================================================================
+  !=================================================================
 
-    ra = rcmin            !s/m
+   function evpot2 (spre,temp,ur,rn) result(evap)
+      use types, only: r_4
+      use global_par, only: rcmin, rcmax
+      use photo, only: tetens
+      !implicit none
 
-    !     Delta
+      !Commments from CPTEC-PVM2 code
+      !    c Entradas
+      !c --------
+      !c spre   = pressao aa supeficie (mb)
+      !c temp   = temperatura (oC)
+      !c ur     = umidade relativa  (0-1,adimensional)
+      !c rn     = saldo de radiacao (W m-2)
+      !c
+      !c Saida
+      !c -----
+      !c evap  = evapotranspiracao potencial sem estresse (mm/dia)
 
-    t1 = temp + 1.
-    t2 = temp - 1.
-    es1 = tetens(t1)
-    es2 = tetens(t2)
-    delta = (es1-es2)/(t1-t2) !mb/oC
+      !     Inputs
 
-    !     Delta_e
-    !     -------
+      real(r_4),intent(in) :: spre                 !Surface pressure (mb)
+      real(r_4),intent(in) :: temp                 !Temperature (oC)
+      real(r_4),intent(in) :: ur                   !Relative humidity (0-1,dimensionless)
+      real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
+      !     Output
+      !     ------
+      !
+      real(r_4) :: evap                 !Evapotranspiration (mm/day)
+      !     Parameters
+      !     ----------
+      real(r_4) :: ra, t1, t2, es, es1, es2, delta_e, delta
+      real(r_4) :: gama, gama2, rc
 
-    es = tetens (temp)
-    delta_e = es*(1. - ur)    !mb
+      ra = rcmin            !s/m
 
-    !     Stomatal Conductance
-    !     --------------------
+      !     Delta
 
-    rc = rcmin
+      t1 = temp + 1.
+      t2 = temp - 1.
+      es1 = tetens(t1)
+      es2 = tetens(t2)
+      delta = (es1-es2)/(t1-t2) !mb/oC
 
-    !     Gama and gama2
-    !     --------------
+      !     Delta_e
+      !     -------
 
-    gama  = spre*(1004.)/(2.45e6*0.622)
-    gama2 = gama*(ra + rc)/ra
+      es = tetens (temp)
+      delta_e = es*(1. - ur)    !mb
 
-    !     Potencial evapotranspiration (without stress)
-    !     ---------------------------------------------
+      !     Stomatal Conductance
+      !     --------------------
 
-    evap =(delta*rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
-    evap = evap*(86400./2.45e6) !mm/day
-    evap = amax1(evap,0.)     !Eliminates condensation
-  end function evpot2
+      rc = rcmin
+
+      !     Gama and gama2
+      !     --------------
+
+      gama  = spre*(1004.)/(2.45e6*0.622)
+      gama2 = gama*(ra + rc)/ra
+
+      !     Potencial evapotranspiration (without stress)
+      !     ---------------------------------------------
+
+      evap =(delta*rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
+      evap = evap*(86400./2.45e6) !mm/day
+      evap = amax1(evap,0.)     !Eliminates condensation
+   end function evpot2
 
   !=================================================================
   !=================================================================

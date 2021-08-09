@@ -16,3 +16,6 @@ input/.python-version
 run_debug
 .vscode
 .python-version
+SANDBOX/*.npy
+SANDBOX/__pycache__
+SANDBOX/*.so

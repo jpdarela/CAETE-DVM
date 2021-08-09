@@ -1,9 +1,8 @@
 # Build caete_module & debug programs
-PYEXEC = python
+PYEXEC = python3
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
-CLEAN_DIR = ./clean_dir.sh
 DEBUG_PROGRAM = run_debug
 
 # RUN MODE FLAGS
@@ -95,7 +94,6 @@ debug_caete.o: debug_caete.f90
 # CLEAN DIR
 clean:
 	rm -rf test *.mod *.s *.o pls_ex.txt __pycache__ run_debug
-	$(CLEAN_DIR)
 	clear
 
 clean_plsgen:
