@@ -20,9 +20,11 @@ module photo
 
    ! Module defining functions related with CO2 assimilation and other processes in CAETE
    ! Some of these functions are based in CPTEC-PVM2, others are new features
-
+   use types
    implicit none
    private
+
+
 
    ! functions(f) and subroutines(s) defined here
    public ::                    &
@@ -32,7 +34,7 @@ module photo
         spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
         water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
         photosynthesis_rate    ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
-        canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m) == m s-1
+        canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m)
         stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
         transpiration          ,&
@@ -46,14 +48,43 @@ module photo
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
-        leap
+        leap                   ,&
+        ttype
 
 contains
 
-   function leap(year) result(is_leap)
-      ! Why this is here?
+   subroutine ttype()
       use types
-      !implicit none
+
+      type t1
+      integer(i_4) :: att1
+      integer(i_4) :: att2
+      integer(i_4) :: att3
+      end type t1
+
+      type(t1), dimension(2) :: test
+      integer(i_4) :: i
+      test(1)%att1 = 23234523
+      test(1)%att2 = 1223452
+      test(1)%att3 = 4421524
+
+      test(2)%att1 = 0
+      test(2)%att2 = 0
+      test(2)%att3 = 0
+
+
+      do i = 1, 2
+         print *, i, "ELEMENTO"
+         print*, test(i)%att1
+         print*, test(i)%att2
+         print*, test(i)%att3
+      enddo
+
+   end subroutine ttype
+
+
+   function leap(year) result(is_leap)
+      use types
 
       integer(i_4),intent(in) :: year
       logical(l_1) :: is_leap
@@ -512,7 +543,7 @@ contains
 
       ! !### DOMINGUES et al. 2010
       cbio_aux = cbio
-      if(cbio .le. 0.0D0) cbio_aux = 0.01
+      if(cbio .le. 0.0D0) cbio_aux = 0.01D0
 
       nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
       pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
@@ -1159,6 +1190,7 @@ module water
   ! functions defined here:
 
   public ::              &
+       wtt              ,&
        soil_temp        ,&
        soil_temp_sub    ,&
        penman           ,&
@@ -1168,6 +1200,41 @@ module water
 
 
 contains
+
+   !====================================================================
+   !====================================================================
+
+function wtt(t) result(es)
+   ! returns Saturation Vapor Pressure (hPa), using Buck equation
+
+   ! buck equation...references:
+   ! http://www.hygrometers.com/wp-content/uploads/CR-1A-users-manual-2009-12.pdf
+   ! Hartmann 1994 - Global Physical Climatology p.351
+   ! https://en.wikipedia.org/wiki/Arden_Buck_equation#CITEREFBuck1996
+
+   ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
+   !      J. Appl. Meteorol. 20:1527–1532.
+
+   use types, only: r_4
+   !implicit none
+
+   real(r_4),intent( in) :: t
+   real(r_4) :: es
+
+   if (t .ge. 0.) then
+      es = 6.1121 * exp((18.729-(t/227.5))*(t/(257.87+t))) ! Arden Buck
+      !es = es * 10 ! transform kPa in mbar == hPa
+      return
+   else
+      es = 6.1115 * exp((23.036-(t/333.7))*(t/(279.82+t))) ! Arden Buck
+      !es = es * 10 ! mbar == hPa ! mbar == hPa
+      return
+   endif
+
+end function wtt
+
+!====================================================================
+!====================================================================
 
   !=================================================================
   !=================================================================
@@ -1226,7 +1293,6 @@ contains
   function penman (spre,temp,ur,rn,rc2) result(evap)
     use types, only: r_4
     use global_par, only: rcmin, rcmax
-    use photo, only: tetens
     !implicit none
 
 
@@ -1250,14 +1316,14 @@ contains
     !     -----
     t1 = temp + 1.
     t2 = temp - 1.
-    es1 = tetens(t1)       !Saturation partial pressure of water vapour at temperature T
-    es2 = tetens(t2)
+    es1 = wtt(t1)       !Saturation partial pressure of water vapour at temperature T
+    es2 = wtt(t2)
 
     delta = (es1-es2)/(t1-t2) !mbar/oC
     !
     !     Delta_e
     !     -------
-    es = tetens (temp)
+    es = wtt (temp)
     delta_e = es*(1. - ur)    !mbar
 
     if ((delta_e.ge.(1./h5)-0.5).or.(rc2.ge.rcmax)) evap = 0.
@@ -1269,7 +1335,9 @@ contains
 
        !     Real evapotranspiration
        !     -----------------------
+       ! LH
        evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
+       ! H2O MASS
        evap = evap*(86400./2.45e6) !mm/day
        evap = amax1(evap,0.)  !Eliminates condensation
     endif
@@ -1308,7 +1376,6 @@ contains
   function evpot2 (spre,temp,ur,rn) result(evap)
     use types, only: r_4
     use global_par, only: rcmin, rcmax
-    use photo, only: tetens
     !implicit none
 
     !Commments from CPTEC-PVM2 code
@@ -1344,14 +1411,14 @@ contains
 
     t1 = temp + 1.
     t2 = temp - 1.
-    es1 = tetens(t1)
-    es2 = tetens(t2)
+    es1 = wtt(t1)
+    es2 = wtt(t2)
     delta = (es1-es2)/(t1-t2) !mb/oC
 
     !     Delta_e
     !     -------
 
-    es = tetens (temp)
+    es = wtt (temp)
     delta_e = es*(1. - ur)    !mb
 
     !     Stomatal Conductance

@@ -1,7 +1,6 @@
 # -*-coding:utf-8-*-
 # "CAETÊ"
-# Authors João Paulo Darela Filho & Gabriel Marandola
-
+# Author:  João Paulo Darela Filho
 """
 Copyright 2017- LabTerra
 
@@ -47,14 +46,20 @@ print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
 # GLOBAL
 out_ext = ".pkz"
 npls = gp.npls
+runplotp = False
 
 while True:
-    maskp = input("TWO MASK OPTIONS: AMAZON BIOME (a); PAN-AMAZON (b): ")
+    maskp = input(
+        "TWO MASK OPTIONS: AMAZON BIOME (a); PAN-AMAZON (b) OR PLOT RUN (c): ")
     if maskp == 'b':
         mask = np.load("../input/mask/mask_raisg-360-720.npy")
         break
     if maskp == 'a':
         mask = np.load("../input/mask/mask_BIOMA.npy")
+        break
+    if maskp == 'c':
+        mask = np.load("../input/mask/mask_raisg-360-720.npy")
+        runplotp = True
         break
 
 Pan_Amazon_RECTANGLE = "y = 160:221 x = 201:272"
@@ -211,6 +216,44 @@ def catch_out_carbon3(out):
     return dict(zip(lst, out))
 
 
+def find_coord(N, W):
+    """ Given a pair of geographic (WGS84) coordinates
+        returns the Y and X indices in the array (360,720)
+        (C_contiguous) Tested only in south america"""
+    Yc = round(N, 2)
+    Xc = round(W, 2)
+
+    if abs(Yc) > 89.75:
+        if Yc < 0:
+            Yc = -89.75
+        else:
+            Yc = 89.75
+
+    if abs(Xc) > 179.75:
+        if Xc < 0:
+            Xc = -179.75
+        else:
+            Xc = 179.75
+
+    Yind = 0
+    Xind = 0
+
+    lon = np.arange(-179.75, 180, 0.5)
+    lat = np.arange(89.75, -90, -0.5)
+
+    while Yc < lat[Yind]:
+        Yind += 1
+    if Xc <= 0:
+        while Xc > lon[Xind]:
+            Xind += 1
+    else:
+        Xind += lon.size // 2
+        while Xc > lon[Xind]:
+            Xind += 1
+
+    return Yind, Xind
+
+
 class grd:
 
     """
@@ -238,6 +281,8 @@ class grd:
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
         self.neighbours = None
+        self.plot_name = None
+        self.plot = False
 
         self.ls = None          # Number of surviving plss//
 
@@ -1284,3 +1329,121 @@ class grd:
             soil_out = catch_out_carbon3(s_out)
             self.sp_csoil = soil_out['cs']
             self.sp_snc = soil_out['snc']
+
+
+class plot(grd):
+
+    def __init__(self, i, j, dump_folder):
+        y, x = find_coord(i, j)
+        super().__init__(x, y, dump_folder)
+
+        self.plot_name = input("Plot name: ")
+        self.plot = True
+
+    def init_plot(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
+        """ PREPARE A GRIDCELL TO RUN With PLOT OBSERVED DATA
+            input_fpath:(str or pathlib.Path) path to Files with climate and soil data
+            co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
+            pls_table: np.ndarray with functional traits of a set of PLant life strategies
+        """
+
+        assert self.plot == False, "already done"
+        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
+        assert self.input_fpath.exists()
+
+        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+            self.data = pkl.load(fh)
+
+        os.makedirs(self.out_dir, exist_ok=True)
+        self.flush_data = 0
+
+        self.pr = self.data['pr']
+        self.ps = self.data['ps']
+        self.rsds = self.data['rsds']
+        self.tas = self.data['tas']
+        self.rhs = self.data['hurs']
+
+        # SOIL AND NUTRIENTS
+        self.input_nut = []
+        self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
+        for nut in self.nutlist:
+            self.input_nut.append(self.data[nut])
+        self.soil_dict = dict(zip(self.nutlist, self.input_nut))
+        self.data = None
+
+        # TIME
+        self.stime = copy.deepcopy(stime_i)
+        self.calendar = self.stime['calendar']
+        self.time_index = self.stime['time_index']
+        self.time_unit = self.stime['units']
+        self.ssize = self.time_index.size
+        self.sind = int(self.time_index[0])
+        self.eind = int(self.time_index[-1])
+        self.start_date = cftime.num2date(
+            self.time_index[0], self.time_unit, calendar=self.calendar)
+        self.end_date = cftime.num2date(
+            self.time_index[-1], self.time_unit, calendar=self.calendar)
+
+        # OTHER INPUTS
+        self.pls_table = pls_table.copy()
+        self.neighbours = neighbours_index(self.pos, mask)
+        self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
+
+        # Prepare co2 inputs (we have annually means)
+        self.co2_data = copy.deepcopy(co2)
+
+        self.tsoil = []
+        self.emaxm = []
+
+        # STATE
+        # Water
+        ws1 = tsoil[0][self.y, self.x].copy()
+        fc1 = tsoil[1][self.y, self.x].copy()
+        wp1 = tsoil[2][self.y, self.x].copy()
+
+        ws2 = ssoil[0][self.y, self.x].copy()
+        fc2 = ssoil[1][self.y, self.x].copy()
+        wp2 = ssoil[2][self.y, self.x].copy()
+
+        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.wp_water_upper_mm = self.swp.w1
+        self.wp_water_lower_mm = self.swp.w2
+        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
+
+        self.theta_sat = hsoil[0][self.y, self.x].copy()
+        self.psi_sat = hsoil[1][self.y, self.x].copy()
+        self.soil_texture = hsoil[2][self.y, self.x].copy()
+
+        # Biomass
+        self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
+            1.0, self.pls_table)
+        a, b, c, d = m.pft_area_frac(
+            self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
+        self.vp_lsid = np.where(a > 0.0)[0]
+        self.ls = self.vp_lsid.size
+        del a, b, c, d
+        self.vp_dcl = np.zeros(shape=(npls,), order='F')
+        self.vp_dca = np.zeros(shape=(npls,), order='F')
+        self.vp_dcf = np.zeros(shape=(npls,), order='F')
+        self.vp_ocp = np.zeros(shape=(npls,), order='F')
+        self.vp_sto = np.zeros(shape=(3, npls), order='F')
+
+        # # # SOIL
+        self.sp_csoil = np.zeros(shape=(4,), order='F') + 1.0
+        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.1
+        self.sp_available_p = self.soil_dict['ap']
+        self.sp_available_n = 0.2 * self.soil_dict['tn']
+        self.sp_in_n = 0.5 * self.soil_dict['tn']
+        self.sp_so_n = 0.3 * self.soil_dict['tn']
+        self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
+        self.sp_in_p = self.soil_dict['ip']
+        self.sp_uptk_costs = np.zeros(npls, order='F')
+        self.sp_organic_n = 0.01
+        self.sp_sorganic_n = 0.01
+        self.sp_organic_p = 0.01
+        self.sp_sorganic_p = 0.01
+
+        self.outputs = dict()
+        self.filled = True
+
+        return None

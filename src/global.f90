@@ -85,3 +85,19 @@ module photo_par
         e_vpm = 60592.0D0    ,&          ! Arrhenius eq. constant
         kp25 = 82.0D0                    ! µmol mol-1 (ppm)  MM constant PEPcase at
 end module photo_par
+
+
+
+! module my_type
+!    use types
+!    implicit none
+!    private
+
+!    public :: Books
+!    type Books
+!       integer(i_4) :: title
+!       integer(i_4) :: author
+!       integer(i_4) :: subject
+!    end type Books
+
+! end module my_type

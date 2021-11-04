@@ -35,7 +35,7 @@ contains
 
 
       use types
-      use global_par
+      use global_par, only: ntraits, npls
       use alloc
       use productivity
       use omp_lib
@@ -257,8 +257,18 @@ contains
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================
-      call OMP_SET_NUM_THREADS(2)
-
+      ! FAZER NUmthreads função de nlen pra otimizar a criação de trheads
+      if (nlen .le. 20) then
+         call OMP_SET_NUM_THREADS(1)
+      else if (nlen .le. 100) then
+         call OMP_SET_NUM_THREADS(1)
+      else if (nlen .le. 300) then
+         call OMP_SET_NUM_THREADS(2)
+      else if (nlen .le. 600) then
+         call OMP_SET_NUM_THREADS(2)
+      else
+         call OMP_SET_NUM_THREADS(3)
+      endif
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &

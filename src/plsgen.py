@@ -139,7 +139,7 @@ def table_gen(NPLS, fpath=None):
 
     def calc_ratios(pool):
 
-        # TODO increase ranges to left
+        # TODO increase ranges to the left
         pool_n2c = np.linspace(0.0005, 0.06, 1000)
         pool_p2c = np.linspace(0.2e-5, 0.008, 1000)  # TODO
 
