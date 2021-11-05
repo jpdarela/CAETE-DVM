@@ -1238,27 +1238,33 @@ def h52nc(input_file, dump_nc_folder):
 
     import time
 
+    drv = "H5FD_CORE"
+    mod = "a"
+
     ip = Path(input_file).resolve()
     print(f"Loading file: {ip}", end='-')
-    h5f = tb.open_file(ip, mode='a', driver="H5FD_CORE")
+    h5f = tb.open_file(ip, mode=mod, driver=drv)
     print('Loaded')
 
     g1_table = h5f.root.RUN0.Outputs_G1
     print('Creating Sorted table for g1', time.ctime())
     index_dt1 = g1_table.cols.date.create_csindex()
     t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
+    g1_table.close()
     # t1d = h5f.root.RUN0.indexedT1date
 
     g2_table = h5f.root.RUN0.Outputs_G2
     print('Creating Sorted table for g2', time.ctime())
     index_dt2 = g2_table.cols.date.create_csindex()
     t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
+    g2_table.close()
     # t2d = h5f.root.RUN0.indexedT2date
 
     g3_table = h5f.root.RUN0.Outputs_G3
     print('Creating Sorted table for g3', time.ctime())
     index_dt3 = g3_table.cols.date.create_csindex()
     t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
+    g3_table.close()
     # t3d = h5f.root.RUN0.indexedT3date
 
     for interval in run_breaks:
@@ -1266,9 +1272,6 @@ def h52nc(input_file, dump_nc_folder):
         create_ncG2(t2d, interval, dump_nc_folder)
         create_ncG3(t3d, interval, dump_nc_folder)
 
-    # t1d.remove()
-    # t2d.remove()
-    # t3d.remove()
 
     snap_table = h5f.root.RUN0.spin_snapshot
     lim_data(snap_table, dump_nc_folder)

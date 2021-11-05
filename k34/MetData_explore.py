@@ -20,3 +20,13 @@ with bz2.BZ2File("./ISIMIP_HISTORICAL_METADATA.pbz2", mode='rb') as fh:
 units = 'days since 1860-01-01 00:00:00'
 calendar = 'proleptic_gregorian'
 time_num = cf.date2num(idxT.to_pydatetime(), units, calendar)
+
+with open("./CO2_AMB_AmzFACE2000_2100.csv", 'r') as fh:
+    co2 = fh.readlines()
+    co2.pop(0)
+
+
+def find_co2(year):
+    for i in co2:
+        if int(i.split(',')[0]) == year:
+            return float(i.split(',')[1].strip())

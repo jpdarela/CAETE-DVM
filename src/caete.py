@@ -151,7 +151,36 @@ run_breaks_CMIP5_proj = [('20060101', '20071231'),
                          ('20960101', '20971231'),
                          ('20980101', '20991231')]
 
-rbrk = [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
+                                 ('20440101', '20451231'),
+                                 ('20460101', '20471231'),
+                                 ('20480101', '20491231'),
+                                 ('20500101', '20511231'),
+                                 ('20520101', '20531231'),
+                                 ('20540101', '20551231'),
+                                 ('20560101', '20571231'),
+                                 ('20580101', '20591231'),
+                                 ('20600101', '20611231'),
+                                 ('20620101', '20631231'),
+                                 ('20640101', '20651231'),
+                                 ('20660101', '20671231'),
+                                 ('20680101', '20691231'),
+                                 ('20700101', '20711231'),
+                                 ('20720101', '20731231'),
+                                 ('20740101', '20751231'),
+                                 ('20760101', '20771231'),
+                                 ('20780101', '20791231'),
+                                 ('20800101', '20811231'),
+                                 ('20820101', '20831231'),
+                                 ('20840101', '20851231'),
+                                 ('20860101', '20871231'),
+                                 ('20880101', '20891231'),
+                                 ('20900101', '20911231'),
+                                 ('20920101', '20931231'),
+                                 ('20940101', '20951231'),
+                                 ('20960101', '20971231'),
+                                 ('20980101', '20991231')]
+
+rbrk= [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
 
 warnings.simplefilter("default")
 
@@ -174,11 +203,11 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
         decimals    - Optional  : positive number of decimals in percent complete (Int)
         bar_length  - Optional  : character length of bar (Int)
     """
-    bar_utf = b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
-    str_format = "{0:." + str(decimals) + "f}"
-    percents = str_format.format(100 * (iteration / float(total)))
-    filled_length = int(round(bar_length * iteration / float(total)))
-    bar = '█' * filled_length + '-' * (bar_length - filled_length)
+    bar_utf= b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
+    str_format= "{0:." + str(decimals) + "f}"
+    percents= str_format.format(100 * (iteration / float(total)))
+    filled_length= int(round(bar_length * iteration / float(total)))
+    bar= '█' * filled_length + '-' * (bar_length - filled_length)
 
     sys.stdout.write('\r%s |%s| %s%s %s' %
                      (prefix, bar, percents, '%', suffix)),
@@ -780,10 +809,15 @@ class grd:
         assert not fix_co2 or type(
             fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string "
 
+        if self.plot:
+            splitter = ","
+        else:
+            splitter = "\t"
+
         def find_co2(year):
             for i in self.co2_data:
-                if int(i.split('\t')[0]) == year:
-                    return float(i.split('\t')[1].strip())
+                if int(i.split(splitter)[0]) == year:
+                    return float(i.split(splitter)[1].strip())
 
         def find_index(start, end):
             result = []
@@ -1337,22 +1371,19 @@ class plot(grd):
         y, x = find_coord(i, j)
         super().__init__(x, y, dump_folder)
 
-        self.plot_name = input("Plot name: ")
+        self.plot_name = dump_folder
         self.plot = True
 
-    def init_plot(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
+    def init_plot(self, sdata, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN With PLOT OBSERVED DATA
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data
             co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
         """
 
-        assert self.plot == False, "already done"
-        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
-        assert self.input_fpath.exists()
+        assert self.filled == False, "already done"
 
-        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
-            self.data = pkl.load(fh)
+        self.data = sdata
 
         os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = 0
