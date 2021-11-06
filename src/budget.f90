@@ -171,7 +171,7 @@ contains
 
       real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs
       real(r_8), dimension(3,npls) :: sto_budg
-      real(r_8) :: soil_sat
+      real(r_8) :: soil_sat, ar_aux
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -272,12 +272,13 @@ contains
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
-      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc)
+      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux)
       do p = 1,nlen
 
          carbon_in_storage = 0.0D0
          testcdef = 0.0D0
          sr = 0.0D0
+         ar_aux = 0.0D0
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
@@ -316,7 +317,7 @@ contains
             &, mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
             &, cf1_pft(ri),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
             &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
-            &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p))
+            &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p), ar_aux)
 
          ! Estimate growth of storage C pool
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
@@ -327,7 +328,7 @@ contains
          ! Calculate storage GROWTH respiration
          sr = 0.25D0 * growth_stoc ! g m-2
          if(sr .gt. 1.0D2) sr = 0.0D0
-         ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
+         ar(p) = ar(p) + real(((sr + mr_sto + ar_aux) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
 
          growth_stoc = 0.0D0

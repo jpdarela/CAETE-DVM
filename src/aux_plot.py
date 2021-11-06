@@ -14,6 +14,7 @@ def get_var(grd, var, spin=(1, 5)):
         dt = dt[var]
         dim = dt.shape
     if len(dim) == 1:
+        colname = var
         output = np.zeros(0, dtype=dt.dtype)
         for fname in k:
             with open(grd.outputs[fname], mode='rb') as fh:
@@ -21,6 +22,7 @@ def get_var(grd, var, spin=(1, 5)):
                 dt1 = dt1[var]
                 output = np.hstack((output, dt1))
     elif len(dim) == 2:
+        colname = [var + f"_{x + 1}" for x in range(len(dim))]
         day_len = dim[-1] * int(len(k))
         s = (dim[0], 0)
         output = np.zeros(s, dtype=dt.dtype)

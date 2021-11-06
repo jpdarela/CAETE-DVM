@@ -176,18 +176,31 @@ def make_table_LD():
 
 
 def run_HD():
+    # Open HD traits table
     pls_table = np.load("./pls_attrs_HD.npy")
 
+    # Create the plot object
     k34_plot = mod.plot(-2.61, -60.20, 'k34-HD')
 
+    # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                        pls_table=pls_table, tsoil=tsoil,
                        ssoil=ssoil, hsoil=hsoil)
+
+    # Apply a numerical spinup in the soil pools of resources
     k34_plot = apply_spin(k34_plot)
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
+
+    # Run the first sequence of repetitions with co2 fixed at 2000 year values
+    # The binary files for each repetttion is stored as spinX.pkz elsewhere
+    # We run the model trought 450 years to assure a steady state
+    k34_plot.run_caete('20000102', '20151231', spinup=30,
                        fix_co2=368.9, save=True)
+
+    # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
-    k34_plot.run_caete('20000102', '20151231', spinup=9,
+
+    #
+    k34_plot.run_caete('20000102', '20151231', spinup=30,
                        fix_co2="2020", save=True)
     return k34_plot
 
@@ -195,39 +208,76 @@ def run_HD():
 def run_MD():
     pls_table = pls.table_gen(NPLS)
 
+    # Create the plot object
     k34_plot = mod.plot(-2.61, -60.20, 'k34-MD')
 
+    # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                        pls_table=pls_table, tsoil=tsoil,
                        ssoil=ssoil, hsoil=hsoil)
+
+    # Apply a numerical spinup in the soil pools of resources
     k34_plot = apply_spin(k34_plot)
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
+
+    # Run the first sequence of repetitions with co2 fixed at 2000 year values
+    # The binary files for each repetttion is stored as spinX.pkz elsewhere
+    # We run the model trought 450 years to assure a steady state
+    k34_plot.run_caete('20000102', '20151231', spinup=30,
                        fix_co2=368.9, save=True)
+
+    # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
-    k34_plot.run_caete('20000102', '20151231', spinup=9,
+
+    #
+    k34_plot.run_caete('20000102', '20151231', spinup=30,
                        fix_co2="2020", save=True)
+    return k34_plot
     return k34_plot
 
 
 def run_LD():
     pls_table = np.load("./pls_attrs_LD.npy")
 
+    # Create the plot object
     k34_plot = mod.plot(-2.61, -60.20, 'k34-LD')
 
+    # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                        pls_table=pls_table, tsoil=tsoil,
                        ssoil=ssoil, hsoil=hsoil)
+
+    # Apply a numerical spinup in the soil pools of resources
     k34_plot = apply_spin(k34_plot)
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
+
+    # Run the first sequence of repetitions with co2 fixed at 2000 year values
+    # The binary files for each repetttion is stored as spinX.pkz elsewhere
+    # We run the model trought 450 years to assure a steady state
+    k34_plot.run_caete('20000102', '20151231', spinup=30,
                        fix_co2=368.9, save=True)
+
+    # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
-    k34_plot.run_caete('20000102', '20151231', spinup=9,
+
+    #
+    k34_plot.run_caete('20000102', '20151231', spinup=29,
                        fix_co2="2020", save=True)
     return k34_plot
 
 
-def pk2csv(grd):
-    pass
+def pk2csv(grd: mod.grd, spin) -> pd.DataFrame:
+    import joblib
+    if spin < 10:
+        name = f'spin0{spin}.pkz'
+    else:
+        name = f'spin{spin}.pkz'
+    with open(grd.outputs[name], 'rb') as fh:
+        dt = joblib.load(fh)
+
+    MICV = ['photo','npp', 'aresp']
+
+
+
+
 
 if __name__ == "__main__":
 
@@ -238,4 +288,5 @@ if __name__ == "__main__":
     # md = run_MD()
 
     # Need to compile the fortrna code do 4 PLSs
-    ld = run_LD()
+    # ld = run_LD()
+    sd = pk2csv()

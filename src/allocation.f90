@@ -43,7 +43,7 @@ module alloc
       & sop,op,scl1,sca1,scf1,storage,storage_out_alloc,scl2,sca2,scf2,&
       & leaf_litter,cwd,root_litter,nitrogen_uptake, phosphorus_uptake,&
       & litter_nutrient_content, limiting_nutrient, c_costs_of_uptake,&
-      & uptk_strategy)
+      & uptk_strategy, ctonfix)
 
 
       ! PARAMETERS
@@ -105,7 +105,7 @@ module alloc
       integer(i_2), dimension(3), intent(out) :: limiting_nutrient ! Limiting nutrient code
       real(r_8), intent(out) :: c_costs_of_uptake
       integer(i_4), dimension(2), intent(out) :: uptk_strategy
-
+      real(r_8),intent(out) :: ctonfix
 
       ! Auxiliary variables
       real(r_8) :: nuptk ! N plant uptake g(N) m-2
@@ -273,7 +273,7 @@ module alloc
       pdia = dt(16)
       amp = dt(17)
 
-
+      ctonfix= 0.0D0
       ! If there is not nutrients or NPP then no allocation process
       ! only deallocation label 294
       if(nmin .le. 0.0 .and. storage(2) .le. 0.0D0) then
@@ -327,6 +327,7 @@ module alloc
       npp_pot = (real(npp,kind=r_8) * (1000.0D0 / 365.242D0)) ! Transform Kg m-2 Year-1 to g m-2 day
       daily_growth = 0.0D0
       npp_to_fixer = npp_pot * pdia
+      ctonfix = npp_to_fixer
       npp_pot = npp_pot - npp_to_fixer - npp_costs
 
       ! START STORAGE_OUT_alloc

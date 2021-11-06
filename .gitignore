@@ -16,9 +16,9 @@ input/.python-version
 run_debug
 .vscode
 .python-version
-SANDBOX/*.npy
-SANDBOX/__pycache__
-SANDBOX/*.so
+SANDBOX/
+BENCHMARK/
+PLS_stabilization_test/
 k34/CO2_AMB_AmzFACE2000_2100.csv
 k34/CO2_ELE_AmzFACE2000_2100.csv
 k34/MetData_AmzFACE2000_2015_CAETE.csv
