@@ -1,0 +1,403 @@
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
+    <script type="text/javascript">
+
+
+ $(document).ready(function(){
+	  function getH2Children($row) {
+	      var children = [];
+	      while($row.next().hasClass('child_dataset')) {
+		  children.push($row.next());
+		  $row = $row.next();
+	      }
+	      return children;
+	  }
+	  function getH1Children($row) {
+	      var children = [];
+	      var turning_on = $row.next().is(":hidden");
+	      while($row.next().hasClass('child_dataset') ||
+		    $row.next().hasClass('child_variable')) {
+		  if(turning_on){
+		      if( ($row.next().is(":hidden")) &&
+			  ($row.next().hasClass('child_variable'))) children.push($row.next());
+		  }else{
+		      if(!($row.next().is(":hidden"))) children.push($row.next());
+		  }
+		  $row = $row.next();
+	      }
+	      return children;
+	  }
+	  $('.parent').on('click', function() {
+	      var children = getH1Children($(this));	 
+	      $.each(children, function() {
+		  $(this).toggle();
+	      })
+	  });
+	  $('.child_variable').on('click', function() {
+	      var children = getH2Children($(this));
+	      $.each(children, function() {
+		  $(this).toggle();
+	      })
+	  });
+	  $('.child_dataset').toggle();
+      });
+
+      function pageLoad() {
+	  
+	  $("table").delegate('td','mouseover mouseleave', function(e) {
+	      var table = document.getElementById("scoresTable");
+	      if (e.type == 'mouseover') {
+		  $(this).parent().addClass("hover");
+		  table.rows[0].cells[$(this).index()].style.fontWeight = "bolder";
+	      }
+	      else {
+		  $(this).parent().removeClass("hover");
+		  table.rows[0].cells[$(this).index()].style.fontWeight = "normal";
+	      }
+	  });
+
+	  colorTable();
+      }
+      
+      function printRow(table,row,array,cmap) {
+	  if(typeof array == 'undefined'){
+	      for(var i = 1, col; col = table.rows[row].cells[i]; i++) {
+		  col.style.backgroundColor = "#808080";
+	      }
+	      return;
+	  }
+	  var nc = cmap.length;
+	  for(var col=0;col<array.length;col++){
+	      var clr = "#808080";
+	      if(array[col] > -900){
+                  var ae = Math.abs(array[col]);
+                  var ind;
+                  if(ae>=0.25){
+                     ind = Math.round(2*array[col]+4);
+                  }else{
+                     ind = Math.round(4*array[col]+4);
+                  }
+		  ind = Math.min(Math.max(ind,0),nc-1);
+		  clr = cmap[ind];
+	      }
+	      table.rows[row].cells[col+1].style.backgroundColor = clr;
+	  }
+      }
+      
+      function colorTable() {
+	  	  
+        $.getJSON("scalars.json", function(data) {
+          var scalars = data;
+	  var scalar_option = document.getElementById("ScalarOption");
+          var region_option = document.getElementById("RegionOption");
+	  var scalar_name   = scalar_option.options[scalar_option.selectedIndex].value;
+	  scalar_name  += " " + region_option.options[region_option.selectedIndex].value;
+	  
+	  var PuOr = ['#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788'];
+	  var GnRd = ['#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837'];
+	  var cmap = GnRd;
+	  if(document.getElementById("colorblind").checked) cmap = PuOr;
+
+	  var row = 1;
+	  var tab = "";
+	  var table = document.getElementById("scoresTable");
+	  for(let h1 in scalars){
+	      printRow(table,row,scalars[h1][scalar_name],cmap);
+	      row += 1;
+	      H1 = scalars[h1]["children"]
+	      for(let h2 in H1){
+		  printRow(table,row,H1[h2][scalar_name],cmap);
+		  row += 1;
+		  H2 = H1[h2]["children"]
+		  for(let v in H2){
+	              var s_name = scalar_name;
+                      if(h1 == "Relationships") {
+                        s_name = v.substring(0,v.indexOf("/")) + " RMSE Score " + region_option.options[region_option.selectedIndex].value;
+                      }else{
+                      }
+		      printRow(table,row,H2[v][s_name],cmap);
+		      row += 1;
+		  }
+	      }
+	  }
+
+	  table = document.getElementById("scoresLegend");
+	  row = 0;
+	  for(var col=0;col<cmap.length;col++){
+	      table.rows[row].cells[col].style.backgroundColor = cmap[col];
+	  }
+	});  
+      }
+    </script>
+    <style type="text/css">
+      .parent{
+      }
+      .child_variable{
+      }
+      .child_dataset{
+      }
+      table.table-header-rotated {
+          border-collapse: collapse;
+      }
+      th.rotate {
+          height: 96px;
+          white-space: nowrap;
+	  font-weight: normal;
+      }
+      th.rotate > div {
+          transform: translate(10px, 43px) rotate(-45deg);
+          width: 0px;
+      }
+      th.rotate > div > span {
+      }
+      td {
+	  height: 25px;
+	  width: 25px;
+	  border: 1px solid;
+      }
+      td.row-label {
+	  width: 325px;
+      }
+      a {
+	  display:block;
+	  text-decoration: none;
+      }
+      .hover {
+	  font-weight: bold;
+          border: 2px solid;
+      }
+    </style>
+    
+  </head>
+  <body onload="pageLoad()">
+
+    <div data-role="page" id="MeanState">      
+      <div data-role="header" data-position="fixed" data-tap-toggle="false">
+        <h1>ILAMB Benchmarking</h1>
+      </div>
+
+      <select id="ScalarOption" onchange="colorTable()">
+        <option value="Spatial Distribution Score">Spatial Distribution Score</option>
+        <option value="Seasonal Cycle Score">Seasonal Cycle Score</option>
+        <option value="Bias Score">Bias Score</option>
+        <option value="RMSE Score">RMSE Score</option>
+        <option value="Overall Score" selected="selected">Overall Score</option>
+      </select>
+      <select id="RegionOption" onchange="colorTable()">
+          <option value='global' selected="selected">Globe</option>
+      </select>
+
+      <form>
+	<fieldset data-role="controlgroup" data-type="horizontal" data-mini="True">
+	  <input type="checkbox" name="colorblind" id="colorblind" checked onchange="colorTable()">
+	  <label for="colorblind" >Colorblind colors</label>
+	</fieldset>
+      </form>
+      
+      <center>
+	<table class="table-header-rotated" id="scoresTable">
+	  <thead>
+            <tr>
+              <th></th>
+              <th class="rotate"><div>CAETE-1000_r05</div></th>
+              <th class="rotate"><div>CAETE-1000_r06</div></th>
+              <th class="rotate"><div>CAETE-1000_r09</div></th>
+              <th class="rotate"><div>CAETE-1000_r10</div></th>
+              <th class="rotate"><div>CAETE-1000_r11</div></th>
+            </tr>
+	  </thead>
+	  <tbody>
+	    <tr class="parent" bgcolor="#FFECE6">
+              <td class="row-label">Carbon Cycle</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_variable" bgcolor="#FFECE6">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Gross Primary Production</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/GrossPrimaryProduction/GBAF/GBAF.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GBAF</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/GBAF/GBAF.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/GBAF/GBAF.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/GBAF/GBAF.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/GBAF/GBAF.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/GBAF/GBAF.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/GrossPrimaryProduction/FLUXCOM/FLUXCOM.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FLUXCOM</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/GrossPrimaryProduction/MADANI/MADANI.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MADANI</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/MADANI/MADANI.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/MADANI/MADANI.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/MADANI/MADANI.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/MADANI/MADANI.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/GrossPrimaryProduction/MADANI/MADANI.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_variable" bgcolor="#FFECE6">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Ecosystem Respiration</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/EcosystemRespiration/GBAF/GBAF.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GBAF</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/GBAF/GBAF.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/GBAF/GBAF.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/GBAF/GBAF.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/GBAF/GBAF.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/GBAF/GBAF.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/EcosystemRespiration/FLUXCOM/FLUXCOM.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FLUXCOM</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/EcosystemRespiration/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_variable" bgcolor="#FFECE6">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Net Ecosystem Exchange</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/NetEcosystemExchange/GBAF/GBAF.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GBAF</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/GBAF/GBAF.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/GBAF/GBAF.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/GBAF/GBAF.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/GBAF/GBAF.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/GBAF/GBAF.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/NetEcosystemExchange/FLUXCOM/FLUXCOM.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FLUXCOM</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/NetEcosystemExchange/FLUXCOM/FLUXCOM.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_variable" bgcolor="#FFECE6">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Leaf Area Index</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/LeafAreaIndex/AVH15C1/AVH15C1.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AVH15C1</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVH15C1/AVH15C1.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVH15C1/AVH15C1.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVH15C1/AVH15C1.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVH15C1/AVH15C1.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVH15C1/AVH15C1.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/LeafAreaIndex/AVHRR/AVHRR.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AVHRR</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVHRR/AVHRR.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVHRR/AVHRR.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVHRR/AVHRR.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVHRR/AVHRR.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/AVHRR/AVHRR.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFECE6">
+              <td class="row-label"><a href="./CarbonCycle/LeafAreaIndex/MODIS/MODIS.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MODIS</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/MODIS/MODIS.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/MODIS/MODIS.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/MODIS/MODIS.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/MODIS/MODIS.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="CarbonCycle/LeafAreaIndex/MODIS/MODIS.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="parent" bgcolor="#FFDCE7">
+              <td class="row-label">Soil Water Runoff and Evapotranspiration</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_variable" bgcolor="#FFDCE7">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Water storage</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFDCE7">
+              <td class="row-label"><a href="./SoilWaterRunoffandEvapotranspiration/Waterstorage/GLDAS/GLDAS.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GLDAS</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Waterstorage/GLDAS/GLDAS.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Waterstorage/GLDAS/GLDAS.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Waterstorage/GLDAS/GLDAS.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Waterstorage/GLDAS/GLDAS.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Waterstorage/GLDAS/GLDAS.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_variable" bgcolor="#FFDCE7">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Evapotranspiration</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFDCE7">
+              <td class="row-label"><a href="./SoilWaterRunoffandEvapotranspiration/Evapotranspiration/GLEAMv3.3a/GLEAMv3.3a.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GLEAMv3.3a</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/GLEAMv3.3a/GLEAMv3.3a.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/GLEAMv3.3a/GLEAMv3.3a.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/GLEAMv3.3a/GLEAMv3.3a.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/GLEAMv3.3a/GLEAMv3.3a.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/GLEAMv3.3a/GLEAMv3.3a.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_dataset" bgcolor="#FFDCE7">
+              <td class="row-label"><a href="./SoilWaterRunoffandEvapotranspiration/Evapotranspiration/MODIS16A2/MODIS16A2.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MODIS16A2</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/MODIS16A2/MODIS16A2.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/MODIS16A2/MODIS16A2.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/MODIS16A2/MODIS16A2.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/MODIS16A2/MODIS16A2.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Evapotranspiration/MODIS16A2/MODIS16A2.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	    <tr class="child_variable" bgcolor="#FFDCE7">
+              <td class="row-label">&nbsp;&nbsp;&nbsp;&nbsp;Runoff</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+	    <tr class="child_dataset" bgcolor="#FFDCE7">
+              <td class="row-label"><a href="./SoilWaterRunoffandEvapotranspiration/Runoff/LORA/LORA.html" target="_blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LORA</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Runoff/LORA/LORA.html?model=CAETE-1000_r05" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Runoff/LORA/LORA.html?model=CAETE-1000_r06" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Runoff/LORA/LORA.html?model=CAETE-1000_r09" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Runoff/LORA/LORA.html?model=CAETE-1000_r10" target="_blank">&nbsp;</a></td>
+              <td><a href="SoilWaterRunoffandEvapotranspiration/Runoff/LORA/LORA.html?model=CAETE-1000_r11" target="_blank">&nbsp;</a></td>
+	  </tbody>
+	</table>
+
+	
+	<p>Relative Scale
+	<table class="table-header-rotated" id="scoresLegend">
+	  <tbody>
+            <tr>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+	    </tr>
+	  </tbody>
+	</table>
+	Worse Value&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Better Value
+	<table class="table-header-rotated" id="missingLegend">
+	  <tbody>
+            <tr>
+              <td bgcolor="#808080"></td>
+	    </tr>
+	  </tbody>
+	</table>Missing Data or Error
+      </center>
+
+      <div data-role="footer">
+        <center>ILAMB 2.5 (unknown-git)</center>
+      </div>
+    </body>
+</html>

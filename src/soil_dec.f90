@@ -28,11 +28,11 @@ module soil_dec
    public :: water_effect     ! Soil water content effect on C decay
    public :: sorbed_p_equil   ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
    public :: solution_p_equil
-   public :: sorbed_n_equil   ! Fucntion that caculates the equilibrium between Mineralized N and Sorbed P
+   public :: sorbed_n_equil   ! Fucntion that caculates the equilibrium between Mineralized N and Sorbed N
    public :: solution_n_equil
    public :: leaching
    public :: add_pool
-   
+
 contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
@@ -410,7 +410,7 @@ contains
       if (theta > 1.0) aux = 1.0
 
       inter = (k_a * aux) - (k_b * aux**2)
-      retval = max(inter, 0.01) ! Residual decay
+      retval = max(inter, 0.2) ! Residual decay
 
    end function water_effect
 

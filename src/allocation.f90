@@ -101,7 +101,8 @@ module alloc
       real(r_8), dimension(2),intent(out) :: nitrogen_uptake ! N plant uptake g(N) m-2  INDEX //avail_n = 1, on = 2//
       real(r_8), dimension(3),intent(out) :: phosphorus_uptake ! P plant uptake g(P) m-2  INDEX //avail_p = 1, sop = 2, op=3//
       real(r_8),dimension(6),intent(out) :: litter_nutrient_content ! [(lln),(rln),(cwdn),(llp),(rlp),(cwdp)] g m-2
-      integer(i_2), dimension(3), intent(out) :: limiting_nutrient
+      ! Limiting nutrient organization: dim1 = leaf wood root, code: 1=N 2=P 4=N,COLIM 5=P,COLIM 6=COLIM 0=NOLIM
+      integer(i_2), dimension(3), intent(out) :: limiting_nutrient ! Limiting nutrient code
       real(r_8), intent(out) :: c_costs_of_uptake
       integer(i_4), dimension(2), intent(out) :: uptk_strategy
 
@@ -391,7 +392,7 @@ module alloc
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.035D0
+      mult_factor_n  = 0.020D0
       mult_factor_p  = 0.003D0
       avail_n = (mult_factor_n * nmin) !g m⁻²
       avail_p = (mult_factor_p * plab) !g m⁻²

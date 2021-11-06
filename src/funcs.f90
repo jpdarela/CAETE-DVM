@@ -20,9 +20,11 @@ module photo
 
    ! Module defining functions related with CO2 assimilation and other processes in CAETE
    ! Some of these functions are based in CPTEC-PVM2, others are new features
-
+   use types
    implicit none
    private
+
+
 
    ! functions(f) and subroutines(s) defined here
    public ::                    &
@@ -32,7 +34,7 @@ module photo
         spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
         water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
         photosynthesis_rate    ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
-        canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m) == m s-1
+        canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m)
         stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
         transpiration          ,&
@@ -46,14 +48,43 @@ module photo
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
-        leap
+        leap                   ,&
+        ttype
 
 contains
 
-   function leap(year) result(is_leap)
-      ! Why this is here?
+   subroutine ttype()
       use types
-      !implicit none
+
+      type t1
+      integer(i_4) :: att1
+      integer(i_4) :: att2
+      integer(i_4) :: att3
+      end type t1
+
+      type(t1), dimension(2) :: test
+      integer(i_4) :: i
+      test(1)%att1 = 23234523
+      test(1)%att2 = 1223452
+      test(1)%att3 = 4421524
+
+      test(2)%att1 = 0
+      test(2)%att2 = 0
+      test(2)%att3 = 0
+
+
+      do i = 1, 2
+         print *, i, "ELEMENTO"
+         print*, test(i)%att1
+         print*, test(i)%att2
+         print*, test(i)%att3
+      enddo
+
+   end subroutine ttype
+
+
+   function leap(year) result(is_leap)
+      use types
 
       integer(i_4),intent(in) :: year
       logical(l_1) :: is_leap
@@ -120,20 +151,16 @@ contains
       !implicit none
 
       real(r_8),intent(in) :: tau_leaf  !years
-      real(r_8) :: sla   !m2 gC-1
+      real(r_8):: sla   !m2 gC-1
 
-      real(r_8) :: leaf_t_months
-      real(r_8) :: leaf_t_coeff
-      real(r_8) :: leaf_turnover
+      real(r_8) :: n_tau_leaf, tl0
 
-      leaf_t_months = tau_leaf*12.0D0 ! turnover time in months
-      leaf_t_coeff = leaf_t_months/100.0D0 !1 - 100 months == ~ 1/12 to 8.3 years (TRY-kattge et al. 2011; Jedi-Pavlick 2012)
+      n_tau_leaf = (tau_leaf - 0.08333333)/(8.33333333 - 0.08333333)
 
-      ! leaf_turnover =  (365.0/12.0) * exp(2.6*leaf_t_coeff)
-      leaf_turnover =  (365.242D0/12.0D0) * (10.00D0 ** (2.00D0*leaf_t_coeff))
+      tl0 = (365.242D0 / 12.0D0) * (10.00D0 ** (2.00D0*n_tau_leaf))
 
-      ! sla = (3e-2 * (365.0/leaf_turnover)**(-1.02))
-      sla = (3D-2 * (365.2420D0/leaf_turnover)**(-0.460D0))
+      sla = (3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
+
    end function spec_leaf_area
 
    !=================================================================
@@ -248,7 +275,7 @@ contains
    function canopy_resistence(vpd_in,f1_in,g1,ca) result(rc2_in)
       ! return stomatal resistence based on Medlyn et al. 2011a
       ! Coded by Helena Alves do Prado
-
+      use global_par, only: rcmin, rcmax
       use types, only: r_4 ,r_8
 
 
@@ -278,6 +305,10 @@ contains
       gs = 0.003 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0e6)/ca) ! mol m-2 s-1
       gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
       rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
+
+      if(rc2_in .ge. rcmax) rc2_in = rcmax
+      if(rc2_in .lt. rcmin) rc2_in = rcmin
+
    end function canopy_resistence
 
    !=================================================================
@@ -424,36 +455,29 @@ contains
 
    !=================================================================
    !=================================================================
+   ! def nrubisco(leaf_t, n_in):
+      ! from math import e
 
-   function nrubisco(leaf_t,nbio_in) result(nb)
+      ! tl = e**(-(leaf_t + 1.03)) + 0.08
+
+      ! return tl * (n_in * 0.7)
+   function nrubisco(leaf_t,n_in) result(nb)
       use types
       real(r_8), intent(in) :: leaf_t
-      real(r_8), intent(in) :: nbio_in
-      real(r_8) :: nb
-      real(r_8) :: tl0, tlm, tl
-      real(r_8) :: auxmax = 0.3D0, auxmin = 0.00D0
+      real(r_8), intent(in) :: n_in
+      real(r_8) :: nb, tl
+      real(r_8) :: e = 2.718281828459045D0
 
-      ! These values need to be taken from the table of PLSs
-      ! Minimum and maximum time of C residence in CVEG pool
-      ! tl = (auxmax - auxmin) / (tlm -tl0) * (tl - tlm) + auxmin
+      tl = e**(-(leaf_t + 1.2)) + 0.04
 
-      ! new_v = (new_max - new_min) / (old_max -
-      ! old_min) * (v - old_min) + new_mi
-      tl0 = spec_leaf_area(1.0D0/12.0D0)
-      tlm = spec_leaf_area(8.33333333333D0)
-      tl = spec_leaf_area(leaf_t)
-
-      ! tl = (((tl-tl0)/(tlm-tl0))*(auxmax-auxmin)+auxmin)
-      tl = 1.0D0 - (auxmax - auxmin) / (tlm -tl0) * (tl - tl0) + auxmin
-
-      nb = tl * nbio_in ! Leaf nitrogen that is rubisco
+      nb = tl * n_in
 
    end function nrubisco
 
    !=================================================================
    !=================================================================
 
-   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,&
+   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,cbio,&
         & leaf_turnover,f1ab,vm, amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
@@ -467,7 +491,7 @@ contains
       real(r_4),intent(in) :: p0    ! atm Pressure hPa
       real(r_4),intent(in) :: ipar  ! mol Photons m-2 s-1
       real(r_8),intent(in) :: nbio, c_atm  ! gm-2, ppm
-      real(r_8),intent(in) :: pbio  ! gm-2
+      real(r_8),intent(in) :: pbio, cbio  ! kg m-2
       logical(l_1),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_8),intent(in) :: leaf_turnover   ! y
@@ -500,25 +524,41 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: vm_nutri
-      real(r_8) :: nbio2, pbio2, xbio
+      real(r_8) :: nbio2, pbio2, cbio_aux
+      real(r_8) :: nmgg, pmgg
+      real(r_8) :: coeffa, coeffb
 
       ! Calculating Fraction of leaf Nitrogen that is lignin
-      xbio = nrubisco(leaf_turnover,nbio)
-      nbio2 = xbio
-      pbio2 = pbio
+      nbio2 = nbio !nrubisco(leaf_turnover, nbio)
+      pbio2 = pbio !nrubisco(leaf_turnover, pbio)
 
       if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
       if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
 
+      ! ! ! Calculation of reference carboxilation rate of rubisco
+      ! !### WALKER et al. 2014
+      ! vm_nutri = 3.946D0 + (0.921D0 * dlog(nbio2)) - (0.121D0 * dlog(pbio2))
+      ! vm_nutri = vm_nutri + (0.282D0 * dlog(nbio2) * dlog(pbio2))
+      ! vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
 
-      ! Calculation of reference carboxilation rate of rubisco
-      vm_nutri = 3.946D0 + (0.921D0 * dlog(nbio2)) - (0.121D0 * dlog(pbio2))
-      vm_nutri = vm_nutri + (0.282D0 * dlog(nbio2) * dlog(pbio2))
-      vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
+      ! !### DOMINGUES et al. 2010
+      cbio_aux = cbio
+      if(cbio .le. 0.0D0) cbio_aux = 0.01D0
 
+      nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      coeffa = 1.57D0
+      coeffb = 0.55D0
+
+      vm_nutri = coeffa + (coeffb * dlog10(nmgg))
+      vm =  10**vm_nutri * 1D-6
+      if(vm + 1 .eq. vm) vm = p25 - 5.0D-5 ! If Vc max is inf give it a low value
+      if(vm .gt. p25) vm = p25
 
       ! Rubisco Carboxilation Rate - temperature dependence
       vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0)))
+      if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
+      if(vm_in .gt. p25) vm_in = p25
 
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
@@ -556,30 +596,19 @@ contains
          b = (-1.)*(jc+jl)
          c = jc*jl
          delta = (b**2)-4.0*a*c
-         ! if(delta .eq. 0.0)then
-         !    jp = (-b) / (2 * a)
-         ! else if(delta .gt. 0.0) then
          jp1 = (-b-(sqrt(delta)))/(2.0*a)
          jp2 = (-b+(sqrt(delta)))/(2.0*a)
          jp = dmin1(jp1,jp2)
-         ! else
-         !    jp = 0.0
-         ! endif
 
          !Leaf level gross photosynthesis (minimum between jc, jl and je)
          !---------------------------------------------------------------
          b2 = (-1.)*(jp+je)
          c2 = jp*je
          delta2 = (b2**2)-4.0*a2*c2
-         ! if(delta2 .eq. 0.0)then
-         !    f1a = (-b2) / (2.0 * a2)
-         ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0d0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0d0*a2)
          f1a = dmin1(j1,j2)
-         ! else
-         !    f1a = 0.0
-         ! endif
+
 
          f1ab = f1a
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
@@ -628,15 +657,10 @@ contains
          b2 = (-1.)*(jcl+je)
          c2 = jcl*je
          delta2 = (b2**2)-4.0*a2*c2
-         ! if(delta2 .eq. 0.0)then
-         !    f1a = (-b2) / (2.0 * a2)
-         ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0*a2)
          f1a = dmin1(j1,j2)
-         ! else
-         !    f1a = 0.0
-         ! endif
+
 
          f1ab = f1a
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
@@ -1165,6 +1189,7 @@ module water
   ! functions defined here:
 
   public ::              &
+       wtt              ,&
        soil_temp        ,&
        soil_temp_sub    ,&
        penman           ,&
@@ -1174,6 +1199,41 @@ module water
 
 
 contains
+
+   !====================================================================
+   !====================================================================
+
+function wtt(t) result(es)
+   ! returns Saturation Vapor Pressure (hPa), using Buck equation
+
+   ! buck equation...references:
+   ! http://www.hygrometers.com/wp-content/uploads/CR-1A-users-manual-2009-12.pdf
+   ! Hartmann 1994 - Global Physical Climatology p.351
+   ! https://en.wikipedia.org/wiki/Arden_Buck_equation#CITEREFBuck1996
+
+   ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
+   !      J. Appl. Meteorol. 20:1527–1532.
+
+   use types, only: r_4
+   !implicit none
+
+   real(r_4),intent( in) :: t
+   real(r_4) :: es
+
+   if (t .ge. 0.) then
+      es = 6.1121 * exp((18.729-(t/227.5))*(t/(257.87+t))) ! Arden Buck
+      !es = es * 10 ! transform kPa in mbar == hPa
+      return
+   else
+      es = 6.1115 * exp((23.036-(t/333.7))*(t/(279.82+t))) ! Arden Buck
+      !es = es * 10 ! mbar == hPa ! mbar == hPa
+      return
+   endif
+
+end function wtt
+
+!====================================================================
+!====================================================================
 
   !=================================================================
   !=================================================================
@@ -1232,7 +1292,6 @@ contains
   function penman (spre,temp,ur,rn,rc2) result(evap)
     use types, only: r_4
     use global_par, only: rcmin, rcmax
-    use photo, only: tetens
     !implicit none
 
 
@@ -1256,14 +1315,14 @@ contains
     !     -----
     t1 = temp + 1.
     t2 = temp - 1.
-    es1 = tetens(t1)       !Saturation partial pressure of water vapour at temperature T
-    es2 = tetens(t2)
+    es1 = wtt(t1)       !Saturation partial pressure of water vapour at temperature T
+    es2 = wtt(t2)
 
     delta = (es1-es2)/(t1-t2) !mbar/oC
     !
     !     Delta_e
     !     -------
-    es = tetens (temp)
+    es = wtt (temp)
     delta_e = es*(1. - ur)    !mbar
 
     if ((delta_e.ge.(1./h5)-0.5).or.(rc2.ge.rcmax)) evap = 0.
@@ -1275,7 +1334,9 @@ contains
 
        !     Real evapotranspiration
        !     -----------------------
+       ! LH
        evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
+       ! H2O MASS
        evap = evap*(86400./2.45e6) !mm/day
        evap = amax1(evap,0.)  !Eliminates condensation
     endif
@@ -1314,7 +1375,6 @@ contains
   function evpot2 (spre,temp,ur,rn) result(evap)
     use types, only: r_4
     use global_par, only: rcmin, rcmax
-    use photo, only: tetens
     !implicit none
 
     !Commments from CPTEC-PVM2 code
@@ -1350,14 +1410,14 @@ contains
 
     t1 = temp + 1.
     t2 = temp - 1.
-    es1 = tetens(t1)
-    es2 = tetens(t2)
+    es1 = wtt(t1)
+    es2 = wtt(t2)
     delta = (es1-es2)/(t1-t2) !mb/oC
 
     !     Delta_e
     !     -------
 
-    es = tetens (temp)
+    es = wtt (temp)
     delta_e = es*(1. - ur)    !mb
 
     !     Stomatal Conductance

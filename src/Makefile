@@ -1,9 +1,26 @@
+# ! Copyright 2017- LabTerra
+
+# !     This program is free software: you can redistribute it and/or modify
+# !     it under the terms of the GNU General Public License as published by
+# !     the Free Software Foundation, either version 3 of the License, or
+# !     (at your option) any later version.)
+
+# !     This program is distributed in the hope that it will be useful,
+# !     but WITHOUT ANY WARRANTY; without even the implied warranty of
+# !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# !     GNU General Public License for more details.
+
+# !     You should have received a copy of the GNU General Public License
+# !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ! AUTHOR: JP Darela
+
+
 # Build caete_module & debug programs
 PYEXEC = python
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
-CLEAN_DIR = ./clean_dir.sh
 DEBUG_PROGRAM = run_debug
 
 # RUN MODE FLAGS
@@ -95,7 +112,6 @@ debug_caete.o: debug_caete.f90
 # CLEAN DIR
 clean:
 	rm -rf test *.mod *.s *.o pls_ex.txt __pycache__ run_debug
-	$(CLEAN_DIR)
 	clear
 
 clean_plsgen:

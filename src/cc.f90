@@ -14,6 +14,27 @@
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ! AUTHOR: João Paulo Darela Filho
+
+! DESCRIPTION: First tentative of Carbon costs of Nutrient aquisition implementation in CAETÊ.
+!              Based on the FUN model of Fisher et al. 2010, {MORE CITATIONS NEEDED}.
+!              Te carbon costs of each possible strategy is calculated. The active uptake is then
+!              taken from the respective pool. Active Uptake = Total Uptake - Passive uptake
+!              The total uptake is based on plant requirements. The carbon cost is the optimal value
+!              among the costs of each possible strategy FOR N and P active uptake strategies
+!
+!      ! ------UPTAKE STRATEGIES CODE
+
+      ! integer(i_4), parameter ::  nma   = 1 ,& ! (Nut. = N/P) Active uptake by root AM colonized on Solution N/P pool (costs of)
+      !                           & nme   = 2 ,& ! (Nut. = N/P) Active uptake by root EM colonized on Solution N/P pool
+      !                           & am    = 3 ,& ! (Nut. = N/P) Active uptake by root AM hyphae on Solution N/P pool
+      !                           & em    = 4 ,& ! (Nut. = N/P) Active uptake by root EM hyphae on Solution N/P pool
+      !                           & ramAP = 5 ,& ! (Nut. = P)   PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
+      !                           & AM0   = 5 ,& ! (Nut. = N)   NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & remAP = 6 ,& ! (Nut. = P)   PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
+      !                           & EM0   = 6 ,& ! (Nut. = N)   NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
+      !                           & AMAP  = 7 ,& ! (Nut. = P)   PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
+      !                           & EM0x  = 8    ! (Nut. = P)   Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
+
 module carbon_costs
    use types
    use global_par
@@ -71,7 +92,7 @@ module carbon_costs
          return
       endif
 
-      uptk = ((nsoil * mf) / sd) * (et * 86400.0D0)      !  !(ML⁻²T⁻¹)
+      uptk = ((nsoil * mf) / sd) * (et * 86400.0D0)      !  !(ML⁻²T⁻¹) g m-2 day-1
       uptk = min((nsoil *  mf), uptk)
 
    end subroutine calc_passive_uptk1
@@ -82,7 +103,7 @@ module carbon_costs
       real(r_8), intent(in) :: w    ! Water soil depht Kg(H2O) m-2 == (mm)
       real(r_8), intent(in) :: av_n ! available N (soluble) g m-2
       real(r_8), intent(in) :: av_p ! available P (i soluble) g m-2
-      real(r_8), intent(in) :: e    ! Trannspiration (mm/day) == kg(H2O) m-2 day-1
+      real(r_8), intent(in) :: e    ! Transpiration (mm/day) == kg(H2O) m-2 day-1
       real(r_8), intent(in) :: nupt, pupt ! g m-2
       real(r_8), dimension(2), intent(out) :: topay_upt !(N, P)gm⁻² Remaining uptake to be paid if applicable
       real(r_8), dimension(2), intent(out) :: to_storage!(N, P)gm⁻² Passively uptaken nutrient if applicable
@@ -201,27 +222,15 @@ module carbon_costs
       real(r_8), intent(in) :: croot
       real(r_8), dimension(6), intent(out) :: ccn
 
-      real(r_8), parameter :: kn   = 0.5D0  ,& !
-                            & kcn  = 1.0D0  ,& !
-                            & kan  = 0.9D0  ,& !
-                            & kanc = 1.4D0  ,& !
-                            & ken  = 0.95D0 ,& !
-                            & kenc = 0.75D0
+      real(r_8), parameter :: kn   = 0.15D0  ,& !
+                            & kcn  = 0.15D0  ,& !
+                            & kan  = 0.0D0  ,& !
+                            & kanc = 0.025D0  ,& !
+                            & ken  = 0.025D0 ,& !
+                            & kenc = 0.15D0
 
       integer(i_4), parameter :: N = 1
 
-      ! ------UPTAKE STRATEGIES CODE
-
-      ! integer(i_4), parameter ::  nma   = 1 ,& ! (Nut. = N/P) Active uptake by root AM colonized on Solution N/P pool (costs of)
-      !                           & nme   = 2 ,& ! (Nut. = N/P) Active uptake by root EM colonized on Solution N/P pool
-      !                           & am    = 3 ,& ! (Nut. = N/P) Active uptake by root AM hyphae on Solution N/P pool
-      !                           & em    = 4 ,& ! (Nut. = N/P) Active uptake by root EM hyphae on Solution N/P pool
-      !                           & ramAP = 5 ,& ! (Nut. = P)   PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
-      !                           & AM0   = 5 ,& ! (Nut. = N)   NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
-      !                           & remAP = 6 ,& ! (Nut. = P)   PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
-      !                           & EM0   = 6 ,& ! (Nut. = N)   NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
-      !                           & AMAP  = 7 ,& ! (Nut. = P)   PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
-      !                           & EM0x  = 8    ! (Nut. = P)   Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
 
       integer(i_4), parameter :: nma = 1  ,&  ! ROOT AM  active uptake in N soluble inorganic (NSI)
                                & nme = 2  ,&  ! ROOT EM  active uptake in NSI
@@ -239,7 +248,7 @@ module carbon_costs
       ccn(am) = cc_active(kan, amp * av_n, kanc, amp * croot)
       ccn(em) = cc_active(ken, ecm * av_n, kenc, ecm * croot)
       ccn(Am0) =  1.0D15 ! cc_active(kan, amp * on, kenc, amp * croot)
-      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot)
+      ccn(em0) = cc_active(ken, ecm * on, kenc, ecm * croot) + 1.0
    end subroutine active_costn
 
 
@@ -250,25 +259,12 @@ module carbon_costs
       real(r_8), intent(in) :: croot
       real(r_8), dimension(8), intent(out) :: ccp
 
-      ! ------UPTAKE STRATEGIES CODE
-
-      ! integer(i_4), parameter ::  nma   = 1 ,& ! (Nut. = N/P) Active uptake by root AM colonized on Solution N/P pool (costs of)
-      !                           & nme   = 2 ,& ! (Nut. = N/P) Active uptake by root EM colonized on Solution N/P pool
-      !                           & am    = 3 ,& ! (Nut. = N/P) Active uptake by root AM hyphae on Solution N/P pool
-      !                           & em    = 4 ,& ! (Nut. = N/P) Active uptake by root EM hyphae on Solution N/P pool
-      !                           & ramAP = 5 ,& ! (Nut. = P)   PA - Active P uptake by root AM colonized via PA-phosphatase activity on Organic P pool
-      !                           & AM0   = 5 ,& ! (Nut. = N)   NA - Active N uptake by root AM hyphae via NA nitrogenase activity on Ornagic N pool
-      !                           & remAP = 6 ,& ! (Nut. = P)   PA - Active P uptake by root EM colonized via PA-phosphatase activity on Organic P pool
-      !                           & EM0   = 6 ,& ! (Nut. = N)   NA - Active N uptake by EM hyphae via NA nitrogenase activity on Ornagic N pool
-      !                           & AMAP  = 7 ,& ! (Nut. = P)   PA - Active P uptake by AM hyphae production of Phosphatase to clive opganic P
-      !                           & EM0x  = 8    ! (Nut. = P)   Active P uptake via Exudation activity (e.g. oxalates) on strong sorbed inorganic P (or primary)
-
       real(r_8), parameter :: kp   = 0.7D0  ,&
                             & kcp  = 1.0D0  ,& ! PArameters from FUN3.0 source code (modified)
-                            & kap  = 0.8D0  ,& ! AkP<-0.1 #AM cost
-                            & kapc = 1.2D0  ,& ! AkCp<-0.5 #AM cost
-                            & kep  = 0.7D0  ,& ! EkP<-0.05 #ECM cost
-                            & kepc = 1.3D0     ! EkCp<-1.0 #ECM cost
+                            & kap  = 0.1D0  ,& ! AkP<-0.1 #AM cost
+                            & kapc = 0.5D0  ,& ! AkCp<-0.5 #AM cost
+                            & kep  = 0.05D0  ,& ! EkP<-0.05 #ECM cost
+                            & kepc = 1.0D0     ! EkCp<-1.0 #ECM cost
 
       ! Strategies of P aquisition - ACTIVE UPTAKE
       integer(i_4), parameter :: nma   = 1 ,& ! Non Myco. AM
@@ -298,7 +294,7 @@ module carbon_costs
 
       ! !Costs of Mycorrhizal AP/exudates
       ccp(AMAP) = cc_active(kap, amp * op , kapc, amp * croot) ! OP
-      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 2.0
+      ccp(EM0x) = cc_active(kep, ecm * sop, kepc, ecm * croot) + 0.8 ! Artificial increasing of c costs
    end subroutine active_costp
 
 
@@ -435,7 +431,7 @@ module carbon_costs
       ! Insoluble inorg p pool = (8)
    end subroutine prep_out_p
 
-
+!!!!### TO BE IMPLEMENTED ... C costs of AP enzymatic activity + Nitrogenase + exudates
    subroutine ap_actvity1(c_xm, strat, cc_array, ezc_ap)
       real(r_8), intent(in) :: c_xm ! g m-2 C expended on P uptake
       integer(i_4), intent(in) :: strat ! index for the active costs array

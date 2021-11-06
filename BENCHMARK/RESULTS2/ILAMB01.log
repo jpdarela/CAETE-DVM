@@ -1,0 +1,178 @@
+[INFO][0][<module>] Linux curisco 5.8.0-50-generic #56~20.04.1-Ubuntu SMP Mon Apr 12 21:46:35 UTC 2021 x86_64
+[INFO][0][<module>] /home/jp/.local/lib/python3.8/site-packages/ILAMB (2.5)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/numpy (1.17.4)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/matplotlib (3.1.2)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/netCDF4 (1.5.3)
+[INFO][0][<module>] /home/jp/.local/lib/python3.8/site-packages/cf_units (2.1.4)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/sympy (1.5.1)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/mpi4py (3.0.3)
+[INFO][0][<module>] 2021-04-22 21:16:48.498132
+[INFO][0][MakeComparable][GrossPrimaryProduction/GBAF][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][GrossPrimaryProduction/GBAF][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/GBAF][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][GrossPrimaryProduction/GBAF][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/GBAF][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][GrossPrimaryProduction/GBAF][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/GBAF][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][GrossPrimaryProduction/GBAF][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/MADANI][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [420 360 720] after: [420  61  71]
+[INFO][0][confront][GrossPrimaryProduction/MADANI][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/MADANI][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [420 360 720] after: [420  61  71]
+[INFO][0][confront][GrossPrimaryProduction/MADANI][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/MADANI][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [420 360 720] after: [420  61  71]
+[INFO][0][confront][GrossPrimaryProduction/MADANI][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][GrossPrimaryProduction/MADANI][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [420 360 720] after: [420  61  71]
+[INFO][0][confront][GrossPrimaryProduction/MADANI][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][EcosystemRespiration/GBAF][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][EcosystemRespiration/GBAF][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][EcosystemRespiration/GBAF][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][EcosystemRespiration/GBAF][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][EcosystemRespiration/GBAF][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][EcosystemRespiration/GBAF][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][EcosystemRespiration/GBAF][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][EcosystemRespiration/GBAF][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][EcosystemRespiration/FLUXCOM][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][EcosystemRespiration/FLUXCOM][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][EcosystemRespiration/FLUXCOM][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][EcosystemRespiration/FLUXCOM][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][EcosystemRespiration/FLUXCOM][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][EcosystemRespiration/FLUXCOM][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][EcosystemRespiration/FLUXCOM][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][EcosystemRespiration/FLUXCOM][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/GBAF][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][NetEcosystemExchange/GBAF][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/GBAF][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][NetEcosystemExchange/GBAF][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/GBAF][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][NetEcosystemExchange/GBAF][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/GBAF][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [324 360 720] after: [324  61  71]
+[INFO][0][confront][NetEcosystemExchange/GBAF][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/FLUXCOM][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][NetEcosystemExchange/FLUXCOM][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/FLUXCOM][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][NetEcosystemExchange/FLUXCOM][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/FLUXCOM][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][NetEcosystemExchange/FLUXCOM][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][NetEcosystemExchange/FLUXCOM][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [408 360 720] after: [408  61  71]
+[INFO][0][confront][NetEcosystemExchange/FLUXCOM][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVH15C1][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][LeafAreaIndex/AVH15C1][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVH15C1][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][LeafAreaIndex/AVH15C1][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVH15C1][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][LeafAreaIndex/AVH15C1][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVH15C1][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][LeafAreaIndex/AVH15C1][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVHRR][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [348 360 720] after: [348  61  71]
+[INFO][0][confront][LeafAreaIndex/AVHRR][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVHRR][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [348 360 720] after: [348  61  71]
+[INFO][0][confront][LeafAreaIndex/AVHRR][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVHRR][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [348 360 720] after: [348  61  71]
+[INFO][0][confront][LeafAreaIndex/AVHRR][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][LeafAreaIndex/AVHRR][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [348 360 720] after: [348  61  71]
+[INFO][0][confront][LeafAreaIndex/AVHRR][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][LeafAreaIndex/MODIS][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [ 72 360 720] after: [72 61 71]
+[INFO][0][confront][LeafAreaIndex/MODIS][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][LeafAreaIndex/MODIS][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [ 72 360 720] after: [72 61 71]
+[INFO][0][confront][LeafAreaIndex/MODIS][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][LeafAreaIndex/MODIS][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [ 72 360 720] after: [72 61 71]
+[INFO][0][confront][LeafAreaIndex/MODIS][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][LeafAreaIndex/MODIS][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [ 72 360 720] after: [72 61 71]
+[INFO][0][confront][LeafAreaIndex/MODIS][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Waterstorage/GLDAS][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [158 150 360] after: [158  31  36]
+[INFO][0][confront][Waterstorage/GLDAS][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Waterstorage/GLDAS][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [158 150 360] after: [158  31  36]
+[INFO][0][confront][Waterstorage/GLDAS][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Waterstorage/GLDAS][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [158 150 360] after: [158  31  36]
+[INFO][0][confront][Waterstorage/GLDAS][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Waterstorage/GLDAS][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [158 150 360] after: [158  31  36]
+[INFO][0][confront][Waterstorage/GLDAS][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [468 360 720] after: [468  61  71]
+[INFO][0][confront][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Evapotranspiration/MODIS16A2][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [180 360 720] after: [180  61  71]
+[INFO][0][confront][Evapotranspiration/MODIS16A2][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Evapotranspiration/MODIS16A2][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [180 360 720] after: [180  61  71]
+[INFO][0][confront][Evapotranspiration/MODIS16A2][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Evapotranspiration/MODIS16A2][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [180 360 720] after: [180  61  71]
+[INFO][0][confront][Evapotranspiration/MODIS16A2][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Evapotranspiration/MODIS16A2][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [180 360 720] after: [180  61  71]
+[INFO][0][confront][Evapotranspiration/MODIS16A2][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Runoff/LORA][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [396 360 720] after: [396  61  71]
+[INFO][0][confront][Runoff/LORA][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Runoff/LORA][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [396 360 720] after: [396  61  71]
+[INFO][0][confront][Runoff/LORA][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Runoff/LORA][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [396 360 720] after: [396  61  71]
+[INFO][0][confront][Runoff/LORA][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Runoff/LORA][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [396 360 720] after: [396  61  71]
+[INFO][0][confront][Runoff/LORA][CAETE-1000_r10] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/GBAF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/GBAF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/GBAF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/GBAF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r05] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r06] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r09] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/FLUXCOM][CAETE-1000_r10] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/MADANI][CAETE-1000_r05] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/MADANI][CAETE-1000_r06] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/MADANI][CAETE-1000_r09] Success
+[INFO][0][modelPlots][GrossPrimaryProduction/MADANI][CAETE-1000_r10] Success
+[INFO][0][modelPlots][EcosystemRespiration/GBAF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][EcosystemRespiration/GBAF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][EcosystemRespiration/GBAF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][EcosystemRespiration/GBAF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][EcosystemRespiration/FLUXCOM][CAETE-1000_r05] Success
+[INFO][0][modelPlots][EcosystemRespiration/FLUXCOM][CAETE-1000_r06] Success
+[INFO][0][modelPlots][EcosystemRespiration/FLUXCOM][CAETE-1000_r09] Success
+[INFO][0][modelPlots][EcosystemRespiration/FLUXCOM][CAETE-1000_r10] Success
+[INFO][0][modelPlots][NetEcosystemExchange/GBAF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][NetEcosystemExchange/GBAF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][NetEcosystemExchange/GBAF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][NetEcosystemExchange/GBAF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][NetEcosystemExchange/FLUXCOM][CAETE-1000_r05] Success
+[INFO][0][modelPlots][NetEcosystemExchange/FLUXCOM][CAETE-1000_r06] Success
+[INFO][0][modelPlots][NetEcosystemExchange/FLUXCOM][CAETE-1000_r09] Success
+[INFO][0][modelPlots][NetEcosystemExchange/FLUXCOM][CAETE-1000_r10] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVH15C1][CAETE-1000_r05] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVH15C1][CAETE-1000_r06] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVH15C1][CAETE-1000_r09] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVH15C1][CAETE-1000_r10] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVHRR][CAETE-1000_r05] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVHRR][CAETE-1000_r06] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVHRR][CAETE-1000_r09] Success
+[INFO][0][modelPlots][LeafAreaIndex/AVHRR][CAETE-1000_r10] Success
+[INFO][0][modelPlots][LeafAreaIndex/MODIS][CAETE-1000_r05] Success
+[INFO][0][modelPlots][LeafAreaIndex/MODIS][CAETE-1000_r06] Success
+[INFO][0][modelPlots][LeafAreaIndex/MODIS][CAETE-1000_r09] Success
+[INFO][0][modelPlots][LeafAreaIndex/MODIS][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Waterstorage/GLDAS][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Waterstorage/GLDAS][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Waterstorage/GLDAS][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Waterstorage/GLDAS][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Evapotranspiration/GLEAMv3.3a][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Evapotranspiration/MODIS16A2][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Evapotranspiration/MODIS16A2][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Evapotranspiration/MODIS16A2][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Evapotranspiration/MODIS16A2][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Runoff/LORA][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Runoff/LORA][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Runoff/LORA][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Runoff/LORA][CAETE-1000_r10] Success
+[INFO][0][<module>][total time] 446.9 s

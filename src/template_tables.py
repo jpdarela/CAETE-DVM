@@ -1,3 +1,19 @@
+#   Copyright 2017- LabTerra
+
+#      This program is free software: you can redistribute it and/or modify
+#      it under the terms of the GNU General Public License as published by
+#      the Free Software Foundation, either version 3 of the License, or
+#      (at your option) any later version.)
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 # template_tables.py
 # Templates for tables of CAETÊ
 from caete_module import global_par as gp
@@ -20,7 +36,8 @@ G1_1d = ['emaxm',
          'cue',
          'cdef',
          'vcmax',
-         'specific_la']
+         'specific_la',
+         'ls']
 
 G1_2d = ['nupt', ]
 
@@ -90,11 +107,12 @@ class run_g1(tb.IsDescription):
     cdef = tb.Float32Col(dflt=0.0, pos=15)
     vcmax = tb.Float32Col(dflt=0.0, pos=16)
     specific_la = tb.Float32Col(dflt=0.0, pos=17)
-    nupt1 = tb.Float32Col(dflt=0.0, pos=18)
-    nupt2 = tb.Float32Col(dflt=0.0, pos=19)
-    pupt1 = tb.Float32Col(dflt=0.0, pos=20)
-    pupt2 = tb.Float32Col(dflt=0.0, pos=21)
-    pupt3 = tb.Float32Col(dflt=0.0, pos=22)
+    ls = tb.Float32Col(dflt=0.0, pos=18)
+    nupt1 = tb.Float32Col(dflt=0.0, pos=19)
+    nupt2 = tb.Float32Col(dflt=0.0, pos=20)
+    pupt1 = tb.Float32Col(dflt=0.0, pos=21)
+    pupt2 = tb.Float32Col(dflt=0.0, pos=22)
+    pupt3 = tb.Float32Col(dflt=0.0, pos=23)
 
 
 class run_g2(tb.IsDescription):

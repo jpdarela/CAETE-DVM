@@ -20,6 +20,8 @@ __descr__ = """ This script works in the folowing manner: Given a directory (raw
 # GLOBAL VARIABLES (paths)
 
 CLIMATIC_DATA = "historical_ISIMIP-v3"
+ANCILLARY_OUTPUT = "ISIMIP_HISTORICAL_METADATA.pbz2"
+
 
 # FOLDER IN THE SERVER WHERE ALL data IS stored FOR ALL USERS
 shared_data = Path("/home/amazonfaceme/shared_data/")
@@ -217,7 +219,7 @@ def main():
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])
     ancillary_data.write(os.path.join(
-        clim_data, "ISIMIP_HISTORICAL_METADATA.pbz2"))
+        clim_data, ANCILLARY_OUTPUT))
 
     for ds in dss:
         ds.close()

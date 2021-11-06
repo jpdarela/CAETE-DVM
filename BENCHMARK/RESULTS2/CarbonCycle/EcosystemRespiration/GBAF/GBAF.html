@@ -1,0 +1,612 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.16.5/math.min.js"></script>
+    <script>
+        function getQueryVariable(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i=0;i<vars.length;i++) {
+                var pair = vars[i].split("=");
+                if(pair[0] == variable){return pair[1];}
+            }
+            return(false);
+        }
+    </script>
+    <script type='text/javascript'>
+        function pageLoad() {
+           pageLoadMeanState();
+        }
+    </script>
+    <script type='text/javascript'>
+
+        function updateImagesAndHeadersMeanState(){
+            var rsel  = document.getElementById("MeanStateRegion");
+            var msel  = document.getElementById("MeanStateModel");
+            var rid   = rsel.selectedIndex;
+            var mid   = msel.selectedIndex;
+            var RNAME = rsel.options[rid].value;
+            var MNAME = msel.options[mid].value;
+            var CNAME = "EcosystemRespiration / GBAF / 1982-2009";
+            var head  = "CNAME / RNAME / MNAME";
+            head      = head.replace("CNAME",CNAME).replace("RNAME",RNAME).replace("MNAME",MNAME);
+            $("#MeanStateHead").text(head);
+            
+          document.getElementById('timeint').src =  MNAME + '_' + RNAME + '_timeint.png'
+          document.getElementById('benchmark_timeint').src =  'Benchmark_' + RNAME + '_timeint.png'
+          document.getElementById('phase').src =  MNAME + '_' + RNAME + '_phase.png'
+          document.getElementById('benchmark_phase').src =  'Benchmark_' + RNAME + '_phase.png'
+          document.getElementById('shift').src =  MNAME + '_' + RNAME + '_shift.png'
+          document.getElementById('shiftscore').src =  MNAME + '_' + RNAME + '_shiftscore.png'
+          document.getElementById('bias').src =  MNAME + '_' + RNAME + '_bias.png'
+          document.getElementById('biasscore').src =  MNAME + '_' + RNAME + '_biasscore.png'
+          document.getElementById('rmse').src =  MNAME + '_' + RNAME + '_rmse.png'
+          document.getElementById('rmsescore').src =  MNAME + '_' + RNAME + '_rmsescore.png'
+          document.getElementById('spatial_variance').src =  RNAME + '_spatial_variance.png'
+          document.getElementById('legend_spatial_variance').src =  'legend_spatial_variance.png'
+          document.getElementById('cycle').src =  MNAME + '_' + RNAME + '_cycle.png'
+          document.getElementById('dtcycle').src =  MNAME + '_' + RNAME + '_dtcycle.png'
+          document.getElementById('spaceint').src =  MNAME + '_' + RNAME + '_spaceint.png'
+          document.getElementById('compcycle').src =  RNAME + '_compcycle.png'
+          document.getElementById('legend_compcycle').src =  'legend_compcycle.png'
+        }
+
+        function highlightRowMeanState(cell) {
+            var select = document.getElementById("MeanStateRegion");
+            for (var i = 0; i < select.length; i++){
+                var table = document.getElementById("MeanState_table_" + select.options[i].value);
+                var rows  = table.getElementsByTagName("tr");
+                for (var r = 2; r < rows.length; r++) {
+                    for (var c = 0; c < rows[r].cells.length-6; c++) {
+                        rows[r].cells[c].style.backgroundColor = "#ffffff";
+                    }
+                }
+                var r = cell.closest("tr").rowIndex;
+                document.getElementById("MeanStateModel").selectedIndex = r-1;
+                for (var c = 0; c < rows[r].cells.length-6; c++) {
+                    rows[r].cells[c].style.backgroundColor = "#c1c1c1";
+                }
+            }
+            updateImagesAndHeadersMeanState();
+        }
+
+        function paintScoreCellsMeanState(RNAME) {
+
+	    var PuOr = ['#b35806','#e08214','#fdb863','#fee0b6','#f7f7f7','#d8daeb','#b2abd2','#8073ac','#542788'];
+	    var GnRd = ['#b2182b','#d6604d','#f4a582','#fddbc7','#f7f7f7','#d9f0d3','#a6dba0','#5aae61','#1b7837'];
+	    var colors = GnRd;
+            var nc = colors.length;
+            var table  = document.getElementById("MeanState_table_" + RNAME);
+            var rows   = table.getElementsByTagName("tr");
+            for (var c = rows[0].cells.length-5; c < rows[0].cells.length; c++) {
+                var scores = [];
+                for (var r = 2; r < rows.length; r++) {
+                    val = rows[r].cells[c].innerHTML;
+                    if (val=="") {
+                      scores[r-2] = 0;
+                    }else{
+                      scores[r-2] = parseFloat(val);
+                    }
+                }
+                var mean = math.mean(scores);
+                var std  = math.max(0.02,math.std(scores));
+                for (var r = 2; r < rows.length; r++) {
+                    scores[r-2] = Math.min(+2,Math.max(-2,(scores[r-2]-mean)/std));
+                }
+                for (var r = 2; r < rows.length; r++) {
+		    var e  = scores[r-2];
+                    var ae = Math.abs(e);
+                    var clr;
+                    if(ae >= 0.25){
+                      clr = math.round(2*e+4);
+                    }else{
+		      clr = math.round(4*e+4);
+                    }
+                    clr = math.min(math.max(0,clr),8);
+                    rows[r].cells[c].style.backgroundColor = colors[clr];
+                }
+            }
+        }
+
+        function pageLoadMeanState() {
+            var select = document.getElementById("MeanStateRegion");
+            var region = getQueryVariable("region");
+            var model  = getQueryVariable("model");
+            if (region) {
+                for (var i = 0; i < select.length; i++){
+                    if (select.options[i].value == region) select.selectedIndex = i;
+                }
+            }
+            var table = document.getElementById("MeanState_table_" + select.options[select.selectedIndex].value);
+            var rows  = table.getElementsByTagName("tr");
+            if (model) {
+                for (var r = 0; r < rows.length; r++) {
+                    if(rows[r].cells[0].innerHTML==model) highlightRowMeanState(rows[r].cells[0]);
+                }
+            }else{
+                highlightRowMeanState(rows[2]);
+            }
+            for (var i = 0; i < select.length; i++){
+                paintScoreCellsMeanState(select.options[i].value);
+            }
+            changeRegionMeanState();
+        }
+
+        function changeRegionMeanState() {
+            var select = document.getElementById("MeanStateRegion");
+            for (var i = 0; i < select.length; i++){
+                RNAME = select.options[i].value;
+                if (i == select.selectedIndex) {
+                    document.getElementById("MeanState_table_" + RNAME).style.display = "table";
+                }else{
+                    document.getElementById("MeanState_table_" + RNAME).style.display = "none";
+                }
+            }
+            updateImagesAndHeadersMeanState();
+        }
+      function AllSelect() {
+        var header = "CNAME / RNAME / MNAME";
+        var CNAME  = "EcosystemRespiration / GBAF / 1982-2009";
+        header     = header.replace("CNAME",CNAME);
+        var rid    = document.getElementById("AllModelsRegion").selectedIndex;
+        var RNAME  = document.getElementById("AllModelsRegion").options[rid].value;
+        var pid    = document.getElementById("AllModelsPlot").selectedIndex;
+        var PNAME  = document.getElementById("AllModelsPlot").options[pid].value;
+        header     = header.replace("RNAME",RNAME);
+        $("#AllModelsHead").text(header);
+        if(PNAME == "shift" || PNAME == "shiftscore" || PNAME == "bias" || PNAME == "biasscore" || PNAME == "rmse" || PNAME == "rmsescore" || PNAME == "cycle" || PNAME == "dtcycle" || PNAME == "spaceint"){
+          document.getElementById("Benchmark_div").style.display = 'none';
+        }else{
+          document.getElementById("Benchmark_div").style.display = 'inline';
+        }
+        if(PNAME == "cycle" || PNAME == "dtcycle" || PNAME == "spaceint"){
+          document.getElementById("Benchmark_legend").style.display = 'none';
+          document.getElementById("CAETE-1000_r05_legend").style.display = 'none';
+          document.getElementById("CAETE-1000_r06_legend").style.display = 'none';
+          document.getElementById("CAETE-1000_r09_legend").style.display = 'none';
+          document.getElementById("CAETE-1000_r10_legend").style.display = 'none';
+          document.getElementById("CAETE-1000_r11_legend").style.display = 'none';
+        }else{
+          document.getElementById("Benchmark_legend").style.display = 'inline';
+          document.getElementById("CAETE-1000_r05_legend").style.display = 'inline';
+          document.getElementById("CAETE-1000_r06_legend").style.display = 'inline';
+          document.getElementById("CAETE-1000_r09_legend").style.display = 'inline';
+          document.getElementById("CAETE-1000_r10_legend").style.display = 'inline';
+          document.getElementById("CAETE-1000_r11_legend").style.display = 'inline';
+        }
+        document.getElementById('Benchmark').src = 'Benchmark_' + RNAME + '_' + PNAME + '.png';
+        document.getElementById('Benchmark_legend').src = 'legend_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r05').src = 'CAETE-1000_r05_' + RNAME + '_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r05_legend').src = 'legend_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r06').src = 'CAETE-1000_r06_' + RNAME + '_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r06_legend').src = 'legend_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r09').src = 'CAETE-1000_r09_' + RNAME + '_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r09_legend').src = 'legend_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r10').src = 'CAETE-1000_r10_' + RNAME + '_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r10_legend').src = 'legend_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r11').src = 'CAETE-1000_r11_' + RNAME + '_' + PNAME + '.png';
+        document.getElementById('CAETE-1000_r11_legend').src = 'legend_' + PNAME + '.png';
+      }
+
+      $(document).on('pageshow', '[data-role="page"]', function(){
+        AllSelect()
+      });
+    </script>
+    <style type="text/css">
+      .container{
+        display:inline;
+      }
+      .break{
+        clear:left;
+      }
+      .child{
+        margin-bottom:10px;
+        display:inline-block;
+        padding:5px;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      table.table-header-rotated {
+          border-collapse: collapse;
+      }
+      td {
+          text-align: center;
+          padding: 10px 5px;
+          border: 1px solid #ccc;
+      }
+      th {
+          padding: 5px 10px;
+      }
+      th.rotate {
+          height: 280px;
+          white-space: nowrap;
+      }
+      th.rotate > div {
+          transform: translate(10px, 135px) rotate(-45deg);
+          width: 0px;
+      }
+      th.rotate > div > span {
+      }
+      th.row-header {
+          padding: 0px 10px;
+          text-align: right;
+      }
+      td.divider {
+          width: 0px;
+          border: 0px solid #ccc;
+          padding: 0px 0px
+      }
+    </style>
+  </head>
+  <body onload="pageLoad()">
+    <div data-role="page" id="MeanState">
+      <div data-role="header" data-position="fixed" data-tap-toggle="false">
+        <h1 id="MeanStateHead">Mean State</h1>
+        <div data-role="navbar">
+          <ul>
+            <li><a href='#MeanState' class=ui-btn-active ui-state-persist>Mean State</a></li>
+            <li><a href='#AllModels'>All Models</a></li>
+            <li><a href='#DataInformation'>Data Information</a></li>
+          </ul>
+        </div>
+      </div>
+      <select id="MeanStateRegion" onchange="changeRegionMeanState()">
+        <option value='global' selected="selected">Globe</option>
+      </select>
+      <div style="display:none">
+      <select id="MeanStateModel">
+        <option value='Benchmark'>Benchmark</option>
+        <option value='CAETE-1000_r05' selected="selected">CAETE-1000_r05</option>
+        <option value='CAETE-1000_r06'>CAETE-1000_r06</option>
+        <option value='CAETE-1000_r09'>CAETE-1000_r09</option>
+        <option value='CAETE-1000_r10'>CAETE-1000_r10</option>
+        <option value='CAETE-1000_r11'>CAETE-1000_r11</option>
+      </select>
+      </div>
+        <center>
+        <table class="table-header-rotated" id="MeanState_table_global">
+           <thead>
+             <tr>
+               <th></th>
+               <th class="rotate"><div><span>Download Data</span></div></th>
+               <th class="rotate"><div><span>Period Mean (original grids) [g/m2/s]</span></div></th>
+               <th class="rotate"><div><span>Model Period Mean (intersection) [g/m2/s]</span></div></th>
+               <th class="rotate"><div><span>Benchmark Period Mean (intersection) [g/m2/s]</span></div></th>
+               <th class="rotate"><div><span>Model Period Mean (complement) [g/m2/s]</span></div></th>
+               <th class="rotate"><div><span>Benchmark Period Mean (complement) [g/m2/s]</span></div></th>
+               <th></th>
+               <th class="rotate"><div><span>Bias [g/m2/s]</span></div></th>
+               <th class="rotate"><div><span>RMSE [g/m2/s]</span></div></th>
+               <th class="rotate"><div><span>Phase Shift [months]</span></div></th>
+               <th></th>
+               <th class="rotate"><div><span>Bias Score [1]</span></div></th>
+               <th class="rotate"><div><span>RMSE Score [1]</span></div></th>
+               <th class="rotate"><div><span>Seasonal Cycle Score [1]</span></div></th>
+               <th class="rotate"><div><span>Spatial Distribution Score [1]</span></div></th>
+               <th class="rotate"><div><span>Overall Score [1]</span></div></th>
+             </tr>
+           </thead>
+           <tbody>
+             <tr>
+               <td class="row-header">Benchmark</td>
+               <td><a href="GBAF_Benchmark.nc" download>[-]</a></td>
+               <td>6.88e-05</td>
+               <td></td>
+               <td></td>
+               <td></td>
+               <td></td>
+               <td class="divider"></td>
+               <td></td>
+               <td></td>
+               <td></td>
+               <td class="divider"></td>
+               <td></td>
+               <td></td>
+               <td></td>
+               <td></td>
+               <td></td>
+             </tr>
+             <tr>
+               <td onclick="highlightRowMeanState(this)" class="row-header">CAETE-1000_r05</td>
+               <td onclick="highlightRowMeanState(this)"><a href="GBAF_CAETE-1000_r05.nc" download>[-]</a></td>
+               <td onclick="highlightRowMeanState(this)">8.81e-05</td>
+               <td onclick="highlightRowMeanState(this)">8.81e-05</td>
+               <td onclick="highlightRowMeanState(this)">6.88e-05</td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">1.93e-05</td>
+               <td onclick="highlightRowMeanState(this)">2.13e-05</td>
+               <td onclick="highlightRowMeanState(this)">3.10</td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">0.129</td>
+               <td onclick="highlightRowMeanState(this)">0.394</td>
+               <td onclick="highlightRowMeanState(this)">0.496</td>
+               <td onclick="highlightRowMeanState(this)">0.822</td>
+               <td onclick="highlightRowMeanState(this)">0.447</td>
+             </tr>
+             <tr>
+               <td onclick="highlightRowMeanState(this)" class="row-header">CAETE-1000_r06</td>
+               <td onclick="highlightRowMeanState(this)"><a href="GBAF_CAETE-1000_r06.nc" download>[-]</a></td>
+               <td onclick="highlightRowMeanState(this)">7.86e-05</td>
+               <td onclick="highlightRowMeanState(this)">7.86e-05</td>
+               <td onclick="highlightRowMeanState(this)">6.88e-05</td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">9.81e-06</td>
+               <td onclick="highlightRowMeanState(this)">1.33e-05</td>
+               <td onclick="highlightRowMeanState(this)">2.88</td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">0.314</td>
+               <td onclick="highlightRowMeanState(this)">0.437</td>
+               <td onclick="highlightRowMeanState(this)">0.539</td>
+               <td onclick="highlightRowMeanState(this)">0.697</td>
+               <td onclick="highlightRowMeanState(this)">0.485</td>
+             </tr>
+             <tr>
+               <td onclick="highlightRowMeanState(this)" class="row-header">CAETE-1000_r09</td>
+               <td onclick="highlightRowMeanState(this)"><a href="GBAF_CAETE-1000_r09.nc" download>[-]</a></td>
+               <td onclick="highlightRowMeanState(this)">0.000111</td>
+               <td onclick="highlightRowMeanState(this)">0.000111</td>
+               <td onclick="highlightRowMeanState(this)">6.88e-05</td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">4.25e-05</td>
+               <td onclick="highlightRowMeanState(this)">4.30e-05</td>
+               <td onclick="highlightRowMeanState(this)">2.91</td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">0.00304</td>
+               <td onclick="highlightRowMeanState(this)">0.364</td>
+               <td onclick="highlightRowMeanState(this)">0.532</td>
+               <td onclick="highlightRowMeanState(this)">0.765</td>
+               <td onclick="highlightRowMeanState(this)">0.406</td>
+             </tr>
+             <tr>
+               <td onclick="highlightRowMeanState(this)" class="row-header">CAETE-1000_r10</td>
+               <td onclick="highlightRowMeanState(this)"><a href="GBAF_CAETE-1000_r10.nc" download>[-]</a></td>
+               <td onclick="highlightRowMeanState(this)">0.000110</td>
+               <td onclick="highlightRowMeanState(this)">0.000110</td>
+               <td onclick="highlightRowMeanState(this)">6.88e-05</td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">4.16e-05</td>
+               <td onclick="highlightRowMeanState(this)">4.22e-05</td>
+               <td onclick="highlightRowMeanState(this)">2.89</td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">0.00422</td>
+               <td onclick="highlightRowMeanState(this)">0.370</td>
+               <td onclick="highlightRowMeanState(this)">0.535</td>
+               <td onclick="highlightRowMeanState(this)">0.839</td>
+               <td onclick="highlightRowMeanState(this)">0.424</td>
+             </tr>
+             <tr>
+               <td onclick="highlightRowMeanState(this)" class="row-header">CAETE-1000_r11</td>
+               <td onclick="highlightRowMeanState(this)"><a href="GBAF_CAETE-1000_r11.nc" download>[-]</a></td>
+               <td onclick="highlightRowMeanState(this)">0.000113</td>
+               <td onclick="highlightRowMeanState(this)">0.000113</td>
+               <td onclick="highlightRowMeanState(this)">6.88e-05</td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)"></td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">4.47e-05</td>
+               <td onclick="highlightRowMeanState(this)">4.52e-05</td>
+               <td onclick="highlightRowMeanState(this)">3.02</td>
+               <td onclick="highlightRowMeanState(this)" class="divider"></td>
+               <td onclick="highlightRowMeanState(this)">0.00224</td>
+               <td onclick="highlightRowMeanState(this)">0.356</td>
+               <td onclick="highlightRowMeanState(this)">0.510</td>
+               <td onclick="highlightRowMeanState(this)">0.808</td>
+               <td onclick="highlightRowMeanState(this)">0.406</td>
+             </tr>
+          </tbody>
+        </table>
+        </center>
+        <div data-role="collapsible" data-collapsed="false"><h1>Temporally integrated period mean</h1>
+        <div class="container" id="benchmark_timeint_div">
+          <div class="child">
+          <center>BENCHMARK&nbsp;MEAN</center>
+          <img src="" id="benchmark_timeint" alt="Data not available" ></img>
+          <center><img src="legend_timeint.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="timeint_div">
+          <div class="child">
+          <center>MODEL&nbsp;MEAN</center>
+          <img src="" id="timeint" alt="Data not available" ></img>
+          <center><img src="legend_timeint.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="bias_div">
+          <div class="child">
+          <center>BIAS</center>
+          <img src="" id="bias" alt="Data not available" ></img>
+          <center><img src="legend_bias.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="biasscore_div">
+          <div class="child">
+          <center>BIAS&nbsp;SCORE</center>
+          <img src="" id="biasscore" alt="Data not available" ></img>
+          <center><img src="legend_biasscore.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="rmse_div">
+          <div class="child">
+          <center>RMSE</center>
+          <img src="" id="rmse" alt="Data not available" ></img>
+          <center><img src="legend_rmse.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="rmsescore_div">
+          <div class="child">
+          <center>RMSE&nbsp;SCORE</center>
+          <img src="" id="rmsescore" alt="Data not available" ></img>
+          <center><img src="legend_rmsescore.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="benchmark_phase_div">
+          <div class="child">
+          <center>BENCHMARK&nbsp;MAX&nbsp;MONTH</center>
+          <img src="" id="benchmark_phase" alt="Data not available" ></img>
+          <center><img src="legend_phase.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="phase_div">
+          <div class="child">
+          <center>MODEL&nbsp;MAX&nbsp;MONTH</center>
+          <img src="" id="phase" alt="Data not available" ></img>
+          <center><img src="legend_phase.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="shift_div">
+          <div class="child">
+          <center>DIFFERENCE&nbsp;IN&nbsp;MAX&nbsp;MONTH</center>
+          <img src="" id="shift" alt="Data not available" ></img>
+          <center><img src="legend_shift.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="shiftscore_div">
+          <div class="child">
+          <center>SEASONAL&nbsp;CYCLE&nbsp;SCORE</center>
+          <img src="" id="shiftscore" alt="Data not available" ></img>
+          <center><img src="legend_shiftscore.png" id="leg"  alt="Data not available" ></img></center>
+          </div>
+        </div><br>
+        <div class="container" id="spatial_variance_div">
+          <div class="child">
+          <center>SPATIAL&nbsp;TAYLOR&nbsp;DIAGRAM</center>
+          <img src="" id="spatial_variance" alt="Data not available" ></img>
+          </div>
+        </div>
+        <div class="container" id="legend_spatial_variance_div">
+          <div class="child">
+          <center>MODEL&nbsp;COLORS</center>
+          <img src="" id="legend_spatial_variance" alt="Data not available" ></img>
+          </div>
+        </div>
+        </div>
+        <div data-role="collapsible" data-collapsed="false"><h1>Spatially integrated regional mean</h1>
+        <div class="container" id="legend_compcycle_div">
+          <div class="child">
+          <center>MODEL&nbsp;COLORS</center>
+          <img src="" id="legend_compcycle" alt="Data not available" ></img>
+          </div>
+        </div>
+        <div class="container" id="spaceint_div">
+          <div class="child">
+          <center>REGIONAL&nbsp;MEAN</center>
+          <img src="" id="spaceint" alt="Data not available" ></img>
+          </div>
+        </div>
+        <div class="container" id="cycle_div">
+          <div class="child">
+          <center>ANNUAL&nbsp;CYCLE</center>
+          <img src="" id="cycle" alt="Data not available" ></img>
+          </div>
+        </div>
+        <div class="container" id="dtcycle_div">
+          <div class="child">
+          <center>MONTHLY&nbsp;ANOMALY</center>
+          <img src="" id="dtcycle" alt="Data not available" ></img>
+          </div>
+        </div>
+        <div class="container" id="compcycle_div">
+          <div class="child">
+          <center>ANNUAL&nbsp;CYCLE</center>
+          <img src="" id="compcycle" alt="Data not available" ></img>
+          </div>
+        </div>
+        </div>
+    </div>
+    <div data-role="page" id="AllModels">
+      <div data-role="header" data-position="fixed" data-tap-toggle="false">
+        <h1 id="AllModelsHead">All Models</h1>
+        <div data-role="navbar">
+          <ul>
+            <li><a href='#MeanState'>Mean State</a></li>
+            <li><a href='#AllModels' class=ui-btn-active ui-state-persist>All Models</a></li>
+            <li><a href='#DataInformation'>Data Information</a></li>
+          </ul>
+        </div>
+      </div>
+      <select id="AllModelsRegion" onchange="AllSelect()">
+        <option value='global' selected="selected">Globe</option>
+      </select>
+      <select id="AllModelsPlot" onchange="AllSelect()">
+        <option value='timeint' selected="selected">Temporally integrated period mean</option>
+        <option value='phase'>Temporally integrated period mean max month</option>
+        <option value='shift'>Temporally integrated mean phase shift</option>
+        <option value='shiftscore'>Temporally integrated mean phase shift score</option>
+        <option value='bias'>Temporally integrated period mean bias</option>
+        <option value='biasscore'>Temporally integrated period mean bias score</option>
+        <option value='rmse'>Temporally integrated period mean rmse</option>
+        <option value='rmsescore'>Temporally integrated period mean rmse score</option>
+        <option value='cycle'>Spatially integrated regional mean cycle</option>
+        <option value='dtcycle'>Spatially integrated regional mean detrended cycle</option>
+        <option value='spaceint'>Spatially integrated regional mean</option>
+      </select>
+        <div class="container" id="Benchmark_div">
+          <div class="child">
+          <center>Benchmark</center>
+          <img src="" id="Benchmark" alt="Data not available" ></img>
+          <center><img src="legend_Benchmark.png" id="Benchmark_legend"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="CAETE-1000_r05_div">
+          <div class="child">
+          <center>CAETE-1000_r05</center>
+          <img src="" id="CAETE-1000_r05" alt="Data not available" ></img>
+          <center><img src="legend_CAETE-1000_r05.png" id="CAETE-1000_r05_legend"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="CAETE-1000_r06_div">
+          <div class="child">
+          <center>CAETE-1000_r06</center>
+          <img src="" id="CAETE-1000_r06" alt="Data not available" ></img>
+          <center><img src="legend_CAETE-1000_r06.png" id="CAETE-1000_r06_legend"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="CAETE-1000_r09_div">
+          <div class="child">
+          <center>CAETE-1000_r09</center>
+          <img src="" id="CAETE-1000_r09" alt="Data not available" ></img>
+          <center><img src="legend_CAETE-1000_r09.png" id="CAETE-1000_r09_legend"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="CAETE-1000_r10_div">
+          <div class="child">
+          <center>CAETE-1000_r10</center>
+          <img src="" id="CAETE-1000_r10" alt="Data not available" ></img>
+          <center><img src="legend_CAETE-1000_r10.png" id="CAETE-1000_r10_legend"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+        <div class="container" id="CAETE-1000_r11_div">
+          <div class="child">
+          <center>CAETE-1000_r11</center>
+          <img src="" id="CAETE-1000_r11" alt="Data not available" ></img>
+          <center><img src="legend_CAETE-1000_r11.png" id="CAETE-1000_r11_legend"  alt="Data not available" ></img></center>
+          </div>
+        </div>
+    </div>
+    <div data-role="page" id="DataInformation">
+      <div data-role="header" data-position="fixed" data-tap-toggle="false">
+        <h1 id="DataInformationHead">Data Information</h1>
+        <div data-role="navbar">
+          <ul>
+            <li><a href='#MeanState'>Mean State</a></li>
+            <li><a href='#AllModels'>All Models</a></li>
+            <li><a href='#DataInformation' class=ui-btn-active ui-state-persist>Data Information</a></li>
+          </ul>
+        </div>
+      </div>
+      
+<p><dl><dt><b>&nbsp;&nbsp;History:</dt></b><dd>Tue Mar 16 16:03:21 2021: cdo settbounds,month reco_masked0.nc reco_masked.nc</dd></dl></p><p><dl><dt><b>&nbsp;&nbsp;Conventions:</dt></b><dd>CF-1.6</dd></dl></p><p><dl><dt><b>&nbsp;&nbsp;Cdi:</dt></b><dd>Climate Data Interface version ?? (<a href='http://mpimet.mpg.de/cdi)'>http://mpimet.mpg.de/cdi)</a></dd></dl></p><p><dl><dt><b>&nbsp;&nbsp;Cdo:</dt></b><dd>Climate Data Operators version 1.9.3 (<a href='http://mpimet.mpg.de/cdo)'>http://mpimet.mpg.de/cdo)</a></dd></dl></p>
+    </div>
+  </body>
+</html>

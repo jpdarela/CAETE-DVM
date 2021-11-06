@@ -1,0 +1,901 @@
+Section,Variable,Source,Model,ScalarName,AnalysisType,Region,ScalarType,Units,Data
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.0342
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,kg m-2,3.6109
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,3.6109
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.515182
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Bias,MeanState,global,scalar,kg m-2,-6.42331
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.546746
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.530964
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.0342
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,kg m-2,5.22269
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,5.22269
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.861362
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Bias,MeanState,global,scalar,kg m-2,-4.81152
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.621479
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.74142
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.0342
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,kg m-2,5.02325
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,5.02325
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.844175
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Bias,MeanState,global,scalar,kg m-2,-5.01096
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.610242
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.727208
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.0342
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,kg m-2,5.37313
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,5.37313
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.863283
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Bias,MeanState,global,scalar,kg m-2,-4.66108
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.62324
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.743261
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.0342
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,kg m-2,4.99477
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,4.99477
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.711579
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Bias,MeanState,global,scalar,kg m-2,-5.03944
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.62148
+SoilCNP,SoilTotalCarbon,IGBP,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.66653
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.2979
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,kg m-2,4.99477
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,4.99477
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.211209
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Bias,MeanState,global,scalar,kg m-2,-5.30317
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.625118
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.418164
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.2979
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,kg m-2,5.22269
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,5.22269
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.364766
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Bias,MeanState,global,scalar,kg m-2,-5.07525
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.613566
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.489166
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.2979
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,kg m-2,5.02325
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,5.02325
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.339539
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Bias,MeanState,global,scalar,kg m-2,-5.27469
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.604406
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.471973
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.2979
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,kg m-2,5.37313
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,5.37313
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.389552
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Bias,MeanState,global,scalar,kg m-2,-4.9248
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.613153
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.501353
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,10.2979
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,kg m-2,3.6109
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,3.6109
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.128987
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Bias,MeanState,global,scalar,kg m-2,-6.68704
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.559892
+SoilCNP,SoilTotalCarbon,HWSD,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.34444
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,5.50376
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,1.4844
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,1.4844
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.088629
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-4.01936
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.51438
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.301504
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,5.50376
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,2.53932
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,2.53932
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.17696
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-2.96444
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.65319
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.415075
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,5.50376
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,2.3865
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,2.3865
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.161777
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-3.11726
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.634753
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.398265
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,5.50376
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,3.42574
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,3.42574
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.12948
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-2.07802
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.749541
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.43951
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,5.50376
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,1.49316
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,1.49316
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.0879881
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-4.0106
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.520268
+SoilCNP,SoilAvailablePhosphorus,RF,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.304128
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,20.3012
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,2.53932
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,2.53991
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,1.73453
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.012486
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-17.7613
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.487264
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.249875
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,20.3012
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,2.3865
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,2.38689
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,1.84616
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.0112856
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-17.9144
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.480468
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.245877
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,20.3012
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,1.4844
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,1.48437
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,1.53098
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.0058129
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-18.8169
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.432447
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.21913
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,20.3012
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,1.49316
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,1.49354
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.972058
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.00579766
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-18.8077
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.435312
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.220555
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,20.3012
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,3.42574
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,3.42548
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,3.77769
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.00905568
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-16.8758
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.539149
+SoilCNP,SoilAvailablePhosphorus,YANG,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.274102
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,9.43113
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,35.6622
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,35.6622
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.186979
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,26.2311
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.134979
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.160979
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,9.43113
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,60.9708
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,60.9708
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.09374
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,51.5397
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.0239634
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.0588517
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,9.43113
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,57.3047
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,57.3047
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.102692
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,47.8735
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.0299435
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.0663177
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,9.43113
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,82.2742
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,82.2742
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.124506
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,72.8431
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.00371866
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.0641125
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,9.43113
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,35.8606
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,35.8606
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.183985
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,26.4295
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.153145
+SoilCNP,SoilInorganicPhosphorus,RF,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.168565
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.6341
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,60.9708
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,60.9849
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,41.6579
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.445376
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,39.3508
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.249307
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.347341
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.6341
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,57.3047
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,57.3141
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,44.3372
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.473559
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,35.68
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.270992
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.372275
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.6341
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,35.6622
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,35.6614
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,36.7875
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.643639
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,14.0272
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.448573
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.546106
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.6341
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,35.8606
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,35.8698
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,23.3575
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.630561
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,14.2356
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.443543
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.537052
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.6341
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,82.2742
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,82.268
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,90.7379
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.570411
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,60.6339
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.123674
+SoilCNP,SoilInorganicPhosphorus,YANG,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.347043
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,84.3568
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,55.1638
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,55.1638
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.879491
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-29.1929
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.710371
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.794931
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,84.3568
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,90.6545
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,90.6545
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.925623
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,6.29776
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.736536
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.831079
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,84.3568
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,85.5703
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,85.5703
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.933548
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,1.21353
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.753023
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.843286
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,84.3568
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,123.779
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,123.779
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.918938
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,39.4219
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.584651
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.751795
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,84.3568
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,53.5281
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,53.5281
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.87441
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-30.8286
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.702876
+SoilCNP,SoilTotalPhosphorus,RF,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.788643
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,228.044
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,90.6545
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,90.6747
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,63.028
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.18233
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-137.369
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.601779
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.392054
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,228.044
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,85.5703
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,85.584
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,66.7881
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.166216
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-142.46
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.593796
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.380006
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,228.044
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,55.1638
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,55.1633
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,55.8923
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.0918713
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-172.88
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.539043
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.315457
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,228.044
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,53.5281
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,53.5411
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,35.7274
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.0869187
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-174.503
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.527056
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.306987
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,228.044
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,123.779
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,123.771
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,134.863
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.144606
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-104.273
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.602897
+SoilCNP,SoilTotalPhosphorus,YANG,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.373751
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,48.0846
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,12.3827
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,12.3827
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.450904
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-35.7019
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.483599
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.467251
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,48.0846
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,21.1704
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,21.1704
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.710237
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-26.9142
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.587484
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.648861
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,48.0846
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,19.8975
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,19.8975
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.677062
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-28.1872
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.571321
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.624192
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,48.0846
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,28.5674
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,28.5674
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.592757
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-19.5172
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.675943
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.63435
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,48.0846
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,12.4516
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,12.4516
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.467828
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-35.633
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.479743
+SoilCNP,SoilPrimaryandSorbedPhosphorus,RF,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.473785
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,133.418
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,21.1704
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,21.1753
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,14.4646
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.0302245
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-112.243
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.479696
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.25496
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,133.418
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,19.8975
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,19.9007
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,15.3949
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.0273895
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-113.517
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.47254
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.249965
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,133.418
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,12.3827
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,12.3824
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,12.7734
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.014135
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-121.035
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.428692
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.221414
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,133.418
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,12.4516
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,12.4548
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,8.11023
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.0140688
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-120.963
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.430934
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.222501
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,133.418
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,28.5674
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,28.5653
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,31.5062
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.0222575
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-104.853
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.5316
+SoilCNP,SoilPrimaryandSorbedPhosphorus,YANG,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.276929
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,1052.81
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,1244.57
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,1244.57
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.204315
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,191.761
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.455492
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.329904
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,1052.81
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,847.749
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,847.749
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.220182
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-205.06
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.541955
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.381069
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,1052.81
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,244.332
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,244.332
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.728112
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-808.478
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.459263
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.593687
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,1052.81
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,860.123
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,860.123
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.201664
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-192.687
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.522779
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.362221
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,1052.81
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,799.187
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,799.187
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.212653
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-253.622
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.495415
+SoilCNP,SoilTotalNitrogen,IGBP,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.354034
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.3373
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,5.6345
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,5.6345
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.0508278
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-15.7028
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.519898
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.285363
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.3373
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,5.974
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,5.974
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.0857581
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-15.3633
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.527081
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.306419
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.3373
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,5.98167
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,5.98167
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.0795692
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-15.3556
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.528893
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.304231
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.3373
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,9.51128
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,9.51128
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.1712
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-11.826
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.655051
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.413125
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,21.3373
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,3.72273
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,3.72273
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.0175888
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-17.6145
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.462654
+SoilCNP,SoilOrganicPhosphorus,RF,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.240121
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,52.6904
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,g m-2,5.974
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,g m-2,5.97459
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,g m-2,5.17097
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.0103374
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Bias,MeanState,global,scalar,g m-2,-46.7158
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.457633
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.233985
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,52.6904
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,g m-2,5.98167
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,g m-2,5.98224
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,g m-2,5.20985
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.00961414
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Bias,MeanState,global,scalar,g m-2,-46.7081
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.459072
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.234343
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,52.6904
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,g m-2,5.6345
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,g m-2,5.63511
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,g m-2,4.80045
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.00618857
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Bias,MeanState,global,scalar,g m-2,-47.0553
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.451685
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.228937
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,52.6904
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,g m-2,3.72273
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,g m-2,3.72305
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,g m-2,3.28761
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.00214505
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Bias,MeanState,global,scalar,g m-2,-48.9673
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.421118
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.211631
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,g m-2,52.6904
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,g m-2,0.0
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,g m-2,9.51128
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,g m-2,9.51177
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,g m-2,8.84145
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.0219476
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Bias,MeanState,global,scalar,g m-2,-43.1786
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.520136
+SoilCNP,SoilOrganicPhosphorus,YANG,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.271042
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,19.2611
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,mg g-1,22.5937
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,22.5883
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,mg g-1,22.3744
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.991537
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Bias,MeanState,global,scalar,mg g-1,3.3272
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.836062
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.913799
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,19.2611
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,mg g-1,22.1005
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,22.0943
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,mg g-1,21.8725
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.82028
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Bias,MeanState,global,scalar,mg g-1,2.83212
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.847594
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.833937
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,19.2611
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,mg g-1,18.1288
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,18.1355
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,mg g-1,18.5606
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.886436
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Bias,MeanState,global,scalar,mg g-1,-1.12081
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.908263
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.89735
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,19.2611
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,mg g-1,21.2785
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,21.288
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,mg g-1,21.7357
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.514722
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Bias,MeanState,global,scalar,mg g-1,2.03318
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.848263
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.681493
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,19.2611
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,mg g-1,18.2593
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,18.2654
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,mg g-1,18.6461
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.935512
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Bias,MeanState,global,scalar,mg g-1,-0.991372
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.914498
+LeafTraits,LeafNitrogen,BUTLER,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.925005
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,1.1286
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,mg g-1,2.58488
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,2.58451
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,mg g-1,2.57637
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.792976
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Bias,MeanState,global,scalar,mg g-1,1.45604
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.277735
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.535356
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,1.1286
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,mg g-1,2.36512
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,2.366
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,mg g-1,2.45926
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.858248
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Bias,MeanState,global,scalar,mg g-1,1.23827
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.340666
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.599457
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,1.1286
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,mg g-1,2.22719
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,2.22759
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,mg g-1,2.24634
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.584448
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Bias,MeanState,global,scalar,mg g-1,1.09928
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.380837
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.482643
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,1.1286
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,mg g-1,3.57009
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,3.57083
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,mg g-1,3.63593
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.91789
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Bias,MeanState,global,scalar,mg g-1,2.44298
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.140585
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.529238
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,mg g-1,1.1286
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,mg g-1,0.0
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,mg g-1,2.42817
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,mg g-1,2.42812
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,mg g-1,2.46436
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.744667
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Bias,MeanState,global,scalar,mg g-1,1.29978
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.319457
+LeafTraits,LeafPhosphorus,BUTLER,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.532062
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,m2 kg-1,14.2799
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,m2 kg-1,0.0
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,m2 kg-1,40.6776
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,m2 kg-1,40.6808
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,m2 kg-1,40.0616
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.975106
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Bias,MeanState,global,scalar,m2 kg-1,26.4009
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.162236
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.568671
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,m2 kg-1,14.2799
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,m2 kg-1,0.0
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,m2 kg-1,19.1142
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,m2 kg-1,19.1134
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,m2 kg-1,19.2618
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.734787
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Bias,MeanState,global,scalar,m2 kg-1,4.83352
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.672296
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.703541
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,m2 kg-1,14.2799
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,m2 kg-1,0.0
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,m2 kg-1,25.83
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,m2 kg-1,25.8301
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,m2 kg-1,25.8136
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.0110208
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Bias,MeanState,global,scalar,m2 kg-1,11.5501
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.44072
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.22587
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,m2 kg-1,14.2799
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,m2 kg-1,0.0
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,m2 kg-1,22.2782
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,m2 kg-1,22.2784
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,m2 kg-1,22.2379
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.050112
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Bias,MeanState,global,scalar,m2 kg-1,7.99846
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.560962
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.305537
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,m2 kg-1,14.2799
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,m2 kg-1,0.0
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,m2 kg-1,26.0286
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,m2 kg-1,26.029
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,m2 kg-1,25.9546
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.053159
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Bias,MeanState,global,scalar,m2 kg-1,11.749
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.434379
+LeafTraits,SpecificLeafArea,BUTLER,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.243769
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,17.878
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,kg m-2,12.5078
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,12.506
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,kg m-2,17.4139
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.359719
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Bias,MeanState,global,scalar,kg m-2,-5.37194
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.469805
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.414762
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,17.878
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,kg m-2,4.78646
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,4.78658
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,kg m-2,4.45159
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.0500832
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Bias,MeanState,global,scalar,kg m-2,-13.0914
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.415499
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.232791
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,17.878
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,kg m-2,8.36819
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,8.36773
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,kg m-2,9.65405
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.110259
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Bias,MeanState,global,scalar,kg m-2,-9.51023
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.481722
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.295991
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,17.878
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,kg m-2,9.68761
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,9.68749
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,kg m-2,10.0318
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.0824643
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Bias,MeanState,global,scalar,kg m-2,-8.19047
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.482331
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.282398
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,17.878
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,kg m-2,12.8177
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,12.8155
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,kg m-2,19.1643
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.406932
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Bias,MeanState,global,scalar,kg m-2,-5.0625
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.466036
+LivingBiomass,Biomass,GEOCARBON,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.436484
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,11.6232
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,kg m-2,9.68761
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,9.68761
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.297229
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Bias,MeanState,global,scalar,kg m-2,-1.93556
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.602216
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.449722
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,11.6232
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,kg m-2,8.36819
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,8.36819
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.379432
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Bias,MeanState,global,scalar,kg m-2,-3.25499
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.609685
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.494558
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,11.6232
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,kg m-2,12.5078
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,12.5078
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.710646
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Bias,MeanState,global,scalar,kg m-2,0.884581
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.55715
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.633898
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,11.6232
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,kg m-2,4.78646
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,4.78646
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.190978
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Bias,MeanState,global,scalar,kg m-2,-6.83671
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.483139
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.337058
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,11.6232
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,kg m-2,12.8177
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,12.8177
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.712282
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Bias,MeanState,global,scalar,kg m-2,1.19453
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.547644
+LivingBiomass,Biomass,SAATCHI,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.629963
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,13.491
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,kg m-2,9.68761
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,9.68812
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,kg m-2,9.58795
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.280941
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Bias,MeanState,global,scalar,kg m-2,-3.80284
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.635707
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.458324
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,13.491
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,kg m-2,8.36819
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,8.36663
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,kg m-2,8.66982
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.358548
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Bias,MeanState,global,scalar,kg m-2,-5.12434
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.630115
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.494331
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,13.491
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,kg m-2,12.8177
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,12.8283
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,kg m-2,10.7578
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.724803
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Bias,MeanState,global,scalar,kg m-2,-0.662639
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.550184
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.637493
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,13.491
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,kg m-2,12.5078
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,12.5169
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,kg m-2,10.7301
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.717715
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Bias,MeanState,global,scalar,kg m-2,-0.974044
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.560141
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.638928
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,kg m-2,13.491
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,kg m-2,0.0
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,kg m-2,4.78646
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,kg m-2,4.78933
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,kg m-2,4.22989
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.181216
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Bias,MeanState,global,scalar,kg m-2,-8.70163
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.51704
+LivingBiomass,Biomass,BACCINI,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.349128
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Benchmark Period Mean (intersection),MeanState,global,scalar,Mg ha-1,192.854
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Benchmark Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Period Mean (original grids),MeanState,global,scalar,Mg ha-1,47.8646
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Model Period Mean (intersection),MeanState,global,scalar,Mg ha-1,47.8646
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Model Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Spatial Distribution Score,MeanState,global,score,1,0.0578639
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Bias,MeanState,global,scalar,Mg ha-1,-144.989
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Bias Score,MeanState,global,score,1,0.437182
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r11,Overall Score,MeanState,global,score,1,0.247523
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Benchmark Period Mean (intersection),MeanState,global,scalar,Mg ha-1,192.854
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Benchmark Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Period Mean (original grids),MeanState,global,scalar,Mg ha-1,128.177
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Model Period Mean (intersection),MeanState,global,scalar,Mg ha-1,128.177
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Model Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Spatial Distribution Score,MeanState,global,score,1,0.451591
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Bias,MeanState,global,scalar,Mg ha-1,-64.6769
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Bias Score,MeanState,global,score,1,0.487787
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r09,Overall Score,MeanState,global,score,1,0.469689
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Benchmark Period Mean (intersection),MeanState,global,scalar,Mg ha-1,192.854
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Benchmark Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Period Mean (original grids),MeanState,global,scalar,Mg ha-1,125.078
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Model Period Mean (intersection),MeanState,global,scalar,Mg ha-1,125.078
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Model Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Spatial Distribution Score,MeanState,global,score,1,0.402182
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Bias,MeanState,global,scalar,Mg ha-1,-67.7764
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Bias Score,MeanState,global,score,1,0.492492
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r10,Overall Score,MeanState,global,score,1,0.447337
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Benchmark Period Mean (intersection),MeanState,global,scalar,Mg ha-1,192.854
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Benchmark Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Period Mean (original grids),MeanState,global,scalar,Mg ha-1,83.6819
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Model Period Mean (intersection),MeanState,global,scalar,Mg ha-1,83.6819
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Model Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Spatial Distribution Score,MeanState,global,score,1,0.125991
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Bias,MeanState,global,scalar,Mg ha-1,-109.172
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Bias Score,MeanState,global,score,1,0.521107
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r05,Overall Score,MeanState,global,score,1,0.323549
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Benchmark Period Mean (intersection),MeanState,global,scalar,Mg ha-1,192.854
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Benchmark Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Period Mean (original grids),MeanState,global,scalar,Mg ha-1,96.8761
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Model Period Mean (intersection),MeanState,global,scalar,Mg ha-1,96.8761
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Model Period Mean (complement),MeanState,global,scalar,Mg ha-1,0.0
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Spatial Distribution Score,MeanState,global,score,1,0.0946192
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Bias,MeanState,global,scalar,Mg ha-1,-95.9778
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Bias Score,MeanState,global,score,1,0.515474
+LivingBiomass,Biomass,AVITABILE,CAETE-1000_r06,Overall Score,MeanState,global,score,1,0.305046

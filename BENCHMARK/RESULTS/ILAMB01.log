@@ -1,0 +1,280 @@
+[INFO][0][<module>] Linux curisco 5.8.0-50-generic #56~20.04.1-Ubuntu SMP Mon Apr 12 21:46:35 UTC 2021 x86_64
+[INFO][0][<module>] /home/jp/.local/lib/python3.8/site-packages/ILAMB (2.5)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/numpy (1.17.4)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/matplotlib (3.1.2)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/netCDF4 (1.5.3)
+[INFO][0][<module>] /home/jp/.local/lib/python3.8/site-packages/cf_units (2.1.4)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/sympy (1.5.1)
+[INFO][0][<module>] /usr/lib/python3/dist-packages/mpi4py (3.0.3)
+[INFO][0][<module>] 2021-04-23 18:42:05.598093
+[INFO][0][MakeComparable][Biomass/SAATCHI][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/SAATCHI][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Biomass/SAATCHI][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/SAATCHI][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Biomass/SAATCHI][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/SAATCHI][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Biomass/SAATCHI][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/SAATCHI][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Biomass/SAATCHI][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/SAATCHI][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][Biomass/AVITABILE][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/AVITABILE][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Biomass/AVITABILE][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/AVITABILE][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Biomass/AVITABILE][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/AVITABILE][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Biomass/AVITABILE][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/AVITABILE][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Biomass/AVITABILE][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/AVITABILE][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][Biomass/BACCINI][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/BACCINI][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Biomass/BACCINI][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/BACCINI][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Biomass/BACCINI][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/BACCINI][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Biomass/BACCINI][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/BACCINI][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Biomass/BACCINI][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/BACCINI][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][Biomass/GEOCARBON][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/GEOCARBON][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][Biomass/GEOCARBON][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/GEOCARBON][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][Biomass/GEOCARBON][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/GEOCARBON][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][Biomass/GEOCARBON][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/GEOCARBON][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][Biomass/GEOCARBON][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][Biomass/GEOCARBON][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SpecificLeafArea/BUTLER][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SpecificLeafArea/BUTLER][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SpecificLeafArea/BUTLER][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SpecificLeafArea/BUTLER][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SpecificLeafArea/BUTLER][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SpecificLeafArea/BUTLER][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SpecificLeafArea/BUTLER][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SpecificLeafArea/BUTLER][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SpecificLeafArea/BUTLER][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SpecificLeafArea/BUTLER][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][LeafNitrogen/BUTLER][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafNitrogen/BUTLER][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][LeafNitrogen/BUTLER][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafNitrogen/BUTLER][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][LeafNitrogen/BUTLER][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafNitrogen/BUTLER][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][LeafNitrogen/BUTLER][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafNitrogen/BUTLER][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][LeafNitrogen/BUTLER][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafNitrogen/BUTLER][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][LeafPhosphorus/BUTLER][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafPhosphorus/BUTLER][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][LeafPhosphorus/BUTLER][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafPhosphorus/BUTLER][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][LeafPhosphorus/BUTLER][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafPhosphorus/BUTLER][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][LeafPhosphorus/BUTLER][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafPhosphorus/BUTLER][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][LeafPhosphorus/BUTLER][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][LeafPhosphorus/BUTLER][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/HWSD][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/HWSD][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/HWSD][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/HWSD][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/HWSD][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/HWSD][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/HWSD][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/HWSD][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/HWSD][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/HWSD][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/IGBP][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/IGBP][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/IGBP][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/IGBP][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/IGBP][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/IGBP][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/IGBP][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/IGBP][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilTotalCarbon/IGBP][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalCarbon/IGBP][CAETE-1000_r11] Success
+[INFO][0][confront][SoilTotalNitrogen/IGBP][CAETE-1000_r05] Success
+[INFO][0][confront][SoilTotalNitrogen/IGBP][CAETE-1000_r06] Success
+[INFO][0][confront][SoilTotalNitrogen/IGBP][CAETE-1000_r09] Success
+[INFO][0][confront][SoilTotalNitrogen/IGBP][CAETE-1000_r10] Success
+[INFO][0][confront][SoilTotalNitrogen/IGBP][CAETE-1000_r11] Success
+[INFO][0][confront][SoilTotalPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][confront][SoilTotalPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][confront][SoilTotalPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][confront][SoilTotalPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][confront][SoilTotalPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilTotalPhosphorus/YANG][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilTotalPhosphorus/YANG][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilTotalPhosphorus/YANG][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilTotalPhosphorus/YANG][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilTotalPhosphorus/YANG][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilTotalPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][confront][SoilInorganicPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][confront][SoilInorganicPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][confront][SoilInorganicPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][confront][SoilInorganicPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][confront][SoilInorganicPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilInorganicPhosphorus/YANG][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilInorganicPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilInorganicPhosphorus/YANG][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilInorganicPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilInorganicPhosphorus/YANG][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilInorganicPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilInorganicPhosphorus/YANG][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilInorganicPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilInorganicPhosphorus/YANG][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilInorganicPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][confront][SoilOrganicPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][confront][SoilOrganicPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][confront][SoilOrganicPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][confront][SoilOrganicPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][confront][SoilOrganicPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilOrganicPhosphorus/YANG][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilOrganicPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilOrganicPhosphorus/YANG][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilOrganicPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilOrganicPhosphorus/YANG][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilOrganicPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilOrganicPhosphorus/YANG][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilOrganicPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilOrganicPhosphorus/YANG][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilOrganicPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][confront][SoilAvailablePhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][confront][SoilAvailablePhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][confront][SoilAvailablePhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][confront][SoilAvailablePhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][confront][SoilAvailablePhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][MakeComparable][SoilAvailablePhosphorus/YANG][CAETE-1000_r05] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilAvailablePhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][MakeComparable][SoilAvailablePhosphorus/YANG][CAETE-1000_r06] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilAvailablePhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][MakeComparable][SoilAvailablePhosphorus/YANG][CAETE-1000_r09] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilAvailablePhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][MakeComparable][SoilAvailablePhosphorus/YANG][CAETE-1000_r10] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilAvailablePhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][MakeComparable][SoilAvailablePhosphorus/YANG][CAETE-1000_r11] Spatial data was clipped from the reference:  before: [  1 360 720] after: [ 1 61 71]
+[INFO][0][confront][SoilAvailablePhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][modelPlots][Biomass/SAATCHI][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Biomass/SAATCHI][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Biomass/SAATCHI][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Biomass/SAATCHI][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Biomass/SAATCHI][CAETE-1000_r11] Success
+[INFO][0][modelPlots][Biomass/AVITABILE][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Biomass/AVITABILE][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Biomass/AVITABILE][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Biomass/AVITABILE][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Biomass/AVITABILE][CAETE-1000_r11] Success
+[INFO][0][modelPlots][Biomass/BACCINI][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Biomass/BACCINI][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Biomass/BACCINI][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Biomass/BACCINI][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Biomass/BACCINI][CAETE-1000_r11] Success
+[INFO][0][modelPlots][Biomass/GEOCARBON][CAETE-1000_r05] Success
+[INFO][0][modelPlots][Biomass/GEOCARBON][CAETE-1000_r06] Success
+[INFO][0][modelPlots][Biomass/GEOCARBON][CAETE-1000_r09] Success
+[INFO][0][modelPlots][Biomass/GEOCARBON][CAETE-1000_r10] Success
+[INFO][0][modelPlots][Biomass/GEOCARBON][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SpecificLeafArea/BUTLER][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SpecificLeafArea/BUTLER][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SpecificLeafArea/BUTLER][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SpecificLeafArea/BUTLER][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SpecificLeafArea/BUTLER][CAETE-1000_r11] Success
+[INFO][0][modelPlots][LeafNitrogen/BUTLER][CAETE-1000_r05] Success
+[INFO][0][modelPlots][LeafNitrogen/BUTLER][CAETE-1000_r06] Success
+[INFO][0][modelPlots][LeafNitrogen/BUTLER][CAETE-1000_r09] Success
+[INFO][0][modelPlots][LeafNitrogen/BUTLER][CAETE-1000_r10] Success
+[INFO][0][modelPlots][LeafNitrogen/BUTLER][CAETE-1000_r11] Success
+[INFO][0][modelPlots][LeafPhosphorus/BUTLER][CAETE-1000_r05] Success
+[INFO][0][modelPlots][LeafPhosphorus/BUTLER][CAETE-1000_r06] Success
+[INFO][0][modelPlots][LeafPhosphorus/BUTLER][CAETE-1000_r09] Success
+[INFO][0][modelPlots][LeafPhosphorus/BUTLER][CAETE-1000_r10] Success
+[INFO][0][modelPlots][LeafPhosphorus/BUTLER][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilTotalCarbon/HWSD][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilTotalCarbon/HWSD][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilTotalCarbon/HWSD][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilTotalCarbon/HWSD][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilTotalCarbon/HWSD][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilTotalCarbon/IGBP][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilTotalCarbon/IGBP][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilTotalCarbon/IGBP][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilTotalCarbon/IGBP][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilTotalCarbon/IGBP][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilTotalNitrogen/IGBP][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilTotalNitrogen/IGBP][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilTotalNitrogen/IGBP][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilTotalNitrogen/IGBP][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilTotalNitrogen/IGBP][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilTotalPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilInorganicPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilOrganicPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilPrimaryandSorbedPhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/RF][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/RF][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/RF][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/RF][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/RF][CAETE-1000_r11] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/YANG][CAETE-1000_r05] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/YANG][CAETE-1000_r06] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/YANG][CAETE-1000_r09] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/YANG][CAETE-1000_r10] Success
+[INFO][0][modelPlots][SoilAvailablePhosphorus/YANG][CAETE-1000_r11] Success
+[INFO][0][<module>][total time] 172.2 s
