@@ -41,7 +41,6 @@ from caete_module import photo as m
 from caete_module import soil_dec
 
 NO_DATA = [-9999.0, -9999.0]
-
 print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
 # GLOBAL
 out_ext = ".pkz"
@@ -780,7 +779,7 @@ class grd:
         assert self.filled, "The gridcell has no input data"
         assert not fix_co2 or type(
             fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string "
-
+        ABORT = 0
         if self.plot:
             splitter = ","
         else:
@@ -851,6 +850,8 @@ class grd:
             fix_co2_p = True
 
         for s in range(spin):
+            if ABORT:
+                break
             if save:
                 self._allocate_output(steps.size)
                 self.save = True
@@ -965,6 +966,7 @@ class grd:
                     self.ls[step] = self.vp_lsid.size
                 else:
                     if self.vp_lsid.size < 1:
+                        ABORT = 1
                         rwarn(f"Gridcell {self.xyname} has less \
                                 than 1 living Plant Life Strategies")
                     # UPDATE vegetation pools
@@ -1186,6 +1188,9 @@ class grd:
                                     step] = daily_output['limitation_status'][:, self.vp_lsid]
                     self.uptake_strategy[:, self.vp_lsid,
                                          step] = daily_output['uptk_strat'][:, self.vp_lsid]
+                if ABORT:
+                    rwarn("NO LIVING PLS - ABORT")
+                    break
             if save:
                 if s > 0:
                     while True:
@@ -1425,7 +1430,7 @@ class plot(grd):
 
         # Biomass
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-            1.0, self.pls_table)
+            0.5, self.pls_table)
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
         self.vp_lsid = np.where(a > 0.0)[0]

@@ -1,0 +1,14 @@
+Column,VariableCode,VariableName,Unit
+1,YEAR,Year,year
+2,DoY,Day of the year,doy
+3,GPP,Gross Primary Productivity,g m-2 day-1
+4,NPP,Net Primary Productivity,g m-2 day-1
+5,RAU,Autotrophic respiration,g m-2 day-1
+6,CL,C leaf mass,g m-2
+7,CW,C wood mass,g m-2
+8,CCR,C coarse root mass,g m-2
+9,CFR,C fine root mass,g m-2
+10,CR,C coarse+fine root mass,g m-2
+11,GS,Stomatal conductance,mmol m-2 s-1
+12,ET,Evapotranspiration,kg m-2 day-1
+13,LAI,Leaf area index,m2 m-2

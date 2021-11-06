@@ -6,6 +6,7 @@ import cftime as cf
 import caete as mod
 import plsgen as pls
 from aux_plot import get_var
+from cfunits import Units
 
 from sklearn.cluster import KMeans
 
@@ -252,35 +253,76 @@ def run_LD():
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
     # The binary files for each repetttion is stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000102', '20151231', spinup=30,
-                       fix_co2=368.9, save=True)
+    k34_plot.run_caete('20000102', '20151231', spinup=20,
+                       fix_co2='2000', save=True)
+
+    k34_plot.run_caete('20000102', '20151231', spinup=10,
+                       fix_co2='2000', save=True)
 
     # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
 
     #
-    k34_plot.run_caete('20000102', '20151231', spinup=29,
+    k34_plot.run_caete('20000102', '20151231', spinup=10,
                        fix_co2="2020", save=True)
     return k34_plot
 
 
-def pk2csv(grd: mod.grd, spin) -> pd.DataFrame:
+def pk2csv1(grd: mod.grd, spin) -> pd.DataFrame:
     import joblib
     if spin < 10:
         name = f'spin0{spin}.pkz'
     else:
         name = f'spin{spin}.pkz'
     with open(grd.outputs[name], 'rb') as fh:
-        dt = joblib.load(fh)
+        spin_dt = joblib.load(fh)
 
-    MICV = ['photo','npp', 'aresp']
+    CT1 = pd.read_csv("../k34/CODE_TABLE1.csv")
 
+    MICV = ['year', 'doy', 'photo', 'npp', 'aresp', 'cleaf',
+            'cawood', None, 'cfroot', None, 'rcm', 'evapm', 'lai']
 
+    caete_units = {'photo': 'kg m-2 year-1',
+                   'npp': 'kg m-2 year-1',
+                   'aresp': 'kg m-2 year-1',
+                   'cleaf': 'kg m-2',
+                   'cawood': 'kg m-2',
+                   'cfroot': 'kg m-2',
+                   'evapm': 'kg m-2 day-1',
+                   'lai': 'm2 m-2'}
+    # return spin_dt
+    cols = CT1.VariableCode.__array__()
+    units_out = CT1.Unit.__array__()
+    series = []
+    idxT1 = pd.date_range("2000-01-02", "2015-12-31", freq='D', closed=None)
+    idx = idxT1.to_pydatetime()
+    for i, var in enumerate(MICV):
+        if var == 'year':
+            data = [x.timetuple()[0] for x in idx]
+            s1 = pd.Series(np.array(data), index=idxT1)
+            series.append(s1)
+        elif var == 'doy':
+            data = [x.timetuple()[-2] for x in idx]
+            s1 = pd.Series(np.array(data), index=idxT1)
+            series.append(s1)
+        elif var is None:
+            series.append(pd.Series(np.zeros(5843,) - 9999.0, index=idxT1))
+        elif var == 'rcm':
+            # TODO
+            series.append(pd.Series(np.zeros(5843,) - 9999.0, index=idxT1))
+        else:
+            data = Units.conform(spin_dt[var], Units(
+                caete_units[var]), Units(units_out[i]))
+            s1 = pd.Series(np.array(data), index=idxT1)
+            series.append(s1)
 
+    return pd.DataFrame(dict(list(zip(cols, series))))
+
+    # return code_table1
 
 
 if __name__ == "__main__":
-
+    pass
     # make_table_HD() ## Run just one time
     # make_table_LD()  # Run just one time
 
@@ -289,4 +331,4 @@ if __name__ == "__main__":
 
     # Need to compile the fortrna code do 4 PLSs
     # ld = run_LD()
-    sd = pk2csv()
+    # sd = pk2csv1()

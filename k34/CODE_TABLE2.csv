@@ -1,0 +1,14 @@
+Column,VariableCode,VariableName,Unit
+1,YEAR,Year,year
+2,PID,Plant entity identification number,1
+3,DE,Density of individuals,Ind m-2
+4,OC,Occupation of the gridcell by the plant entity,%
+5,PH,Average height,m
+6,MH,Maximum height,m
+7,CA,Canopy area,m2
+8,BA,Total basal area,m2
+9,TB,Total biomass,Kg
+10,WD,Wood density*,Kg m-3
+11,MO,Plant entity mortality (number of individuals),1
+12,SLA,Specific leaf area*,m2 Kg-1
+13,P50,Water potential when plants lose 50% oftheir maximum hydraulic conductivity*,MPa
