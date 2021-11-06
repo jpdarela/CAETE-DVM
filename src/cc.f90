@@ -222,12 +222,12 @@ module carbon_costs
       real(r_8), intent(in) :: croot
       real(r_8), dimension(6), intent(out) :: ccn
 
-      real(r_8), parameter :: kn   = 0.5D0  ,& !
-                            & kcn  = 1.0D0  ,& !
-                            & kan  = 0.9D0  ,& !
-                            & kanc = 1.4D0  ,& !
-                            & ken  = 0.95D0 ,& !
-                            & kenc = 0.75D0
+      real(r_8), parameter :: kn   = 0.15D0  ,& !
+                            & kcn  = 0.15D0  ,& !
+                            & kan  = 0.0D0  ,& !
+                            & kanc = 0.025D0  ,& !
+                            & ken  = 0.025D0 ,& !
+                            & kenc = 0.15D0
 
       integer(i_4), parameter :: N = 1
 
@@ -261,10 +261,10 @@ module carbon_costs
 
       real(r_8), parameter :: kp   = 0.7D0  ,&
                             & kcp  = 1.0D0  ,& ! PArameters from FUN3.0 source code (modified)
-                            & kap  = 0.7D0  ,& ! AkP<-0.1 #AM cost
-                            & kapc = 1.1D0  ,& ! AkCp<-0.5 #AM cost
-                            & kep  = 0.7D0  ,& ! EkP<-0.05 #ECM cost
-                            & kepc = 1.3D0     ! EkCp<-1.0 #ECM cost
+                            & kap  = 0.1D0  ,& ! AkP<-0.1 #AM cost
+                            & kapc = 0.5D0  ,& ! AkCp<-0.5 #AM cost
+                            & kep  = 0.05D0  ,& ! EkP<-0.05 #ECM cost
+                            & kepc = 1.0D0     ! EkCp<-1.0 #ECM cost
 
       ! Strategies of P aquisition - ACTIVE UPTAKE
       integer(i_4), parameter :: nma   = 1 ,& ! Non Myco. AM

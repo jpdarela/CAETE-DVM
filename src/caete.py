@@ -151,36 +151,8 @@ run_breaks_CMIP5_proj = [('20060101', '20071231'),
                          ('20960101', '20971231'),
                          ('20980101', '20991231')]
 
-                                 ('20440101', '20451231'),
-                                 ('20460101', '20471231'),
-                                 ('20480101', '20491231'),
-                                 ('20500101', '20511231'),
-                                 ('20520101', '20531231'),
-                                 ('20540101', '20551231'),
-                                 ('20560101', '20571231'),
-                                 ('20580101', '20591231'),
-                                 ('20600101', '20611231'),
-                                 ('20620101', '20631231'),
-                                 ('20640101', '20651231'),
-                                 ('20660101', '20671231'),
-                                 ('20680101', '20691231'),
-                                 ('20700101', '20711231'),
-                                 ('20720101', '20731231'),
-                                 ('20740101', '20751231'),
-                                 ('20760101', '20771231'),
-                                 ('20780101', '20791231'),
-                                 ('20800101', '20811231'),
-                                 ('20820101', '20831231'),
-                                 ('20840101', '20851231'),
-                                 ('20860101', '20871231'),
-                                 ('20880101', '20891231'),
-                                 ('20900101', '20911231'),
-                                 ('20920101', '20931231'),
-                                 ('20940101', '20951231'),
-                                 ('20960101', '20971231'),
-                                 ('20980101', '20991231')]
 
-rbrk= [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
+rbrk = [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
 
 warnings.simplefilter("default")
 
@@ -203,11 +175,11 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
         decimals    - Optional  : positive number of decimals in percent complete (Int)
         bar_length  - Optional  : character length of bar (Int)
     """
-    bar_utf= b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
-    str_format= "{0:." + str(decimals) + "f}"
-    percents= str_format.format(100 * (iteration / float(total)))
-    filled_length= int(round(bar_length * iteration / float(total)))
-    bar= '█' * filled_length + '-' * (bar_length - filled_length)
+    bar_utf = b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
+    str_format = "{0:." + str(decimals) + "f}"
+    percents = str_format.format(100 * (iteration / float(total)))
+    filled_length = int(round(bar_length * iteration / float(total)))
+    bar = '█' * filled_length + '-' * (bar_length - filled_length)
 
     sys.stdout.write('\r%s |%s| %s%s %s' %
                      (prefix, bar, percents, '%', suffix)),
@@ -652,7 +624,7 @@ class grd:
             self.time_index[-1], self.time_unit, calendar=self.calendar)
 
         # OTHER INPUTS
-        self.pls_table = pls_table.copy()
+        self.pls_table = copy.deepcopy(pls_table)
         self.neighbours = neighbours_index(self.pos, mask)
         self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
 
@@ -1241,10 +1213,15 @@ class grd:
         assert self.filled, "The gridcell has no input data"
         self.budget_spinup = True
 
+        if self.plot:
+            splitter = ","
+        else:
+            splitter = "\t"
+
         def find_co2(year):
             for i in self.co2_data:
-                if int(i.split('\t')[0]) == year:
-                    return float(i.split('\t')[1].strip())
+                if int(i.split(splitter)[0]) == year:
+                    return float(i.split(splitter)[1].strip())
 
         def find_index(start, end):
             result = []

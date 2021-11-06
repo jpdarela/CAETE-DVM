@@ -261,13 +261,13 @@ contains
       if (nlen .le. 20) then
          call OMP_SET_NUM_THREADS(1)
       else if (nlen .le. 100) then
-         call OMP_SET_NUM_THREADS(1)
+         call OMP_SET_NUM_THREADS(2)
       else if (nlen .le. 300) then
          call OMP_SET_NUM_THREADS(2)
       else if (nlen .le. 600) then
-         call OMP_SET_NUM_THREADS(2)
-      else
          call OMP_SET_NUM_THREADS(3)
+      else
+         call OMP_SET_NUM_THREADS(4)
       endif
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
