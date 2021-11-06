@@ -1,13 +1,12 @@
 import numpy as np
-import _pickle as pkl
-import bz2
+# import _pickle as pkl
+# import bz2
 import pandas as pd
 import cftime as cf
 import caete as mod
 import plsgen as pls
 from aux_plot import get_var
 
-import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
 idxT = pd.date_range("2000-01-02", "2016-01-01", freq='D', closed=None)
@@ -72,7 +71,6 @@ stime_i = {'standard_name': 'time',
 # CO2 DATA
 AMB = "../k34/CO2_AMB_AmzFACE2000_2100.csv"
 ELE = "../k34/CO2_ELE_AmzFACE2000_2100.csv"
-
 
 with open(AMB, 'r') as fh:
     co2 = fh.readlines()
@@ -147,7 +145,6 @@ def make_table_LD():
     grassesC4 = grasses[head][grasses['c4'] == 1]
 
     kmeans = KMeans(n_clusters=2).fit(woodies)
-    centroids = kmeans.cluster_centers_
 
     dt1 = woodies.copy()
 
@@ -159,8 +156,8 @@ def make_table_LD():
     # Low diversity table:
     # PLS 1 = Grass C3
     # PLS 2 = Grass C4
-    # PLS 3 = Woody 1 (Fixer)
-    # PLS 4 = Woody 2 (Non Fixer)
+    # PLS 3 = Woody 1
+    # PLS 4 = Woody 2 -> one of the woodies are a N fixer
 
     pls_attrs_LD = np.zeros(shape=(17, 4), dtype=np.float64, order="F")
     pls_attrs_LD[:, 0] = grassesC3.mean().__array__()
@@ -229,10 +226,13 @@ def run_LD():
     return k34_plot
 
 
+def pk2csv(grd):
+    pass
+
 if __name__ == "__main__":
 
     # make_table_HD() ## Run just one time
-    make_table_LD()  # Run just one time
+    # make_table_LD()  # Run just one time
 
     # hd = run_HD()
     # md = run_MD()

@@ -27,32 +27,36 @@ Make sure you have them properly installed before running the code.
 
 ## Running and Developing CAETÊ
 
-This section suposses you have a working python environment and an installed fortran compiler. I strongly recommend you to do it in a LINUX/GNU operating system. Most of the fuctionality will not work on other systems because of the parallel computations realized in python.
-If you need help setting up your environment, check the [development environment section](#development-Environment)
+This section suposses you have a working python environment and an installed fortran compiler. I strongly recommend you to do it in a LINUX/GNU operating system. Most of the fuctionality will not work on MS-windows systems because of the parallel computations realized in python.
+If you are a MAC-OS user and need help to set up your environment, check the [development environment section](#development-Environment)
 
 CAETÊ uses both Python and Fortran and uses `f2py` module to create an library of code (functions and subroutines) that can be imported and used in python scripts. This means that the Fortran code must be compiled before you can run the code.
 
 The Makefile inside `/src` folder have useful automation to make it easier.
 
-`clean_plsgen` - remove the cache files containing allocation combinations for PLS creation in plsgen.py. Run this will make the first run of caete in your computer slower but will make sure that your input data is ok!
+`clean_plsgen` - remove the cache files containing allocation combinations for PLS creation in plsgen.py. Run this will make the first run of CAETÊ in your computer slower but will make sure that your input data is ok!
 
 `make clean` - it clear your python cache and deletes some compiled files.
 
-`make so` - compile fortran source and creates a file named with something like `caete_module.so`, the wraped Fortran functions and subroutines for python.
+`make so` - compile fortran source and creates a file named with something like `caete_module.so`, the wrapped Fortran functions and subroutines for python.
 
-For your use we prepared some sampled input data. You probably do not want to run the model for the entire Amazon outside an HPC environment.
+For your use we prepared some sampled input data. You probably do not want to run the model for the entire Amazon outside an HPC environment and we are not able to publicize the input dataset.
 
 To build and run CAETÊ in you PC you can do the following:
 
 ```bash
 # Use pyenv to select your python executable
-CAETE-DVM$ pyenv local <define your python version (>= 3.5)>
+CAETE-DVM$ pyenv local <define your python version (>= 3.5)
 
 # Goto the source file
 CAETE-DVM$ cd src
 
 # Clean you cache
 CAETE-DVM/src$ make clean_plsgen
+# After the first clean_plsgen there is almost no need to run in anymore.
+# If you change the plsgen.py file, particularly the creation
+# of allocation combinations you must to re-run the above command
+
 CAETE-DVM/src$ make clean
 
 # Build caete_module.so
@@ -101,20 +105,26 @@ CAETE-DVM/outputs/run_name/gridcellYX$ python
 >>> plt.show()
 
 ```
-2 - In the same folder were the raw outputs are saved (`./ouputs/run_name/`) you will find the nc_outputs folder, _i.e._, the
-folder containing CF compliant netCDF files with daily values for the main output variables. Some high dimensional output data is simplified. So some information is absent in the netCDF files.
+
+2 - In the same folder were the raw outputs are saved (`./ouputs/run_name/`) you will find the nc_outputs folder,_i.e._, the
+folder containing CF compliant netCDF files with daily values for the main output variables. Some high dimensional output data is simplified. So, some valuable information is absent in the netCDF files.
 
 ## Development Environment
 
 If you need help configuring your development environment, installing python, installing CAETÊ dependencies or setting up a debug enviornment in vscode, check the [CAETÊ starting pack tutorial](https://github.com/fmammoli/CAETE-Tutorials)
 
-## __CONTRIBUTORS__:
+## __CONTRIBUTORS__
 
+- Anja Rammig
 - Bárbara R. Cardeli
 - Bianca Rius
 - Caio Fascina
+- Carlos A. Quesada
 - David Lapola
+- Felipe Mammoli
 - Gabriela M. Sophia
 - Gabriel Marandola
 - Helena Alves
-- F. Mammoli
+- Katrin Fleischer
+- Phillip PAPAstefanou
+- Tatiana Reichert

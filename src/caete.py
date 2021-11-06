@@ -218,8 +218,8 @@ def catch_out_carbon3(out):
 
 
 def find_coord(N, W):
-    """ Given a pair of geographic (WGS84) coordinates
-        returns the Y and X indices in the array (360,720)
+    """ Given a pair of geographic (WGS84) coordinates (decimal degrees)
+        returns the Y and X indices in the array (360,720//0.5° lon-lat)
         (C_contiguous) Tested only in south america"""
     Yc = round(N, 2)
     Xc = round(W, 2)
@@ -1343,6 +1343,7 @@ class grd:
 
 
 class plot(grd):
+    """i and j are the latitude and longitude (in that order) of plot location in decimal degrees"""
 
     def __init__(self, i, j, dump_folder):
         y, x = find_coord(i, j)

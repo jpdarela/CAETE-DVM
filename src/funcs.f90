@@ -552,9 +552,8 @@ contains
 
       vm_nutri = coeffa + (coeffb * dlog10(nmgg))
       vm =  10**vm_nutri * 1D-6
-      if(vm + 1 .eq. vm) vm = p25 - 5.0D-5
+      if(vm + 1 .eq. vm) vm = p25 - 5.0D-5 ! If Vc max is inf give it a low value
       if(vm .gt. p25) vm = p25
-
 
       ! Rubisco Carboxilation Rate - temperature dependence
       vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0)))
