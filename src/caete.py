@@ -28,6 +28,7 @@ from time import sleep
 from pathlib import Path
 import warnings
 import bz2
+import gc
 
 from joblib import load, dump
 import cftime
@@ -659,7 +660,6 @@ class grd:
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
         self.vp_lsid = np.where(a > 0.0)[0]
         self.ls = self.vp_lsid.size
-        del a, b, c, d
         self.vp_dcl = np.zeros(shape=(npls,), order='F')
         self.vp_dca = np.zeros(shape=(npls,), order='F')
         self.vp_dcf = np.zeros(shape=(npls,), order='F')
@@ -683,7 +683,7 @@ class grd:
 
         self.outputs = dict()
         self.filled = True
-
+        gc.collect()
         return None
 
     def clean_run(self, dump_folder, save_id):
@@ -931,7 +931,7 @@ class grd:
                                          ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
                                          dcl, dca, dcf, uptk_costs, self.wmax_mm)
 
-                del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
+                # del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
                 # Create a dict with the function output
                 daily_output = catch_out_budget(out)
 
@@ -998,7 +998,8 @@ class grd:
                         self.vp_ocp * self.vp_sto[i])
 
                 # OUTPUTS for SOIL CWM
-                self.litter_l[step] = daily_output['litter_l']
+                self.litter_l[step] = daily_output['litter_l'] + \
+                    daily_output['cp'][3]
                 self.cwd[step] = daily_output['cwd']
                 self.litter_fr[step] = daily_output['litter_fr']
                 self.lnc[:, step] = daily_output['lnc']
@@ -1191,6 +1192,7 @@ class grd:
                 if ABORT:
                     rwarn("NO LIVING PLS - ABORT")
                     break
+            gc.collect()
             if save:
                 if s > 0:
                     while True:
@@ -1209,6 +1211,7 @@ class grd:
                     sleep(0.5)
                 else:
                     break
+        gc.collect()
         return None
 
     def bdg_spinup(self, start_date='19010101', end_date='19030101'):

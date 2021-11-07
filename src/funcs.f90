@@ -967,7 +967,7 @@ contains
     if(ston .lt. 0.0D0) then
       ston = 1.0D0/300.0D0
     else
-      ston = ston/stoc
+      ston = (ston * 1.0D-2)/stoc
     endif
 
     rm = ((ston * stoc) * 27.0D0 * dexp(0.07D0*temp))

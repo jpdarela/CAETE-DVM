@@ -102,7 +102,7 @@ contains
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
       real(r_8),dimension(npls),intent(out) ::  npp2pay_1 ! C costs of N/P uptake
-      real(r_8),dimension(3),intent(out) :: cp
+      real(r_8),dimension(4),intent(out) :: cp ! Aux cp(1:3) CVEG C POOLS cp(4) Auxiliary to HR
       real(r_8),intent(out) :: c_cost_cwm
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri, i, j
@@ -164,14 +164,15 @@ contains
       real(r_8),dimension(:,:),allocatable :: lit_nut_content  ! d0=6 g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
-
+      real(r_8),dimension(:),allocatable :: ar_fix_hr ! store plss npp (C) exchanged with N fixer µorganisms GOTO HR
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
-      INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs
+      INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs/living grasses
 
-      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs
+      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, pdia_aux
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat, ar_aux
+      real(r_8), dimension(:), allocatable :: idx_grasses, idx_pdia
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -180,6 +181,7 @@ contains
       ! create copies of some input variables (arrays) - ( they are passed by reference by standard)
       do i = 1,npls
          awood_aux(i) = dt(7,i)
+         pdia_aux(i) = dt(17,i)
          cl1_pft(i) = cl1_in(i)
          ca1_pft(i) = ca1_in(i)
          cf1_pft(i) = cf1_in(i)
@@ -190,10 +192,11 @@ contains
          do j = 1,3
             sto_budg(j,i) = sto_budg_in(j,i)
          enddo
-
       enddo
 
-      w = w1 + w2          ! soil water mm
+      ! find the number of grasses
+
+      w = w1 + w2      ! soil water mm
       soil_temp = ts   ! soil temp °C
       soil_sat = wmax_in
 
@@ -203,15 +206,30 @@ contains
       nlen = sum(run)    ! New length for the arrays in the main loop
       allocate(lp(nlen))
       allocate(ocp_coeffs(nlen))
+      allocate(idx_grasses(nlen))
+      allocate(idx_pdia(nlen))
+      allocate(ar_fix_hr(nlen))
+
+      idx_grasses(:) = 1.0D0
+      idx_pdia(:) = 1.0D0
 
       ! Get only living PLSs
       counter = 1
       do p = 1,npls
          if(run(p).eq. 1) then
-              lp(counter) = p
-              ocp_coeffs(counter) = ocpavg(p)
-              counter = counter + 1
+            lp(counter) = p
+            ocp_coeffs(counter) = ocpavg(p)
+            counter = counter + 1
          endif
+      enddo
+
+      ! Identify grasses
+      do p = 1, nlen
+         if (awood_aux(lp(p)) .le. 0.0D0) idx_grasses(p) = 0.0D0
+      enddo
+      ! Identify Nfixers
+      do p = 1, nlen
+         if (pdia_aux(lp(p)) .le. 0.0D0) idx_pdia(p) = 0.0D0
       enddo
 
       allocate(evap(nlen))
@@ -320,15 +338,16 @@ contains
             &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p), ar_aux)
 
          ! Estimate growth of storage C pool
+         ar_fix_hr(p) = ar_aux
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
          if (isnan(growth_stoc)) growth_stoc = 0.0D0
-         if (growth_stoc .gt. 0.1D2) growth_stoc = 0.0D0
+         if (growth_stoc .gt. 0.1D3) growth_stoc = 0.0D0
          storage_out_bdgt(:,p) = day_storage(:,p)
 
          ! Calculate storage GROWTH respiration
          sr = 0.25D0 * growth_stoc ! g m-2
          if(sr .gt. 1.0D2) sr = 0.0D0
-         ar(p) = ar(p) + real(((sr + mr_sto + ar_aux) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
+         ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
 
          growth_stoc = 0.0D0
@@ -439,9 +458,9 @@ contains
       c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. isnan(npp2pay))
 
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
-      cp(2) = sum(ca1_int * ocp_coeffs, mask= .not. isnan(ca1_int))
+      cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
-
+      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ca1_int))
       ! FILTER BAD VALUES
       do p = 1,2
          do i = 1, nlen

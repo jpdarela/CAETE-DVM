@@ -77,6 +77,8 @@ with open(AMB, 'r') as fh:
     co2 = fh.readlines()
     co2.pop(0)
 
+EXP = ['AMB_LD', 'AMB_HD', 'ELE_LD', 'ELE_HD']
+
 # PLS DATA:
 NPLS = 1000
 
@@ -289,7 +291,8 @@ def pk2csv1(grd: mod.grd, spin) -> pd.DataFrame:
                    'cawood': 'kg m-2',
                    'cfroot': 'kg m-2',
                    'evapm': 'kg m-2 day-1',
-                   'lai': 'm2 m-2'}
+                   'lai': 'm2 m-2',
+                   'rcm': 'mol m-2 s-1'}
     # return spin_dt
     cols = CT1.VariableCode.__array__()
     units_out = CT1.Unit.__array__()
@@ -308,15 +311,16 @@ def pk2csv1(grd: mod.grd, spin) -> pd.DataFrame:
         elif var is None:
             series.append(pd.Series(np.zeros(5843,) - 9999.0, index=idxT1))
         elif var == 'rcm':
-            # TODO
-            series.append(pd.Series(np.zeros(5843,) - 9999.0, index=idxT1))
+            tmp = ((np.zeros(5843,) + 1.0) / spin_dt[var]) / 0.0224
+            series.append(pd.Series(tmp, index=idxT1))
         else:
             data = Units.conform(spin_dt[var], Units(
                 caete_units[var]), Units(units_out[i]))
             s1 = pd.Series(np.array(data), index=idxT1)
             series.append(s1)
-
-    return pd.DataFrame(dict(list(zip(cols, series))))
+    dt1 = pd.DataFrame(dict(list(zip(cols, series))))
+    dt1.to_csv(f"AmzFACE_D_CAETE_{EXP[0]}_spin{spin}.csv", index=False)
+    return dt1
 
     # return code_table1
 

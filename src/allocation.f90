@@ -273,7 +273,7 @@ module alloc
       pdia = dt(16)
       amp = dt(17)
 
-      ctonfix= 0.0D0
+      ctonfix = 0.0D0
       ! If there is not nutrients or NPP then no allocation process
       ! only deallocation label 294
       if(nmin .le. 0.0 .and. storage(2) .le. 0.0D0) then
@@ -327,7 +327,7 @@ module alloc
       npp_pot = (real(npp,kind=r_8) * (1000.0D0 / 365.242D0)) ! Transform Kg m-2 Year-1 to g m-2 day
       daily_growth = 0.0D0
       npp_to_fixer = npp_pot * pdia
-      ctonfix = npp_to_fixer
+      ctonfix =  npp_to_fixer ! Sum Up in HR
       npp_pot = npp_pot - npp_to_fixer - npp_costs
 
       ! START STORAGE_OUT_alloc
