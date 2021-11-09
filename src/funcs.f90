@@ -910,7 +910,7 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-      real(r_8), parameter :: a1 = 28.0D0, a2 = 0.06D0
+      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
       !   Autothrophic respiration
       !   ========================
       !   Maintenance respiration (kgC/m2/yr) (based in Ryan 1991)
@@ -951,7 +951,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: a1 = 28.0D0, a2 = 0.07D0
+      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
 
     !   Autothrophic respiration
     !   ========================

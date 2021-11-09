@@ -242,8 +242,13 @@ def find_coord(N, W):
     lon = np.arange(-179.75, 180, 0.5)
     lat = np.arange(89.75, -90, -0.5)
 
-    while Yc < lat[Yind]:
-        Yind += 1
+    if True:
+        while Yc < lat[Yind]:
+            Yind += 1
+    # else:
+    #     Yind += lat.size // 2
+    #     while Yc > lat[Yind]:
+    #         Yind += 1
     if Xc <= 0:
         while Xc > lon[Xind]:
             Xind += 1
@@ -1432,8 +1437,14 @@ class plot(grd):
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-            0.5, self.pls_table)
+        a0 = np.zeros(shape=(3, gp.npls))
+        a0[0, :] = 0.5
+        a0[1, :] = 0.5
+        a0[2, :] = 5
+        self.vp_cleaf = a0[0, :]
+        self.vp_croot = a0[1, :]
+        self.vp_cwood = a0[2, :]
+
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
         self.vp_lsid = np.where(a > 0.0)[0]

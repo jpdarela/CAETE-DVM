@@ -1,6 +1,6 @@
 import numpy as np
-# import _pickle as pkl
-# import bz2
+import _pickle as pkl
+import bz2
 import pandas as pd
 import cftime as cf
 import caete as mod
@@ -38,6 +38,8 @@ soil_texture = np.load("../input/hydra/soil_text.npy")
 
 hsoil = (theta_sat, psi_sat, soil_texture)
 
+with bz2.BZ2File("../k34/input_data_185-240.pbz2", mode='rb') as fh:
+    dth = pkl.load(fh)
 
 # input climatic + N/P init day
 sdata = {'hurs': dt['RH'].__array__(dtype=np.float64),
@@ -45,11 +47,11 @@ sdata = {'hurs': dt['RH'].__array__(dtype=np.float64),
          'ps': dt['Press'].__array__(dtype=np.float64) * 100.0,
          'pr': dt['Precip'].__array__(dtype=np.float64) * 1.15741e-05,
          'rsds': dt['Rad'].__array__(dtype=np.float64),
-         'tn': 1248.81,
-         'tp': 66.13,
-         'ap': 2.63,
-         'ip': 9.11,
-         'op': 7.05}
+         'tn': dth['tn'],
+         'tp': dth['tp'],
+         'ap': dth['ap'],
+         'ip': dth['ip'],
+         'op': dth['op']}
 
 # TIME
 tu = 'days since 1860-01-01 00:00:00'
@@ -80,7 +82,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_HD', 'ELE_LD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 2000
+NPLS = 3000
 
 
 def apply_spin(grid):

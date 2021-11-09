@@ -62,13 +62,14 @@ def check_viability(trait_values, wood):
     """
 
     assert wood is not None
-    rtur = np.array(model.spinup3(gp.cmin, trait_values))
+    lim = 0.1
+    rtur = np.array(model.spinup3(lim, trait_values))
     if wood:
-        if rtur[0] <= gp.cmin and rtur[1] <= gp.cmin and rtur[2] <= gp.cmin:
+        if rtur[0] <= lim and rtur[1] <= lim and rtur[2] <= lim:
             return False
         return True
     else:
-        if rtur[0] <= gp.cmin and rtur[1] <= gp.cmin:
+        if rtur[0] <= lim and rtur[1] <= lim:
             return False
         return True
 
@@ -133,26 +134,14 @@ def turnover_combinations(verbose=False):
     return a1, a2
 
 
-def calc_ratios(NPLS, pool='leaf'):
-    N0 = 0.0001
+def calc_ratios1(NPLS):
+    N0 = 0.005
     NM = 0.04
-    P0 = 0.02e-5
-    PM = 0.004
+    P0 = 0.0005
+    PM = 0.0035
 
-    if pool == 'wood':
-        N0 = N0 / 150.0
-        NM = NM / 150.0
-        P0 = P0 / 150.0
-        PM = PM / 150.0
-
-    if pool == 'root':
-        N0 = N0 / 2.0
-        NM = NM / 2.0
-        P0 = P0 / 2.0
-        PM = PM / 2.0
-
-    if os.path.exists(Path("./NP.npy")):
-        x1 = np.load("./NP.npy")
+    if os.path.exists(Path("./NP1.npy")):
+        x1 = np.load("./NP1.npy")
     else:
         pool_n2c = np.linspace(N0, NM, 5000)
         pool_p2c = np.linspace(P0, PM, 5000)
@@ -161,7 +150,29 @@ def calc_ratios(NPLS, pool='leaf'):
             (a / b) >= 1.5) and ((a / b) <= 60.0)]
         assert len(x) > 0, "zero len"
         x1 = np.array(x)
-        np.save("./NP.npy", x1)
+        np.save("./NP1.npy", x1)
+    idx = np.random.randint(0, x1.shape[0], size=NPLS)
+    sampleNP = x1[idx, :]
+    return sampleNP
+
+
+def calc_ratios2(NPLS):
+    N0 = 0.003
+    NM = 0.01
+    P0 = 5.12e-5
+    PM = 0.0035
+
+    if os.path.exists(Path("./NP2.npy")):
+        x1 = np.load("./NP2.npy")
+    else:
+        pool_n2c = np.linspace(N0, NM, 5000)
+        pool_p2c = np.linspace(P0, PM, 5000)
+
+        x = [[a, b] for a in pool_n2c for b in pool_p2c if (
+            (a / b) >= 4) and ((a / b) <= 180.0)]
+        assert len(x) > 0, "zero len"
+        x1 = np.array(x)
+        np.save("./NP2.npy", x1)
     idx = np.random.randint(0, x1.shape[0], size=NPLS)
     sampleNP = x1[idx, :]
     return sampleNP
@@ -239,11 +250,11 @@ def table_gen(NPLS, fpath=None):
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
 
-    leaf = calc_ratios(NPLS)
+    leaf = calc_ratios1(NPLS)
     leaf_n2c = leaf[:, 0]
     leaf_p2c = leaf[:, 1]
 
-    wood = calc_ratios(NPLS, 'wood')
+    wood = calc_ratios2(NPLS)
     awood_n2c = wood[:, 0]
     awood_p2c = wood[:, 1]
 
@@ -252,7 +263,7 @@ def table_gen(NPLS, fpath=None):
     np.place(awood_n2c, test, 0.0)
     np.place(awood_p2c, test, 0.0)
 
-    root = calc_ratios(NPLS)
+    root = calc_ratios1(NPLS)
     froot_n2c = root[:, 0]
     froot_p2c = root[:, 1]
 
