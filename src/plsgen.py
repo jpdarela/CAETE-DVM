@@ -20,7 +20,6 @@ Copyright 2017-2018 LabTerra
 
 import os
 import sys
-from random import shuffle
 from math import ceil
 import csv
 from pathlib import Path
@@ -65,11 +64,11 @@ def check_viability(trait_values, wood):
     assert wood is not None
     rtur = np.array(model.spinup3(gp.cmin, trait_values))
     if wood:
-        if rtur[0] <= gp.cmin or rtur[1] <= gp.cmin or rtur[2] <= gp.cmin:
+        if rtur[0] <= gp.cmin and rtur[1] <= gp.cmin and rtur[2] <= gp.cmin:
             return False
         return True
     else:
-        if rtur[0] <= gp.cmin or rtur[1] <= gp.cmin:
+        if rtur[0] <= gp.cmin and rtur[1] <= gp.cmin:
             return False
         return True
 
@@ -134,19 +133,38 @@ def turnover_combinations(verbose=False):
     return a1, a2
 
 
-def calc_ratios():
+def calc_ratios(NPLS, pool='leaf'):
+    N0 = 0.0001
+    NM = 0.04
+    P0 = 0.02e-5
+    PM = 0.004
+
+    if pool == 'wood':
+        N0 = N0 / 150.0
+        NM = NM / 150.0
+        P0 = P0 / 150.0
+        PM = PM / 150.0
+
+    if pool == 'root':
+        N0 = N0 / 2.0
+        NM = NM / 2.0
+        P0 = P0 / 2.0
+        PM = PM / 2.0
+
     if os.path.exists(Path("./NP.npy")):
         x1 = np.load("./NP.npy")
     else:
-        pool_n2c = np.linspace(0.0001, 0.09, 5000)
-        pool_p2c = np.linspace(0.02e-5, 0.01, 5000)
+        pool_n2c = np.linspace(N0, NM, 5000)
+        pool_p2c = np.linspace(P0, PM, 5000)
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 1.5) and ((a / b) <= 40.0)]
+            (a / b) >= 1.5) and ((a / b) <= 60.0)]
         assert len(x) > 0, "zero len"
         x1 = np.array(x)
         np.save("./NP.npy", x1)
-    return x1
+    idx = np.random.randint(0, x1.shape[0], size=NPLS)
+    sampleNP = x1[idx, :]
+    return sampleNP
 
 
 def table_gen(NPLS, fpath=None):
@@ -157,7 +175,7 @@ def table_gen(NPLS, fpath=None):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 30000
+    r_ceil = 3000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
@@ -208,7 +226,7 @@ def table_gen(NPLS, fpath=None):
     # # # COMBINATIONS
     # # # Random samples from  distributions (g1, tleaf ...)
     # # # Random variables
-    g1 = np.random.uniform(1, 12.0, NPLS)
+    g1 = np.random.uniform(0.1, 19.0, NPLS)
     # g1 = vec_ranging(np.random.beta(1.2, 2, NPLS), 1.0, 15.0) # dimensionles
     # # vcmax = np.random.uniform(3e-5, 100e-5,N) # molCO2 m-2 s-1
     resorption = np.random.uniform(0.2, 0.7, NPLS)
@@ -221,25 +239,22 @@ def table_gen(NPLS, fpath=None):
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
 
-    leaf = calc_ratios()
-    sample1 = np.random.random_integers(0, leaf.shape[0], size=NPLS)
-    leaf_n2c = leaf[sample1, 0]
-    leaf_p2c = leaf[sample1, 1]
+    leaf = calc_ratios(NPLS)
+    leaf_n2c = leaf[:, 0]
+    leaf_p2c = leaf[:, 1]
 
-    wood = calc_ratios()
-    sample1 = np.random.random_integers(0, leaf.shape[0], size=NPLS)
-    awood_n2c = wood[sample1, 0] / 25.0
-    awood_p2c = wood[sample1, 1] / 25.0
+    wood = calc_ratios(NPLS, 'wood')
+    awood_n2c = wood[:, 0]
+    awood_p2c = wood[:, 1]
 
     test = alloc[:, 4] == 0.0
 
     np.place(awood_n2c, test, 0.0)
     np.place(awood_p2c, test, 0.0)
 
-    root = calc_ratios()
-    sample1 = np.random.random_integers(0, leaf.shape[0], size=NPLS)
-    froot_n2c = root[sample1, 0]
-    froot_p2c = root[sample1, 1]
+    root = calc_ratios(NPLS)
+    froot_n2c = root[:, 0]
+    froot_p2c = root[:, 1]
 
     # new traits
     pdia = np.random.uniform(0.01, 0.1, NPLS)

@@ -460,7 +460,7 @@ contains
       cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
       cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
-      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ca1_int))
+      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ar_fix_hr))
       ! FILTER BAD VALUES
       do p = 1,2
          do i = 1, nlen

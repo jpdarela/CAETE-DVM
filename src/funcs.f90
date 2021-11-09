@@ -910,7 +910,7 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-
+      real(r_8), parameter :: a1 = 28.0D0, a2 = 0.06D0
       !   Autothrophic respiration
       !   ========================
       !   Maintenance respiration (kgC/m2/yr) (based in Ryan 1991)
@@ -919,14 +919,14 @@ contains
       ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1D3)) * 27.0D0 * dexp(0.07D0*temp))
+         rms64 = ((n2cw * (csa * 1D3)) * a1 * dexp(a2 * temp))
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1D3)) * 27.0D0 * dexp(0.07D0*temp))
+      rml64 = ((n2cl * (cl1_mr * 1D3)) * a1 * dexp(a2 * temp))
 
-      rmf64 = ((n2cf * (cf1_mr * 1D3)) * 27.0D0 * dexp(0.07D0*ts))
+      rmf64 = ((n2cf * (cf1_mr * 1D3)) * a1 * dexp(a2 * ts))
 
       rm64 = (rml64 + rmf64 + rms64) * 1D-3
 
@@ -951,6 +951,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
+      real(r_8), parameter :: a1 = 28.0D0, a2 = 0.07D0
 
     !   Autothrophic respiration
     !   ========================
@@ -970,7 +971,7 @@ contains
       ston = (ston * 1.0D-2)/stoc
     endif
 
-    rm = ((ston * stoc) * 27.0D0 * dexp(0.07D0*temp))
+    rm = ((ston * stoc) * a1 * dexp(a2 * temp))
 
     if (rm .lt. 0) then
        rm = 0.0

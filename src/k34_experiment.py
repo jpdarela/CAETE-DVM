@@ -10,7 +10,7 @@ from cfunits import Units
 
 from sklearn.cluster import KMeans
 
-idxT = pd.date_range("2000-01-02", "2016-01-01", freq='D', closed=None)
+idxT = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
 
 dt = pd.read_csv("../k34/MetData_AmzFACE2000_2015_CAETE.csv")
 dt.index = idxT
@@ -44,7 +44,7 @@ sdata = {'hurs': dt['RH'].__array__(dtype=np.float64),
          'tas': dt['Temp'].__array__(dtype=np.float64) + 273.15,
          'ps': dt['Press'].__array__(dtype=np.float64) * 100.0,
          'pr': dt['Precip'].__array__(dtype=np.float64) * 1.15741e-05,
-         'rsds': dt['RH'].__array__(dtype=np.float64),
+         'rsds': dt['Rad'].__array__(dtype=np.float64),
          'tn': 1248.81,
          'tp': 66.13,
          'ap': 2.63,
@@ -80,7 +80,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_HD', 'ELE_LD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 1000
+NPLS = 2000
 
 
 def apply_spin(grid):
@@ -102,6 +102,7 @@ def make_table_HD():
                            pls_table=pls_table, tsoil=tsoil,
                            ssoil=ssoil, hsoil=hsoil)
         k34_plot = apply_spin(k34_plot)
+
         k34_plot.run_caete('20000102', '20151231', 10, save=True)
         area = get_var(k34_plot, 'area', (9, 10))
         lpls = area[:, -1] > 0.0
@@ -225,16 +226,18 @@ def run_MD():
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
     # The binary files for each repetttion is stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000102', '20151231', spinup=30,
-                       fix_co2=368.9, save=True)
+    k34_plot.run_caete('20000102', '20151231', spinup=20,
+                       fix_co2='2000', save=True, nutri_cycle=False)
+
+    k34_plot.run_caete('20000102', '20151231', spinup=10,
+                       fix_co2='2000', save=True)
 
     # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
 
     #
-    k34_plot.run_caete('20000102', '20151231', spinup=30,
+    k34_plot.run_caete('20000102', '20151231', spinup=10,
                        fix_co2="2020", save=True)
-    return k34_plot
     return k34_plot
 
 
@@ -270,7 +273,7 @@ def run_LD():
     return k34_plot
 
 
-def pk2csv1(grd: mod.grd, spin) -> pd.DataFrame:
+def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
     import joblib
     if spin < 10:
         name = f'spin0{spin}.pkz'
