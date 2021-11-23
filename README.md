@@ -13,7 +13,7 @@ General Dependencies
 - make (for building automation)
 - gfortran
 - gdb (optional for debug)
-
+- python-is-python3 (make sure that you can call your python3 as python or change the Makefile - line 20)
 Python Dependencies
 
 - pyenv (optional)
