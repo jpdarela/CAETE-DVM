@@ -173,6 +173,9 @@ contains
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat, ar_aux
       real(r_8), dimension(:), allocatable :: idx_grasses, idx_pdia
+      
+      
+      
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -562,7 +565,11 @@ contains
       deallocate(cf2)
       deallocate(ca2)
       deallocate(day_storage)
+      DEALLOCATE(idx_grasses)
+      DEALLOCATE(idx_pdia)
+      DEALLOCATE(ar_fix_hr)
 
+      
    end subroutine daily_budget
 
 end module budget

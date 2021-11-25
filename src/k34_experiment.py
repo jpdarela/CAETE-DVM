@@ -1,3 +1,4 @@
+import cfunits
 import numpy as np
 import _pickle as pkl
 import bz2
@@ -6,7 +7,7 @@ import cftime as cf
 import caete as mod
 import plsgen as pls
 from aux_plot import get_var
-from cfunits import Units
+
 
 from sklearn.cluster import KMeans
 
@@ -82,7 +83,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_HD', 'ELE_LD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 3000
+NPLS = 1000
 
 
 def apply_spin(grid):
@@ -98,26 +99,36 @@ def make_table_HD():
     This may take some time"""
     def lplss():
         pls_table = pls.table_gen(NPLS)
+        print("FST")
         k34_plot = mod.plot(-2.61, -60.20, 'k34-CUI')
 
         k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                            pls_table=pls_table, tsoil=tsoil,
                            ssoil=ssoil, hsoil=hsoil)
+        
         k34_plot = apply_spin(k34_plot)
-
-        k34_plot.run_caete('20000102', '20151231', 10, save=True)
-        area = get_var(k34_plot, 'area', (9, 10))
+        
+        k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
+        k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
+        
+        area = get_var(k34_plot, 'area', (19, 20))
         lpls = area[:, -1] > 0.0
         arr1 = k34_plot.pls_table[:, lpls]
+        print(f"INIT SUCC EV UN: {lpls.sum()}")
         while True:
+            print("REPEAT ...")
+            print(f"ARR SHP: {arr1.shape}")
             pls_table = pls.table_gen(NPLS)
             k34_plot = mod.plot(-2.61, -60.20, 'k34-CUI')
             k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                                pls_table=pls_table, tsoil=tsoil,
                                ssoil=ssoil, hsoil=hsoil)
             k34_plot = apply_spin(k34_plot)
-            k34_plot.run_caete('20000102', '20151231', 10, save=True)
-            area = get_var(k34_plot, 'area', (9, 10))
+            print("RUNNING")
+            k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
+            k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
+            
+            area = get_var(k34_plot, 'area', (19, 20))
             lpls = area[:, -1] > 0.0
             lpls_arr = k34_plot.pls_table[:, lpls]
             arr1 = np.concatenate((arr1, lpls_arr), axis=1)
@@ -181,12 +192,10 @@ def make_table_LD():
     np.save("pls_attrs_LD.npy", pls_attrs_LD)
 
 
-def run_HD():
-    # Open HD traits table
-    pls_table = np.load("./pls_attrs_HD.npy")
+def run_experiment(pls_table):
 
     # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-HD')
+    k34_plot = mod.plot(-2.61, -60.20, 'k34-XD')
 
     # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
@@ -199,78 +208,17 @@ def run_HD():
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
     # The binary files for each repetttion is stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000102', '20151231', spinup=30,
-                       fix_co2=368.9, save=True)
-
-    # Run the year of the experiment! the CO2 increases are generated here
-    k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
-
-    #
-    k34_plot.run_caete('20000102', '20151231', spinup=30,
-                       fix_co2="2020", save=True)
-    return k34_plot
-
-
-def run_MD():
-    pls_table = pls.table_gen(NPLS)
-
-    # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-MD')
-
-    # Fill the plot object with input data
-    k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
-                       pls_table=pls_table, tsoil=tsoil,
-                       ssoil=ssoil, hsoil=hsoil)
-
-    # Apply a numerical spinup in the soil pools of resources
-    k34_plot = apply_spin(k34_plot)
-
-    # Run the first sequence of repetitions with co2 fixed at 2000 year values
-    # The binary files for each repetttion is stored as spinX.pkz elsewhere
-    # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000102', '20151231', spinup=20,
+    k34_plot.run_caete('20000101', '20151231', spinup=20,
                        fix_co2='2000', save=True, nutri_cycle=False)
 
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
+    k34_plot.run_caete('20000101', '20151231', spinup=10,
                        fix_co2='2000', save=True)
 
     # Run the year of the experiment! the CO2 increases are generated here
-    k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
+    k34_plot.run_caete('20000101', '20151231', spinup=1, save=True)
 
     #
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
-                       fix_co2="2020", save=True)
-    return k34_plot
-
-
-def run_LD():
-    pls_table = np.load("./pls_attrs_LD.npy")
-
-    # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-LD')
-
-    # Fill the plot object with input data
-    k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
-                       pls_table=pls_table, tsoil=tsoil,
-                       ssoil=ssoil, hsoil=hsoil)
-
-    # Apply a numerical spinup in the soil pools of resources
-    k34_plot = apply_spin(k34_plot)
-
-    # Run the first sequence of repetitions with co2 fixed at 2000 year values
-    # The binary files for each repetttion is stored as spinX.pkz elsewhere
-    # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000102', '20151231', spinup=20,
-                       fix_co2='2000', save=True)
-
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
-                       fix_co2='2000', save=True)
-
-    # Run the year of the experiment! the CO2 increases are generated here
-    k34_plot.run_caete('20000102', '20151231', spinup=1, save=True)
-
-    #
-    k34_plot.run_caete('20000102', '20151231', spinup=10,
+    k34_plot.run_caete('20000101', '20151231', spinup=10,
                        fix_co2="2020", save=True)
     return k34_plot
 
@@ -302,7 +250,7 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
     cols = CT1.VariableCode.__array__()
     units_out = CT1.Unit.__array__()
     series = []
-    idxT1 = pd.date_range("2000-01-02", "2015-12-31", freq='D', closed=None)
+    idxT1 = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
     idx = idxT1.to_pydatetime()
     for i, var in enumerate(MICV):
         if var == 'year':
@@ -314,13 +262,13 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
             s1 = pd.Series(np.array(data), index=idxT1)
             series.append(s1)
         elif var is None:
-            series.append(pd.Series(np.zeros(5843,) - 9999.0, index=idxT1))
+            series.append(pd.Series(np.zeros(idxT1.size,) - 9999.0, index=idxT1))
         elif var == 'rcm':
-            tmp = ((np.zeros(5843,) + 1.0) / spin_dt[var]) / 0.0224
+            tmp = ((np.zeros(idxT1.size,) + 1.0) / spin_dt[var]) / 0.0224
             series.append(pd.Series(tmp, index=idxT1))
         else:
-            data = Units.conform(spin_dt[var], Units(
-                caete_units[var]), Units(units_out[i]))
+            data = cfunits.Units.conform(spin_dt[var], cfunits.Units(
+                caete_units[var]), cfunits.Units(units_out[i]))
             s1 = pd.Series(np.array(data), index=idxT1)
             series.append(s1)
     dt1 = pd.DataFrame(dict(list(zip(cols, series))))
@@ -335,9 +283,15 @@ if __name__ == "__main__":
     # make_table_HD() ## Run just one time
     # make_table_LD()  # Run just one time
 
-    # hd = run_HD()
-    # md = run_MD()
 
-    # Need to compile the fortrna code do 4 PLSs
-    # ld = run_LD()
-    # sd = pk2csv1()
+    # # LOW FD
+    # pls_table = np.load("./pls_attrs_LD.npy")
+    # hd = run_experiment(pls_table)
+
+    # # INTERMEDIATE FD
+    # pls_table = pls.table_gen(NPLS)
+    # hd = run_experiment(pls_table)
+        
+    # Open HIGH FD traits table
+    # pls_table = np.load("./pls_attrs_HD.npy")
+    # hd = run_experiment(pls_table)
