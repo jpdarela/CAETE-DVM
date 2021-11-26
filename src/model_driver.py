@@ -270,13 +270,13 @@ def apply_spin(grid):
 
 
 def apply_fun(grid):
-    grid.run_caete('19790101', '19791231', spinup=2,
-                   fix_co2='1983', save=False)
+    grid.run_caete('19790101', '19791231', spinup=10,
+                   fix_co2='1983', save=False, nutri_cycle=False)
     return grid
 
 
 def apply_fun0(grid):
-    grid.run_caete('19790101', '19891231', spinup=35,
+    grid.run_caete('19790101', '19891231', spinup=15,
                    fix_co2='1983', save=False)
     return grid
 

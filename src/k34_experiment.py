@@ -284,7 +284,7 @@ if __name__ == "__main__":
     # make_table_LD()  # Run just one time
 
 
-    # # LOW FD
+    # # LOW FD  # RECOMPILE WITH NPLS=4
     # pls_table = np.load("./pls_attrs_LD.npy")
     # hd = run_experiment(pls_table)
 

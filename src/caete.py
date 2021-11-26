@@ -659,8 +659,12 @@ class grd:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-            1.0, self.pls_table)
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 1.0
+        self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
+        # self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
+        #     1.0, self.pls_table)
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
         self.vp_lsid = np.where(a > 0.0)[0]
@@ -1219,7 +1223,7 @@ class grd:
         gc.collect()
         return None
 
-    def bdg_spinup(self, start_date='19010101', end_date='19030101'):
+    def bdg_spinup(self, start_date, end_date):
         """SPINUP SOIL POOLS - generate soil OM and Organic nutrients inputs for soil spinup
         - Side effect - Start soil water pools pools """
 
@@ -1345,7 +1349,7 @@ class grd:
     def sdc_spinup(self, water, ll, cwd, rl, lnc):
         """SOIL POOLS SPINUP"""
 
-        for x in range(100000):
+        for x in range(3000):
 
             s_out = soil_dec.carbon3(self.soil_temp, water / self.wmax_mm, ll, cwd, rl, lnc,
                                      self.sp_csoil, self.sp_snc)
@@ -1367,9 +1371,12 @@ class plot(grd):
 
     def init_plot(self, sdata, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN With PLOT OBSERVED DATA
-            input_fpath:(str or pathlib.Path) path to Files with climate and soil data
+            sdata : python dict with the proper structure - see the input files e.g. CAETE-DVM/input/central/input_data_175-235.pbz2
+            stime_i:  python dict with the proper structure - see the input files e.g. CAETE-DVM/input/central/ISIMIP_HISTORICAL_METADATA.pbz2
+            These dicts are build upon .csv climatic data in the file CAETE-DVM/src/k34_experiment.py where you can find an application of the plot class 
             co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
+            tsoil, ssoil, hsoil: numpy arrays with soil parameters see the file CAETE-DVM/src/k34_experiment.py
         """
 
         assert self.filled == False, "already done"
