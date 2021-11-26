@@ -1313,7 +1313,7 @@ contains
    !====================================================================
    !====================================================================
 
-   subroutine pls_allometry (dt, cawood1, nind, height, diameter,&
+   subroutine pls_allometry (dt, cawood1,awood, nind, height, diameter,&
       &crown_area)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
 
@@ -1324,10 +1324,10 @@ contains
       integer(i_4),parameter :: npft = npls 
       integer(i_4) :: p
       real(r_8),dimension(ntraits, npls),intent(in) :: dt
-      real(r_8),dimension(npft),intent(in) :: cawood1
+      real(r_8),dimension(npft),intent(in) :: cawood1, awood
       real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
       integer(i_4),dimension(npft),intent(out) :: nind
-      real(r_8),dimension(npft) :: cawood, dwood, awood 
+      real(r_8),dimension(npft) :: cawood, dwood
 
       
       ! ============================

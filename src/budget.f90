@@ -227,7 +227,7 @@ contains
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
 
-      call pls_allometry(dt, ca1_pft, nind_aux, height_aux, diameter_aux,&
+      call pls_allometry(dt, ca1_pft,awood_aux, nind_aux, height_aux, diameter_aux,&
       &                   crown_aux)
 
       max_height = maxval(height_aux(:))
