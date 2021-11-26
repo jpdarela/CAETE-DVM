@@ -509,6 +509,7 @@ contains
       integer(i_4) :: last_with_pls
       real(r_8) :: llight
 
+
       type :: layer_array
          real(r_8) :: sum_height
          integer(i_4) :: num_height !!corresponds to the number of layers according max height of PLS.
@@ -1211,7 +1212,7 @@ contains
       real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs
       logical(kind=l_1),dimension(npft),intent(out) :: ocp_wood
       integer(kind=i_4),dimension(npft),intent(out) :: run_pls
-      real(kind=r_8), dimension(npls), intent(out) :: c_to_soil ! NOT IMPLEMENTED IN BUDGET
+      real(kind=r_8), dimension(npls), intent(out) :: c_to_soil !NOT IMPLEMENTED IN BUDGET
       logical(kind=l_1),dimension(npft) :: is_living
       real(kind=r_8),dimension(npft) :: cleaf, cawood, cfroot
       real(kind=r_8),dimension(npft) :: total_biomass_pft,total_w_pft
@@ -1232,7 +1233,6 @@ contains
             cawood(p) = 0.0D0
          endif
       enddo
-
 
       do p = 1,npft
          total_w_pft(p) = 0.0D0

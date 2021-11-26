@@ -132,7 +132,7 @@ def neighbours_index(pos, matrix):
 def catch_out_budget(out):
     lst = ["evavg", "epavg", "phavg", "aravg", "nppavg",
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
-           "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
+           "cfrootavg_pft", "csapavg_pft", "cheartavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
            "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
            "limitation_status", "uptk_strat", "cp", "c_cost_cwm", "height_pft"]
 
@@ -229,6 +229,8 @@ class grd:
         self.cleaf = None
         self.cawood = None
         self.cfroot = None
+        self.csap = None
+        self.cheart = None
         self.area = None
         self.wue = None
         self.cue = None
@@ -333,6 +335,8 @@ class grd:
         self.cleaf = np.zeros(shape=(n,), order='F')
         self.cawood = np.zeros(shape=(n,), order='F')
         self.cfroot = np.zeros(shape=(n,), order='F')
+        self.csap = np.zeros(shape=(n,), order='F')
+        self.cheart = np.zeros(shape=(n,), order='F')
         self.wue = np.zeros(shape=(n,), order='F')
         self.cue = np.zeros(shape=(n,), order='F')
         self.cdef = np.zeros(shape=(n,), order='F')
@@ -558,6 +562,8 @@ class grd:
         self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
             1.0, self.pls_table)
         self.vp_nind = m.pls_allometry(self.pls_table, self.vp_cwood)
+        self.vp_csap = np.zeros(shape=(npls,), order='F')
+        self.vp_cheart = np.zeros(shape=(npls,), order='F')
 
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
@@ -756,8 +762,8 @@ class grd:
                     cleaf[n] = self.vp_cleaf[c]
                     cwood[n] = self.vp_cwood[c]
                     croot[n] = self.vp_croot[c]
-                    csap[n] = self.vp_csap[c]
-                    cheart[n] = self.vp_cheart[c]
+                    csap[n] = self.vp_csap[c]*0.05
+                    cheart[n] = self.vp_cheart[c]*0.95
                     dcl[n] = self.vp_dcl[c]
                     dca[n] = self.vp_dca[c]
                     dcf[n] = self.vp_dcf[c]
@@ -812,6 +818,8 @@ class grd:
                     self.vp_cleaf=daily_output['cleafavg_pft'][self.vp_lsid]
                     self.vp_cwood=daily_output['cawoodavg_pft'][self.vp_lsid]
                     self.vp_croot=daily_output['cfrootavg_pft'][self.vp_lsid]
+                    self.vp_csap = daily_output['csapavg_pft'][self.vp_lsid]
+                    self.vp_cheart = daily_output['cheartavg_pft'][self.vp_lsid]
                     self.vp_dcl=daily_output['delta_cveg'][0][self.vp_lsid]
                     self.vp_dca=daily_output['delta_cveg'][1][self.vp_lsid]
                     self.vp_dcf=daily_output['delta_cveg'][2][self.vp_lsid]

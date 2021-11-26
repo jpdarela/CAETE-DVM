@@ -43,7 +43,7 @@ contains
         &, ch1_in,dleaf_in, dwood_in&
         &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
-        &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
+        &, cfrootavg_pft, csapavg_pft,cheartavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
         &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, height)
 
@@ -112,6 +112,8 @@ contains
       real(r_8),dimension(npls),intent(out) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
+      real(r_8),dimension(npls),intent(out) :: csapavg_pft
+      real(r_8),dimension(npls),intent(out) :: cheartavg_pft
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
       real(r_8),intent(out) :: height
       real(r_8),dimension(3,npls),intent(out) :: delta_cveg_1
@@ -229,6 +231,9 @@ contains
       &                   crown_aux)
 
       max_height = maxval(height_aux(:))
+      ! 
+      
+      ! print*, ca1_pft
       ! print*, 'max_height', max_height
 
       nlen = sum(run)    ! New length for the arrays in the main loop
