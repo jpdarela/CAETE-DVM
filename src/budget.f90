@@ -80,10 +80,9 @@ contains
       real(r_8),dimension(npls),intent(in) :: cs1_in
       real(r_8),dimension(npls),intent(in) :: ch1_in
       real(r_8),dimension(npls),intent(in) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
-      real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2
-      real(r_8),dimension(npls),intent(in) :: dwood_in  ! k gm-2
-      real(r_8),dimension(npls),intent(in) :: uptk_costs_in ! g m-2
-
+      real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2=======
+      real(r_8),dimension(npls),intent(in) :: dwood_in
+      real(r_8),dimension(npls),intent(in) :: uptk_costs_in
 
       !     ----------------------------OUTPUTS------------------------------
       real(r_4),intent(out) :: epavg          !Maximum evapotranspiration (mm/day)
