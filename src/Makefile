@@ -33,7 +33,7 @@ OVRTFLAG = --overwrite-signature
 FC = gfortran
 FCFLAGS = -g -lgomp -fopenmp -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -lgomp -fopenmp -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
-EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans -cpp
 
 # Sources for compilation in run mode (F2PY)
 sources = global.f90 funcs.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.f90
@@ -43,6 +43,7 @@ objects = global.o funcs.o soil_dec.o cc.o allocation.o productivity.o budget.o 
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
+	$(PYEXEC) ask_npls.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so: $(sources) interface

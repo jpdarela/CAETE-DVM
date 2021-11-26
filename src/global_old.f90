@@ -1,4 +1,3 @@
-
 ! Copyright 2017- LabTerra
 
 !     This program is free software: you can redistribute it and/or modify
@@ -48,7 +47,7 @@ module global_par
    real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
-   integer(i_4),parameter,public :: npls = 3000                  ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: npls = NEV                  ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = 17                 ! Number of traits for each PLS
 
 end module global_par
@@ -88,3 +87,19 @@ module photo_par
         e_vpm = 60592.0D0    ,&          ! Arrhenius eq. constant
         kp25 = 82.0D0                    ! µmol mol-1 (ppm)  MM constant PEPcase at
 end module photo_par
+
+
+
+! module my_type
+!    use types
+!    implicit none
+!    private
+
+!    public :: Books
+!    type Books
+!       integer(i_4) :: title
+!       integer(i_4) :: author
+!       integer(i_4) :: subject
+!    end type Books
+
+! end module my_type
