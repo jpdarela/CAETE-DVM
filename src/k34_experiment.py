@@ -1,7 +1,10 @@
-import cfunits
-import numpy as np
+import os
 import _pickle as pkl
 import bz2
+from pathlib import Path
+
+import cfunits
+import numpy as np
 import pandas as pd
 import cftime as cf
 import caete as mod
@@ -80,7 +83,7 @@ with open(AMB, 'r') as fh:
     co2 = fh.readlines()
     co2.pop(0)
 
-EXP = ['AMB_LD', 'AMB_HD', 'ELE_LD', 'ELE_HD']
+EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
 NPLS = 1000
@@ -105,12 +108,12 @@ def make_table_HD():
         k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                            pls_table=pls_table, tsoil=tsoil,
                            ssoil=ssoil, hsoil=hsoil)
-        
+
         k34_plot = apply_spin(k34_plot)
-        
+
         k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
         k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
-        
+
         area = get_var(k34_plot, 'area', (19, 20))
         lpls = area[:, -1] > 0.0
         arr1 = k34_plot.pls_table[:, lpls]
@@ -127,7 +130,7 @@ def make_table_HD():
             print("RUNNING")
             k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
             k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
-            
+
             area = get_var(k34_plot, 'area', (19, 20))
             lpls = area[:, -1] > 0.0
             lpls_arr = k34_plot.pls_table[:, lpls]
@@ -223,7 +226,7 @@ def run_experiment(pls_table):
     return k34_plot
 
 
-def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
+def get_spin(grd: mod.plot, spin) -> dict:
     import joblib
     if spin < 10:
         name = f'spin0{spin}.pkz'
@@ -231,6 +234,12 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
         name = f'spin{spin}.pkz'
     with open(grd.outputs[name], 'rb') as fh:
         spin_dt = joblib.load(fh)
+    return spin_dt
+
+
+def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
+
+    spin_dt = get_spin(grd, spin)
 
     CT1 = pd.read_csv("../k34/CODE_TABLE1.csv")
 
@@ -278,6 +287,58 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
     # return code_table1
 
 
+def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
+    exp = 1
+    spin_dt = get_spin(grd, spin)
+   
+    CT1 = pd.read_csv("../k34/CODE_TABLE2.csv")
+
+    # READ PLS_TABLE:
+    # pls_attrs = pd.read_csv("./pls_attrs.csv")
+    # traits = list(pls_attrs.columns.__array__()[1:])
+    # caete_traits = [trait.upper() for trait in traits]
+
+    MICV = ['year', 'pid', None, 'ocp', None, None,
+            None, None, None, None, None, None, None,]
+
+    area = spin_dt['area']
+    idx1 = np.where(area[:,0] > 0.0)[0]
+    cols = CT1.VariableCode.__array__()
+    # LOOP over living strategies in the simulation start
+    idxT1 = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
+    fname = f"AmzFACE_D_CAETE_{EXP[exp]}_spin{spin}"
+    os.mkdir(f"./{fname}")
+    
+    for lev in idx1:
+        area_TS = area[lev,:]
+        area_TS = pd.Series(area_TS, index=idxT1)
+        idxT2 = pd.date_range("2000-12-31", "2015-12-31", freq='Y')
+        YEAR = []
+        PID = []
+        OCP = []
+        for i in idxT2:
+            YEAR.append(i.year)
+            PID.append(int(lev))
+            OCP.append(float(area_TS.loc[[i.date()]]))
+        ocp_ts = pd.Series(OCP, index=idxT2)
+        pid_ts = pd.Series(PID, index=idxT2)
+        y_ts = pd.Series(YEAR, index=idxT2)
+        # return ocp_ts, pid_ts, y_ts
+        series = []
+        for i, var in enumerate(MICV):
+            if var == 'year':
+                series.append(y_ts)
+            elif var == 'pid':
+                series.append(pid_ts)
+            elif var is None:
+                series.append(pd.Series(np.zeros(idxT2.size,) - 9999.0, index=idxT2))
+            elif var == 'ocp':
+                series.append(ocp_ts)
+            else:
+                pass
+        dt1 = pd.DataFrame(dict(list(zip(cols, series))))
+        dt1.to_csv(f"./{fname}/AmzFACE_D_CAETE_{EXP[exp]}_spin{spin}_EV_{int(lev)}.csv", index=False)
+
 if __name__ == "__main__":
     pass
     # make_table_HD() ## Run just one time
@@ -289,9 +350,9 @@ if __name__ == "__main__":
     # hd = run_experiment(pls_table)
 
     # # INTERMEDIATE FD
-    # pls_table = pls.table_gen(NPLS)
+    # pls_table = pls.table_gen(NPLS, Path('./'))
     # hd = run_experiment(pls_table)
-        
+
     # Open HIGH FD traits table
     # pls_table = np.load("./pls_attrs_HD.npy")
     # hd = run_experiment(pls_table)
