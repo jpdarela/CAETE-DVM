@@ -428,8 +428,10 @@ module alloc
       internal_p_leaf = internal_p * aleaf
       internal_p_wood = internal_p * awood
       internal_p_root = internal_p * aroot
+      !TODO
 
-      ! Calculate the available nutirents for uptake
+      ! Calculate the available nutrients for uptake
+      !TODO INCLUDE OTHER POOLS IN THE CALCULATION
       leaf_av_n = (avail_n * aleaf) + internal_n_leaf ! g(N)m⁻²
       leaf_av_p = (avail_p * aleaf) + internal_p_leaf ! g(P)m⁻²
 

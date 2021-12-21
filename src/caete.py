@@ -1027,14 +1027,15 @@ class grd:
                     for i in idx:
                         self.sp_snc[i] = 0.0
 
-                # UPDATE ORGANIC POOLS
-                self.sp_organic_n = self.sp_snc[:2].sum()
-                self.sp_sorganic_n = self.sp_snc[2:4].sum()
-                self.sp_organic_p = self.sp_snc[4:6].sum()
-                self.sp_sorganic_p = self.sp_snc[6:].sum()
+
 
                 # IF NUTRICYCLE:
                 if nutri_cycle:
+                    # UPDATE ORGANIC POOLS
+                    self.sp_organic_n = self.sp_snc[:2].sum()
+                    self.sp_sorganic_n = self.sp_snc[2:4].sum()
+                    self.sp_organic_p = self.sp_snc[4:6].sum()
+                    self.sp_sorganic_p = self.sp_snc[6:].sum()
                     self.sp_available_p += soil_out['pmin']
                     self.sp_available_n += soil_out['nmin']
                     # NUTRIENT DINAMICS

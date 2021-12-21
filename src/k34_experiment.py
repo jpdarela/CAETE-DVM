@@ -86,7 +86,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 1000
+NPLS = 2000
 
 
 def apply_spin(grid):
@@ -209,7 +209,7 @@ def run_experiment(pls_table):
     k34_plot = apply_spin(k34_plot)
 
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
-    # The binary files for each repetttion is stored as spinX.pkz elsewhere
+    # The binary files for each repetttion are stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
     k34_plot.run_caete('20000101', '20151231', spinup=20,
                        fix_co2='2000', save=True, nutri_cycle=False)
@@ -240,7 +240,7 @@ def get_spin(grd: mod.plot, spin) -> dict:
 def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
 
     spin_dt = get_spin(grd, spin)
-
+    exp = 1
     CT1 = pd.read_csv("../k34/CODE_TABLE1.csv")
 
     MICV = ['year', 'doy', 'photo', 'npp', 'aresp', 'cleaf',
@@ -281,7 +281,7 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
             s1 = pd.Series(np.array(data), index=idxT1)
             series.append(s1)
     dt1 = pd.DataFrame(dict(list(zip(cols, series))))
-    dt1.to_csv(f"AmzFACE_D_CAETE_{EXP[0]}_spin{spin}.csv", index=False)
+    dt1.to_csv(f"AmzFACE_D_CAETE_{EXP[exp]}_spin{spin}.csv", index=False)
     return dt1
 
     # return code_table1
@@ -349,9 +349,9 @@ if __name__ == "__main__":
     # pls_table = np.load("./pls_attrs_LD.npy")
     # hd = run_experiment(pls_table)
 
-    # # INTERMEDIATE FD
-    # pls_table = pls.table_gen(NPLS, Path('./'))
-    # hd = run_experiment(pls_table)
+    # INTERMEDIATE FD
+    pls_table = pls.table_gen(NPLS, Path('./'))
+    md = run_experiment(pls_table)
 
     # Open HIGH FD traits table
     # pls_table = np.load("./pls_attrs_HD.npy")
