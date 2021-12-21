@@ -1,6 +1,6 @@
 # task5_caete.py
 
-# Generate data raw for the environmental vulnerability index calculation
+# Generate data for the environmental vulnerability index calculation
 
 import os
 import _pickle as pkl
