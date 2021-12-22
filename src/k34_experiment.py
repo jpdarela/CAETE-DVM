@@ -86,7 +86,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 2000
+NPLS = 1000
 
 
 def apply_spin(grid):
@@ -345,13 +345,13 @@ if __name__ == "__main__":
     # make_table_LD()  # Run just one time
 
 
-    # # LOW FD  # RECOMPILE WITH NPLS=4
-    # pls_table = np.load("./pls_attrs_LD.npy")
-    # hd = run_experiment(pls_table)
+    # LOW FD  # RECOMPILE WITH NPLS=4
+    pls_table = np.load("./pls_attrs_LD.npy")
+    ld = run_experiment(pls_table)
 
     # INTERMEDIATE FD
-    pls_table = pls.table_gen(NPLS, Path('./'))
-    md = run_experiment(pls_table)
+    # pls_table = pls.table_gen(NPLS, Path('./'))
+    # md = run_experiment(pls_table)
 
     # Open HIGH FD traits table
     # pls_table = np.load("./pls_attrs_HD.npy")
