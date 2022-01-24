@@ -70,8 +70,8 @@ if not sombrero:
         zone = 'c'
 
 if zone == 'c':
-    y0, y1 = 175, 176 #186 #176
-    x0, x1 = 235, 236 #241 #236
+    y0, y1 = 175, 186 #186 #176
+    x0, x1 = 235, 241 #241 #236
     folder = "central"
 
 elif zone == 's':
@@ -316,10 +316,10 @@ if __name__ == "__main__":
 
     fh.close()
 
-    # print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
-    # print("Saving db - This will take some hours\n")
-    # write_h5(dump_folder)
-    # print("\n\nSaving netCDF4 files")
-    # h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
-    # h52nc(h5path, nc_outputs)
-    # print(time.ctime())
+    print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
+    print("Saving db - This will take some hours\n")
+    write_h5(dump_folder)
+    print("\n\nSaving netCDF4 files")
+    h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
+    h52nc(h5path, nc_outputs)
+    print(time.ctime())

@@ -28,6 +28,7 @@ module photo
    public ::                    &
         gross_ph               ,& ! (f), gross photosynthesis (kgC m-2 y-1)
         leaf_area_index        ,& ! (f), leaf area index(m2 m-2)
+        accumulate_npp         ,& ! (f), accumulate npp (yr)
         f_four                 ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
         spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
         water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
@@ -48,7 +49,8 @@ module photo
         water_ue               ,&
         leap                   ,&
         pls_allometry          ,& ! (s), tree diameter (m), height (m), crown area (m2) and average individual number equations.
-        foliage_projective           
+        foliage_projective     ,&
+        density_ind          
 
 contains
 
@@ -112,6 +114,18 @@ contains
       if(lai .lt. 0.0D0) lai = 0.0D0
 
    end function leaf_area_index
+
+   function accumulate_npp(npp) result (accu_npp)
+      !Function to calculates the accumulation of NPP to be used in SE_module and mortality dynamic
+
+      use types
+
+      real(r_4),intent(in) :: npp
+      real(r_4) :: accu_npp
+
+      accu_npp = accu_npp + npp
+
+   end function accumulate_npp
 
    !=================================================================
    !=================================================================
@@ -1313,7 +1327,7 @@ contains
    !====================================================================
    !====================================================================
 
-   subroutine pls_allometry (dt, cawood1,awood, nind, height, diameter,&
+   subroutine pls_allometry (dt, cawood1,awood, nind, height_var, diameter,&
       &crown_area)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
 
@@ -1325,13 +1339,14 @@ contains
       integer(i_4) :: p
       real(r_8),dimension(ntraits, npls),intent(in) :: dt
       real(r_8),dimension(npft),intent(in) :: cawood1, awood
-      real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
+      real(r_8),dimension(npft),intent(out) :: height_var, diameter, crown_area
       integer(i_4),dimension(npft),intent(out) :: nind
-      real(r_8),dimension(npft) :: cawood, dwood
+      real(r_8),dimension(npft) :: cawood, dwood, height
 
       
       ! ============================
       dwood = dt(18,:)
+      height_var = dt(20,:)
       cawood = cawood1
       ! ============================
     
@@ -1362,27 +1377,55 @@ contains
    end subroutine pls_allometry
 
 
-   subroutine foliage_projective (crown_area, lai, nind, fpc_ind, fpc_grid)
+   subroutine foliage_projective (crown_area, lai, fpc_ind, fpc_grid, dens)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
 
       use types 
       use global_par
 
       real(r_8), intent(in) :: crown_area, lai
-      integer(i_4), intent(in) :: nind
       real(r_8), intent(out) :: fpc_ind, fpc_grid
+      real(r_8), intent(in) :: dens
       real(r_8) :: ca, leaf_index
-      real(r_8) :: fpcgrid_sum
 
       !====================================================
       ca = crown_area !rename inputs - CA in m2
       leaf_index = lai !rename inputs - leaf_area in m2/m2
       !====================================================
 
-      fpc_ind = (1-exp(-0.5*12))
-      fpc_grid = ca*nind*fpc_ind
+      fpc_ind = (1-exp(-0.5*leaf_index))
+      fpc_grid = ca*dens*fpc_ind
 
    end subroutine foliage_projective
+
+   subroutine density_ind (xmin, xmax, dens)
+      !Subroutine to calculate the initial density of individuals.
+      !This is called in caete.py
+      
+      use types
+      use global_par, only: npls
+
+      !parameters
+      integer(i_4) :: p,t
+      integer(i_4), parameter :: ntl=365
+      integer(i_4), intent(in) :: xmin, xmax
+      real(r_8), dimension(npls), intent(out) :: dens
+      real(r_8), dimension(ntl) :: x !internal variable
+
+      x(:) = 0.
+      
+      call random_number(x)
+      do p = 1, npls
+         do t = 1, ntl
+            if (t .eq. 1) then
+               x(t) = xmin+(xmax-xmin)*x(t)
+               dens(p) = x(t)
+            endif
+         enddo
+      enddo
+
+   end subroutine density_ind
+
 
 end module photo
 

@@ -28,7 +28,7 @@ contains
 
   subroutine prod(dt,catm,temp,ts,p0,w,ipar,sla1,rh,emax,cl1_prod,&
        & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,height1,max_height,wmax,ph,ar,&
-       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,e)
+       & nppa,npp_accu,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,e)
 
     use types
     use global_par
@@ -60,6 +60,7 @@ contains
     real(r_8), intent(out) :: laia                 !Autotrophic respiration (kgC/m2/yr)
     real(r_4), intent(out) :: ar                   !Leaf area index (m2 leaf/m2 area)
     real(r_4), intent(out) :: nppa                 !Net primary productivity (kgC/m2/yr)
+    real(r_4), intent(out) :: npp_accu
     real(r_4), intent(out) :: vpd
     real(r_8), intent(out) :: f5                   !Water stress response modifier (unitless)
     real(r_4), intent(out) :: rm                   !autothrophic respiration (kgC/m2/day)
@@ -193,6 +194,9 @@ contains
     else
        c_defcit = 0.0
     endif
+
+    !Variable to calculates the accumulation of NPP
+    npp_accu = accumulate_npp(nppa)
 
   end subroutine prod
 

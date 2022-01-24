@@ -161,7 +161,8 @@ def get_var_metadata(var):
               'pdia': ['CWM- NPP aloated to N fixers', 'fraction_of_npp', 'pdia'],
               'ls': ['Living Plant Life Strategies', 'unitless', 'ls'],
               'dwood': ['Wood Density', 'g/cm-3', 'dwood'],
-              'sla_var': ['Specific Leaf Area (variant)', 'm2/g', 'sla_var']}
+              'sla_var': ['Specific Leaf Area (variant)', 'm2/g', 'sla_var'],
+              'height_var': ['Height of each PLS (variant)', 'm', 'height_var']}
 
     out = {}
     for v in var:
@@ -1003,6 +1004,7 @@ def ccc(table, pls_table, nc_out):
     pdia = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     dwood = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
     sla_var = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
+    height_var = np.zeros(shape=(dm1, 61, 71), dtype=np.float32) - 9999.0
 
     time_index = []
     pls_array = pls_table.read_where("PLS_id >= 0")
@@ -1053,6 +1055,8 @@ def ccc(table, pls_table, nc_out):
                 out['grid_y'], out['grid_x'], out['area_0'], pls_array['dwood'])
             sla_var[i, :, :] = assemble_cwm(
                 out['grid_y'], out['grid_x'], out['area_0'], pls_array['sla_var'])
+            height_var[i, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_0'], pls_array['height_var'])
 
             g1[i + 1, :, :] = assemble_cwm(out['grid_y'],
                                            out['grid_x'], out['area_f'], pls_array['g1'])
@@ -1092,6 +1096,8 @@ def ccc(table, pls_table, nc_out):
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['dwood'])
             sla_var[i + 1, :, :] = assemble_cwm(
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['sla_var'])
+            height_var[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['height_var'])   
         else:
             afdate = str2cf_date(interval[1])
             time_index.append(
@@ -1134,6 +1140,8 @@ def ccc(table, pls_table, nc_out):
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['dwood'])
             sla_var[i + 1, :, :] = assemble_cwm(
                 out['grid_y'], out['grid_x'], out['area_f'], pls_array['sla_var'])
+            height_var[i + 1, :, :] = assemble_cwm(
+                out['grid_y'], out['grid_x'], out['area_f'], pls_array['height_var'])
 
 
     arr = [g1,
@@ -1154,7 +1162,8 @@ def ccc(table, pls_table, nc_out):
            amp,
            pdia,
            dwood,
-           sla_var]
+           sla_var,
+           height_var]
 
     vars = ['g1',
             'resopfrac',
@@ -1174,7 +1183,8 @@ def ccc(table, pls_table, nc_out):
             'amp',
             'pdia',
             'dwood',
-            'sla_var']
+            'sla_var',
+            'height_var']
 
     flt_attrs = get_var_metadata(vars)
     write_snap_output(arr, vars, flt_attrs, time_index, nc_out)

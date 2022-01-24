@@ -40,7 +40,7 @@ contains
 
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
         &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in&
-        &, ch1_in,dleaf_in, dwood_in&
+        &, ch1_in, dens_in,dleaf_in, dwood_in&
         &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
         &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
         &, cfrootavg_pft, csapavg_pft,cheartavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
@@ -79,6 +79,7 @@ contains
       real(r_8),dimension(npls),intent(in) :: ca1_in  !                 cawood
       real(r_8),dimension(npls),intent(in) :: cs1_in
       real(r_8),dimension(npls),intent(in) :: ch1_in
+      real(r_8),dimension(npls),intent(in) :: dens_in
       real(r_8),dimension(npls),intent(in) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2=======
       real(r_8),dimension(npls),intent(in) :: dwood_in
@@ -184,6 +185,8 @@ contains
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
       real(r_8),dimension(:), allocatable :: height_int
+      real(r_4),dimension(:), allocatable :: npp_accu
+      
 
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
@@ -192,8 +195,9 @@ contains
       real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, dwood_aux, sla_aux
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
-      real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux !, fpcind_aux, fpcgrid_aux
+      real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux, fpcind_aux, fpcgrid_aux, dens_aux
       integer(i_4), dimension(npls) :: nind_aux
+      
       real(r_8) :: max_height
       ! real(r_8) :: fpc_sum
       !     START
@@ -206,6 +210,7 @@ contains
          awood_aux(i) = dt(7,i)
          dwood_aux(i) = dt(18,i)
          sla_aux(i) = dt(19,i)
+         height_aux(i) = dt(20,i)
          cl1_pft(i) = cl1_in(i)
          ca1_pft(i) = ca1_in(i)
          cf1_pft(i) = cf1_in(i)
@@ -230,8 +235,12 @@ contains
       &                   crown_aux)
 
       max_height = maxval(height_aux(:))
-      ! 
+
+      ! call foliage_projective (crown_aux, laia, fpcind_aux, fpcgrid_aux, dens_aux)
+      ! print*, 'dens=', dens_aux(:)
+      ! print*, 'fpc_grid', fpcgrid_aux(:)
       
+      ! 
       ! print*, ca1_pft
       ! print*, 'max_height', max_height
 
@@ -285,11 +294,20 @@ contains
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
       allocate(height_int(nlen))
+      allocate(npp_accu(nlen))
 
       !     Maximum evapotranspiration   (emax)
       !     =================================
       emax = evpot2(p0,temp,rh,available_energy(temp))
       soil_temp = ts
+
+      ! !     Create a random density of average-individuals (dens)
+      ! !     =====================================================
+      ! xmin = 1
+      ! xmax = 10
+
+      ! x(:) = 0.0
+      ! call random_number(x)
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================
@@ -309,20 +327,20 @@ contains
 
          call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
-               &, wue(p), c_def(p), vcmax(p), tra(p))
+               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), npp_accu (p), laia(p)&
+               &, f5(p), vpd(p), rm(p), rg(p), rc2(p),wue(p), c_def(p), vcmax(p), tra(p))
 
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 
          height_int(p) = height_aux(ri)
-         ! print*, 'height', height_aux(ri), 'height_int', height_int(p)
+         dens_aux(p) = dens_in(p)
 
-         ! call foliage_projective (crown_aux(p), laia(p), nind_aux(p), fpcind_aux(p), fpcgrid_aux(p))
+         ! print*, 'NPP [do inside] =', nppa(p)
+         ! print*, 'NPP ACUMULO =', npp_accu(p), 'NPP/DIA =', nppa(p), p
 
-         ! fpc_sum = (fpcgrid_aux(p)+fpcgrid_aux(p+1))
-         ! print*, 'fpc_sum', fpc_sum, 'fpcgrid', fpcgrid_aux(p), 'nind', nind_aux(p), p 
+         call foliage_projective (crown_aux(p), laia(p), fpcind_aux(p), fpcgrid_aux(p), dens_aux(p))
+         ! print*, 'FPC =', fpcgrid_aux(p), 'DENSIDADE =', dens_aux(p), p
 
-         ! print*, 'FPC_BUDGET', fpcgrid_aux(p)
 
          ! Check if the carbon deficit can be compensated by stored carbon
          carbon_in_storage = sto_budg(1, ri)
@@ -481,7 +499,7 @@ contains
 
       height = sum(height_int * ocp_coeffs, mask= .not. isnan(height_int))
 
-      ! print*, 'height [output]=', height_pft_1, 'coeff', ocp_coeffs
+      ! print*, 'NPP [output]=', nppavg
 
       ! FILTER BAD VALUES
       do p = 1,2
