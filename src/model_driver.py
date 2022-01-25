@@ -6,7 +6,7 @@
 
 import os
 import sys
-import _pickle as pkl
+import pickle as pkl
 import bz2
 import copy
 import multiprocessing as mp

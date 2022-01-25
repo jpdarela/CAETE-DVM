@@ -185,7 +185,7 @@ contains
       real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
       real(r_8),dimension(:), allocatable :: height_int
-      real(r_4),dimension(:), allocatable :: npp_accu
+      ! real(r_4),dimension(:), allocatable :: npp_accu
       
 
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
@@ -196,10 +196,10 @@ contains
       real(r_8), dimension(3,npls) :: sto_budg
       real(r_8) :: soil_sat
       real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux, fpcind_aux, fpcgrid_aux, dens_aux
-      integer(i_4), dimension(npls) :: nind_aux
-      
       real(r_8) :: max_height
-      ! real(r_8) :: fpc_sum
+
+
+
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -210,7 +210,6 @@ contains
          awood_aux(i) = dt(7,i)
          dwood_aux(i) = dt(18,i)
          sla_aux(i) = dt(19,i)
-         height_aux(i) = dt(20,i)
          cl1_pft(i) = cl1_in(i)
          ca1_pft(i) = ca1_in(i)
          cf1_pft(i) = cf1_in(i)
@@ -231,14 +230,10 @@ contains
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
 
-      call pls_allometry(dt, ca1_pft,awood_aux, nind_aux, height_aux, diameter_aux,&
+      call pls_allometry(dt, ca1_pft,awood_aux, height_aux, diameter_aux,&
       &                   crown_aux)
 
       max_height = maxval(height_aux(:))
-
-      ! call foliage_projective (crown_aux, laia, fpcind_aux, fpcgrid_aux, dens_aux)
-      ! print*, 'dens=', dens_aux(:)
-      ! print*, 'fpc_grid', fpcgrid_aux(:)
       
       ! 
       ! print*, ca1_pft
@@ -294,7 +289,7 @@ contains
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
       allocate(height_int(nlen))
-      allocate(npp_accu(nlen))
+      ! allocate(npp_accu(nlen))
 
       !     Maximum evapotranspiration   (emax)
       !     =================================
@@ -325,15 +320,15 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
+         height_int(p) = height_aux(ri)
+         dens_aux(p) = dens_in(p)
+
          call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), npp_accu (p), laia(p)&
+               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p)&
                &, f5(p), vpd(p), rm(p), rg(p), rc2(p),wue(p), c_def(p), vcmax(p), tra(p))
 
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
-
-         height_int(p) = height_aux(ri)
-         dens_aux(p) = dens_in(p)
 
          ! print*, 'NPP [do inside] =', nppa(p)
          ! print*, 'NPP ACUMULO =', npp_accu(p), 'NPP/DIA =', nppa(p), p
@@ -499,7 +494,8 @@ contains
 
       height = sum(height_int * ocp_coeffs, mask= .not. isnan(height_int))
 
-      ! print*, 'NPP [output]=', nppavg
+      ! print*, '[output]','CLEAF =', cl1_int, 'CWOOD =', ca1_int, 'CROOT =', cf1_int
+      ! print*, 'NPP [output]=', nppa
 
       ! FILTER BAD VALUES
       do p = 1,2

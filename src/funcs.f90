@@ -28,7 +28,6 @@ module photo
    public ::                    &
         gross_ph               ,& ! (f), gross photosynthesis (kgC m-2 y-1)
         leaf_area_index        ,& ! (f), leaf area index(m2 m-2)
-        accumulate_npp         ,& ! (f), accumulate npp (yr)
         f_four                 ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
         spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
         water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
@@ -115,17 +114,17 @@ contains
 
    end function leaf_area_index
 
-   function accumulate_npp(npp) result (accu_npp)
-      !Function to calculates the accumulation of NPP to be used in SE_module and mortality dynamic
+   ! function accumulate_npp(npp) result (accu_npp)
+   !    !Function to calculates the accumulation of NPP to be used in SE_module and mortality dynamic
 
-      use types
+   !    use types
 
-      real(r_4),intent(in) :: npp
-      real(r_4) :: accu_npp
+   !    real(r_4),intent(in) :: npp
+   !    real(r_4) :: accu_npp
 
-      accu_npp = accu_npp + npp
+   !    accu_npp = accu_npp + npp
 
-   end function accumulate_npp
+   ! end function accumulate_npp
 
    !=================================================================
    !=================================================================
@@ -1327,7 +1326,7 @@ contains
    !====================================================================
    !====================================================================
 
-   subroutine pls_allometry (dt, cawood1,awood, nind, height_var, diameter,&
+   subroutine pls_allometry (dt, cawood1,awood, height, diameter,&
       &crown_area)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
 
@@ -1339,14 +1338,12 @@ contains
       integer(i_4) :: p
       real(r_8),dimension(ntraits, npls),intent(in) :: dt
       real(r_8),dimension(npft),intent(in) :: cawood1, awood
-      real(r_8),dimension(npft),intent(out) :: height_var, diameter, crown_area
-      integer(i_4),dimension(npft),intent(out) :: nind
-      real(r_8),dimension(npft) :: cawood, dwood, height
+      real(r_8),dimension(npft),intent(out) :: height, diameter, crown_area
+      real(r_8),dimension(npft) :: cawood, dwood
 
       
       ! ============================
       dwood = dt(18,:)
-      height_var = dt(20,:)
       cawood = cawood1
       ! ============================
     
@@ -1354,7 +1351,6 @@ contains
          height(p) = 0.0D0
          diameter(p) = 0.0D0
          crown_area(p) = 0.0D0
-         nind(p) = 0.0D0
       enddo
 
       !PLS DIAMETER (in m.)
@@ -1364,13 +1360,11 @@ contains
             diameter(p) = 0.0D0 !in m.
             crown_area(p) = 0.0D0 !in m2.
             dwood(p) = 0.0D0
-            nind(p) = 0.0D0
          else
             diameter(p) = (4*(cawood(p)*1.0D3)/(dwood(p)*1D7)*pi*k_allom2)&
             &**(1/(2+k_allom3))
             height(p) = k_allom2*(diameter(p)**k_allom3)
             crown_area(p) = k_allom1*(diameter(p)**krp)
-            nind(p) = nint(diameter(p)**(-1.6))
          endif
       enddo
       
@@ -1425,6 +1419,8 @@ contains
       enddo
 
    end subroutine density_ind
+
+   
 
 
 end module photo
