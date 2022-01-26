@@ -38,7 +38,7 @@ contains
 
    ! TO RUN ALL MODEL ONLY
 
-   subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
+   subroutine daily_budget(dt, w1, w2, ts, precip,temp, p0, ipar, rh&
         &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, cs1_in&
         &, ch1_in, dens_in,dleaf_in, dwood_in&
         &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
@@ -56,6 +56,7 @@ contains
 
       use photo
       use water, only: evpot2, penman, available_energy, runoff
+      use ecosystem_services
 
       !     ----------------------------INPUTS-------------------------------
       real(r_8),dimension(ntraits,npls),intent(in) :: dt
@@ -66,6 +67,7 @@ contains
       real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
       real(r_8),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_8),intent(in) :: precip
       real(r_4),intent(in) :: rh                   ! Relative humidity
       real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
       real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
@@ -197,6 +199,7 @@ contains
       real(r_8) :: soil_sat
       real(r_8), dimension(npls) :: diameter_aux, crown_aux, height_aux, fpcind_aux, fpcgrid_aux, dens_aux
       real(r_8) :: max_height
+      real(r_8) :: co2_abs,evap_se,water_ret
 
 
 
@@ -495,7 +498,9 @@ contains
       height = sum(height_int * ocp_coeffs, mask= .not. isnan(height_int))
 
       ! print*, '[output]','CLEAF =', cl1_int, 'CWOOD =', ca1_int, 'CROOT =', cf1_int
-      ! print*, 'NPP [output]=', nppa
+      ! print*, 'NPP [output]=', nppavg
+
+      ! call SE_module(cl1_int,ca1_int,cf1_int,evap,precip,co2_abs,evap_se,water_ret)
 
       ! FILTER BAD VALUES
       do p = 1,2

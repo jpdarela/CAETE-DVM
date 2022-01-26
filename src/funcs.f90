@@ -49,7 +49,7 @@ module photo
         leap                   ,&
         pls_allometry          ,& ! (s), tree diameter (m), height (m), crown area (m2) and average individual number equations.
         foliage_projective     ,&
-        density_ind          
+        density_ind                     
 
 contains
 
@@ -1326,7 +1326,7 @@ contains
    !====================================================================
    !====================================================================
 
-   subroutine pls_allometry (dt, cawood1,awood, height, diameter,&
+   subroutine pls_allometry (dt,cawood1,awood,height,diameter,&
       &crown_area)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
 
@@ -1371,7 +1371,7 @@ contains
    end subroutine pls_allometry
 
 
-   subroutine foliage_projective (crown_area, lai, fpc_ind, fpc_grid, dens)
+   subroutine foliage_projective (crown_area,lai,fpc_ind,fpc_grid,dens)
       !Based in LPJ model (Smith et al., 2001; Sitch et al., 2003)
 
       use types 
@@ -1419,8 +1419,6 @@ contains
       enddo
 
    end subroutine density_ind
-
-   
 
 
 end module photo

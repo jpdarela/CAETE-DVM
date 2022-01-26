@@ -23,6 +23,10 @@ module productivity
 
   public :: prod
 
+!   public ::                     &
+!         prod                   ,& ! (s), productivity 
+!         ecosystem_services        ! (s), SE_module 
+
 
 contains
 
@@ -200,4 +204,72 @@ contains
 
     end subroutine prod
 
+
 end module productivity
+
+
+module ecosystem_services
+
+    implicit none
+    private
+
+    public :: SE_module
+
+contains
+
+    subroutine SE_module (cl1_se,cw1_se,cr1_se,evapot,&
+        &prec,co2_abs,evap_se,water_ret)
+
+        !Coded by: Bárbara Cardeli (2022)
+
+        use types
+        use global_par, only: npls
+
+        integer(i_4),parameter :: npft = npls
+        integer(i_4) :: p 
+
+        !INPUTS
+        real(r_8), dimension(npft),intent(in) :: cl1_se, cw1_se, cr1_se
+        real(r_4), dimension(npft),intent(in) :: evapot !,rnoff
+        real(r_8), intent(in) :: prec
+        
+        !OUTPUTS
+        real(r_8), intent(out) :: co2_abs,evap_se,water_ret
+
+        !INTERNAL
+        real(r_8), dimension(npft) :: tissues_biomass
+        real(r_8) :: total_biomass, total_evap
+
+
+        do p = 1, npls
+            !Loop to accumulate biomass
+            tissues_biomass(p) = cl1_se(p) + cw1_se(p) + cr1_se(p)
+            total_biomass = total_biomass + tissues_biomass(p)
+
+            !Loop to accumulate evapotranspiration rates
+            total_evap = total_evap + evapot(p)
+        enddo
+
+        !   CARBON (CO2) SEQUESTRATION (kgC/m2/yr)
+        !============================================!
+        !this equation calculates the absorption and 
+        !sequestration of carbon dioxide (CO2) in plant tissues
+
+        co2_abs = (total_biomass*3.67)*365.242D0
+
+        !   EVAPOTRANSPIRATION RATES (mm/yr)
+        !======================================!
+
+        evap_se = total_evap*365.242D0
+
+        !   WATER RETENTION IN SOIL (m3/yr)
+        !======================================!
+
+        water_ret = ((prec*6.9)*365.242D0-(total_evap))
+
+        !*****************PRECISA ZERAR AO FINAL DE CADA ANO!!!!!**********************
+
+    end subroutine SE_module
+
+
+end module ecosystem_services
