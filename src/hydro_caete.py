@@ -18,7 +18,7 @@
 import warnings
 import numpy as np
 from math import log as ln
-
+import caete_module as cmod
 
 def rwarn(txt='RuntimeWarning'):
     warnings.warn(f"{txt}", RuntimeWarning)
@@ -84,12 +84,17 @@ class soil_water:
         self.fc2 = np.float64(fc2)
         self.wp2 = np.float64(wp2)
 
-        # Soil Water POols mm (Kg m-2)
+        # Soil Water Pools mm (Kg m-2)
         self.w1 = np.float64(20.0)
         self.w2 = np.float64(60.0)
 
+        # Soil Pools for CPTEC-PVM
+        self.w_pvm = np.float64(35.0)
+        self.snw_pvm = np.float64(0.0)
+        self.ice_pvm = np.float64(0.0)
+
         # Set pool sizes
-        # Kilograms of water that would fit the  soil layers in the ausence of soil
+        # Kilograms of water that would fit the soil layers in the absence of soil
         self.p1_vol = np.float64(300.0)  # Kg(H2O) - Layer 1
         self.p2_vol = np.float64(700.0)  # Kg(H2O) - Layer 2
 
@@ -111,7 +116,7 @@ class soil_water:
         """Calculates upper and lower soil water pools for the grid cell,
         as well as the grid runoff and the water fluxes between layers"""
 
-        # evapo adaptation to use in both layers
+        # evapo adaptation to use on both layers
         ev1 = evapo * 0.3  # Kg m-2
         ev2 = evapo - ev1  # Kg m-2
 
@@ -171,6 +176,65 @@ class soil_water:
         return runoff1 + runoff2
 
 
+    def hidro_pvm(self, prain, evapo, temp, stemp):
+    """Old hidrology model from CPTEC_PVM implemented for benchmarking purposes"""
+
+        self.wmax = np.float64(500.00)    # soil water capacity (500 mm)
+        thr_snow = -1.0  # Snow temperature threshold
+        thr_ice = -2.5   # Ice temperature threshold
+
+        runoff = 11.5 * ((self.w_pvm/self.wmax) ** 6.6) # mm/day
+        # por que tem essa função? pra calcular runoff quando nao transborda? se for deviamos acrescentar no modelo dnv
+
+        if snw_pvm > 0.0 and temp > thr_snow:
+            smelt = 2.63 + (2.55 * temp) + (0.0912 * temp * prain) # mm/day
+            self.snw_pvm += psnow - smelt
+
+        if temp < thr_snow: # snowfall condition
+            psnow = prain
+
+        if stemp < thr_ice: # frozen soil condition
+
+            self.ice_pvm += self.w_pvm
+            runoff = smelt + prain
+
+
+        else:
+
+            self.w_pvm += self.ice_pvm # soil ice melting
+            self.ice_pvm = 0
+            ice_melt = 0
+
+            if self.w_pvm > self.wmax:
+
+                ice_melt = self.w_pvm - self.wmax # runoff due to ice melt
+                self.w_pvm = self.wmax
+
+
+        # Pool update function (bucket model)
+        self.w_pvm += prain + smelt - evapo - runoff
+
+
+        if self.w_pvm < 0.0:
+            self.w_pvm = 0.0
+
+        if self.w_pvm > self.wmax:        # runoff condition
+            runoff += (self.w_pvm - self.wmax)
+            self.w_pvm = self.wmax
+
+        runoff += ice_melt # total runoff
+
+        return self.w_pvm, runoff
+
+        # Checklist:
+            # only one runoff
+            # only one soil layer
+            # daily calculation
+            # proper inputs
+            # proper outputs
+            # proper compiling and execution
+
+
 if __name__ == "__main__":
 
     ws1, ws2 = 0.45, 0.48
@@ -178,6 +242,8 @@ if __name__ == "__main__":
     wp1, wp2 = 0.24, 0.27
 
     wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+
+    stemp = 22.0
 
     for x in range(5000):
         evapo = 5 if np.random.normal() > 0 else 0
