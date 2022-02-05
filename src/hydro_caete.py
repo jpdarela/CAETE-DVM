@@ -18,6 +18,9 @@
 import warnings
 import numpy as np
 from math import log as ln
+import caete_module as caete_mod
+
+
 
 
 def rwarn(txt='RuntimeWarning'):
@@ -169,6 +172,10 @@ class soil_water:
             runoff2 = 0.0
 
         return runoff1 + runoff2
+
+def CPTEC_PVM2_bdget(temp, p0, rh):
+   return  caete_mod.water.evpot2(p0, temp, rh, caete_mod.water.available_energy(temp))
+
 
 
 if __name__ == "__main__":

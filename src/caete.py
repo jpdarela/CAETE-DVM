@@ -276,6 +276,8 @@ class grd:
         self.x = x                            # Grid point x coordinate
         self.y = y                            # Grid point y coordinate
         self.xyname = str(y) + '-' + str(x)   # IDENTIFIES GRIDCELLS
+        self.plot_name = dump_folder
+        self.plot = None
         self.input_fname = f"input_data_{self.xyname}.pbz2"
         self.input_fpath = None
         self.data = None
@@ -287,11 +289,9 @@ class grd:
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
         self.neighbours = None
-        self.plot_name = None
-        self.plot = False
 
         self.ls = None          # Number of surviving plss//
-
+        self.grid_filename = f"gridcell{self.xyname}" 
         self.out_dir = Path(
             "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
         self.flush_data = None
@@ -789,7 +789,7 @@ class grd:
         assert not fix_co2 or type(
             fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string "
         ABORT = 0
-        if self.plot:
+        if self.plot is True:
             splitter = ","
         else:
             splitter = "\t"
@@ -1367,7 +1367,6 @@ class plot(grd):
         y, x = find_coord(i, j)
         super().__init__(x, y, dump_folder)
 
-        self.plot_name = dump_folder
         self.plot = True
 
     def init_plot(self, sdata, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
