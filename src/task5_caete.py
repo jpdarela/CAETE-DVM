@@ -20,26 +20,24 @@ NPLS = mod.gp.npls
 MODS = ['GFDL-ESM2M','HadGEM2-ES','IPSL-CM5A-LR','MIROC5']
 SCEN = ['historical','rcp26','rcp60','rcp85']
 
-# Open file with centroids and other metadata from Moara's cities
+# Open file with centroids and other metadata from Task5 cities
 coord = pd.read_csv("../input/task5/task5_coordinates.csv", index_col="NM_MUNICIP")
 
-# Set filepaths to the Climatic (with time metadata) and soil nutrients input data
-RUN_NAME = int(input("1 for hist_obs or 2 for CMIP5_ISIMIP2b: "))
+RUN_NAME = int(input("  1 for hist_obs or 2 for CMIP5_ISIMIP2b: "))
 
 PLS_TABLE = np.load("./pls_attrs_TASK5.npy")
+
 
 def read_pkz(pkz):
     with open (pkz, 'rb') as fh:
         dt = joblib.load(fh)
-    
     return dt
 
 
 def pkz2csv(pkz, rpath, mod, scen):
-    # from h52nc import get_var_metadata
+
     from cftime import num2pydate
     spin_dt = read_pkz(pkz)
-    # vars = list(spin_dt.keys())
     s = num2pydate(spin_dt['sind'], spin_dt['time_unit'], spin_dt['calendar'])
     e = num2pydate(spin_dt['eind'], spin_dt['time_unit'], spin_dt['calendar'])
     start = s.strftime("%Y%m%d")
@@ -99,7 +97,7 @@ def read_hist_obs():
 
 
 def read_CMIP5_run(mod_name, scen_name):
-    s_data = Path(f"../input/task5//CMIP5_ISIMIP2b/{mod_name}/{mod_name}_{scen_name}").resolve()
+    s_data = Path(f"../input/task5/CMIP5_ISIMIP2b/{mod_name}/{mod_name}_{scen_name}").resolve()
     clim_metadata = Path(os.path.join(s_data, f"{mod_name}-{scen_name}_METADATA.pbz2"))
     # Load time related metadata 
     with bz2.BZ2File(clim_metadata, mode='r') as fh:
@@ -108,13 +106,14 @@ def read_CMIP5_run(mod_name, scen_name):
     stime = copy.deepcopy(clim_metadata[0])
     del clim_metadata
         # # # open co2 data
-    with open(os.path.join(Path(f"../input/task5//CMIP5_ISIMIP2b/{mod_name}"), f"co2-{mod_name}-{scen_name}.txt")) as fh:
+    with open(os.path.join(Path(f"../input/task5/CMIP5_ISIMIP2b/{mod_name}"), f"co2-{mod_name}-{scen_name}.txt")) as fh:
         co2_data = fh.readlines()
     pt, tsoil, ssoil, hsoil = read_soil_data()
     return s_data, stime, co2_data, pt, tsoil, ssoil, hsoil
 
         
-# Define helper functions to multiprocessing (parallel execution)
+# Define helper functions for multiprocessing (parallel execution)
+
 # Pre spinup phase -> soil and vegetation pools
 def apply_spin(grid: mod.grd)-> mod.grd:
     """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
@@ -124,7 +123,7 @@ def apply_spin(grid: mod.grd)-> mod.grd:
     return grid
 
 
-# Entire model spinup (10 * 30 years; fixed co2; no nutrients dynamics)
+# Entire model spinup (10 * 30 years; fixed co2; no nutrients dynamics - FIXED from input)
 def spinup_no_cycle(grid: mod.grd)-> mod.grd:
     grid.run_caete('19010101', '19300101', 10,
                    '1901', False, False, False)
@@ -137,20 +136,19 @@ def spinup(grid: mod.grd)-> mod.grd:
                    '1901', False, True, False)
     return grid
 
-# Transient run (1901-2016)
-
+# Transient run (1901-2016) Observed - historcal
 def transient_run_hist_obs(grid: mod.grd)-> mod.grd:
     grid.run_caete('19010101', '20161231', 1,
                    None, True, True, False)
     return grid
 
-
+# transient run (1901-2005) Simulated - historical by CMIP5 MOdels
 def transient_run_hist_cmip5(grid: mod.grd)-> mod.grd:
     grid.run_caete('19010101', '20051231', 1,
                    None, True, True, False)
     return grid
 
-
+# Transient + Projected (2006-2099)
 def proj_run_cmip5(grid: mod.grd)-> mod.grd:
     grid.run_caete('20060101', '20991231', 1,
                    None, True, True, False)
@@ -160,6 +158,7 @@ def proj_run_cmip5(grid: mod.grd)-> mod.grd:
 if __name__ == "__main__":
     
     if RUN_NAME == 1:
+        # Run observed historical CAETÊ simulation
         data = read_hist_obs()
         GRD_CELLS = []
         # Create gridcells that lies in the municipality polygon centroid
@@ -202,12 +201,12 @@ if __name__ == "__main__":
         m = MODS[mod_name]
         # s = SCEN[scen_name]
         
-        # jistorical
+        # historical
         # run
         data = read_CMIP5_run(m, 'historical')
         
         GRD_CELLS = []
-        # Create gridcells that lies in the municipality polygon centroid
+        # Create gridcells that lies over the municipality polygon centroid
         for i in coord.index:
             x, y = int(coord.loc[[str(i)]].xindex), int(coord.loc[[str(i)]].yindex)
             GRD_CELLS.append(mod.grd(x, y, str(i)))
