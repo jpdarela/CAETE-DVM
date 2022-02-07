@@ -135,6 +135,10 @@ def turnover_combinations(verbose=False):
 
 
 def calc_ratios1(NPLS):
+    # Reich, P. B., & Oleksyn, J. (2004). 
+    # Global patterns of plant leaf N and P in relation to temperature and latitude. 
+    # Proceedings of the National Academy of Sciences, 101(30), 11001–11006. 
+    # https://doi.org/10.1073/pnas.0403588101
     N0 = 0.005
     NM = 0.04
     P0 = 0.0005
@@ -157,6 +161,9 @@ def calc_ratios1(NPLS):
 
 
 def calc_ratios2(NPLS):
+    # Heineman, K. D., Turner, B. L., & Dalling, J. W. (2016). 
+    # Variation in wood nutrients along a tropical soil fertility gradient. 
+    # New Phytologist, 211(2), 440?454. https://doi.org/10.1111/nph.13904
     N0 = 0.003
     NM = 0.01
     P0 = 5.12e-5
