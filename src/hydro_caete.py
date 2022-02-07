@@ -18,7 +18,7 @@
 import warnings
 import numpy as np
 from math import log as ln
-import caete_module as cmod
+# import caete_module as cmod
 
 def rwarn(txt='RuntimeWarning'):
     warnings.warn(f"{txt}", RuntimeWarning)
@@ -176,39 +176,51 @@ class soil_water:
         return runoff1 + runoff2
 
 
-    def hidro_pvm(self, prain, evapo, temp, stemp):
-    """Old hidrology model from CPTEC_PVM implemented for benchmarking purposes"""
+    def hydro_pvm(self, prain, evapo, temp, stemp):
+        """Old hydrology model from CPTEC_PVM implemented for benchmarking purposes"""
 
         self.wmax = np.float64(500.00)    # soil water capacity (500 mm)
-        thr_snow = -1.0  # Snow temperature threshold
-        thr_ice = -2.5   # Ice temperature threshold
+        thr_snow = -1.0                   # Snow temperature threshold
+        thr_ice = -2.5                    # Ice temperature threshold
 
         runoff = 11.5 * ((self.w_pvm/self.wmax) ** 6.6) # mm/day
-        # por que tem essa função? pra calcular runoff quando nao transborda? se for deviamos acrescentar no modelo dnv
-
-        if snw_pvm > 0.0 and temp > thr_snow:
-            smelt = 2.63 + (2.55 * temp) + (0.0912 * temp * prain) # mm/day
-            self.snw_pvm += psnow - smelt
 
         if temp < thr_snow: # snowfall condition
+            if self.snw_pvm < 0:
+                self.snw_pvm = 0
             psnow = prain
+            smelt = 0.0
+            self.snw_pvm += psnow
+
+        elif self.snw_pvm > 0.0 and temp > thr_snow:
+            psnow = prain
+            smelt = 2.63 + (2.55 * temp) + (0.0912 * temp * prain) # mm/day
+            self.snw_pvm += psnow - smelt
+            if self.snw_pvm < 0:
+                self.snw_pvm = 0
+
+        else:
+            smelt = 0.0
+            if self.snw_pvm < 0:
+                self.snw_pvm = 0
 
         if stemp < thr_ice: # frozen soil condition
 
             self.ice_pvm += self.w_pvm
             runoff = smelt + prain
-
+            ice_roff = 0.0
 
         else:
 
             self.w_pvm += self.ice_pvm # soil ice melting
-            self.ice_pvm = 0
-            ice_melt = 0
+            self.ice_pvm = 0.0
+            ice_roff = 0.0
 
             if self.w_pvm > self.wmax:
 
-                ice_melt = self.w_pvm - self.wmax # runoff due to ice melt
+                ice_roff = self.w_pvm - self.wmax # runoff due to ice melt
                 self.w_pvm = self.wmax
+                self.ice_pvm = 0.0
 
 
         # Pool update function (bucket model)
@@ -222,20 +234,16 @@ class soil_water:
             runoff += (self.w_pvm - self.wmax)
             self.w_pvm = self.wmax
 
-        runoff += ice_melt # total runoff
+        runoff += ice_roff # total runoff
 
-        return self.w_pvm, runoff
-
-        # Checklist:
-            # only one runoff
-            # only one soil layer
-            # daily calculation
-            # proper inputs
-            # proper outputs
-            # proper compiling and execution
+        return self.w_pvm, runoff, self.ice_pvm, self.snw_pvm, ice_roff
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":          # Independent Testing
+
+    import time
+    import matplotlib.pyplot as plt
+    import pandas as pd
 
     ws1, ws2 = 0.45, 0.48
     fc1, fc2 = 0.39, 0.43
@@ -243,9 +251,12 @@ if __name__ == "__main__":
 
     wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
 
-    stemp = 22.0
+    water = [100.0,]    # initial values
+    ice = [0.0,]
+    snow = [0.0,]
+    runoff = [0.0,]
 
-    for x in range(5000):
+    for x in range(5000):           # Saxton's Hydrology test
         evapo = 5 if np.random.normal() > 0 else 0
         roff = wp._update_pool(evapo, evapo)
         wp.w1 = np.float(0.0) if wp.w1 < 0.0 else wp.w1
@@ -253,3 +264,65 @@ if __name__ == "__main__":
         print(wp.w1, ':w1')
         print(wp.w2, ':w2')
         print(roff, ' :runoff')
+
+    print("")
+    print("--------------------")
+    print("CPTEC-PVM Hydro Test")
+    print("--------------------")
+    print("")
+
+    time.sleep(2)
+
+    for x in range(10000):                  # PVM Hydrology test
+
+        temp = np.random.uniform(-8,35)     # Temperature generator
+
+        if temp > 4:                        # Soil Temperature
+            soil_temp = temp - 3
+        else:
+            soil_temp = temp + 3
+
+        evapo = np.random.uniform(2,12)     # Evapotranspiration generator
+        prec = np.random.uniform(0,18)      # Precipitation generator
+
+        result = wp.hydro_pvm(prec, evapo, temp, soil_temp)
+
+        print(temp, soil_temp, ': temp and soil temp')
+        print(evapo, prec, 'evapo and prec')
+        print(result[0], ': wsoil')
+        print(result[1], ': runoff')
+        print(result[2], result[3], ': ice and snow\n')
+
+        # print(result[4], 'ice melt\n')    # ice melt check
+        # if result[1] > 300:
+        #     print("runoff outlier!")
+        #     break
+
+        water.append(result[0])
+        runoff.append(result[1])
+        ice.append(result[2])
+        snow.append(result[3])
+
+    water = np.array(water)
+    runoff = np.array(runoff)
+    ice = np.array(ice)
+    snow = np.array(snow)
+
+    dict_results = {'water': water, 'runoff': runoff, 'ice': ice, 'snow': snow}
+
+    # Graphs for testing
+    df = pd.DataFrame(dict_results)
+    plt.style.use('ggplot')
+    df.water.rolling(30).mean().plot(color='#196F3D', linewidth=0.9)
+    plt.grid(True)
+    df.ice.rolling(30).mean().plot(color='#195F5D', linewidth=0.9)
+    df.snow.rolling(30).mean().plot(color='#FF0FF0', linewidth=0.9)
+
+    df.runoff.rolling(30).mean().plot(color='#000000', linewidth=0.9)
+
+    plt.title('Soil water dynamics for 10000 days')
+    plt.xlabel('Days')
+    plt.ylabel('Water content (mm)')
+    plt.legend(['Water', 'Ice', 'Snow', 'Runoff'], loc='best',
+               bbox_to_anchor=(0.5, 0., 0.5, 0.5))
+    plt.show()
