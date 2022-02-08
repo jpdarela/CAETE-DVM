@@ -2,12 +2,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from pandas.core.arrays import sparse
-import plsgen
 
-from cc import carbon_costs as cc
+from caete_module import carbon_costs as cc
 
-# print(cc.active_cost.__doc__)
+print(cc.active_cost.__doc__)
 
 
 # # Simulation of cc to nutrients uptake for CAETÊ-DVM
@@ -17,23 +15,23 @@ pls_table = pd.read_csv('./pls_attrs.csv')
 
 
 # fraction of Symbionts that are AM
-amp = pls_table.iloc(1)[15]
+amp = pls_table.iloc(1)[16]
 # amp = pls_table[15, :]
 # fraction of NPP dedicated to Diazotrophic organisms
-pdia = pls_table.iloc(1)[16]
+pdia = pls_table.iloc(1)[17]
 # pdia = pls_table[16, :]
 rs = pls_table.iloc(1)[1]
 
-croot = 950.0  # g m-2
+croot = 550.0  # g m-2
 
 nupt = 0.03   # all g m-2
 pupt = 0.0039
-npp = 2.25
+npp = 1.31
 
 
 tsoil = 25.5
-wsoil = 245.0  # mm
-e = 3e-4 * 86400.0   # mm/s to mm/day
+wsoil = 360.0  # mm
+e = 0.00005  # mm/s
 
 
 pls = np.random.randint(0, 999)
@@ -44,10 +42,10 @@ fixed_n = cc.fixed_n(npp * pdia[pls], tsoil)
 # In CAETÊ the fixed N or a fraction of it are available to allocate C
 # I is counted as available N and non used mass remains in storage
 # Nutrients in soil. In this way the N STORAGE will downregulate N uptake
-nmin = 1.2 * 0.0045  # gm-2
-on = 1.0 * 0.0045
-plab = 1.0 * 0.003
-sop = 1.0 * 0.003
+nmin = 20 * 0.02  # gm-2
+on = 2.0 * 0.02
+plab = 0.01* 0.003
+sop = 0.10 * 0.003
 op = 3.0 * 0.003
 
 # discount c_fix before  allocation
@@ -64,63 +62,48 @@ rsp = rs[pls] * litterp
 to_pay, to_sto, pu = cc.passive_uptake(
     wsoil, nmin, plab, nupt, pupt, e)
 
-a = 0
-if pu[0] > nmin:
-    pu[0] = nmin
-    nmin = 0.0
-    print("PASSIVE n CLEANED THE POOL")
-    a += 1
-if pu[1] > plab:
-    pu[1] = plab
-    plab = 0.0
-    print("PASSIVE p CLEANED THE POOL")
-    a += 1
-
-if a:
-    assert False
-
-# Calc costs of active uptake
+# # Calc costs of active uptake
 Pargs = (amp[pls], plab - pu[1], sop, op, croot)
 Nargs = (amp[pls], nmin - pu[0], on, croot)
-cp = 0.0
-pstrat = 0
-cn = 0.0
-nstrat = 0
-nout = np.zeros(2,)
-pout = np.zeros(3,)
+# cp = 0.0
+# pstrat = 0
+# cn = 0.0
+# nstrat = 0
+# nout = np.zeros(2,)
+# pout = np.zeros(3,)
 
-# calculate the amount of nutrient actively  extracted from the specific pool if necessary
-if to_pay[0] > 0.0:
-    ccn = cc.active_costn(*Nargs)
-    cn, nstrat = cc.select_active_strategy(ccn)
-    nout = cc.prep_out_n(nstrat, nupt, to_pay[0])
-else:
-    nout[0] = nupt
+# # calculate the amount of nutrient actively  extracted from the specific pool if necessary
+# if to_pay[0] > 0.0:
+#     ccn = cc.active_costn(*Nargs)
+#     cn, nstrat = cc.select_active_strategy(ccn)
+#     nout = cc.prep_out_n(nstrat, nupt, to_pay[0])
+# else:
+#     nout[0] = nupt
 
-# calculate the amount of nutrient actively  extracted from the specific pool if necessary
-if to_pay[1] > 0.0:
-    ccp = cc.active_costp(*Pargs)
-    cp, pstrat = cc.select_active_strategy(ccp)
-    pout = cc.prep_out_p(pstrat, pupt, to_pay[1])
-else:
-    # everthing is passive
-    pout[0] = pupt
-# Retranslocation costs
-cc_r_n = cc.retran_nutri_cost(littern, rsn, 1)
-cc_r_p = cc.retran_nutri_cost(litterp, rsp, 2)
+# # calculate the amount of nutrient actively  extracted from the specific pool if necessary
+# if to_pay[1] > 0.0:
+#     ccp = cc.active_costp(*Pargs)
+#     cp, pstrat = cc.select_active_strategy(ccp)
+#     pout = cc.prep_out_p(pstrat, pupt, to_pay[1])
+# else:
+#     # everthing is passive
+#     pout[0] = pupt
+# # Retranslocation costs
+# cc_r_n = cc.retran_nutri_cost(littern, rsn, 1)
+# cc_r_p = cc.retran_nutri_cost(litterp, rsp, 2)
 
 
-# prints
-print("\nAMP: ", amp[pls])
-print("Fixed N: ", fixed_n, ' npp%: ', pdia[pls])
-print("PASSIVE N uptk: ", pu[0])
-print("PASSIVE P uptk: ", pu[1])
-print("REALIZED ACTIVE N uptk: ", nout)
-print("REALIZED ACTIVE P uptk: ", pout)
-print("ALLOC N uptake: ", nupt)
-print("ALLOC P uptake: ", pupt)
-print('CC: ', cn + cp + cc_r_p + cc_r_n)
-print('N / P strat: ', nstrat, pstrat)
+# # prints
+# print("\nAMP: ", amp[pls])
+# print("Fixed N: ", fixed_n, ' npp%: ', pdia[pls])
+# print("PASSIVE N uptk: ", pu[0])
+# print("PASSIVE P uptk: ", pu[1])
+# print("REALIZED ACTIVE N uptk: ", nout)
+# print("REALIZED ACTIVE P uptk: ", pout)
+# print("ALLOC N uptake: ", nupt)
+# print("ALLOC P uptake: ", pupt)
+# print('CC: ', cn + cp + cc_r_p + cc_r_n)
+# print('N / P strat: ', nstrat, pstrat)
 
 # ccost, strategy = cc.select_active_strategy(*args)
 

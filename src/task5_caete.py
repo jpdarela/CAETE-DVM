@@ -8,12 +8,11 @@ import copy
 import bz2
 from pathlib import Path
 import multiprocessing as mp
-from stringprep import c22_specials
 import pandas as pd
 import numpy as np 
 import joblib
 import caete as mod
-import plsgen as pls
+# import plsgen as pls
 
 assert mod.gp.npls == 2000, "Compile for 2000 PLS"
 NPLS = mod.gp.npls

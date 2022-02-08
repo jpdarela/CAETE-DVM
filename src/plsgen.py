@@ -304,7 +304,7 @@ def table_gen(NPLS, fpath=None):
         # # ___side_effects
         if not fpath.exists():
             os.system(f" mkdir -p {fpath.resolve()}")
-        fnp = Path(os.path.join(fpath, 'pls_attrs.csv')).resolve()
+        fnp = Path(os.path.join(fpath, f'pls_attrs-{NPLS}.csv')).resolve()
         with open(fnp, mode='w') as fh:
             writer = csv.writer(fh, delimiter=',')
             writer.writerow(head)

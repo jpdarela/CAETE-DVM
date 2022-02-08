@@ -76,9 +76,9 @@ module carbon_costs
    subroutine calc_passive_uptk1(nsoil, et, sd, mf, uptk)
       ! From Fisher et al. 2010
       real(r_8), intent(in) :: nsoil  ! (ML⁻²)
-      real(r_8), intent(in) :: et ! Transpiration (ML⁻²T⁻¹)
+      real(r_8), intent(in) :: et ! Transpiration (ML⁻²T⁻¹) (mm/s)
       real(r_8), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
-      real(r_8), intent(in) :: mf
+      real(r_8), intent(in) :: mf ! 
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
 
@@ -87,13 +87,13 @@ module carbon_costs
          return
       endif
 
-      if(sd .le. 75.0D0) then
+      if(sd .le. 0.0D0) then
          uptk = 0.0D0
          return
       endif
 
       uptk = ((nsoil * mf) / sd) * (et * 86400.0D0)      !  !(ML⁻²T⁻¹) g m-2 day-1
-      uptk = min((nsoil *  mf), uptk)
+      ! uptk = min((nsoil *  mf), uptk)
 
    end subroutine calc_passive_uptk1
 
@@ -113,8 +113,10 @@ module carbon_costs
             & ruptn,&
             & ruptp
 
-      call calc_passive_uptk1(av_n, e, w, 0.0010D0, passive_n)
-      call calc_passive_uptk1(av_p, e, w, 0.0003D0, passive_p)
+      call calc_passive_uptk1(av_n, e, w, 1.0D0, passive_n)
+      call calc_passive_uptk1(av_p, e, w, 1.0D0, passive_p)
+      if(passive_n .gt. av_n) call abrt("cc.f90 - 118 (NITRO) ABRT")
+      if(passive_p .gt. av_p) call abrt("cc.f90 - 119 (PHOSP) ABRT")
       passive_upt(1) = passive_n
       passive_upt(2) = passive_p
 

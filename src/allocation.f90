@@ -270,13 +270,13 @@ module alloc
       leaf_p2c = dt(13)
       wood_p2c = dt(14)
       root_p2c = dt(15)
-      pdia = dt(16)
-      amp = dt(17)
+      pdia = dt(17)
+      amp = dt(16)
 
       ctonfix = 0.0D0
       ! If there is not nutrients or NPP then no allocation process
       ! only deallocation label 294
-      if(nmin .le. 0.0 .and. storage(2) .le. 0.0D0) then
+      if((nmin .le. 0.0 .and. on .le. 0.0) .and. storage(2) .le. 0.0D0) then
          daily_growth(wood) = 0.0D0
          daily_growth(root) = 0.0D0
          daily_growth(leaf) = 0.0D0
@@ -288,7 +288,7 @@ module alloc
          goto 294
       endif
 
-      if(plab .le. 0.0D0 .and. storage(3) .le. 0.0D0) then
+      if((plab .le. 0.0 .and. sop .le. 0.0 .and. op .le. 0.0) .and. storage(3) .le. 0.0D0) then
          daily_growth(wood) = 0.0D0
          daily_growth(root) = 0.0D0
          daily_growth(leaf) = 0.0D0
@@ -395,25 +395,22 @@ module alloc
       ! Only a very small amount of total nutrients are available in fact
       mult_factor_n  = 0.020D0
       mult_factor_p  = 0.003D0
-      avail_n = (mult_factor_n * nmin) !g m⁻²
-      avail_p = (mult_factor_p * plab) !g m⁻²
 
-      ! Auxiliary to calculate Carbon costs of Nutrient uptake/uptake of nutrients
-      if (on .lt. 0.0D0) then
-         aux_on = 0.0D0
-      else
-         aux_on = on * mult_factor_n
-      endif
-      if (op .lt. 0.0D0) then
-         aux_op = 0.0D0
-      else
-         aux_op = op * mult_factor_p
-      endif
-      if (sop .lt. 0.0D0) then
-         aux_sop = 0.0D0
-      else
-         aux_sop = sop * mult_factor_p
-      endif
+      avail_n = (mult_factor_n * nmin) !g m⁻²
+      if(nmin .le. 0.0) avail_n = 0.0D0
+      
+      avail_p = (mult_factor_p * plab) !g m⁻²
+      if(plab .le. 0.0) avail_p = 0.0D0
+      
+      aux_on = on * mult_factor_n
+      if (on .le. 0.0D0) aux_on = 0.0D0
+
+      aux_op = op * mult_factor_p
+      if (op .le. 0.0D0) aux_op = 0.0D0
+      
+      aux_sop = sop * mult_factor_p
+      if (sop .le. 0.0D0) aux_sop = 0.0D0
+      
 
       ! NITROGEN FIXATION goes direct to plant use
       n_fixed = fixed_n(npp_to_fixer, ts)
@@ -432,6 +429,9 @@ module alloc
 
       ! Calculate the available nutrients for uptake
       !TODO INCLUDE OTHER POOLS IN THE CALCULATION
+      ! av_tot_n = avail_n + aux_on
+      ! av_tot_p = avail_p + aux_op + aux_sop
+
       leaf_av_n = (avail_n * aleaf) + internal_n_leaf ! g(N)m⁻²
       leaf_av_p = (avail_p * aleaf) + internal_p_leaf ! g(P)m⁻²
 
@@ -806,9 +806,6 @@ module alloc
       if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
       if(to_sto(2) .lt. 0.0D0) to_sto(2) = 0.0D0
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
-
-      test34 = phosphorus_uptake(3) .gt. op
-      test35 = phosphorus_uptake(2) .gt. sop
 
       ! TODO calculate enzimatic n costs of enzimatic activity?
       ! ???????????????????????????????????????????????????????
