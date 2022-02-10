@@ -120,16 +120,10 @@ contains
       real(r_8),dimension(npls) :: cl1_pft, cf1_pft, ca1_pft
       real(r_4) :: soil_temp
       real(r_4) :: emax
+      real(r_8) :: w                               !Daily soil moisture storage (mm)
 
       real(r_8),dimension(:),allocatable :: ocp_coeffs
-      ! real(r_4),dimension(:),allocatable :: rimelt !Runoff due to soil ice melting
-      ! real(r_4),dimension(:),allocatable :: smelt  !Snowmelt (mm/day)
-      real(r_8) :: w                               !Daily soil moisture storage (mm)
-      ! ! real(r_4),dimension(:),allocatable :: g    !Daily soil ice storage (mm)
-      ! ! real(r_4),dimension(:),allocatable :: s    !Daily overland snow storage (mm)
-      ! real(r_4),dimension(:),allocatable :: ds
-      ! real(r_4),dimension(:),allocatable :: dw
-      ! real(r_4),dimension(:),allocatable :: roff   !Total runoff
+
       real(r_4),dimension(:),allocatable :: evap   !Actual evapotranspiration (mm/day)
       !c     Carbon Cycle
       real(r_4),dimension(:),allocatable :: ph     !Canopy gross photosynthesis (kgC/m2/yr)
@@ -521,15 +515,8 @@ contains
          npp2pay_1(ri) = npp2pay(p)
       enddo
 
-      ! deallocate(w)
-      ! deallocate(g)
-      ! deallocate(s)
+
       deallocate(lp)
-      ! deallocate(rimelt)
-      ! deallocate(smelt)
-      ! deallocate(ds)
-      ! deallocate(dw)
-      ! deallocate(roff)
       deallocate(evap)
       deallocate(nppa)
       deallocate(ph)

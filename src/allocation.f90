@@ -175,7 +175,7 @@ module alloc
 
       ! CC auxiliary
       real(r_8) :: npp_to_fixer, n_fixed
-      real(r_8), dimension(2) :: to_pay, to_sto, plant_uptake
+      real(r_8), dimension(2) :: to_pay, to_sto, plant_passive_uptake
       real(r_8), dimension(6) :: ccn ! Carbon Costs of  N uptake by strategy :
       real(r_8), dimension(8) :: ccp ! CC of P uptake by strategy
       real(r_8) :: active_nupt_cost, active_pupt_cost
@@ -249,7 +249,7 @@ module alloc
       aux_op                 = 0.0D0
       to_pay(:)              = 0.0D0
       to_sto(:)              = 0.0D0
-      plant_uptake(:)        = 0.0D0
+      plant_passive_uptake(:)        = 0.0D0
       ccn(:)                 = 0.0D0
       ccp(:)                 = 0.0D0
 
@@ -274,8 +274,35 @@ module alloc
       amp = dt(16)
 
       ctonfix = 0.0D0
+
+      
+      ! Only a very small amount of total nutrients are available in fact
+      mult_factor_n  = 0.020D0
+      mult_factor_p  = 0.003D0
+      ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
+      ! FIND AVAILABLE NUTRIENTS:
+
+      avail_n = (mult_factor_n * nmin) !g m⁻²
+      if(nmin .le. 0.0) avail_n = 0.0D0
+      
+      avail_p = (mult_factor_p * plab) !g m⁻²
+      if(plab .le. 0.0) avail_p = 0.0D0
+      
+      aux_on = on * mult_factor_n
+      if (on .le. 0.0D0) aux_on = 0.0D0
+
+      aux_op = op * mult_factor_p
+      if (op .le. 0.0D0) aux_op = 0.0D0
+      
+      aux_sop = sop * mult_factor_p
+      if (sop .le. 0.0D0) aux_sop = 0.0D0
+
       ! If there is not nutrients or NPP then no allocation process
       ! only deallocation label 294
+
+      ! Aux variable test35 -> To opptionally calculate passive uptake after label 294
+      test35 = .false.
+
       if((nmin .le. 0.0 .and. on .le. 0.0) .and. storage(2) .le. 0.0D0) then
          daily_growth(wood) = 0.0D0
          daily_growth(root) = 0.0D0
@@ -285,6 +312,7 @@ module alloc
          storage_out_alloc(1) = max(0.0D0, real(npp,kind=r_8) * (1000.0D0 / 365.242D0))
          storage_out_alloc(2) = 0.0D0
          storage_out_alloc(3) = max(storage(3), 0.0D0)
+         test35 = .true.
          goto 294
       endif
 
@@ -297,6 +325,7 @@ module alloc
          storage_out_alloc(1) = max(0.0D0, real(npp,kind=r_8) * (1000.0D0 / 365.242D0))
          storage_out_alloc(2) = max(storage(2), 0.0D0)
          storage_out_alloc(3) = 0.0D0
+         test35 = .true.
          goto 294
       endif
 
@@ -309,18 +338,18 @@ module alloc
          storage_out_alloc(1) = storage(1)
          storage_out_alloc(2) = storage(2)
          storage_out_alloc(3) = storage(3)
+         test35 = .true.
          goto 294
       endif
 
       !# if you reach this point ---> There is C and nutrients to allocate!
-
+      test35 = .false.
+      
       ! INTERNAL VARIABLES
       scf2_tmp = 0.0D0
       sca2_tmp = 0.0D0
       scl2_tmp = 0.0D0
       npp_pot  = 0.0D0
-      avail_n = 0.0D0
-      avail_p = 0.0D0
 
       ! You have: kg m-2 year-1
       ! You want: g m-2 day-1
@@ -332,7 +361,7 @@ module alloc
 
       ! START STORAGE_OUT_alloc
       storage_out_alloc(1) = 0.0D0
-      ! If there is not enough npp to pay uptake the you have to pay tomorrow
+      ! If there is not enough npp to pay the N & p uptake the you have to pay tomorrow
       negative_one = 0.0D0
 
       ! SUM UP STORAGE AND NPP to create POTNPP
@@ -352,6 +381,7 @@ module alloc
          storage_out_alloc(2) = storage(2)
          storage_out_alloc(3) = storage(3)
          if(npp_pot .lt. 0.0D0) negative_one = abs(npp_pot)
+         test35 = .true.
          goto 294
       else
          if (npp_pot .gt. 0.0D0) goto 29
@@ -359,6 +389,7 @@ module alloc
          storage_out_alloc(1) = 0.0D0
          if(npp_pot .lt. 0.0D0)then
              negative_one = abs(npp_pot) ! amount of nutrient uptk that must be paid
+             test35 = .true.
              goto 294
          endif
       endif
@@ -390,27 +421,6 @@ module alloc
          psca = 0.0D0
       endif
 
-      ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
-      ! FIND AVAILABLE NUTRIENTS:
-      ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.020D0
-      mult_factor_p  = 0.003D0
-
-      avail_n = (mult_factor_n * nmin) !g m⁻²
-      if(nmin .le. 0.0) avail_n = 0.0D0
-      
-      avail_p = (mult_factor_p * plab) !g m⁻²
-      if(plab .le. 0.0) avail_p = 0.0D0
-      
-      aux_on = on * mult_factor_n
-      if (on .le. 0.0D0) aux_on = 0.0D0
-
-      aux_op = op * mult_factor_p
-      if (op .le. 0.0D0) aux_op = 0.0D0
-      
-      aux_sop = sop * mult_factor_p
-      if (sop .le. 0.0D0) aux_sop = 0.0D0
-      
 
       ! NITROGEN FIXATION goes direct to plant use
       n_fixed = fixed_n(npp_to_fixer, ts)
@@ -763,14 +773,14 @@ module alloc
       ! 1 - Check Passve uptake
 
       call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
-                        & to_pay, to_sto, plant_uptake)
+                        & to_pay, to_sto, plant_passive_uptake)
       ! N
       ccn(:) = 0.0D0
       active_nupt_cost = 0.0D0
       naquis_strat = 0   ! Passive uptake
       nitrogen_uptake(:) = 0.0D0
       if (to_pay(1) .gt. 0.0D0) then
-         call active_costn(amp, avail_n - plant_uptake(1), aux_on, scf1 * 1D3, ccn)
+         call active_costn(amp, avail_n - plant_passive_uptake(1), aux_on, scf1 * 1D3, ccn)
          call select_active_strategy(ccn, active_nupt_cost, naquis_strat)
          call prep_out_n(naquis_strat, nuptk, to_pay(1), nitrogen_uptake)
          uptk_strategy(1) = naquis_strat
@@ -782,7 +792,7 @@ module alloc
       test34 = nitrogen_uptake(2) .gt. on
       uptk_strategy(1) = naquis_strat
       if(isnan(to_sto(1))) to_sto(1) = 0.0D0
-      if(to_sto(1) .gt. 1.0D1) to_sto(1) = 0.0D0
+      ! if(to_sto(1) .gt. 1.0D1) to_sto(1) = 0.0D0
       if(to_sto(1) .lt. 0.0D0) to_sto(1) = 0.0D0
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
 
@@ -792,7 +802,7 @@ module alloc
       paquis_strat = 0
       phosphorus_uptake(:) = 0.0D0
       if(to_pay(2) .gt. 0.0D0) then
-         call active_costp(amp, avail_p - plant_uptake(2), aux_sop, aux_op, scf1 * 1D3, ccp)
+         call active_costp(amp, avail_p - plant_passive_uptake(2), aux_sop, aux_op, scf1 * 1D3, ccp)
          call select_active_strategy(ccp, active_pupt_cost, paquis_strat)
          call prep_out_p(paquis_strat, puptk, to_pay(2), phosphorus_uptake)
          uptk_strategy(2) = paquis_strat
@@ -803,7 +813,7 @@ module alloc
          uptk_strategy(2) = 0
       endif
       if(isnan(to_sto(2))) to_sto(2) = 0.0D0
-      if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
+      ! if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
       if(to_sto(2) .lt. 0.0D0) to_sto(2) = 0.0D0
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
 
@@ -811,7 +821,25 @@ module alloc
       ! ???????????????????????????????????????????????????????
 
       ! CARBON AND NUTRIENTS TURNOVER
+      test35 = .false. ! Ensure the normal calculations of allocation
+      
 294   continue ! Material going to soil + updating veg pools
+      
+      if(test35) then
+         nitrogen_uptake(:) = 0.0D0
+         phosphorus_uptake(:) = 0.0D0
+         ! Calc passive uptake
+         call passive_uptake(wsoil, avail_n, avail_p, nuptk, puptk, te, &
+         & to_pay, to_sto, plant_passive_uptake)
+
+         ! Uptake from soluble inorganic pools
+         nitrogen_uptake(1) = plant_passive_uptake(1)
+         phosphorus_uptake(1) = plant_passive_uptake(2)
+
+         ! Send to sto
+         storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
+         storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
+      endif
 
       ! LEAF LITTER FLUX
       leaf_litter = scl1 / tleaf  !/ tleaf ! kg(C) m-2 year-1

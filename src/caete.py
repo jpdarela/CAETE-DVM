@@ -1002,6 +1002,8 @@ class grd:
                 # Plant uptake and Carbon costs of nutrient uptake
                 self.nupt[:, step] = daily_output['nupt']
                 self.pupt[:, step] = daily_output['pupt']
+                
+                # CWM of STORAGE_POOL
                 for i in range(3):
                     self.storage_pool[i, step] = np.sum(
                         self.vp_ocp * self.vp_sto[i])
