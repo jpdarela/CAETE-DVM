@@ -18,7 +18,6 @@
 import warnings
 import numpy as np
 from math import log as ln
-# import caete_module as cmod
 
 def rwarn(txt='RuntimeWarning'):
     warnings.warn(f"{txt}", RuntimeWarning)
@@ -186,28 +185,28 @@ class soil_water:
         runoff = 11.5 * ((self.w_pvm/self.wmax) ** 6.6) # mm/day
 
         if temp < thr_snow: # snowfall condition
-            if self.snw_pvm < 0:
-                self.snw_pvm = 0
             psnow = prain
             smelt = 0.0
             self.snw_pvm += psnow
 
         elif self.snw_pvm > 0.0 and temp > thr_snow:
-            psnow = prain
             smelt = 2.63 + (2.55 * temp) + (0.0912 * temp * prain) # mm/day
-            self.snw_pvm += psnow - smelt
-            if self.snw_pvm < 0:
-                self.snw_pvm = 0
+
+            if self.snw_pvm + prain < smelt:
+                smelt = self.snw_pvm + prain
+
+            self.snw_pvm -= smelt
 
         else:
             smelt = 0.0
-            if self.snw_pvm < 0:
-                self.snw_pvm = 0
+
+        if self.snw_pvm < 0:
+            self.snw_pvm = 0
 
         if stemp < thr_ice: # frozen soil condition
 
             self.ice_pvm += self.w_pvm
-            runoff = smelt + prain
+            runoff = smelt + prain      # The precipitation is not instantly frozen by the ice
             ice_roff = 0.0
 
         else:
@@ -236,7 +235,7 @@ class soil_water:
 
         runoff += ice_roff # total runoff
 
-        return self.w_pvm, runoff, self.ice_pvm, self.snw_pvm, ice_roff
+        return self.w_pvm, runoff, self.ice_pvm, self.snw_pvm, ice_roff, smelt
 
 
 if __name__ == "__main__":          # Independent Testing
@@ -282,8 +281,8 @@ if __name__ == "__main__":          # Independent Testing
         else:
             soil_temp = temp + 3
 
-        evapo = np.random.uniform(2,12)     # Evapotranspiration generator
-        prec = np.random.uniform(0,18)      # Precipitation generator
+        evapo = np.random.uniform(1,4)     # Evapotranspiration generator
+        prec = np.random.uniform(1,4)      # Precipitation generator
 
         result = wp.hydro_pvm(prec, evapo, temp, soil_temp)
 
