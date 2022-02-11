@@ -1114,7 +1114,7 @@ class grd:
                         self.pupt[2, step] = 0.0
                     if self.pupt[2, step] > 1.0:
                         rwarn(
-                            f"PuptkO  < max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
+                            f"PuptkO  > max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
                         self.pupt[2, step] = 0.0
                     total_op = self.sp_snc[4:].sum()
                     if total_op > 0.0:

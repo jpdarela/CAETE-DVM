@@ -80,8 +80,10 @@ G3_6d = ["lnc", ]
 
 G3 = G3_1d + G3_3d + G3_6d
 
-PLS_head = ['PLS_id', 'g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
-            'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
+PLS_head = ['PLS_id', 'g1', 'resopfrac', 'tleaf', 'twood',
+            'troot', 'aleaf', 'awood', 'aroot', 'c4',
+            'leaf_n2c', 'awood_n2c', 'froot_n2c',
+            'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
 
 
