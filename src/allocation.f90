@@ -833,8 +833,8 @@ module alloc
          & to_pay, to_sto, plant_passive_uptake)
 
          ! Uptake from soluble inorganic pools
-         nitrogen_uptake(1) = plant_passive_uptake(1)
-         phosphorus_uptake(1) = plant_passive_uptake(2)
+         nitrogen_uptake(1) = min(plant_passive_uptake(1), avail_n)
+         phosphorus_uptake(1) = min(plant_passive_uptake(2), avail_p)
 
          ! Send to sto
          storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))

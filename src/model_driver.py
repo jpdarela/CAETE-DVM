@@ -369,34 +369,28 @@ if __name__ == "__main__":
     result1 = applyXy(apply_fun0, result)
     del result
 
-    # Save Ground 0
+    # Save Ground 0 # BEFORE SPINUP
     g0_path = Path(os.path.join(
-        dump_folder, Path(f"RUN_{outf}_.pkz"))).resolve()
+        dump_folder, Path(f"CAETE_STATE_START_{outf}_.pkz"))).resolve()
     with open(g0_path, 'wb') as fh2:
-        print(f"Saving gridcells with init state in: {g0_path}\n")
+        print(f"Saving gridcells with init(POST-SPINUP) state in: {g0_path}\n")
         joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
 
     result = result1
     del result1
-    # result has the gridcells with total aptitude to run
 
-    # FACE_EXPERIMENT = 'n' #input("Run CO2 enrichment model experiment: y/n: ")
-    # if FACE_EXPERIMENT == 'y':
-    #     interval_1 = run_breaks[:11] 1979-2000
-    #     interval_2 = run_breaks[11:] 2001-1016
-    #     for i, brk in enumerate(interval_1):
-    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-    #         result = zip_gridtime(result, (brk,))
-    #         result = applyXy(apply_funX, result)
-    #     for i, brk in enumerate(interval_2):
-    #         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
-    #         result = zip_gridtime(result, (brk,))
-    #         result = applyXy(apply_fun_eCO2, result)
-    # else:
+    # RUNNING THE experiment
     for i, brk in enumerate(run_breaks):
         print(f"Applying model to the interval {brk[0]}-{brk[1]}")
         result = zip_gridtime(result, (brk,))
         result = applyXy(apply_funX, result)
+
+    # Save FINAL STATE (TO feed CMIP5 proj. experiments)
+    g1_path = Path(os.path.join(
+        dump_folder, Path(f"CAETE_STATE_END_{outf}_.pkz"))).resolve()
+    with open(g1_path, 'wb') as fh2:
+        print(f"Saving gridcells with END state in: {g1_path}\n")
+        joblib.dump(result, fh2, compress=('zlib', 1), protocol=4)
 
     fh.close()
 

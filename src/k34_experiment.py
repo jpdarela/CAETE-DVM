@@ -52,10 +52,15 @@ sdata = {'hurs': dt['RH'].__array__(dtype=np.float64),
          'pr': dt['Precip'].__array__(dtype=np.float64) * 1.15741e-05,
          'rsds': dt['Rad'].__array__(dtype=np.float64),
          'tn': dth['tn'],
-         'tp': dth['tp'],
-         'ap': dth['ap'],
-         'ip': dth['ip'],
-         'op': dth['op']}
+         'tp': 18.70133513,
+         'ap': 0.22684275,
+         'ip': 3.241618875,
+         'op': 4.421773125}
+        #  'tn': dth['tn'],
+        #  'tp': dth['tp'],
+        #  'ap': dth['ap'],
+        #  'ip': dth['ip'],
+        #  'op': dth['op']}
 
 # TIME
 tu = 'days since 1860-01-01 00:00:00'
@@ -198,7 +203,7 @@ def make_table_LD():
 def run_experiment(pls_table):
 
     # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-XD')
+    k34_plot = mod.plot(-2.61, -60.20, 'k34-1000PLS_D')
 
     # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
@@ -211,17 +216,17 @@ def run_experiment(pls_table):
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
     # The binary files for each repetttion are stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000101', '20151231', spinup=5,
+    k34_plot.run_caete('20000101', '20151231', spinup=10,
                        fix_co2='2000', save=True, nutri_cycle=False)
 
-    k34_plot.run_caete('20000101', '20151231', spinup=5,
+    k34_plot.run_caete('20000101', '20151231', spinup=20,
                        fix_co2='2000', save=True)
 
     # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000101', '20151231', spinup=1, save=True)
 
     #
-    k34_plot.run_caete('20000101', '20151231', spinup=1,
+    k34_plot.run_caete('20000101', '20151231', spinup=10,
                        fix_co2="2020", save=True)
     return k34_plot
 
@@ -350,7 +355,7 @@ if __name__ == "__main__":
     # ld = run_experiment(pls_table)
 
     # INTERMEDIATE FD
-    pls_table = pls.table_gen(NPLS)
+    pls_table = pls.table_gen(NPLS, Path("./k34_PLS_TABLE/"))
     md = run_experiment(pls_table)
 
     # Open HIGH FD traits table

@@ -115,8 +115,8 @@ module carbon_costs
 
       call calc_passive_uptk1(av_n, e, w, 1.0D0, passive_n)
       call calc_passive_uptk1(av_p, e, w, 1.0D0, passive_p)
-      if(passive_n .gt. av_n) call abrt("cc.f90 - 118 (NITRO) ABRT")
-      if(passive_p .gt. av_p) call abrt("cc.f90 - 119 (PHOSP) ABRT")
+      if(passive_n .gt. av_n) passive_n = av_n !call abrt("cc.f90 - 118 (NITRO) ABRT")
+      if(passive_p .gt. av_p) passive_p = av_p !call abrt("cc.f90 - 119 (PHOSP) ABRT")
       passive_upt(1) = passive_n
       passive_upt(2) = passive_p
 
@@ -399,7 +399,7 @@ module carbon_costs
       ! Organic N pool = (5, 6)
       ! Soluble inorg_p_pool = (1, 2, 3, 4)
       ! Organic P pool = (5, 6, 7)
-      ! Insoluble inorg p pool = (8)
+      ! Insoluble (sorbed) inorg p pool = (8)
    end subroutine prep_out_n
 
 
@@ -430,7 +430,7 @@ module carbon_costs
       ! Organic N pool = (5, 6)
       ! Soluble inorg_p_pool = (1, 2, 3, 4)
       ! Organic P pool = (5, 6, 7)
-      ! Insoluble inorg p pool = (8)
+      ! Insoluble (sorbed) inorg p pool = (8)
    end subroutine prep_out_p
 
 !!!!### TO BE IMPLEMENTED ... C costs of AP enzymatic activity + Nitrogenase + exudates

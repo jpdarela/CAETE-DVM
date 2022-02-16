@@ -248,8 +248,7 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
         PLS_row = PLS_table.row
 
         pls_df = pd.read_csv(os.path.join(Path(out_dir), Path(
-            "pls_attrs.csv")), delimiter=",")
-
+            f"pls_attrs-{gp.npls}.csv")), delimiter=",")
         for n in range(gp.npls):
             for key in tt.PLS_head:
                 PLS_row[key] = pls_df[key][n]
