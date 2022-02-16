@@ -1,22 +1,28 @@
-# Climatic input data for CAETÊ (in prep)
+# Input data for CAETÊ
+The pre_processing.py file is used to prepare files that are employed to feed the CAETÊ model.
+The raw climatic and edaphic data in these files are publicly available from other sources.
 
-## pre_processing.py
+Climatic data: ISIMIP2b protocol.
 
-## To run in you computer
- - SAVE the sample of CAETÊ input data in the folder input/caete_input
- - EDIT the file model_driver.py so the search dir. for input data matches the above folder in you computer.
+Soil data: HWSD & own sources
 
-## To run in sombrero
-Contact me to have access to our processor server sombrero
+In this repository I make available a small fraction of these raw data with the pourpose of new users to test the model in personal computers. If you want to run the model in continental scales or use another inputs just contact me @ darelafilho _at_ gmail dot com.
 
-## Raw data and SAMPLE input data for caete
-You can find a sample of input data to run CAETÊ (Pan Amazon region) [here](https://1drv.ms/u/s!AsquOP_PotMWgeNdATQs9o9NVQcK6g?e=qmCFRX). The dataset is a bunch of files containing climatic and soil data. Each file contains the climatic variables hurs, tas, ps, pr and rsds for each gridcell for the time span 1901-2016. They also store the soil data used to start the model. The files are python pickled dictionaries compressed with the bz2 algorithm from the python standard library. The files where created using python 3.8.5 in a linux machine. I recomend that you inspect the files opening it with the same version of python that you will use to run the model and checking the integrity of the data. For example, you can load a input file from your python terminal:
+## References
 
-`>>> import _pickle as pkl
-`>>> import bz2
-`>>> with bz2.BZ2File("input_file-y-x.pbz2" mode='r') as fh:
-.........data = pkl.load(fh)`
+### ISIMIP climate input
 
-This will create a dictionary called data containig input data for the gridcell(y,x).
+Weedon, G. P., Balsamo, G., Bellouin, N., Gomes, S., Best, M. J., & Viterbo, P. (2014). The WFDEI meteorological forcing data set: WATCH Forcing Data methodology applied to ERA-Interim reanalysis data. Water Resources Research, 50(9), 7505–7514. [https://doi.org/10.1002/2014WR015638](https://doi.org/10.1002/2014WR015638)
 
-You can download a sample of the raw  global historical data in the form of netCDF4 for the variables tas, pr, ps, rsds & hurs for the time interval 1971-2010 [here](https://1drv.ms/u/s!AsquOP_PotMWgeM-nhGf3GkxV1Wq0g?e=525apd). This is the raw data and is not prepared to run the model.
+Lange, Stefan (2019): EartH2Observe, WFDEI and ERA-Interim data Merged and Bias-corrected for ISIMIP (EWEMBI). V. 1.1. GFZ Data Services. [https://doi.org/10.5880/pik.2019.004](https://doi.org/10.5880/pik.2019.004)
+
+
+The raw input climatic data was downloaded from the [ISIMIP REPOSITORY](https://www.isimip.org/outputdata/isimip-repository/).
+
+### Soil data: 
+
+HWSD:
+Wieder, W.R., J. Boehnert, G.B. Bonan, and M. Langseth. 2014. Regridded Harmonized World Soil Database v1.2. Data set. Available on-line \[[http://daac.ornl.gov](http://daac.ornl.gov)\] from Oak Ridge National Laboratory Distributed Active Archive Center, Oak Ridge, Tennessee, USA. [http://dx.doi.org/10.3334/ORNLDAAC/1247](http://dx.doi.org/10.3334/ORNLDAAC/1247)
+
+IGBP: Global Soil Data Task. (2000). Global Gridded Surfaces of Selected Soil Characteristics (IGBP-DIS). Data set. Available on-line \[[http://daac.ornl.gov](http://daac.ornl.gov)\] from Oak Ridge National Laboratory Distributed Active Archive Center, Oak Ridge, Tennessee, USA. [https://doi.org/10.3334/ORNLDAAC/569](https://doi.org/10.3334/ORNLDAAC/569).
+

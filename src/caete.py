@@ -860,6 +860,8 @@ class grd:
 
         for s in range(spin):
             if ABORT:
+                pID = os.getpid()
+                print(f'Closed process PID = {pID}\nGRD = {self.plot_name}\nCOORD = {self.pos}')
                 break
             if save:
                 self._allocate_output(steps.size)
