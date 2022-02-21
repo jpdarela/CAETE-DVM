@@ -203,7 +203,7 @@ def make_table_LD():
 def run_experiment(pls_table):
 
     # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-1000PLS_D')
+    k34_plot = mod.plot(-2.61, -60.20, 'k34-TESTE21')
 
     # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
@@ -343,6 +343,7 @@ def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
                 pass
         dt1 = pd.DataFrame(dict(list(zip(cols, series))))
         dt1.to_csv(f"./{fname}/AmzFACE_D_CAETE_{EXP[exp]}_spin{spin}_EV_{int(lev)}.csv", index=False)
+
 
 if __name__ == "__main__":
     pass

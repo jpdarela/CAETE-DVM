@@ -1164,7 +1164,7 @@ class grd:
 
                 # END SOIL NUTRIENT DYNAMICS
 
-                # # # Process (cwm) & store (np.array) outputs
+                # # #  store (np.array) outputs
                 if save:
                     assert self.save == True
                     self.carbon_costs[step] = daily_output['c_cost_cwm']

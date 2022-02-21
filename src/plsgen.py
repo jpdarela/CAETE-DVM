@@ -199,15 +199,16 @@ def table_gen(NPLS, fpath=None):
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime = np.random.uniform(0.08333333333333333, 8.33, r_ceil)
+    rtime_leaf = np.random.uniform(0.0833, 8.3333, r_ceil)
+    rtime_froot = np.random.uniform(0.0833, 8.3333, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
 
         allocatio = plsa_grass[np.random.randint(0, plsa_grass.shape[0])]
-        restime[0] = rtime[np.random.randint(0, r_ceil)]
+        restime[0] = rtime_leaf[np.random.randint(0, r_ceil)]
         restime[1] = 0.0
-        restime[2] = rtime[np.random.randint(0, r_ceil)]
+        restime[2] = rtime_froot[np.random.randint(0, r_ceil)]
 
         data_to_test0 = np.concatenate((restime, allocatio), axis=0,)
         if check_viability(data_to_test0, False):
@@ -225,9 +226,9 @@ def table_gen(NPLS, fpath=None):
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
-        restime[0] = rtime[np.random.randint(0, r_ceil)]
+        restime[0] = rtime_leaf[np.random.randint(0, r_ceil)]
         restime[1] = rtime_wood[np.random.randint(0, r_ceil)]
-        restime[2] = rtime[np.random.randint(0, r_ceil)]
+        restime[2] = rtime_froot[np.random.randint(0, r_ceil)]
         data_to_test1 = np.concatenate((restime, allocatio), axis=0,)
         if check_viability(data_to_test1, True):
             alloc_w.append(data_to_test1)
