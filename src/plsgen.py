@@ -222,7 +222,7 @@ def table_gen(NPLS, fpath=None):
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(1, 80.0, r_ceil)
+    rtime_wood = np.random.uniform(1, 100.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
@@ -276,7 +276,7 @@ def table_gen(NPLS, fpath=None):
     froot_p2c = root[:, 1]
 
     # new traits
-    pdia = np.random.uniform(0.01, 0.1, NPLS)
+    pdia = np.random.uniform(0.01, 0.10, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)[0]
     # return woods

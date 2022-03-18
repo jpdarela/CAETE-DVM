@@ -11,6 +11,7 @@ import multiprocessing as mp
 import pandas as pd
 import numpy as np 
 import joblib
+
 import caete as mod
 # import plsgen as pls
 
@@ -111,7 +112,7 @@ def read_CMIP5_run(mod_name, scen_name):
     return s_data, stime, co2_data, pt, tsoil, ssoil, hsoil
 
         
-# Define helper functions for multiprocessing (parallel execution)
+# Define helper/wrapper functions for multiprocessing (parallel execution)
 
 # Pre spinup phase -> soil and vegetation pools
 def apply_spin(grid: mod.grd)-> mod.grd:
@@ -196,12 +197,9 @@ if __name__ == "__main__":
     elif RUN_NAME == 2:
         
         mod_name = int(input(f" 1 - {MODS[0]};\n 2 - {MODS[1]};\n 3 - {MODS[2]};\n 4 - {MODS[3]}\n\t_:")) -1
-        # scen_name = int(input(f"1 - {SCEN[0]};\n 2 - {SCEN[1]};\n 3 - {SCEN[2]};\n 4 - {SCEN[3]}\n\t_:")) -1
         m = MODS[mod_name]
-        # s = SCEN[scen_name]
         
         # historical
-        # run
         data = read_CMIP5_run(m, 'historical')
         
         GRD_CELLS = []

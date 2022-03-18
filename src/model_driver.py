@@ -13,8 +13,6 @@
 # !     You should have received a copy of the GNU General Public License
 # !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# ! AUTHOR: JP Darela
-
 
 #       ____    _    _____ _____ _/\__
 #      / ___|  / \  | ____|_   _| ____|
@@ -22,8 +20,43 @@
 #     | |___ / ___ \| |___  | | | |___
 #      \____/_/   \_\_____| |_| |_____|
 
+# Driver script to execute/run CAETÊ-DVM (OFFLINE) with historical Observed and Simulated climate (4 MODELS FROM CMIP5, ISIMIP2b Protocol)
+
+# SPINUP 0 - PHASE 1 grd.spin_bdg <- Start water pools and generate initial estimated CNP fluxes from Vegetation to Soil
+# SPINUP 0 - PHASE 2 grd.spin_sdc <- Estimate initial Values of CNP in the soil POOLS (From data generated in PHASE 1)
+# SPINUP 1 - PHASE 1 grd.run_caete <- Cycle the model 10 times with the 1979-1989 climate (11 Years) 
+#                                     totalizing 110 years with fixed co2=1980 values [~340 µmol mol⁻¹]
+#                                     + Fixed N and P pools - i.e., No cycles of Nutrients
+# SPINUP 2 - PHASE 1 grd.run_caete <- Cycles the full model 20 times with the 1979-1989 climate (11 Years) 308 years
+# TOTAL SPINUP TIME = 418 years  
+
+README = """SPINUP Breakdown - Initially all PLS receive 0.1 Kg (C) m⁻² for the Fine root and leaf reservoirs.
+            The woody tissues start with 1 kg (C) m⁻². Then the model is cycled 3 years (1979-1983) using the method bdg_spinup
+            of the grd class (caete.py) to estimate initial values of Water, and the approximate C, N, and P fluxes from vegetation
+            to the the soil pools. Then these estimated fluxes are employed to run the sdc_spinup method (i.e. Run the soil cycles submodel)
+            3000 times.
+            
+            After this initial numerical approximation of the soil POOLs of W,C,N,P the model is applied in a STANDARD DVM Spin-up 
+            divided into 2 PHASES:
+            1 - Cycle the model 10 times with the 1979-1989 climate, total = 110 years, with fixed co2=1980 values
+                [~340 µmol mol⁻¹] & Fixed N and P pools - i.e., No cycling of Nutrients (Values fixed from reference data).
+            
+            2 - Cycles the full model 28 times with the 1979-1989 climate, total = 308, years with fixed co2=1980 values
+                [~340 µmol mol⁻¹]. Full cycle of nutrients.
+            
+            This end up with a set of grd objects with the initial conditions prepared to model experiments
+            
+            The netCDF4 CF-compliant output generator do not work with data generated in the spinup PHASE.
+            Thus, the calls to the grd.run_caete method during the spinup are set with the argument save=False
+            Calling this method with save=True in the spinup calls can generate unexpected errors. (Because of the time data/metadata)
+            
+            This is a script intended to execute model experiments for the Pan-Amazon region in a HPC environment.
+            Optionally you can run subsets of study area with 60 grid points in a personal computer 
+            
+            The grd class can be easily applied to experiments and tests as shown in the python scripts k43_experiment.py and task5_caete.py in /src
+            """
+
 import os
-import sys
 import _pickle as pkl
 import bz2
 import copy
@@ -62,19 +95,44 @@ def check_start():
 # Check sombrero
 sombrero = check_start()
 
-print("Set the folder to store outputs:")
-outf = input(
-    "Give a name to your run (ASCII letters and numbers only. No spaces): ")
-dump_folder = Path(f'../outputs/{outf}').resolve()
-nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
-print(
-    f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
-print(f"The final netCDF files will be stored at: {nc_outputs}\n")
-
 zone = ""
 y0, y1 = 0, 0
 x0, x1 = 0, 0
 folder = "central"
+
+
+# Water saturation, field capacity & wilting point (maps of 0.5° res)
+# Topsoil
+map_ws = np.load("../input/soil/ws.npy")
+map_fc = np.load('../input/soil/fc.npy')
+map_wp = np.load('../input/soil/wp.npy')
+
+# Subsoil
+map_subws = np.load("../input/soil/sws.npy")
+map_subfc = np.load("../input/soil/sfc.npy")
+map_subwp = np.load("../input/soil/swp.npy")
+
+tsoil = (map_ws, map_fc, map_wp)
+ssoil = (map_subws, map_subfc, map_subwp)
+
+# Hydraulics
+theta_sat = np.load("../input/hydra/theta_sat.npy")
+psi_sat = np.load("../input/hydra/psi_sat.npy")
+soil_texture = np.load("../input/hydra/soil_text.npy")
+
+hsoil = (theta_sat, psi_sat, soil_texture)
+
+
+
+if not sombrero:
+    print("Set the folder to store outputs:")
+    outf = input(
+        "Give a name to your run (ASCII letters and numbers only. No spaces): ")
+    dump_folder = Path(f'../outputs/{outf}').resolve()
+    nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
+    print(
+        f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
+    print(f"The final netCDF files will be stored at: {nc_outputs}\n")
 
 if not sombrero:
     zone = input("Select a zone [c: central, s: south, e: east, nw: NW]: ")
@@ -108,28 +166,6 @@ else:
     assert sombrero
 
 
-# Water saturation, field capacity & wilting point
-# Topsoil
-map_ws = np.load("../input/soil/ws.npy")
-map_fc = np.load('../input/soil/fc.npy')
-map_wp = np.load('../input/soil/wp.npy')
-
-# Subsoil
-map_subws = np.load("../input/soil/sws.npy")
-map_subfc = np.load("../input/soil/sfc.npy")
-map_subwp = np.load("../input/soil/swp.npy")
-
-tsoil = (map_ws, map_fc, map_wp)
-ssoil = (map_subws, map_subfc, map_subwp)
-
-# Hydraulics
-theta_sat = np.load("../input/hydra/theta_sat.npy")
-psi_sat = np.load("../input/hydra/psi_sat.npy")
-soil_texture = np.load("../input/hydra/soil_text.npy")
-
-hsoil = (theta_sat, psi_sat, soil_texture)
-
-
 if sombrero:
     clim_list = ["HISTORICAL-RUN",
                  "GFDL-ESM2M",
@@ -152,12 +188,13 @@ if sombrero:
         climatology = input(CLIM_DATA_str)
         if climatology in ['1', '2', '3', '4', '5']:
             climatology = int(climatology)
+            outf = clim_list[climatology - 1]
             break
         else:
             pass
     # SELECT MODEL -HISTORICAL SPINUP + RUN
     s_data = Path("/home/amazonfaceme/shared_data").resolve()
-    model_root = Path(os.path.join(s_data, Path(clim_list[climatology - 1])))
+    model_root = Path(os.path.join(s_data, Path(outf)))
     if climatology == 1:
         clim_metadata = Path(os.path.join(s_data, model_root,
                                           "ISIMIP_HISTORICAL_METADATA.pbz2"))
@@ -176,7 +213,7 @@ if sombrero:
     else:
         clim_and_soil_data = Path(os.path.join(model_root, Path("historical")))
         clim_metadata = Path(os.path.join(
-            clim_and_soil_data, f"{clim_list[climatology - 1]}-historical_METADATA.pbz2"))
+            clim_and_soil_data, f"{outf}-historical_METADATA.pbz2"))
         with bz2.BZ2File(clim_metadata, mode='r') as fh:
             clim_metadata = pkl.load(fh)
 
@@ -184,7 +221,7 @@ if sombrero:
         del clim_metadata
         input_path = clim_and_soil_data
         # open co2 data
-        with open(os.path.join(model_root, f"co2-{clim_list[climatology - 1]}-historical.txt")) as fh:
+        with open(os.path.join(model_root, f"co2-{outf}-historical.txt")) as fh:
             co2_data = fh.readlines()
         run_breaks = rbrk[1]
         rbrk_index = 1
@@ -192,9 +229,18 @@ if sombrero:
     with open("stime.txt", 'w') as fh:
         fh.writelines([f"{stime['units']}\n",
                        f"{stime['calendar']}\n",
-                       f"{clim_list[climatology - 1]}-ISIMIP2b-hist\n",
+                       f"{outf}-ISIMIP2b-hist\n",
                        f"{rbrk_index}\n"])
+        
+    
+    dump_folder = Path(f'../outputs/{outf}').resolve()
+    nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
+    print(f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
+    print(f"The final netCDF files will be stored at: {nc_outputs}\n")
+    
+        
 else:
+    assert not sombrero
     # HISTORICAL OBSERVED DATA
     s_data = Path("../input").resolve()
     clim_and_soil_data = Path(folder)
@@ -219,6 +265,8 @@ else:
                        f"historical-ISIMIP2b-TEST-{folder}\n",
                        f"{rbrk_index}\n"])
 
+
+
 # FUNCTIONAL TRAITS DATA
 pls_table = pls.table_gen(npls, dump_folder)
 
@@ -239,7 +287,8 @@ else:
                 grid_mn.append(grd(X, Y, outf))
 
 
-def apply_init(grid):
+def apply_init(grid:grd)->grd: 
+    # wraper to the grd method
     grid.init_caete_dyn(input_path, stime, co2_data,
                         pls_table, tsoil, ssoil, hsoil)
     return grid
@@ -261,7 +310,7 @@ for i, g in enumerate(grid_mn):
 
 
 # DEFINE HARVERSTERS - funcs that will apply grd methods(run the CAETÊ model) over the instanvces
-def apply_spin(grid):
+def apply_spin(grid:grd)->grd:
     """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
     w, ll, cwd, rl, lnc = grid.bdg_spinup(
         start_date="19790101", end_date="19830101")
@@ -269,15 +318,15 @@ def apply_spin(grid):
     return grid
 
 
-def apply_fun(grid):
-    grid.run_caete('19790101', '19791231', spinup=10,
-                   fix_co2='1983', save=False, nutri_cycle=False)
+def apply_fun(grid:grd)->grd:
+    grid.run_caete('19790101', '19891231', spinup=10, # 110 anos sem o ciclo de N/P 
+                   fix_co2='1980', save=False, nutri_cycle=False)
     return grid
 
 
-def apply_fun0(grid):
-    grid.run_caete('19790101', '19891231', spinup=15,
-                   fix_co2='1983', save=False)
+def apply_fun0(grid:grd)->grd:
+    grid.run_caete('19790101', '19891231', spinup=28, # 308
+                   fix_co2='1980', save=False)
     return grid
 
 
@@ -288,15 +337,9 @@ def zip_gridtime(grd_pool, interval):
     return res
 
 
-def apply_funX(grid, brk):
+def apply_funX(grid:grd, brk:list)->grd:
     grid.run_caete(brk[0], brk[1])
     return grid
-
-
-def apply_fun_eCO2(grid, brk):
-    grid.run_caete(brk[0], brk[1], fix_co2=600.0)
-    return grid
-
 
 # Garbage collection
 #
@@ -320,7 +363,7 @@ if __name__ == "__main__":
     from post_processing import write_h5
     from h52nc import h52nc
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count()
+    n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count() - 8
 
     fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())
@@ -369,7 +412,7 @@ if __name__ == "__main__":
     result1 = applyXy(apply_fun0, result)
     del result
 
-    # Save Ground 0 # BEFORE SPINUP
+    # Save Ground 0 # END OF SPINUP
     g0_path = Path(os.path.join(
         dump_folder, Path(f"CAETE_STATE_START_{outf}_.pkz"))).resolve()
     with open(g0_path, 'wb') as fh2:

@@ -680,15 +680,15 @@ class grd:
         self.sp_snc = np.zeros(shape=(8,), order='F') + 0.1
         self.sp_available_p = self.soil_dict['ap']
         self.sp_available_n = 0.2 * self.soil_dict['tn']
-        self.sp_in_n = 0.5 * self.soil_dict['tn']
-        self.sp_so_n = 0.3 * self.soil_dict['tn']
+        self.sp_in_n = 0.4 * self.soil_dict['tn']
+        self.sp_so_n = 0.2 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
         self.sp_in_p = self.soil_dict['ip']
         self.sp_uptk_costs = np.zeros(npls, order='F')
-        self.sp_organic_n = 0.01
-        self.sp_sorganic_n = 0.01
-        self.sp_organic_p = 0.01
-        self.sp_sorganic_p = 0.01
+        self.sp_organic_n = 0.1 * self.soil_dict['tn']
+        self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
+        self.sp_organic_p = 0.5 * self.soil_dict['op']
+        self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
 
         self.outputs = dict()
         self.filled = True
@@ -710,7 +710,7 @@ class grd:
             assert self.out_dir.exists(), f"Failed to create {self.out_dir}"
 
         if abort:
-            print("A exception was occurred ABORTING")
+            print("ABORTING")
             self.out_dir = Path(mem)
             print(
                 f"Returning the original grd_{self.xyname}.out_dir to {self.out_dir}")
@@ -934,8 +934,8 @@ class grd:
                     dcf[n] = self.vp_dcf[c]
                     uptk_costs[n] = self.sp_uptk_costs[c]
                     c += 1
-                ton = self.sp_organic_n + self.sp_sorganic_n
-                top = self.sp_organic_p + self.sp_sorganic_p
+                ton = self.sp_organic_n #+ self.sp_sorganic_n
+                top = self.sp_organic_p #+ self.sp_sorganic_p
                 out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                          self.soil_temp, temp[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
@@ -955,7 +955,7 @@ class grd:
                         np.array(
                             rd.sample(list(np.arange(gp.npls)), gp.npls // 2)))
                     rwarn(
-                        f"Gridcell {self.xyname} has less than 1 living Plant Life Strategies - Re-populating")
+                        f"Gridcell {self.xyname} has no living Plant Life Strategies - Re-populating")
                     # REPOPULATE]
                     # UPDATE vegetation pools
                     self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
@@ -978,8 +978,8 @@ class grd:
                 else:
                     if self.vp_lsid.size < 1:
                         ABORT = 1
-                        rwarn(f"Gridcell {self.xyname} has less \
-                                than 1 living Plant Life Strategies")
+                        rwarn(f"Gridcell {self.xyname} has  \
+                                no living Plant Life Strategies")
                     # UPDATE vegetation pools
                     self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
                     self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]

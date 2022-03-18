@@ -228,7 +228,8 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
         group_run = h5file.create_group(
             "/", f'RUN{RUN}', f'CAETÊ outputs tables Run {RUN}')
-        exp_rows = 2749 * 365 * 100
+        exp_rows = 41965625 # values for 60 grid points/// 916080 * (60/2749) 
+        exp_rows_snap = 57033 # 1254  * (60/2749)
         table_g1 = h5file.create_table(
             group_run, 'Outputs_G1', tt.run_g1, "out vars of g1",
             filters=h5_opt, expectedrows=exp_rows)
@@ -239,10 +240,10 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
             group_run, 'Outputs_G3', tt.run_g3, "out vars of g3",
             filters=h5_opt, expectedrows=exp_rows)
         PLS_table = h5file.create_table(
-            group_run, 'PLS', tt.PLS_temp, f"PLS table for RUN{RUN}", expectedrows=gp.npls)
+            group_run, 'PLS', tt.PLS_temp, f"PLS table for RUN{RUN}", expectedrows=int(gp.npls))
         spin_table = h5file.create_table(
             group_run, 'spin_snapshot', tt.spin_snapshots,
-            "Area, Nutrient limitation and N/P uptake", expectedrows=2749 * 18, filters=h5_opt)
+            "Area, Nutrient limitation and N/P uptake", expectedrows=exp_rows_snap, filters=h5_opt)
 
         # write PLS table
         PLS_row = PLS_table.row

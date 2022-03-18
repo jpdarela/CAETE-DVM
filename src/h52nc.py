@@ -1238,7 +1238,7 @@ def h52nc(input_file, dump_nc_folder):
 
     import time
 
-    drv = "H5FD_CORE"
+    drv = "H5FD_CORE" # Change the default load. ->> LOAD the h5 database in primary memory 
     mod = "a"
 
     ip = Path(input_file).resolve()
