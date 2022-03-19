@@ -54,6 +54,7 @@ README = """SPINUP Breakdown - Initially all PLS receive 0.1 Kg (C) m⁻² for t
             Optionally you can run subsets of study area with 60 grid points in a personal computer 
             
             The grd class can be easily applied to experiments and tests as shown in the python scripts k43_experiment.py and task5_caete.py in /src
+            After the spinup the choosen historical transient run is executed
             """
 
 import os
