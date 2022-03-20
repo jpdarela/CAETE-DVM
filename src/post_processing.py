@@ -18,7 +18,7 @@
 
 # post_processing.py
 # Process raw outputs from CAETÊ-DVM
-# USe pytables to create h5 complex datasets
+# USe pytables to create h5 tables
 import os
 from pathlib import Path
 import joblib
@@ -74,7 +74,7 @@ def process_lim(pool_lim, area):
     """post processing of Nutrients limitation in the allocation process for leaf||wood||root.
        - pool_lim[np.ndarray shape(NPLS,NDAYS)] is the limitation status record for a pool (leaf||wood||root)
        of a bunch of PLS
-       - area is a NPLS sized array with area percentage of the cuupied area of each pls
+       - area is a NPLS sized array with area percentage of the ocupied area of each pls
        output: A tuple with the percentage of the time that a specific limitation occured in a vegetation pool"""
 
     pool_nolim = []  # No limitation

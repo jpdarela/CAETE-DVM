@@ -135,6 +135,7 @@ def turnover_combinations(verbose=False):
 
 
 def calc_ratios1(NPLS):
+    # LEAF POOL
     # Reich, P. B., & Oleksyn, J. (2004). 
     # Global patterns of plant leaf N and P in relation to temperature and latitude. 
     # Proceedings of the National Academy of Sciences, 101(30), 11001–11006. 
@@ -161,6 +162,7 @@ def calc_ratios1(NPLS):
 
 
 def calc_ratios2(NPLS):
+    # WOOD POOL
     # Heineman, K. D., Turner, B. L., & Dalling, J. W. (2016). 
     # Variation in wood nutrients along a tropical soil fertility gradient. 
     # New Phytologist, 211(2), 440?454. https://doi.org/10.1111/nph.13904
@@ -180,6 +182,37 @@ def calc_ratios2(NPLS):
         assert len(x) > 0, "zero len"
         x1 = np.array(x)
         np.save("./NP2.npy", x1)
+    idx = np.random.randint(0, x1.shape[0], size=NPLS)
+    sampleNP = x1[idx, :]
+    return sampleNP
+
+def calc_ratios3(NPLS):
+    # FINE ROOT POOL
+    # Iversen, C., McCormack, M., Baer, J., Powell, A., Chen, W., Collins, C.,
+    # Fan, Y., Fanin, N., Freschet, G., Guo, D., Hogan JA, Kou, L., Laughlin, D.,
+    # Lavely, E., Liese, R., Lin, D., Meier, I., Montagnoli, A., 
+    # Roumet, C., … Zadworny, M. (2021). Fine-Root Ecology Database (FRED): A Global 
+    # Collection of Root Trait Data with Coincident Site, Vegetation, Edaphic, and
+    # Climate Data, Version 3. Oak Ridge National Laboratory, TES SFA,
+    # U.S. Department of Energy, Oak Ridge, Tennessee, U.S.A. 
+    # https://doi.org/https://doi.org/10.25581/ornlsfa.014/1459186
+    # AND some references therein
+    N0 = 0.007
+    NM = 0.06
+    P0 = 0.0004
+    PM = 0.004
+
+    if os.path.exists(Path("./NP3.npy")):
+        x1 = np.load("./NP3.npy")
+    else:
+        pool_n2c = np.linspace(N0, NM, 5000)
+        pool_p2c = np.linspace(P0, PM, 5000)
+
+        x = [[a, b] for a in pool_n2c for b in pool_p2c if (
+            (a / b) >= 5) and ((a / b) <= 67)]
+        assert len(x) > 0, "zero len"
+        x1 = np.array(x)
+        np.save("./NP3.npy", x1)
     idx = np.random.randint(0, x1.shape[0], size=NPLS)
     sampleNP = x1[idx, :]
     return sampleNP
@@ -271,7 +304,7 @@ def table_gen(NPLS, fpath=None):
     np.place(awood_n2c, test, 0.0)
     np.place(awood_p2c, test, 0.0)
 
-    root = calc_ratios1(NPLS)
+    root = calc_ratios3(NPLS)
     froot_n2c = root[:, 0]
     froot_p2c = root[:, 1]
 
