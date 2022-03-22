@@ -49,7 +49,7 @@ module photo
         leap                   ,&
         pls_allometry          ,& ! (s), tree diameter (m), height (m), crown area (m2) and average individual number equations.
         foliage_projective     ,&
-        density_ind                     
+        density_ind              !!!       
 
 contains
 
