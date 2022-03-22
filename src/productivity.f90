@@ -31,7 +31,7 @@ module productivity
 contains
 
     subroutine prod(dt,catm,temp,ts,p0,w,ipar,sla1,rh,emax,cl1_prod,&
-        & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,height1,max_height,wmax,ph,ar,&
+        & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,height1, ar_crown,max_height,wmax,ph,ar,&
         & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,e)
 
         use types
@@ -56,6 +56,7 @@ contains
         real(r_8), intent(in) :: height1
         real(r_8), intent(in) :: max_height
         real(r_8), intent(in) :: sla1
+        real(r_8), intent(in) :: ar_crown
 
     !     Output
     !     ------
@@ -133,7 +134,7 @@ contains
         !----------------------------------------------
         f5 =  water_stress_modifier(w, cf1_prod, rc_pot, emax, wmax)
 
-
+        
     !     Photosysthesis minimum and maximum temperature
     !     ----------------------------------------------
 
@@ -156,7 +157,7 @@ contains
         ! laia = 0.2D0 * dexp((2.5D0 * f1)/p25)
         ! sla = spec_leaf_area(tleaf)  ! m2 g-1  ! Convertions made in leaf_area_index &  gross_ph + calls therein
 
-        laia = leaf_area_index(cl1_prod, sla1)
+        laia = leaf_area_index(cl1_prod, sla1, ar_crown, awood)
         rc = rc_aux !* real(laia,kind=r_4) ! RCM -!s m-1 ! CANOPY SCALING --
 
     !     Canopy gross photosynthesis (kgC/m2/yr)

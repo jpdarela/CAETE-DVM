@@ -98,7 +98,7 @@ contains
    !=================================================================
    !=================================================================
 
-   function leaf_area_index(cleaf, sla_var) result(lai)
+   function leaf_area_index(cleaf, sla_var, crown_area, awood) result(lai)
       ! Returns Leaf Area Index m2 m-2
 
       use types, only: r_8
@@ -106,25 +106,19 @@ contains
 
       real(r_8),intent(in) :: cleaf !kgC m-2
       real(r_8),intent(in) :: sla_var   !m2 gC-1
+      real(r_8),intent(in) :: crown_area
+      real(r_8),intent(in) :: awood
       real(r_8) :: lai
 
-
-      lai  = cleaf * 1.0D3 * sla_var  ! Converts cleaf from (KgC m-2) to (gCm-2)
+      if (awood .lt. 0.0D0) then
+         lai  = cleaf * 1.0D3 * sla_var
+      else
+         lai  = (cleaf * 1.0D3 * sla_var)/crown_area  ! Converts cleaf from (KgC m-2) to (gCm-2)
+      endif
       if(lai .lt. 0.0D0) lai = 0.0D0
 
+
    end function leaf_area_index
-
-   ! function accumulate_npp(npp) result (accu_npp)
-   !    !Function to calculates the accumulation of NPP to be used in SE_module and mortality dynamic
-
-   !    use types
-
-   !    real(r_4),intent(in) :: npp
-   !    real(r_4) :: accu_npp
-
-   !    accu_npp = accu_npp + npp
-
-   ! end function accumulate_npp
 
    !=================================================================
    !=================================================================
@@ -171,7 +165,7 @@ contains
       real(r_8) :: sunlai
       real(r_8) :: shadelai
 
-      lai = leaf_area_index(cleaf,sla_var)
+      lai = leaf_area_index(cleaf,sla_var, crown_area, awood)
 
       sunlai = (1.0D0-(dexp(-p26*lai)))/p26
       shadelai = lai - sunlai
@@ -576,7 +570,7 @@ contains
       !         Code by: Bárbara Cardeli, Bianca Rius e Caio Fascina            !
       !                               START                                     !
 
-      index_leaf = leaf_area_index(cbio, sla_var)
+      index_leaf = leaf_area_index(cbio, sla_var, crown_area, awood)
 
       ! =================================================
       !       LIGHT COMPETITION DYNAMIC. [LAYERS]

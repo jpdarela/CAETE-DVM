@@ -328,11 +328,14 @@ contains
 
          call prod(dt1,catm, temp, soil_temp, p0, w, ipar, sla_aux(p), rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, height_aux(ri), max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p)&
+               &, height_aux(ri), crown_aux(ri),max_height,soil_sat, ph(p), ar(p), nppa(p), laia(p)&
                &, f5(p), vpd(p), rm(p), rg(p), rc2(p),wue(p), c_def(p), vcmax(p), tra(p))
 
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 
+         ! print*, 'SLA_CALC', specific_la(p)
+         ! print*, 'LAI', laia(p)
+         
          ! print*, 'NPP [do inside] =', nppa(p)
          ! print*, 'NPP ACUMULO =', npp_accu(p), 'NPP/DIA =', nppa(p), p
 
