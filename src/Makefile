@@ -115,6 +115,7 @@ clean:
 	rm -rf test *.mod *.s *.o pls_ex.txt __pycache__ run_debug
 	clear
 
-clean_plsgen:
-	rm -rf wallo.npy
-	rm -rf gallo.npy
+clean_alloc:
+	rm -rf wallo.npy gallo.npy 
+clean_NP:
+	rm -rf NP1.npy NP2.npy NP3.npy

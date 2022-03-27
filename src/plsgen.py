@@ -23,7 +23,7 @@ import sys
 from math import ceil
 import csv
 from pathlib import Path
-
+from joblib import Parallel, delayed
 import numpy as np
 from caete_module import photo as model
 from caete_module import global_par as gp
@@ -62,7 +62,7 @@ def check_viability(trait_values, wood):
     """
 
     assert wood is not None
-    lim = 0.1
+    lim = 0.01
     rtur = np.array(model.spinup3(lim, trait_values))
     if wood:
         if rtur[0] <= lim and rtur[1] <= lim and rtur[2] <= lim:
@@ -97,8 +97,8 @@ def turnover_combinations(verbose=False):
 
     else:
         print("Building grassy allocation combinations: \n")
-        aleafg = np.arange(5., 95.1, 0.0125e1, dtype=np.float64)
-        arootg = np.arange(5., 95.1, 0.0125e1, dtype=np.float64)
+        aleafg = np.arange(3.5, 96.5, 0.0125e1, dtype=np.float64)
+        arootg = np.arange(3.5, 96.5, 0.0125e1, dtype=np.float64)
 
         plsa_grass = [[a, 0.0, c]
                       for a in aleafg for c in arootg if (a + c) == 100]
@@ -140,19 +140,20 @@ def calc_ratios1(NPLS):
     # Global patterns of plant leaf N and P in relation to temperature and latitude. 
     # Proceedings of the National Academy of Sciences, 101(30), 11001–11006. 
     # https://doi.org/10.1073/pnas.0403588101
-    N0 = 0.005
-    NM = 0.04
-    P0 = 0.0005
-    PM = 0.0035
+    N0 = 0.001
+    NM = 0.05
+    P0 = 0.0002
+    PM = 0.0095
 
     if os.path.exists(Path("./NP1.npy")):
         x1 = np.load("./NP1.npy")
     else:
+        print('NP1...')
         pool_n2c = np.linspace(N0, NM, 5000)
         pool_p2c = np.linspace(P0, PM, 5000)
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 1.5) and ((a / b) <= 60.0)]
+            (a / b) >= 1.5) and ((a / b) <= 70.0)]
         assert len(x) > 0, "zero len"
         x1 = np.array(x)
         np.save("./NP1.npy", x1)
@@ -166,14 +167,15 @@ def calc_ratios2(NPLS):
     # Heineman, K. D., Turner, B. L., & Dalling, J. W. (2016). 
     # Variation in wood nutrients along a tropical soil fertility gradient. 
     # New Phytologist, 211(2), 440?454. https://doi.org/10.1111/nph.13904
-    N0 = 0.003
+    N0 = 0.001
     NM = 0.01
-    P0 = 5.12e-5
+    P0 = 3.12e-5
     PM = 0.0035
 
     if os.path.exists(Path("./NP2.npy")):
         x1 = np.load("./NP2.npy")
     else:
+        print('NP2...')
         pool_n2c = np.linspace(N0, NM, 5000)
         pool_p2c = np.linspace(P0, PM, 5000)
 
@@ -197,19 +199,20 @@ def calc_ratios3(NPLS):
     # U.S. Department of Energy, Oak Ridge, Tennessee, U.S.A. 
     # https://doi.org/https://doi.org/10.25581/ornlsfa.014/1459186
     # AND some references therein
-    N0 = 0.007
+    N0 = 0.001
     NM = 0.06
-    P0 = 0.0004
-    PM = 0.004
+    P0 = 0.0003
+    PM = 0.005
 
     if os.path.exists(Path("./NP3.npy")):
         x1 = np.load("./NP3.npy")
     else:
+        print('NP3...')
         pool_n2c = np.linspace(N0, NM, 5000)
         pool_p2c = np.linspace(P0, PM, 5000)
 
         x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 5) and ((a / b) <= 67)]
+            (a / b) >= 2) and ((a / b) <= 80)]
         assert len(x) > 0, "zero len"
         x1 = np.array(x)
         np.save("./NP3.npy", x1)
@@ -226,14 +229,14 @@ def table_gen(NPLS, fpath=None):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 3000
+    r_ceil = 10000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime_leaf = np.random.uniform(0.0833, 8.3333, r_ceil)
-    rtime_froot = np.random.uniform(0.0833, 8.3333, r_ceil)
+    rtime_leaf = np.random.uniform(0.166, 8.3333, r_ceil)
+    rtime_froot = np.random.uniform(0.08333, 8.3333, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -255,7 +258,7 @@ def table_gen(NPLS, fpath=None):
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(1, 100.0, r_ceil)
+    rtime_wood = np.random.uniform(0.20, 100.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]

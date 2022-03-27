@@ -320,13 +320,13 @@ def apply_spin(grid:grd)->grd:
 
 
 def apply_fun(grid:grd)->grd:
-    grid.run_caete('19790101', '19891231', spinup=10, # 110 anos sem o ciclo de N/P 
+    grid.run_caete('19790101', '19891231', spinup=5, 
                    fix_co2='1980', save=False, nutri_cycle=False)
     return grid
 
-
+ 
 def apply_fun0(grid:grd)->grd:
-    grid.run_caete('19790101', '19891231', spinup=28, # 308
+    grid.run_caete('19790101', '19891231', spinup=35,
                    fix_co2='1980', save=False)
     return grid
 
@@ -364,7 +364,7 @@ if __name__ == "__main__":
     from post_processing import write_h5
     from h52nc import h52nc
 
-    n_proc = mp.cpu_count() // 2 if not sombrero else mp.cpu_count() - 8
+    n_proc = mp.cpu_count()
 
     fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())

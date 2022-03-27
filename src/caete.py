@@ -659,9 +659,9 @@ class grd:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 1.0
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 1.0
+        self.vp_croot = np.zeros(shape=(npls,), order='F') + 1.0
+        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.1
         self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
         # self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
         #     1.0, self.pls_table)
@@ -953,18 +953,18 @@ class grd:
                 if self.vp_lsid.size < 1 and not save:
                     self.vp_lsid = np.sort(
                         np.array(
-                            rd.sample(list(np.arange(gp.npls)), gp.npls // 2)))
+                            rd.sample(list(np.arange(gp.npls)), int(gp.npls - 5))))
                     rwarn(
                         f"Gridcell {self.xyname} has no living Plant Life Strategies - Re-populating")
                     # REPOPULATE]
                     # UPDATE vegetation pools
-                    self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 1.0
                     self.vp_cwood = np.zeros(shape=(self.vp_lsid.size,))
-                    self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 0.5
+                    self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 1.0
                     awood = self.pls_table[6, :]
                     for i0, i in enumerate(self.vp_lsid):
                         if awood[i] > 0.0:
-                            self.vp_cwood[i0] = 0.5
+                            self.vp_cwood[i0] = 0.1
 
                     self.vp_dcl = np.zeros(shape=(self.vp_lsid.size,))
                     self.vp_dca = np.zeros(shape=(self.vp_lsid.size,))
@@ -978,8 +978,8 @@ class grd:
                 else:
                     if self.vp_lsid.size < 1:
                         ABORT = 1
-                        rwarn(f"Gridcell {self.xyname} has  \
-                                no living Plant Life Strategies")
+                        rwarn(f"Gridcell {self.xyname} has"  + \
+                               " no living Plant Life Strategies")
                     # UPDATE vegetation pools
                     self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
                     self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
@@ -1205,7 +1205,6 @@ class grd:
                                          step] = daily_output['uptk_strat'][:, self.vp_lsid]
                 if ABORT:
                     rwarn("NO LIVING PLS - ABORT")
-                    break
             gc.collect()
             if save:
                 if s > 0:
@@ -1348,7 +1347,7 @@ class grd:
             lnco.append(daily_output['lnc'])
 
         f = np.array
-        def x(a): return a * 1.75
+        def x(a): return a * 1.25
         return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 
     def sdc_spinup(self, water, ll, cwd, rl, lnc):
@@ -1448,13 +1447,10 @@ class plot(grd):
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        a0 = np.zeros(shape=(3, gp.npls))
-        a0[0, :] = 0.5
-        a0[1, :] = 0.5
-        a0[2, :] = 5
-        self.vp_cleaf = a0[0, :]
-        self.vp_croot = a0[1, :]
-        self.vp_cwood = a0[2, :]
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.5
+        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.5
+        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.3
+        self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
 
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
@@ -1472,15 +1468,15 @@ class plot(grd):
         self.sp_snc = np.zeros(shape=(8,), order='F') + 0.1
         self.sp_available_p = self.soil_dict['ap']
         self.sp_available_n = 0.2 * self.soil_dict['tn']
-        self.sp_in_n = 0.5 * self.soil_dict['tn']
-        self.sp_so_n = 0.3 * self.soil_dict['tn']
+        self.sp_in_n = 0.4 * self.soil_dict['tn']
+        self.sp_so_n = 0.2 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
         self.sp_in_p = self.soil_dict['ip']
         self.sp_uptk_costs = np.zeros(npls, order='F')
-        self.sp_organic_n = 0.01
-        self.sp_sorganic_n = 0.01
-        self.sp_organic_p = 0.01
-        self.sp_sorganic_p = 0.01
+        self.sp_organic_n = 0.1 * self.soil_dict['tn']
+        self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
+        self.sp_organic_p = 0.5 * self.soil_dict['op']
+        self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
 
         self.outputs = dict()
         self.filled = True

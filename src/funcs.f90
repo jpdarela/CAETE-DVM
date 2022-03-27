@@ -32,8 +32,12 @@ module photo
         leaf_area_index        ,& ! (f), leaf area index(m2 m-2)
         f_four                 ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
         spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
+        sla_reich              ,& ! (f), specific leaf area (m2 g-1)
         water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
         photosynthesis_rate    ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
+        vcmax_a                ,& ! (f), VCmax from domingues et al. 2010 (eq.1)
+        vcmax_a1               ,& ! (f), VCmax from domingues et al. 2010 (eq.2)
+        vcmax_b                ,& ! (f), VCmax from domingues et al. 2010 (eq.1 Table SM)
         canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m)
         stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
@@ -153,15 +157,35 @@ contains
       real(r_8),intent(in) :: tau_leaf  !years
       real(r_8):: sla   !m2 gC-1
 
-      real(r_8) :: n_tau_leaf, tl0
+      ! real(r_8) :: n_tau_leaf, tl0
 
-      n_tau_leaf = (tau_leaf - 0.08333333)/(8.33333333 - 0.08333333)
+      ! n_tau_leaf = (tau_leaf - 0.08333333)/(8.33333333 - 0.08333333)
 
-      tl0 = (365.242D0 / 12.0D0) * (10.00D0 ** (2.00D0*n_tau_leaf))
+      ! ! tl0 = (365.242D0 / 12.0D0) * (10.0D0 ** (2.0D0*n_tau_leaf))
+      ! ! Tweak the function to 'convert' Leaf Longevity to C residence time (MRT) 
+      ! tl0 = ((365.242D0 / 12.0D0) - 10.45) * (2.718281828459045D0 ** (2.0D0*n_tau_leaf))
 
-      sla = (3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
+      sla = sla_reich(tau_leaf) * 0.0001 !(3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
 
    end function spec_leaf_area
+
+   !=================================================================
+   !=================================================================
+   function sla_reich(tau_leaf) result(sla)
+      ! based on Reich et al. 1997
+      use types, only : r_8
+      !implicit none
+
+      real(r_8),intent(in) :: tau_leaf  !years
+      real(r_8):: sla   !cm2 gC-1
+
+      real(r_8) :: tl0
+
+      tl0 = tau_leaf * 12.0D0
+
+      sla = 266.0D0 * (tl0 ** (-0.55)) 
+
+   end function sla_reich
 
    !=================================================================
    !=================================================================
@@ -187,7 +211,7 @@ contains
       real(r_8) :: sunlai
       real(r_8) :: shadelai
 
-      lai = leaf_area_index(cleaf,sla)
+      lai = leaf_area_index(cleaf, sla)
 
       sunlai = (1.0D0-(dexp(-p26*lai)))/p26
       shadelai = lai - sunlai
@@ -476,8 +500,96 @@ contains
 
    !=================================================================
    !=================================================================
+   function vcmax_a(npa, ppa, sla) result(vcmaxd)
+      ! TESTING eq.1 / Fig 5 Domingues et al. 2010
+      real(r_8), intent(in) :: npa       ! N mg g-1
+      real(r_8), intent(in) :: ppa       ! P mg g-1
+      real(r_8), intent(in) :: sla       ! m2(Leaf) g(C)-1
 
-   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,cbio,&
+      
+      real(r_8) :: vcmaxd !mol m⁻² s⁻¹
+      
+      real(r_8), parameter :: alpha_n = -1.16D0,&
+                              nu_n    = 0.70D0,&
+                              alpha_p = -0.30D0,&
+                              nu_p    = 0.85D0
+                              
+      real(r_8) :: ndw, pdw, lma, nlim, plim, vcmax_dw
+      
+      ndw = npa
+      pdw = ppa
+
+      lma = sla ** (-1) ! g/m2
+
+      ! CALCULATE VCMAX
+      nlim = alpha_n + nu_n * dlog10(ndw)  ! + (sigma_n * dlog10(sla))
+      plim = alpha_p + nu_p * dlog10(pdw)  ! + (sigma_p * dlog10(sla))
+      
+      vcmax_dw = min(10**nlim, 10**plim) ! log10(vcmax_dw) in µmol g⁻¹ s⁻¹
+      vcmaxd = vcmax_dw * lma * 1.0D-6 ! Multiply by LMA to have area values and 1d-6 to mol m-2 s-1
+
+   end function vcmax_a
+
+   !=================================================================
+   !=================================================================
+   function vcmax_a1(npa, ppa, sla) result(vcmaxd)
+      ! TESTING
+      real(r_8), intent(in) :: npa   ! N g m-2
+      real(r_8), intent(in) :: ppa,sla   ! P g m-2 / m2 g-1
+
+      
+      real(r_8) :: vcmaxd !mol m⁻² s⁻¹
+
+      ! UNITS = LMA Domingues = cm2 g-1 (SLA CAETE = m² g⁻¹)
+      ! Dry weight -> mg g⁻¹
+      
+      real(r_8), parameter :: alpha_n = -1.56D0,&
+                              nu_n    = 0.43D0,&
+                              alpha_p = -0.80D0,&
+                              nu_p    = 0.45D0,&
+                              sigma_n = 0.37D0,&
+                              sigma_p = 0.25D0
+                              
+      real(r_8) :: ndw, pdw, lma, nlim, plim, vcmax_dw
+      
+      ndw = npa
+      pdw = ppa
+
+      lma = sla ** (-1) ! g/m2
+
+      ! CALCULATE VCMAX
+      nlim = alpha_n + nu_n * dlog10(ndw)  + (sigma_n * dlog10(sla))
+      plim = alpha_p + nu_p * dlog10(pdw)  + (sigma_p * dlog10(sla))
+      
+      vcmax_dw = min(10**nlim, 10**plim) ! log10(vcmax_dw) in µmol g⁻¹ s⁻¹
+      vcmaxd = vcmax_dw * lma
+
+   end function vcmax_a1
+
+   !=================================================================
+   !=================================================================
+   function vcmax_b(npa) result(vcmaxd)
+      ! TESTING Domingues f
+      real(r_8), intent(in) :: npa   ! N g m-2
+      ! real(r_8), intent(in) :: ppa   ! P g m-2
+
+      
+      real(r_8) :: vcmaxd !mol m⁻² s⁻¹
+
+      real(r_8), parameter :: a = 1.57D0 ,&
+                              b = 0.55D0                             
+      real(r_8) :: ndw
+
+      ! CALCULATE VCMAX
+      ndw = a + (b * dlog10(npa)) 
+      vcmaxd = 10**ndw * 1D-6 
+
+
+   end function vcmax_b
+   !=================================================================
+   !=================================================================
+
+   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,&
         & leaf_turnover,f1ab,vm, amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
@@ -490,8 +602,8 @@ contains
       real(r_4),intent(in) :: temp  ! temp °C
       real(r_4),intent(in) :: p0    ! atm Pressure hPa
       real(r_4),intent(in) :: ipar  ! mol Photons m-2 s-1
-      real(r_8),intent(in) :: nbio, c_atm  ! gm-2, ppm
-      real(r_8),intent(in) :: pbio, cbio  ! kg m-2
+      real(r_8),intent(in) :: nbio, c_atm  ! mg g-1, ppm
+      real(r_8),intent(in) :: pbio  ! mg g-1
       logical(l_1),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_8),intent(in) :: leaf_turnover   ! y
@@ -523,17 +635,16 @@ contains
       real(r_8) :: vpm, v4m
       real(r_8) :: cm, cm0, cm1, cm2
 
-      real(r_8) :: vm_nutri
-      real(r_8) :: nbio2, pbio2, cbio_aux
-      real(r_8) :: nmgg, pmgg
-      real(r_8) :: coeffa, coeffb
+      ! real(r_8) :: vm_nutri
+      real(r_8) :: nbio2, pbio2  ! , cbio_aux
+      ! real(r_8) :: nmgg, pmgg
+      ! real(r_8) :: coeffa, coeffb
 
-      ! Calculating Fraction of leaf Nitrogen that is lignin
       nbio2 = nbio !nrubisco(leaf_turnover, nbio)
       pbio2 = pbio !nrubisco(leaf_turnover, pbio)
 
-      if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
-      if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
+      ! if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
+      ! if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
 
       ! ! ! Calculation of reference carboxilation rate of rubisco
       ! !### WALKER et al. 2014
@@ -541,18 +652,20 @@ contains
       ! vm_nutri = vm_nutri + (0.282D0 * dlog(nbio2) * dlog(pbio2))
       ! vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
 
-      ! !### DOMINGUES et al. 2010
-      cbio_aux = cbio
-      if(cbio .le. 0.0D0) cbio_aux = 0.01D0
+      ! ! !### DOMINGUES et al. 2010
+      ! cbio_aux = cbio
+      ! if(cbio .le. 0.0D0) cbio_aux = 0.01D0
 
-      nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
-      pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
-      coeffa = 1.57D0
-      coeffb = 0.55D0
+      ! nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      ! pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      
+      ! coeffa = 1.57D0
+      ! coeffb = 0.55D0
 
-      vm_nutri = coeffa + (coeffb * dlog10(nmgg))
-      vm =  10**vm_nutri * 1D-6
-      if(vm + 1 .eq. vm) vm = p25 - 5.0D-5 ! If Vc max is inf give it a low value
+      ! vm_nutri = coeffa + (coeffb * dlog10(nbio2))
+
+      vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) ! 10**vm_nutri * 1D-6  ! 
+      if(vm + 1 .eq. vm) vm = 1.0D-5 ! If Vc max is inf give it a low value
       if(vm .gt. p25) vm = p25
 
       ! Rubisco Carboxilation Rate - temperature dependence
@@ -910,7 +1023,7 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
+      real(r_8), parameter :: a1 = 25.0D0, a2 = 0.04D0
       !   Autothrophic respiration
       !   ========================
       !   Maintenance respiration (kgC/m2/yr) (based in Ryan 1991)
@@ -951,7 +1064,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
+      real(r_8), parameter :: a1 = 25.0D0, a2 = 0.04D0
 
     !   Autothrophic respiration
     !   ========================
@@ -968,7 +1081,7 @@ contains
     if(ston .lt. 0.0D0) then
       ston = 1.0D0/300.0D0
     else
-      ston = (ston * 1.0D-2)/stoc
+      ston = ston/stoc
     endif
 
     rm = ((ston * stoc) * a1 * dexp(a2 * temp))

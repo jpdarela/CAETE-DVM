@@ -277,8 +277,8 @@ module alloc
 
       
       ! Only a very small amount of total nutrients are available in fact
-      mult_factor_n  = 0.020D0
-      mult_factor_p  = 0.003D0
+      mult_factor_n  = 0.025D0
+      mult_factor_p  = 0.0035D0
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
 
@@ -366,7 +366,7 @@ module alloc
 
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
-         from_sto2npp = 0.45D0 * storage(1)
+         from_sto2npp = 0.75D0 * storage(1)
          npp_pot = npp_pot + from_sto2npp
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
