@@ -3,7 +3,9 @@ import bz2
 from pathlib import Path
 import copy
 import numpy as np
-
+import matplotlib.pyplot as plt
+import netCDF4 as nc
+import datetime
 import caete as mod
 import plsgen as pls
 
@@ -50,8 +52,20 @@ def apply_spin(grid):
 
 
 def run_experiment(pls_table):
+        # Open a dataset with the Standard time variable
+    tm = nc.Dataset("./time_ISIMIP_hist_obs.nc4", 'r')
+    tm1 = tm.variables["time"]
 
-    # Create the plot object
+    t1 = datetime.datetime(year=2006,month=1,day=1,hour=0,minute=0,second=0)
+    t2 = datetime.datetime(year=2006,month=12,day=31,hour=0,minute=0,second=0)
+
+    # Find the index of the input data array for required dates
+    # Will use this to manipulate the input data in sensitivity experiments  
+    idx0 = int(nc.date2index(t1, tm1, calendar="proleptic_gregorian", select='nearest'))
+    idx1 = int(nc.date2index(t2, tm1, calendar="proleptic_gregorian", select='nearest'))
+
+    print(idx0, idx1)
+    # # Create the plot object
     sdata = Path("../cax").resolve()
     cax_grd = mod.grd(257, 183, 'CAX-ISIMIP')
 
@@ -60,30 +74,28 @@ def run_experiment(pls_table):
                        pls_table=pls_table, tsoil=tsoil,
                        ssoil=ssoil, hsoil=hsoil)
 
-    # Apply a numerical spinup in the soil pools of resources
+    # # Apply a numerical spinup in the soil pools of resources
     cax_grd = apply_spin(cax_grd)
 
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
     # The binary files for each repetttion are stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
-    cax_grd.run_caete('19790101', '19890101', spinup=10,
-                       fix_co2='1980', save=True, nutri_cycle=False)
+    cax_grd.run_caete('19790101', '19991231', spinup=5,
+                       fix_co2='1999', save=True, nutri_cycle=False)
 
-    cax_grd.run_caete('19790101', '19890101', spinup=30,
-                       fix_co2='1980', save=True)
+    cax_grd.run_caete('19790101', '19991231', spinup=15,
+                       fix_co2='1999', save=True)
     
-    pr_tmp = cax_grd.pr
-    # alterações na precipitação
-    cax_grd.pr = pr_tmp
+    cax_grd.pr[idx0:idx1 + 1] *= 0.01 
 
-    # Run the year of the experiment! the CO2 increases are generated here
-    cax_grd.run_caete('19790101', '20151231', spinup=1, save=True)
-
+    # Run the experiment!
+    cax_grd.run_caete('20000101', '20151231', spinup=1, save=True)
+    tm.close()
     return cax_grd
 
 
 
-def get_spin(grd: mod.plot, spin) -> dict:
+def get_spin(grd: mod.grd, spin) -> dict:
     import joblib
     if spin < 10:
         name = f'spin0{spin}.pkz'
@@ -96,10 +108,9 @@ def get_spin(grd: mod.plot, spin) -> dict:
 
 
 if __name__ == "__main__":
-    # pass
+    pass
     pls_table = pls.table_gen(1000, Path("./CAX_PLS_TABLE"))
     cax = run_experiment(pls_table)
-
 
 
 # def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
