@@ -24,20 +24,21 @@
 
 # SPINUP 0 - PHASE 1 grd.spin_bdg <- Start water pools and generate initial estimated CNP fluxes from Vegetation to Soil
 # SPINUP 0 - PHASE 2 grd.spin_sdc <- Estimate initial Values of CNP in the soil POOLS (From data generated in PHASE 1)
-# SPINUP 1 - PHASE 1 grd.run_caete <- Cycle the model 10 times with the 1979-1989 climate (11 Years) 
-#                                     totalizing 110 years with fixed co2=1980 values [~340 µmol mol⁻¹]
+# SPINUP 1 - PHASE 1 grd.run_caete <- Cycle the model n times with the 1979-1989 climate (11 * n Years) 
+#                                     totalizing X years with fixed co2=1980 values [~340 µmol mol⁻¹]
 #                                     + Fixed N and P pools - i.e., No cycles of Nutrients
-# SPINUP 2 - PHASE 1 grd.run_caete <- Cycles the full model 20 times with the 1979-1989 climate (11 Years) 308 years
+# SPINUP 2 - PHASE 1 grd.run_caete <- Cycles the full model n times with the 1979-1989 climate (11 Years) 11 * n years
 # TOTAL SPINUP TIME = 418 years  
 
 README = """SPINUP Breakdown - Initially all PLS receive 0.1 Kg (C) m⁻² for the Fine root and leaf reservoirs.
-            The woody tissues start with 1 kg (C) m⁻². Then the model is cycled 3 years (1979-1983) using the method bdg_spinup
+            The woody tissues start with 1 kg (C) m⁻². Then the model is cycled 4 years (1979-1983) using the method bdg_spinup
             of the grd class (caete.py) to estimate initial values of Water, and the approximate C, N, and P fluxes from vegetation
             to the the soil pools. Then these estimated fluxes are employed to run the sdc_spinup method (i.e. Run the soil cycles submodel)
             3000 times.
             
             After this initial numerical approximation of the soil POOLs of W,C,N,P the model is applied in a STANDARD DVM Spin-up 
             divided into 2 PHASES:
+            The numbers can variate. Look the funcion definitions to the exact values
             1 - Cycle the model 10 times with the 1979-1989 climate, total = 110 years, with fixed co2=1980 values
                 [~340 µmol mol⁻¹] & Fixed N and P pools - i.e., No cycling of Nutrients (Values fixed from reference data).
             
@@ -51,7 +52,7 @@ README = """SPINUP Breakdown - Initially all PLS receive 0.1 Kg (C) m⁻² for t
             Calling this method with save=True in the spinup calls can generate unexpected errors. (Because of the time data/metadata)
             
             This is a script intended to execute model experiments for the Pan-Amazon region in a HPC environment.
-            Optionally you can run subsets of study area with 60 grid points in a personal computer 
+            Optionally you can run subsets of study area with ~60 grid points in a personal computer 
             
             The grd class can be easily applied to experiments and tests as shown in the python scripts k43_experiment.py and task5_caete.py in /src
             After the spinup the chosen historical transient run is executed
