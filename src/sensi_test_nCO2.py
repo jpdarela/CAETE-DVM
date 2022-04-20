@@ -21,34 +21,27 @@ import shutil
 import multiprocessing as mp
 from pathlib import Path
 import joblib
-import numpy as np
 from post_processing import write_h5
 import h52nc
 
+from parameters import BASE_RUN, ATTR_FILENAME, run_path, pls_path
 
-run_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/RUN_r11_.pkz")
-pls_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
-
-# Experiment - Half precipitation - HISTORICAL
-
-# new outputs folder
-dump_folder = Path("r11_exp_half_prec_HIST")
+# Experiment - nCO2 No eCO2 - HISTORICAL
+assert run_path.exists(), "Wrong path to initial conditions"
+assert pls_path.exists(), "Wrong path to Attributes Table"
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
 
+# new outputs folder
+dump_folder = Path(f"{BASE_RUN}_nCO2")
+
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
-    gridcell.pr -= gridcell.pr * 0.5
-    # prevent negative values
-    gridcell.pr[np.where(gridcell.pr < 0.0)[0]] = 0.0
-    assert np.all(gridcell.pr >= 0.0)
 
-h52nc.EXPERIMENT = "Half_prec_-HISTORICAL"
+h52nc.EXPERIMENT = "nCO2"
 from caete import run_breaks_hist as rb
-# h52nc.custom_rbrk(rb)
+
 
 def zip_gridtime(grd_pool, interval):
     res = []
@@ -58,11 +51,11 @@ def zip_gridtime(grd_pool, interval):
 
 
 def apply_funX(grid, brk):
-    grid.run_caete(brk[0], brk[1])
+    grid.run_caete(brk[0], brk[1], fix_co2="1980")
     return grid
 
 
-n_proc = mp.cpu_count() // 2
+n_proc = mp.cpu_count()
 
 for i, brk in enumerate(rb):
     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
@@ -71,7 +64,7 @@ for i, brk in enumerate(rb):
         init_conditions = p.starmap(apply_funX, init_conditions)
 
 to_write = Path(os.path.join(Path("../outputs"), dump_folder)).resolve()
-attrs = Path(os.path.join(to_write, Path("pls_attrs.csv"))).resolve()
+attrs = Path(os.path.join(to_write, Path(ATTR_FILENAME))).resolve()
 h5path = Path(os.path.join(to_write, Path('CAETE.h5'))).resolve()
 nc_outputs = Path(os.path.join(to_write, Path('nc_outputs')))
 

@@ -25,25 +25,24 @@ import numpy as np
 from post_processing import write_h5
 import h52nc
 
+from parameters import BASE_RUN, ATTR_FILENAME, run_path, pls_path
+# Experiment - p4 Temperature + 4 - HISTORICAL
 
-run_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/RUN_r11_.pkz")
-pls_path = Path(
-    "/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/r11/pls_attrs.csv")
 
-# Experiment - Temperature + 4 - HISTORICAL
-
-# new outputs folder
-dump_folder = Path("r11_exp_temp_plus_4_HIST")
+assert run_path.exists(), "Wrong path to initial conditions"
+assert pls_path.exists(), "Wrong path to Attributes Table"
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
 
+# new outputs folder
+dump_folder = Path(f"{BASE_RUN}_p4")
+
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
-    gridcell.tas += 4
+    gridcell.tas += 4.0
 
-h52nc.EXPERIMENT = "Temp_plus_4-HISTORICAL"
+h52nc.EXPERIMENT = "p4"
 from caete import run_breaks_hist as rb
 # h52nc.custom_rbrk(rb)
 
@@ -59,7 +58,7 @@ def apply_funX(grid, brk):
     return grid
 
 
-n_proc = mp.cpu_count() // 2
+n_proc = mp.cpu_count()
 
 for i, brk in enumerate(rb):
     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
@@ -68,7 +67,7 @@ for i, brk in enumerate(rb):
         init_conditions = p.starmap(apply_funX, init_conditions)
 
 to_write = Path(os.path.join(Path("../outputs"), dump_folder)).resolve()
-attrs = Path(os.path.join(to_write, Path("pls_attrs.csv"))).resolve()
+attrs = Path(os.path.join(to_write, Path(ATTR_FILENAME))).resolve()
 h5path = Path(os.path.join(to_write, Path('CAETE.h5'))).resolve()
 nc_outputs = Path(os.path.join(to_write, Path('nc_outputs')))
 

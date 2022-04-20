@@ -197,6 +197,7 @@ if sombrero:
     # SELECT MODEL -HISTORICAL SPINUP + RUN
     s_data = Path("/home/amazonfaceme/shared_data").resolve()
     model_root = Path(os.path.join(s_data, Path(outf)))
+    dump_folder = Path(f'../outputs/{outf}').resolve()
     if climatology == 1:
         clim_metadata = Path(os.path.join(s_data, model_root,
                                           "ISIMIP_HISTORICAL_METADATA.pbz2"))
@@ -211,6 +212,8 @@ if sombrero:
             co2_data = fh.readlines()
         run_breaks = rbrk[0]
         rbrk_index = 0
+        # save the attributes table to the HISTORICAL OBSERVED RUN - It will be used in all other experiments
+        pls_table = pls.table_gen(npls, dump_folder)
 
     else:
         clim_and_soil_data = Path(os.path.join(model_root, Path("historical")))
@@ -227,6 +230,18 @@ if sombrero:
             co2_data = fh.readlines()
         run_breaks = rbrk[1]
         rbrk_index = 1
+        
+        # READ the PLS table employed in the base run
+        from parameters import pls_path
+        if pls_path.exists():
+            from caete_utils import read_pls_table
+            print("Using PLS TABLE from BASE_RUN")
+            pls_table = read_pls_table()
+        else:
+            print(f"WARNING: Creating a new PLS table for a historical simulated ({outf}) run ")
+            pls_table = pls.table_gen(npls, dump_folder)
+            
+        
 
     with open("stime.txt", 'w') as fh:
         fh.writelines([f"{stime['units']}\n",
@@ -235,7 +250,7 @@ if sombrero:
                        f"{rbrk_index}\n"])
         
     
-    dump_folder = Path(f'../outputs/{outf}').resolve()
+    
     nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
     print(f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
     print(f"The final netCDF files will be stored at: {nc_outputs}\n")
@@ -266,11 +281,12 @@ else:
                        f"{stime['calendar']}\n",
                        f"historical-ISIMIP2b-TEST-{folder}\n",
                        f"{rbrk_index}\n"])
+    # FUNCTIONAL TRAITS DATA
+    pls_table = pls.table_gen(npls, dump_folder)
 
 
 
-# FUNCTIONAL TRAITS DATA
-pls_table = pls.table_gen(npls, dump_folder)
+
 
 # # Create the gridcell objects
 if sombrero:

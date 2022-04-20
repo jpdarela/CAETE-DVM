@@ -1,4 +1,3 @@
-# IPSL-CM5A-LR_rcp85
 
 # Copyright 2017- LabTerra
 
@@ -29,15 +28,19 @@ import joblib
 from post_processing import write_h5
 import h52nc
 
+from parameters import pls_path, ATTR_FILENAME
 
-model = "IPSL-CM5A-LR"
-rcp = "rcp85"
 
-base_run = f"/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/{model}_historical"
+model = "GFDL-ESM2M"
+rcp = "rcp26"
 
-run_path = Path(os.path.join(base_run, Path(f"RUN_{model}_historical_.pkz")))
 
-pls_path = Path(os.path.join(base_run, Path("pls_attrs.csv")))
+base_run = f"../outputs/{model}"
+END_COND_FILENAME = f"CAETE_STATE_END_{model}_.pkz"
+
+# Path to the final conditions of the historical simulated period (31122005)
+# These will be the start conditions of the RCP simulations.
+run_path = Path(os.path.join(base_run, END_COND_FILENAME))
 
 
 # RCP X.X
@@ -97,7 +100,7 @@ def apply_funX(grid, brk):
     return grid
 
 
-n_proc = mp.cpu_count() // 2
+n_proc = mp.cpu_count()
 
 for i, brk in enumerate(rb):
     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
@@ -106,7 +109,7 @@ for i, brk in enumerate(rb):
         init_conditions = p.starmap(apply_funX, init_conditions)
 
 to_write = Path(os.path.join(Path("../outputs"), dump_folder)).resolve()
-attrs = Path(os.path.join(to_write, Path("pls_attrs.csv"))).resolve()
+attrs = Path(os.path.join(to_write, Path(ATTR_FILENAME))).resolve()
 h5path = Path(os.path.join(to_write, Path('CAETE.h5'))).resolve()
 nc_outputs = Path(os.path.join(to_write, Path('nc_outputs')))
 

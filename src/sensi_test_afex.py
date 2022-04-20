@@ -1,4 +1,3 @@
-
 # Copyright 2017- LabTerra
 
 #     This program is free software: you can redistribute it and/or modify
@@ -18,66 +17,43 @@
 
 # sensi_test.py
 import os
-import _pickle as pkl
-import bz2
 import shutil
-import copy
 import multiprocessing as mp
 from pathlib import Path
 import joblib
 from post_processing import write_h5
 import h52nc
 
+from parameters import BASE_RUN, ATTR_FILENAME, run_path, pls_path
 
-model = "MIROC5"
-rcp = "rcp26"
+while True:
+    afex_treat = input("N, P ou NP: ")
+    afex_treat = afex_treat.upper()
+    if afex_treat in ['N', 'P', 'NP']:
+        break
 
-base_run = f"/home/amazonfaceme/jpdarela/CAETE/CAETE-DVM/outputs/{model}_historical"
-
-run_path = Path(os.path.join(base_run, Path(f"RUN_{model}_historical_.pkz")))
-
-pls_path = Path(os.path.join(base_run, Path("pls_attrs.csv")))
+with open("afex.cfg", mode='w') as fh:
+    fh.writelines([f"{afex_treat}\n", ])
 
 
-# RCP X.X
+assert run_path.exists(), "Wrong path to initial conditions"
+assert pls_path.exists(), "Wrong path to Attributes Table"
+
+# Experiment - AFEX X
 
 # new outputs folder
-dump_folder = Path(f"{model}_{rcp}")
-
-s_data = Path(f"/home/amazonfaceme/shared_data/{model}").resolve()
-input_fpath = Path(os.path.join(s_data, Path(rcp)))
-
-metadata = Path(os.path.join(
-    input_fpath, Path(f"{model}-{rcp}_METADATA.pbz2")))
-co2p = Path(os.path.join(s_data, Path(f"co2-{model}-{rcp}.txt")))
-
-# READ METADATA
-with bz2.BZ2File(metadata, mode='r') as fh:
-    clim_metadata = pkl.load(fh)
-
-# READ CO2
-with open(co2p) as fh:
-    co2_data = fh.readlines()
-
-stime = copy.deepcopy(clim_metadata[0])
-del clim_metadata
+dump_folder = Path(f"{BASE_RUN}_afex_{afex_treat}")
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
 
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
-    gridcell.change_clim_input(input_fpath, stime, co2_data)
 
-print(f"Calendar is {h52nc.CALENDAR}")
-print(f"Time_UNITS  are {h52nc.TIME_UNITS}")
-print(f"EXPERIMENT is {h52nc.EXPERIMENT}")
-
-h52nc.CALENDAR = stime['calendar']
-h52nc.TIME_UNITS = stime['units']
-h52nc.EXPERIMENT = f"{model}-{rcp}"
-from caete import run_breaks_CMIP5_proj as rb
-h52nc.custom_rbrk(rb)
+h52nc.set_historical_stime(new_descr=False)
+h52nc.EXPERIMENT = f"AFEX_{afex_treat}"
+from caete import run_breaks_hist as rb
+# h52nc.custom_rbrk(rb)
 
 print(f"Calendar is {h52nc.CALENDAR}")
 print(f"Time_UNITS  are {h52nc.TIME_UNITS}")
@@ -92,11 +68,11 @@ def zip_gridtime(grd_pool, interval):
 
 
 def apply_funX(grid, brk):
-    grid.run_caete(brk[0], brk[1])
+    grid.run_caete(brk[0], brk[1], afex=True)
     return grid
 
 
-n_proc = mp.cpu_count() // 2
+n_proc = mp.cpu_count()
 
 for i, brk in enumerate(rb):
     print(f"Applying model to the interval {brk[0]}-{brk[1]}")
@@ -105,7 +81,7 @@ for i, brk in enumerate(rb):
         init_conditions = p.starmap(apply_funX, init_conditions)
 
 to_write = Path(os.path.join(Path("../outputs"), dump_folder)).resolve()
-attrs = Path(os.path.join(to_write, Path("pls_attrs.csv"))).resolve()
+attrs = Path(os.path.join(to_write, Path(ATTR_FILENAME))).resolve()
 h5path = Path(os.path.join(to_write, Path('CAETE.h5'))).resolve()
 nc_outputs = Path(os.path.join(to_write, Path('nc_outputs')))
 
