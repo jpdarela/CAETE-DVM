@@ -1031,8 +1031,6 @@ class grd:
                     for i in idx:
                         self.sp_snc[i] = 0.0
 
-
-
                 # IF NUTRICYCLE:
                 if nutri_cycle:
                     # UPDATE ORGANIC POOLS
@@ -1447,9 +1445,9 @@ class plot(grd):
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.5
-        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.5
-        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.3
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 1.0
+        self.vp_croot = np.zeros(shape=(npls,), order='F') + 1.0
+        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.1
         self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
 
         a, b, c, d = m.pft_area_frac(

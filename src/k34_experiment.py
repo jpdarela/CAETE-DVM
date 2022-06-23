@@ -3,6 +3,9 @@ import _pickle as pkl
 import bz2
 from pathlib import Path
 
+from numpy import asfortranarray
+from pandas import read_csv
+
 import cfunits
 import numpy as np
 import pandas as pd
@@ -11,6 +14,7 @@ import caete as mod
 import plsgen as pls
 from aux_plot import get_var
 
+#
 
 from sklearn.cluster import KMeans
 
@@ -18,7 +22,6 @@ idxT = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
 
 dt = pd.read_csv("../k34/MetData_AmzFACE2000_2015_CAETE.csv")
 dt.index = idxT
-
 
 # Soil Parameters
 # Water saturation, field capacity & wilting point
@@ -84,7 +87,7 @@ stime_i = {'standard_name': 'time',
 AMB = "../k34/CO2_AMB_AmzFACE2000_2100.csv"
 ELE = "../k34/CO2_ELE_AmzFACE2000_2100.csv"
 
-with open(AMB, 'r') as fh:
+with open(ELE, 'r') as fh:
     co2 = fh.readlines()
     co2.pop(0)
 
@@ -200,10 +203,16 @@ def make_table_LD():
     np.save("pls_attrs_LD.npy", pls_attrs_LD)
 
 
+def read_pls_table(pls_path):
+    """Read the standard attributes table saved in csv format. 
+       Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
+    return asfortranarray(read_csv(pls_path).__array__()[:,1:].T)
+
+
 def run_experiment(pls_table):
 
     # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-TESTE21')
+    k34_plot = mod.plot(-2.61, -60.20, 'k34-ELE_LD_1000')
 
     # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
@@ -245,7 +254,7 @@ def get_spin(grd: mod.plot, spin) -> dict:
 def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
 
     spin_dt = get_spin(grd, spin)
-    exp = 1
+    exp = 3
     CT1 = pd.read_csv("../k34/CODE_TABLE1.csv")
 
     MICV = ['year', 'doy', 'photo', 'npp', 'aresp', 'cleaf',
@@ -293,7 +302,7 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
 
 
 def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
-    exp = 1
+    exp = 3
     spin_dt = get_spin(grd, spin)
    
     CT1 = pd.read_csv("../k34/CODE_TABLE2.csv")
@@ -311,7 +320,7 @@ def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
     cols = CT1.VariableCode.__array__()
     # LOOP over living strategies in the simulation start
     idxT1 = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
-    fname = f"AmzFACE_D_CAETE_{EXP[exp]}_spin{spin}"
+    fname = f"AmzFACE_Y_CAETE_{EXP[exp]}_spin{spin}"
     os.mkdir(f"./{fname}")
     
     for lev in idx1:
@@ -342,7 +351,7 @@ def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
             else:
                 pass
         dt1 = pd.DataFrame(dict(list(zip(cols, series))))
-        dt1.to_csv(f"./{fname}/AmzFACE_D_CAETE_{EXP[exp]}_spin{spin}_EV_{int(lev)}.csv", index=False)
+        dt1.to_csv(f"./{fname}/AmzFACE_Y_CAETE_{EXP[exp]}_spin{spin}_EV_{int(lev)}.csv", index=False)
 
 
 if __name__ == "__main__":
@@ -356,7 +365,8 @@ if __name__ == "__main__":
     # ld = run_experiment(pls_table)
 
     # INTERMEDIATE FD
-    pls_table = pls.table_gen(NPLS, Path("./k34_PLS_TABLE/"))
+    # pls_table = pls.table_gen(NPLS, Path("./k34_PLS_TABLE/"))
+    pls_table = read_pls_table("./k34_PLS_TABLE/pls_attrs-1000.csv")
     md = run_experiment(pls_table)
 
     # Open HIGH FD traits table

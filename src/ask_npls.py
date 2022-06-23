@@ -28,7 +28,7 @@ module types
    implicit none
 
    ! FOR THE GNU FORTRAN COMPILER
-   integer,parameter,public :: l_1 = 2  ! standart Logical type
+   integer,parameter,public :: l_1 = 2  ! standard Logical type
    integer,parameter,public :: i_2 = 2  ! 16 bits integer
    integer,parameter,public :: i_4 = 4  ! 32 bits integer
    integer,parameter,public :: r_4 = 4  ! 32 bits float
