@@ -162,7 +162,7 @@ contains
       ! n_tau_leaf = (tau_leaf - 0.08333333)/(8.33333333 - 0.08333333)
 
       ! ! tl0 = (365.242D0 / 12.0D0) * (10.0D0 ** (2.0D0*n_tau_leaf))
-      ! ! Tweak the function to 'convert' Leaf Longevity to C residence time (MRT) 
+      ! ! Tweak the function to 'convert' Leaf Longevity to C residence time (MRT)
       ! tl0 = ((365.242D0 / 12.0D0) - 10.45) * (2.718281828459045D0 ** (2.0D0*n_tau_leaf))
 
       sla = sla_reich(tau_leaf) * 0.0001 !(3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
@@ -183,7 +183,7 @@ contains
 
       tl0 = tau_leaf * 12.0D0
 
-      sla = 266.0D0 * (tl0 ** (-0.55)) 
+      sla = 266.0D0 * (tl0 ** (-0.55))
 
    end function sla_reich
 
@@ -327,7 +327,7 @@ contains
 
       D1 = sqrt(vapour_p_d)
       gs = 0.003 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0e6)/ca) ! mol m-2 s-1
-      gs = gs * (1.0D0 / 44.6D0)! convrt from  mol/m²/s to m s-1
+      gs = gs * 0.02520D0! convrt from  mol/m²/s to m s-1
       rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
 
       if(rc2_in .ge. rcmax) rc2_in = rcmax
@@ -506,16 +506,16 @@ contains
       real(r_8), intent(in) :: ppa       ! P mg g-1
       real(r_8), intent(in) :: sla       ! m2(Leaf) g(C)-1
 
-      
+
       real(r_8) :: vcmaxd !mol m⁻² s⁻¹
-      
+
       real(r_8), parameter :: alpha_n = -1.16D0,&
                               nu_n    = 0.70D0,&
                               alpha_p = -0.30D0,&
                               nu_p    = 0.85D0
-                              
+
       real(r_8) :: ndw, pdw, lma, nlim, plim, vcmax_dw
-      
+
       ndw = npa
       pdw = ppa
 
@@ -524,7 +524,7 @@ contains
       ! CALCULATE VCMAX
       nlim = alpha_n + nu_n * dlog10(ndw)  ! + (sigma_n * dlog10(sla))
       plim = alpha_p + nu_p * dlog10(pdw)  ! + (sigma_p * dlog10(sla))
-      
+
       vcmax_dw = min(10**nlim, 10**plim) ! log10(vcmax_dw) in µmol g⁻¹ s⁻¹
       vcmaxd = vcmax_dw * lma * 1.0D-6 ! Multiply by LMA to have area values and 1d-6 to mol m-2 s-1
 
@@ -537,21 +537,21 @@ contains
       real(r_8), intent(in) :: npa   ! N g m-2
       real(r_8), intent(in) :: ppa,sla   ! P g m-2 / m2 g-1
 
-      
+
       real(r_8) :: vcmaxd !mol m⁻² s⁻¹
 
       ! UNITS = LMA Domingues = cm2 g-1 (SLA CAETE = m² g⁻¹)
       ! Dry weight -> mg g⁻¹
-      
+
       real(r_8), parameter :: alpha_n = -1.56D0,&
                               nu_n    = 0.43D0,&
                               alpha_p = -0.80D0,&
                               nu_p    = 0.45D0,&
                               sigma_n = 0.37D0,&
                               sigma_p = 0.25D0
-                              
+
       real(r_8) :: ndw, pdw, lma, nlim, plim, vcmax_dw
-      
+
       ndw = npa
       pdw = ppa
 
@@ -560,7 +560,7 @@ contains
       ! CALCULATE VCMAX
       nlim = alpha_n + nu_n * dlog10(ndw)  + (sigma_n * dlog10(sla))
       plim = alpha_p + nu_p * dlog10(pdw)  + (sigma_p * dlog10(sla))
-      
+
       vcmax_dw = min(10**nlim, 10**plim) ! log10(vcmax_dw) in µmol g⁻¹ s⁻¹
       vcmaxd = vcmax_dw * lma
 
@@ -573,16 +573,16 @@ contains
       real(r_8), intent(in) :: npa   ! N g m-2
       ! real(r_8), intent(in) :: ppa   ! P g m-2
 
-      
+
       real(r_8) :: vcmaxd !mol m⁻² s⁻¹
 
       real(r_8), parameter :: a = 1.57D0 ,&
-                              b = 0.55D0                             
+                              b = 0.55D0
       real(r_8) :: ndw
 
       ! CALCULATE VCMAX
-      ndw = a + (b * dlog10(npa)) 
-      vcmaxd = 10**ndw * 1D-6 
+      ndw = a + (b * dlog10(npa))
+      vcmaxd = 10**ndw * 1D-6
 
 
    end function vcmax_b
@@ -658,13 +658,13 @@ contains
 
       ! nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
       ! pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
-      
+
       ! coeffa = 1.57D0
       ! coeffb = 0.55D0
 
       ! vm_nutri = coeffa + (coeffb * dlog10(nbio2))
 
-      vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) ! 10**vm_nutri * 1D-6  ! 
+      vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) ! 10**vm_nutri * 1D-6  !
       if(vm + 1 .eq. vm) vm = 1.0D-5 ! If Vc max is inf give it a low value
       if(vm .gt. p25) vm = p25
 
