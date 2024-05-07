@@ -4,7 +4,6 @@ src/*.pyf
 src/*.so
 src/__pycache__
 src/*.npy
-src/*.csv
 src/*.txt
 src/*.cfg
 src/RUN*

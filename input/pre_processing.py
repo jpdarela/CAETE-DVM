@@ -5,10 +5,10 @@ import bz2
 import numpy as np
 from netCDF4 import MFDataset
 
-__wat__ = "Pre-processing of input data to feed CAETÊ"
+__what__ = "Pre-processing of input data to feed CAETÊ"
 __author__ = "jpdarela"
 __date__ = "Mon Dec 28 18:08:27 -03 2020"
-__descr__ = """ This script works in the folowing manner: Given a directory (raw_data) with
+__descr__ = """ This script works in the following manner: Given a directory (raw_data) with
                 input climatic data in the form of netCDF files the script opens these files as
                 MFDataset objects. THen the metadata of the climatic data is compiled from the source
                 files and writen to a file in the output folder (clim_data). This folder will store
