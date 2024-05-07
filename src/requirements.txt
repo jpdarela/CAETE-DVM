@@ -1,0 +1,5 @@
+numpy == 1.26.4
+joblib == 1.4.0
+netCDF4 == 1.6.5
+tables == 3.9.2
+charset-normalizer == 3.3.2
