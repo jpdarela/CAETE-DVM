@@ -115,7 +115,7 @@ contains
 
     ! VPD
     !========
-    vpd = vapor_p_defcit(temp,rh)
+    vpd = vapor_p_defcit(temp, rh)
 
     !Stomatal resistence
     !===================
@@ -130,7 +130,7 @@ contains
 !     ----------------------------------------------
 
     if ((temp.ge.-10.0).and.(temp.le.50.0)) then
-       f1 = f1a * f5 ! :water stress factor ! Ancient floating-point underflow spring (from CPTEC-PVM2)
+       f1 = f1a * f5 ! :water stress factor
     else
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif

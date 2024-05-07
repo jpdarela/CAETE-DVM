@@ -18,7 +18,7 @@ from aux_plot import get_var
 
 from sklearn.cluster import KMeans
 
-idxT = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
+idxT = pd.date_range("2000-01-01", "2015-12-31", freq='D')
 
 dt = pd.read_csv("../k34/MetData_AmzFACE2000_2015_CAETE.csv")
 dt.index = idxT
@@ -87,14 +87,14 @@ stime_i = {'standard_name': 'time',
 AMB = "../k34/CO2_AMB_AmzFACE2000_2100.csv"
 ELE = "../k34/CO2_ELE_AmzFACE2000_2100.csv"
 
-with open(ELE, 'r') as fh:
+with open(AMB, 'r') as fh:
     co2 = fh.readlines()
     co2.pop(0)
 
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 1000
+NPLS = 3000
 
 
 def apply_spin(grid):
@@ -127,32 +127,35 @@ def make_table_HD():
         arr1 = k34_plot.pls_table[:, lpls]
         print(f"INIT SUCC EV UN: {lpls.sum()}")
         while True:
-            print("REPEAT ...")
-            print(f"ARR SHP: {arr1.shape}")
-            pls_table = pls.table_gen(NPLS)
-            k34_plot = mod.plot(-2.61, -60.20, 'k34-CUI')
-            k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
-                               pls_table=pls_table, tsoil=tsoil,
-                               ssoil=ssoil, hsoil=hsoil)
-            k34_plot = apply_spin(k34_plot)
-            print("RUNNING")
-            k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
-            k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
+            try:
+                print("REPEAT ...")
+                print(f"ARR SHP: {arr1.shape}")
+                pls_table = pls.table_gen(NPLS)
+                k34_plot = mod.plot(-2.61, -60.20, 'k34-CUI')
+                k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
+                                pls_table=pls_table, tsoil=tsoil,
+                                ssoil=ssoil, hsoil=hsoil)
+                k34_plot = apply_spin(k34_plot)
+                print("RUNNING")
+                k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
+                k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
 
-            area = get_var(k34_plot, 'area', (19, 20))
-            lpls = area[:, -1] > 0.0
-            lpls_arr = k34_plot.pls_table[:, lpls]
-            arr1 = np.concatenate((arr1, lpls_arr), axis=1)
-            if arr1.shape[-1] >= NPLS:
-                break
+                area = get_var(k34_plot, 'area', (19, 20))
+                lpls = area[:, -1] > 0.0
+                lpls_arr = k34_plot.pls_table[:, lpls]
+                arr1 = np.concatenate((arr1, lpls_arr), axis=1)
+                if arr1.shape[-1] >= NPLS:
+                    break
+            except:
+                pass
         return arr1
     head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
             'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c',
             'amp', 'pdia']
 
     FIT_PLS = lplss()
-    pls_table_HD = FIT_PLS[:, 0:1000]
-    np.save("pls_attrs_HD.npy", pls_table_HD)
+    pls_table_HD = FIT_PLS[:, 0:NPLS]
+    np.save("./k34_PLS_TABLE/pls_attrs_HD.npy", pls_table_HD)
     dtf = pd.DataFrame(pls_table_HD.T, columns=head)
     dtf.to_csv("pls_attrs_HD.csv", index=False)
 
@@ -185,7 +188,7 @@ def make_table_LD():
     # PLS 1 = Grass C3
     # PLS 2 = Grass C4
     # PLS 3 = Woody 1
-    # PLS 4 = Woody 2 -> one of the woodies are a N fixer
+    # PLS 4 = Woody 2 -> one of the woodies is a N fixer
 
     pls_attrs_LD = np.zeros(shape=(17, 4), dtype=np.float64, order="F")
     pls_attrs_LD[:, 0] = grassesC3.mean().__array__()
@@ -204,15 +207,15 @@ def make_table_LD():
 
 
 def read_pls_table(pls_path):
-    """Read the standard attributes table saved in csv format. 
+    """Read the standard attributes table saved in csv format.
        Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
     return asfortranarray(read_csv(pls_path).__array__()[:,1:].T)
 
 
-def run_experiment(pls_table):
+def run_experiment(pls_table, fname):
 
     # Create the plot object
-    k34_plot = mod.plot(-2.61, -60.20, 'k34-ELE_LD_1000')
+    k34_plot = mod.plot(-2.61, -60.20, fname)
 
     # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
@@ -225,18 +228,18 @@ def run_experiment(pls_table):
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
     # The binary files for each repetttion are stored as spinX.pkz elsewhere
     # We run the model trought 450 years to assure a steady state
-    k34_plot.run_caete('20000101', '20151231', spinup=10,
+    k34_plot.run_caete('20000101', '20151231', spinup=5,
                        fix_co2='2000', save=True, nutri_cycle=False)
 
-    k34_plot.run_caete('20000101', '20151231', spinup=20,
+    k34_plot.run_caete('20000101', '20151231', spinup=10,
                        fix_co2='2000', save=True)
 
     # Run the year of the experiment! the CO2 increases are generated here
     k34_plot.run_caete('20000101', '20151231', spinup=1, save=True)
 
-    #
-    k34_plot.run_caete('20000101', '20151231', spinup=10,
-                       fix_co2="2020", save=True)
+    # #
+    # k34_plot.run_caete('20000101', '20151231', spinup=10,
+    #                    fix_co2="2020", save=True)
     return k34_plot
 
 
@@ -304,7 +307,7 @@ def pk2csv1(grd: mod.plot, spin) -> pd.DataFrame:
 def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
     exp = 3
     spin_dt = get_spin(grd, spin)
-   
+
     CT1 = pd.read_csv("../k34/CODE_TABLE2.csv")
 
     # READ PLS_TABLE:
@@ -319,10 +322,10 @@ def pk2csv2(grd: mod.plot, spin) -> pd.DataFrame:
     idx1 = np.where(area[:,0] > 0.0)[0]
     cols = CT1.VariableCode.__array__()
     # LOOP over living strategies in the simulation start
-    idxT1 = pd.date_range("2000-01-01", "2015-12-31", freq='D', closed=None)
+    idxT1 = pd.date_range("2000-01-01", "2015-12-31", freq='D')
     fname = f"AmzFACE_Y_CAETE_{EXP[exp]}_spin{spin}"
     os.mkdir(f"./{fname}")
-    
+
     for lev in idx1:
         area_TS = area[lev,:]
         area_TS = pd.Series(area_TS, index=idxT1)
@@ -365,9 +368,15 @@ if __name__ == "__main__":
     # ld = run_experiment(pls_table)
 
     # INTERMEDIATE FD
-    # pls_table = pls.table_gen(NPLS, Path("./k34_PLS_TABLE/"))
-    pls_table = read_pls_table("./k34_PLS_TABLE/pls_attrs-1000.csv")
-    md = run_experiment(pls_table)
+    pls_table = read_pls_table("./pls_attrs-3000.csv")
+    md1 = run_experiment(pls_table, "exp1")
+    a = get_spin(md1, 16)
+    print(a["ls"][-1])
+    print(a["area"][:,-1][a["area"][:,-1] > 0])
+    print(a["cawood"])
+
+
+    # md2 = run_experiment(pls_table, "exp2")
 
     # Open HIGH FD traits table
     # pls_table = np.load("./pls_attrs_HD.npy")

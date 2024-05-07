@@ -16,14 +16,12 @@ Copyright 2017-2018 LabTerra
 
 """
 
-# This module contains the procedures to create the set of PLant life strategies for CAETÊ runs
-
-import os
-import sys
+# Procedures to create the set of PLant life strategies for CAETÊ runs
 from math import ceil
 import csv
+import os
+import sys
 from pathlib import Path
-from joblib import Parallel, delayed
 import numpy as np
 from caete_module import photo as model
 from caete_module import global_par as gp
@@ -62,8 +60,9 @@ def check_viability(trait_values, wood):
     """
 
     assert wood is not None
-    lim = 0.01
-    rtur = np.array(model.spinup3(lim, trait_values))
+    lim = 0.001
+    npp = 0.001
+    rtur = np.array(model.spinup3(npp, trait_values))
     if wood:
         if rtur[0] <= lim and rtur[1] <= lim and rtur[2] <= lim:
             return False
@@ -73,7 +72,6 @@ def check_viability(trait_values, wood):
             return False
         return True
 
-
 def assertion_data_size(dsize):
     """ Assertion of datasets sizes """
 
@@ -82,7 +80,6 @@ def assertion_data_size(dsize):
     diffw = int(dsize - diffg)
     assert diffg + diffw == dsize
     return diffg, diffw
-
 
 def turnover_combinations(verbose=False):
     """CREATE the residence time and allocation combinations"""
@@ -97,8 +94,8 @@ def turnover_combinations(verbose=False):
 
     else:
         print("Building grassy allocation combinations: \n")
-        aleafg = np.arange(3.5, 96.5, 0.0125e1, dtype=np.float64)
-        arootg = np.arange(3.5, 96.5, 0.0125e1, dtype=np.float64)
+        aleafg = np.arange(2, 80, 0.0125e1, dtype=np.float32)
+        arootg = np.arange(2, 80, 0.0125e1, dtype=np.float32)
 
         plsa_grass = [[a, 0.0, c]
                       for a in aleafg for c in arootg if (a + c) == 100]
@@ -110,9 +107,9 @@ def turnover_combinations(verbose=False):
 
     else:
         print("Building woody allocation combinations: \n")
-        aleafw = np.arange(5., 95.1, 0.0125e1, dtype=np.float64)
-        arootw = np.arange(5., 95.1, 0.0125e1, dtype=np.float64)
-        awood = np.arange(5., 95.1, 0.0125e1, dtype=np.float64)
+        aleafw = np.arange(2, 60, 0.0125e1, dtype=np.float32)
+        arootw = np.arange(2, 90, 0.0125e1, dtype=np.float32)
+        awood = np.arange(2, 80, 0.0125e1, dtype=np.float32)
 
         plsa_wood = [[a, b, c] for a in aleafw for b in awood
                      for c in arootw if (a + b + c) == 100]
@@ -133,12 +130,11 @@ def turnover_combinations(verbose=False):
 
     return a1, a2
 
-
 def calc_ratios1(NPLS):
     # LEAF POOL
-    # Reich, P. B., & Oleksyn, J. (2004). 
-    # Global patterns of plant leaf N and P in relation to temperature and latitude. 
-    # Proceedings of the National Academy of Sciences, 101(30), 11001–11006. 
+    # Reich, P. B., & Oleksyn, J. (2004).
+    # Global patterns of plant leaf N and P in relation to temperature and latitude.
+    # Proceedings of the National Academy of Sciences, 101(30), 11001–11006.
     # https://doi.org/10.1073/pnas.0403588101
     N0 = 0.001
     NM = 0.05
@@ -149,23 +145,22 @@ def calc_ratios1(NPLS):
         x1 = np.load("./NP1.npy")
     else:
         print('NP1...')
-        pool_n2c = np.linspace(N0, NM, 5000)
-        pool_p2c = np.linspace(P0, PM, 5000)
+        pool_n2c = np.linspace(N0, NM, 8000, dtype=np.float32)
+        pool_p2c = np.linspace(P0, PM, 8000, dtype=np.float32)
 
-        x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 1.5) and ((a / b) <= 70.0)]
-        assert len(x) > 0, "zero len"
-        x1 = np.array(x)
+        x = ([a, b] for a in pool_n2c for b in pool_p2c if (
+            (a / b) >= 1.5) and ((a / b) <= 70.0))
+        # assert len(x) > 0, "zero len"
+        x1 = np.array(list(x))
         np.save("./NP1.npy", x1)
     idx = np.random.randint(0, x1.shape[0], size=NPLS)
     sampleNP = x1[idx, :]
     return sampleNP
 
-
 def calc_ratios2(NPLS):
     # WOOD POOL
-    # Heineman, K. D., Turner, B. L., & Dalling, J. W. (2016). 
-    # Variation in wood nutrients along a tropical soil fertility gradient. 
+    # Heineman, K. D., Turner, B. L., & Dalling, J. W. (2016).
+    # Variation in wood nutrients along a tropical soil fertility gradient.
     # New Phytologist, 211(2), 440?454. https://doi.org/10.1111/nph.13904
     N0 = 0.001
     NM = 0.01
@@ -176,13 +171,13 @@ def calc_ratios2(NPLS):
         x1 = np.load("./NP2.npy")
     else:
         print('NP2...')
-        pool_n2c = np.linspace(N0, NM, 5000)
-        pool_p2c = np.linspace(P0, PM, 5000)
+        pool_n2c = np.linspace(N0, NM, 8000, dtype=np.float32)
+        pool_p2c = np.linspace(P0, PM, 8000, dtype=np.float32)
 
-        x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 4) and ((a / b) <= 180.0)]
-        assert len(x) > 0, "zero len"
-        x1 = np.array(x)
+        x = ([a, b] for a in pool_n2c for b in pool_p2c if (
+            (a / b) >= 4) and ((a / b) <= 180.0))
+        # assert len(x) > 0, "zero len"
+        x1 = np.array(list(x))
         np.save("./NP2.npy", x1)
     idx = np.random.randint(0, x1.shape[0], size=NPLS)
     sampleNP = x1[idx, :]
@@ -192,14 +187,14 @@ def calc_ratios3(NPLS):
     # FINE ROOT POOL
     # Iversen, C., McCormack, M., Baer, J., Powell, A., Chen, W., Collins, C.,
     # Fan, Y., Fanin, N., Freschet, G., Guo, D., Hogan JA, Kou, L., Laughlin, D.,
-    # Lavely, E., Liese, R., Lin, D., Meier, I., Montagnoli, A., 
-    # Roumet, C., … Zadworny, M. (2021). Fine-Root Ecology Database (FRED): A Global 
+    # Lavely, E., Liese, R., Lin, D., Meier, I., Montagnoli, A.,
+    # Roumet, C., … Zadworny, M. (2021). Fine-Root Ecology Database (FRED): A Global
     # Collection of Root Trait Data with Coincident Site, Vegetation, Edaphic, and
     # Climate Data, Version 3. Oak Ridge National Laboratory, TES SFA,
-    # U.S. Department of Energy, Oak Ridge, Tennessee, U.S.A. 
+    # U.S. Department of Energy, Oak Ridge, Tennessee, U.S.A.
     # https://doi.org/https://doi.org/10.25581/ornlsfa.014/1459186
     # AND some references therein
-    N0 = 0.001
+    N0 = 0.001 # g(Nutrient)/g(Carbon)
     NM = 0.06
     P0 = 0.0003
     PM = 0.005
@@ -208,18 +203,17 @@ def calc_ratios3(NPLS):
         x1 = np.load("./NP3.npy")
     else:
         print('NP3...')
-        pool_n2c = np.linspace(N0, NM, 5000)
-        pool_p2c = np.linspace(P0, PM, 5000)
+        pool_n2c = np.linspace(N0, NM, 8000, dtype=np.float32)
+        pool_p2c = np.linspace(P0, PM, 8000, dtype=np.float32)
 
-        x = [[a, b] for a in pool_n2c for b in pool_p2c if (
-            (a / b) >= 2) and ((a / b) <= 80)]
-        assert len(x) > 0, "zero len"
-        x1 = np.array(x)
+        x = ([a, b] for a in pool_n2c for b in pool_p2c if (
+            (a / b) >= 2) and ((a / b) <= 80))
+        # assert len(x) > 0, "zero len"
+        x1 = np.array(list(x))
         np.save("./NP3.npy", x1)
     idx = np.random.randint(0, x1.shape[0], size=NPLS)
     sampleNP = x1[idx, :]
     return sampleNP
-
 
 def table_gen(NPLS, fpath=None):
     """AKA main - generate a trait table for CAETÊ - save it to a .csv"""
@@ -229,14 +223,14 @@ def table_gen(NPLS, fpath=None):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 10000
+    r_ceil = 15000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime_leaf = np.random.uniform(0.166, 8.3333, r_ceil)
-    rtime_froot = np.random.uniform(0.08333, 8.3333, r_ceil)
+    rtime_leaf =  np.random.uniform(1.0, 2.0, r_ceil)
+    rtime_froot = np.random.uniform(1.0, 12.000000000, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -253,12 +247,14 @@ def table_gen(NPLS, fpath=None):
         sys.stdout.write('\r%s' % (str(index0)))
     sys.stdout.flush()
     print("\n")
+    rtime_leaf =  np.random.uniform(1.0, 12.0, r_ceil)
+    rtime_froot = np.random.uniform(1.0, 4.000000000, r_ceil)
     print("CREATE WOODY STRATEGIES - Checking potential npp/alocation")
     # Creating woody plants (maybe herbaceous)
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(0.20, 100.0, r_ceil)
+    rtime_wood = np.random.uniform(1, 200.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
@@ -281,7 +277,7 @@ def table_gen(NPLS, fpath=None):
     # # # COMBINATIONS
     # # # Random samples from  distributions (g1, tleaf ...)
     # # # Random variables
-    g1 = np.random.uniform(0.1, 19.0, NPLS)
+    g1 = np.random.uniform(0.5, 19.0, NPLS)
     # g1 = vec_ranging(np.random.beta(1.2, 2, NPLS), 1.0, 15.0) # dimensionles
     # # vcmax = np.random.uniform(3e-5, 100e-5,N) # molCO2 m-2 s-1
     resorption = np.random.uniform(0.2, 0.7, NPLS)

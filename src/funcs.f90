@@ -52,39 +52,9 @@ module photo
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
-        leap                   ,&
-        ttype
+        leap
 
 contains
-
-   subroutine ttype()
-      use types
-
-      type t1
-      integer(i_4) :: att1
-      integer(i_4) :: att2
-      integer(i_4) :: att3
-      end type t1
-
-      type(t1), dimension(2) :: test
-      integer(i_4) :: i
-      test(1)%att1 = 23234523
-      test(1)%att2 = 1223452
-      test(1)%att3 = 4421524
-
-      test(2)%att1 = 0
-      test(2)%att2 = 0
-      test(2)%att3 = 0
-
-
-      do i = 1, 2
-         print *, i, "ELEMENTO"
-         print*, test(i)%att1
-         print*, test(i)%att2
-         print*, test(i)%att3
-      enddo
-
-   end subroutine ttype
 
 
    function leap(year) result(is_leap)
@@ -156,14 +126,6 @@ contains
 
       real(r_8),intent(in) :: tau_leaf  !years
       real(r_8):: sla   !m2 gC-1
-
-      ! real(r_8) :: n_tau_leaf, tl0
-
-      ! n_tau_leaf = (tau_leaf - 0.08333333)/(8.33333333 - 0.08333333)
-
-      ! ! tl0 = (365.242D0 / 12.0D0) * (10.0D0 ** (2.0D0*n_tau_leaf))
-      ! ! Tweak the function to 'convert' Leaf Longevity to C residence time (MRT)
-      ! tl0 = ((365.242D0 / 12.0D0) - 10.45) * (2.718281828459045D0 ** (2.0D0*n_tau_leaf))
 
       sla = sla_reich(tau_leaf) * 0.0001 !(3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
 
@@ -319,7 +281,7 @@ contains
 
       vapour_p_d = vpd_in
       ! Assertions
-      if(vpd_in .le. 0.0) vapour_p_d = 0.001
+      if(vpd_in .le. 0.01) vapour_p_d = 0.01
       if(vpd_in .gt. 4.0) vapour_p_d = 4.0
       ! print *, 'vpd going mad in canopy_resistence'
       ! stop
@@ -346,9 +308,9 @@ contains
 
     !implicit none
 
-    real(r_4),intent(in) :: f1_in    !Photosynthesis (molCO2/m2/s)
+    real(r_8),intent(in) :: f1_in    !Photosynthesis (molCO2/m2/s)
     real(r_4),intent(in) :: vpd_in   !hPa
-    real(r_4),intent(in) :: g1       ! model m (slope) (sqrt(kPa))
+    real(r_8),intent(in) :: g1       ! model m (slope) (sqrt(kPa))
     real(r_8),intent(in) :: ca
     real(r_8) :: gs       !Canopy conductance (molCO2 m-2 s-1)
     !     Internal
@@ -358,7 +320,7 @@ contains
 
     vapour_p_d = vpd_in
     ! Assertions
-    if(vpd_in .le. 0.0) vapour_p_d = 0.001
+    if(vpd_in .le. 0.0) vapour_p_d = 0.01
     if(vpd_in .gt. 4.0) vapour_p_d = 4.0
     ! print *, 'vpd going mad in canopy_resistence'
     ! stop
@@ -479,12 +441,7 @@ contains
 
    !=================================================================
    !=================================================================
-   ! def nrubisco(leaf_t, n_in):
-      ! from math import e
 
-      ! tl = e**(-(leaf_t + 1.03)) + 0.08
-
-      ! return tl * (n_in * 0.7)
    function nrubisco(leaf_t,n_in) result(nb)
       use types
       real(r_8), intent(in) :: leaf_t
@@ -637,6 +594,7 @@ contains
 
       ! real(r_8) :: vm_nutri
       real(r_8) :: nbio2, pbio2  ! , cbio_aux
+      real(r_8), parameter :: light_penalization = 0.0D0
       ! real(r_8) :: nmgg, pmgg
       ! real(r_8) :: coeffa, coeffb
 
@@ -665,12 +623,12 @@ contains
       ! vm_nutri = coeffa + (coeffb * dlog10(nbio2))
 
       vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) ! 10**vm_nutri * 1D-6  !
-      if(vm + 1 .eq. vm) vm = 1.0D-5 ! If Vc max is inf give it a low value
+      ! if(vm + 1 .eq. vm) vm = 1.0D-5 ! If Vc max is inf give it a low value
       if(vm .gt. p25) vm = p25
 
       ! Rubisco Carboxilation Rate - temperature dependence
       vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0)))
-      if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
+      ! if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
       if(vm_in .gt. p25) vm_in = p25
 
       if(c4 .eq. 0) then
@@ -688,14 +646,14 @@ contains
          !Moisture deficit at leaf level (kg/kg)
          r = -0.315*rmax
          !Internal leaf CO2 partial pressure (Pa)
-         ci = p19* (1.-(r/p20)) * ((c_atm/9.901)-mgama) + mgama
+         ci = p19 * (1.-(r/p20)) * ((c_atm/9.901)-mgama) + mgama
          !Rubisco carboxilation limited photosynthesis rate (molCO2/m2/s)
          jc = vm_in*((ci-mgama)/(ci+(f2*(1.+(p3/f3)))))
          !Light limited photosynthesis rate (molCO2/m2/s)
          if (ll) then
             aux_ipar = ipar
          else
-            aux_ipar = ipar - (ipar * 0.20)
+            aux_ipar = ipar - (ipar * light_penalization)
          endif
          jl = p4*(1.0-p5)*aux_ipar*((ci-mgama)/(ci+(p6*mgama)))
          amax = jl
@@ -724,6 +682,7 @@ contains
 
 
          f1ab = f1a
+         ! f1ab = max(f1a - (vm_in * 0.10), 0.0D0)
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
          return
       else
@@ -737,7 +696,7 @@ contains
          if (ll) then
             aux_ipar = ipar
          else
-            aux_ipar = ipar - (ipar * 0.20)
+            aux_ipar = ipar - (ipar * light_penalization)
          endif
 
          ipar1 = aux_ipar * 1e6  ! µmol m-2 s-1 - 1e6 converts mol to µmol
@@ -775,7 +734,7 @@ contains
          f1a = dmin1(j1,j2)
 
 
-         f1ab = f1a
+         ! f1ab = max(f1a - (vm_in * 0.10), 0.0D0)
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
          return
       endif
@@ -806,9 +765,9 @@ contains
       real(kind=r_4),intent(out) :: cfrootini
 
       ! more internal
-      real(kind=r_4),dimension(ntl) :: cleafi_aux
-      real(kind=r_4),dimension(ntl) :: cfrooti_aux
-      real(kind=r_4),dimension(ntl) :: cawoodi_aux
+      real(kind=r_4),dimension(:), allocatable :: cleafi_aux
+      real(kind=r_4),dimension(:), allocatable :: cfrooti_aux
+      real(kind=r_4),dimension(:), allocatable :: cawoodi_aux
 
       real(kind=r_4) :: aux_leaf
       real(kind=r_4) :: aux_wood
@@ -834,6 +793,9 @@ contains
       afroot = dt(6)
 
       iswoody = aawood .gt. 0.0
+      allocate(cleafi_aux(ntl))
+      allocate(cfrooti_aux(ntl))
+      allocate(cawoodi_aux(ntl))
 
       sensitivity = 1.001
       if(nppot .le. 0.0) goto 200
@@ -887,8 +849,11 @@ contains
                endif
             endif
          endif
-      enddo                  !nt
+      enddo                 !nt
 200   continue
+      deallocate(cleafi_aux)
+      deallocate(cfrooti_aux)
+      deallocate(cawoodi_aux)
    end subroutine spinup3
 
    ! ===========================================================
@@ -916,9 +881,9 @@ contains
       real(kind=r_4),dimension(npls),intent(out) :: cawoodini
 
       ! more internal
-      real(kind=r_4),dimension(ntl) :: cleafi_aux
-      real(kind=r_4),dimension(ntl) :: cfrooti_aux
-      real(kind=r_4),dimension(ntl) :: cawoodi_aux
+      real(kind=r_4),dimension(:), allocatable :: cleafi_aux
+      real(kind=r_4),dimension(:), allocatable :: cfrooti_aux
+      real(kind=r_4),dimension(:), allocatable :: cawoodi_aux
 
       real(kind=r_4) :: aux_leaf
       real(kind=r_4) :: aux_wood
@@ -934,6 +899,10 @@ contains
       real(kind=r_4),dimension(npls) :: tawood !turnover time of the aboveground woody biomass compartment (yr)
       real(kind=r_4),dimension(npls) :: tfroot !turnover time of the fine roots compartment
       logical(kind=l_1) :: iswoody
+
+      allocate(cleafi_aux(ntl))
+      allocate(cfrooti_aux(ntl))
+      allocate(cawoodi_aux(ntl))
 
       ! catch 'C turnover' traits
       tleaf  = dt(3,:)
@@ -999,6 +968,9 @@ contains
          enddo                  !nt
       enddo                     !npls
 200   continue
+   deallocate(cleafi_aux)
+   deallocate(cfrooti_aux)
+   deallocate(cawoodi_aux)
    end subroutine spinup2
 
   !===================================================================
@@ -1023,7 +995,7 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-      real(r_8), parameter :: a1 = 25.0D0, a2 = 0.04D0
+      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
       !   Autothrophic respiration
       !   ========================
       !   Maintenance respiration (kgC/m2/yr) (based in Ryan 1991)
@@ -1051,7 +1023,6 @@ contains
 
    end function m_resp
 
-
   !===================================================================
   !===================================================================
 
@@ -1064,7 +1035,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: a1 = 25.0D0, a2 = 0.04D0
+      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
 
     !   Autothrophic respiration
     !   ========================
@@ -1123,11 +1094,11 @@ contains
       if(a2 .le. 0.0D0) a2 = 0.0D0
       if(a3 .le. 0.0D0) a3 = 0.0D0
 
-      rgl64 = 1.25D0 * a1
-      rgf64 = 1.25D0 * a2
+      rgl64 = 0.25D0 * a1
+      rgf64 = 0.25D0 * a2
 
       if(aawood_rg .gt. 0.0D0) then
-         rgs64 = 1.25D0 * a3
+         rgs64 = 0.25D0 * a3
       else
          rgs64 = 0.0D0
       endif
@@ -1558,3 +1529,25 @@ end function wtt
   !=================================================================
 
 end module water
+
+! module vec_ranging_module
+!    implicit none
+!    contains
+
+!    subroutine vec_ranging(values, new_min, new_max, output)
+!        implicit none
+!        real, dimension(:), intent(in) :: values
+!        real, intent(in) :: new_min, new_max
+!        real, dimension(size(values)), intent(out) :: output
+!        real :: old_min, old_max
+!        integer :: i
+
+!        old_min = minval(values)
+!        old_max = maxval(values)
+
+!        do i = 1, size(values)
+!            output(i) = (new_max - new_min) / (old_max - old_min) * (values(i) - old_min) + new_min
+!        end do
+!    end subroutine vec_ranging
+
+! end module vec_ranging_module

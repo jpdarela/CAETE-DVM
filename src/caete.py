@@ -17,23 +17,21 @@ Copyright 2017- LabTerra
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from threading import Thread
+from time import sleep
+from pathlib import Path
 import os
 import sys
 import copy
 import _pickle as pkl
 import random as rd
-from threading import Thread
-from time import sleep
-from pathlib import Path
 import warnings
 import bz2
-import gc
 
-from joblib import load, dump
+from joblib import dump
 import cftime
 import numpy as np
-from numpy import log as ln
+
 from hydro_caete import soil_water
 from caete_module import global_par as gp
 from caete_module import budget as model
@@ -42,31 +40,15 @@ from caete_module import photo as m
 from caete_module import soil_dec
 
 NO_DATA = [-9999.0, -9999.0]
-print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
+# print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
 # GLOBAL
 out_ext = ".pkz"
 npls = gp.npls
-runplotp = False
-
-while True:
-    maskp = input(
-        "TWO MASK OPTIONS: AMAZON BIOME (a); PAN-AMAZON (b) OR PLOT RUN (c): ")
-    if maskp == 'b':
-        mask = np.load("../input/mask/mask_raisg-360-720.npy")
-        break
-    if maskp == 'a':
-        mask = np.load("../input/mask/mask_BIOMA.npy")
-        break
-    if maskp == 'c':
-        mask = np.load("../input/mask/mask_raisg-360-720.npy")
-        runplotp = True
-        break
 
 Pan_Amazon_RECTANGLE = "y = 160:221 x = 201:272"
 
 Pan_Amazon_CORNERS = {'ulc': (201, 160),
                       'lrc': (271, 220)}
-
 
 run_breaks_hist = [('19790101', '19801231'),
                    ('19810101', '19821231'),
@@ -151,11 +133,11 @@ run_breaks_CMIP5_proj = [('20060101', '20071231'),
                          ('20960101', '20971231'),
                          ('20980101', '20991231')]
 
-
+# The lists contains the start and end dates of the runs in the CMIP5
+# historical and projection periods respectively
 rbrk = [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
 
 warnings.simplefilter("default")
-
 
 # AUX FUNCS
 
@@ -189,15 +171,15 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
     sys.stdout.flush()
 
 
-def neighbours_index(pos, matrix):
-    neighbours = []
-    rows = len(matrix)
-    cols = len(matrix[0]) if rows else 0
-    for i in range(max(0, pos[0] - 1), min(rows, pos[0] + 2)):
-        for j in range(max(0, pos[1] - 1), min(cols, pos[1] + 2)):
-            if (i, j) != pos:
-                neighbours.append((i, j))
-    return neighbours
+# def neighbours_index(pos, matrix):
+#     neighbours = []
+#     rows = len(matrix)
+#     cols = len(matrix[0]) if rows else 0
+#     for i in range(max(0, pos[0] - 1), min(rows, pos[0] + 2)):
+#         for j in range(max(0, pos[1] - 1), min(cols, pos[1] + 2)):
+#             if (i, j) != pos:
+#                 neighbours.append((i, j))
+#     return neighbours
 
 
 # WARNING keep the lists of budget/carbon3 outputs updated with fortran code
@@ -245,10 +227,7 @@ def find_coord(N, W):
     if True:
         while Yc < lat[Yind]:
             Yind += 1
-    # else:
-    #     Yind += lat.size // 2
-    #     while Yc > lat[Yind]:
-    #         Yind += 1
+
     if Xc <= 0:
         while Xc > lon[Xind]:
             Xind += 1
@@ -291,7 +270,7 @@ class grd:
         self.neighbours = None
 
         self.ls = None          # Number of surviving plss//
-        self.grid_filename = f"gridcell{self.xyname}" 
+        self.grid_filename = f"gridcell{self.xyname}"
         self.out_dir = Path(
             "../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
         self.flush_data = None
@@ -630,7 +609,7 @@ class grd:
 
         # OTHER INPUTS
         self.pls_table = copy.deepcopy(pls_table)
-        self.neighbours = neighbours_index(self.pos, mask)
+        # self.neighbours = neighbours_index(self.pos, mask)
         self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
 
         # Prepare co2 inputs (we have annually means)
@@ -659,14 +638,20 @@ class grd:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 1.0
-        self.vp_croot = np.zeros(shape=(npls,), order='F') + 1.0
-        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F')
+        self.vp_croot = np.zeros(shape=(npls,), order='F')
+        self.vp_cwood = np.zeros(shape=(npls,), order='F')
+
+        self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
+            1.0, self.pls_table)
+
         self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
-        # self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-        #     1.0, self.pls_table)
+
         a, b, c, d = m.pft_area_frac(
             self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
+        del b # not used
+        del c # not used
+        del d # not used
         self.vp_lsid = np.where(a > 0.0)[0]
         self.ls = self.vp_lsid.size
         self.vp_dcl = np.zeros(shape=(npls,), order='F')
@@ -676,8 +661,8 @@ class grd:
         self.vp_sto = np.zeros(shape=(3, npls), order='F')
 
         # # # SOIL
-        self.sp_csoil = np.zeros(shape=(4,), order='F') + 1.0
-        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.1
+        self.sp_csoil = np.zeros(shape=(4,), order='F') + 2.0
+        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.01
         self.sp_available_p = self.soil_dict['ap']
         self.sp_available_n = 0.2 * self.soil_dict['tn']
         self.sp_in_n = 0.4 * self.soil_dict['tn']
@@ -692,7 +677,6 @@ class grd:
 
         self.outputs = dict()
         self.filled = True
-        gc.collect()
         return None
 
     def clean_run(self, dump_folder, save_id):
@@ -936,6 +920,8 @@ class grd:
                     c += 1
                 ton = self.sp_organic_n #+ self.sp_sorganic_n
                 top = self.sp_organic_p #+ self.sp_sorganic_p
+                # TODO need to adapt no assimilation with water content lower than thw wilting point
+                # self.swp.w1_max ...
                 out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                          self.soil_temp, temp[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
@@ -958,13 +944,13 @@ class grd:
                         f"Gridcell {self.xyname} has no living Plant Life Strategies - Re-populating")
                     # REPOPULATE]
                     # UPDATE vegetation pools
-                    self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 1.0
+                    self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 0.8
                     self.vp_cwood = np.zeros(shape=(self.vp_lsid.size,))
-                    self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 1.0
+                    self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 0.8
                     awood = self.pls_table[6, :]
                     for i0, i in enumerate(self.vp_lsid):
                         if awood[i] > 0.0:
-                            self.vp_cwood[i0] = 0.1
+                            self.vp_cwood[i0] = 1.0
 
                     self.vp_dcl = np.zeros(shape=(self.vp_lsid.size,))
                     self.vp_dca = np.zeros(shape=(self.vp_lsid.size,))
@@ -1004,7 +990,7 @@ class grd:
                 # Plant uptake and Carbon costs of nutrient uptake
                 self.nupt[:, step] = daily_output['nupt']
                 self.pupt[:, step] = daily_output['pupt']
-                
+
                 # CWM of STORAGE_POOL
                 for i in range(3):
                     self.storage_pool[i, step] = np.sum(
@@ -1203,7 +1189,6 @@ class grd:
                                          step] = daily_output['uptk_strat'][:, self.vp_lsid]
                 if ABORT:
                     rwarn("NO LIVING PLS - ABORT")
-            gc.collect()
             if save:
                 if s > 0:
                     while True:
@@ -1222,7 +1207,6 @@ class grd:
                     sleep(0.5)
                 else:
                     break
-        gc.collect()
         return None
 
     def bdg_spinup(self, start_date, end_date):
@@ -1346,6 +1330,7 @@ class grd:
 
         f = np.array
         def x(a): return a * 1.25
+
         return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 
     def sdc_spinup(self, water, ll, cwd, rl, lnc):
@@ -1374,7 +1359,7 @@ class plot(grd):
         """ PREPARE A GRIDCELL TO RUN With PLOT OBSERVED DATA
             sdata : python dict with the proper structure - see the input files e.g. CAETE-DVM/input/central/input_data_175-235.pbz2
             stime_i:  python dict with the proper structure - see the input files e.g. CAETE-DVM/input/central/ISIMIP_HISTORICAL_METADATA.pbz2
-            These dicts are build upon .csv climatic data in the file CAETE-DVM/src/k34_experiment.py where you can find an application of the plot class 
+            These dicts are build upon .csv climatic data in the file CAETE-DVM/src/k34_experiment.py where you can find an application of the plot class
             co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
             tsoil, ssoil, hsoil: numpy arrays with soil parameters see the file CAETE-DVM/src/k34_experiment.py
@@ -1416,7 +1401,7 @@ class plot(grd):
 
         # OTHER INPUTS
         self.pls_table = pls_table.copy()
-        self.neighbours = neighbours_index(self.pos, mask)
+        # self.neighbours = neighbours_index(self.pos, mask)
         self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
 
         # Prepare co2 inputs (we have annually means)

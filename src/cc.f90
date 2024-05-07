@@ -78,7 +78,7 @@ module carbon_costs
       real(r_8), intent(in) :: nsoil  ! (ML⁻²)
       real(r_8), intent(in) :: et ! Transpiration (ML⁻²T⁻¹) (mm/s)
       real(r_8), intent(in) :: sd ! soil water depht (ML⁻²)  ( 1 Kg(H2O) m⁻² == 1 mm )
-      real(r_8), intent(in) :: mf ! 
+      real(r_8), intent(in) :: mf !
       real(r_8), intent(out) :: uptk
       ! Mass units of et and sd must be the same
 

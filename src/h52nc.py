@@ -426,9 +426,14 @@ def write_area_output(arr, time_index, nc_out):
         longitude = rootgrp.createVariable(
             varname="longitude", datatype=np.float32, dimensions=("longitude",))
         var_ = rootgrp.createVariable(varname='ocp_area', datatype=np.float32,
-                                      dimensions=(
-                                          "time", "pls", "latitude", "longitude",),
-                                      fill_value=NO_DATA[0])
+                                    dimensions=(
+                                        "time", "pls", "latitude", "longitude",),
+                                    fill_value=NO_DATA[0],
+                                    compression="zlib",
+                                    complevel=9,
+                                    shuffle=True,
+                                    least_significant_digit=3,
+                                    fletcher32=True)
 
         # attributes
         # rootgrp
@@ -1238,7 +1243,7 @@ def h52nc(input_file, dump_nc_folder):
 
     import time
 
-    drv = "H5FD_CORE" # Change the default load. ->> LOAD the h5 database in primary memory 
+    drv = "H5FD_CORE" # Change the default load. ->> LOAD the h5 database in primary memory
     mod = "a"
 
     ip = Path(input_file).resolve()

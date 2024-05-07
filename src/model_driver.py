@@ -24,36 +24,36 @@
 
 # SPINUP 0 - PHASE 1 grd.spin_bdg <- Start water pools and generate initial estimated CNP fluxes from Vegetation to Soil
 # SPINUP 0 - PHASE 2 grd.spin_sdc <- Estimate initial Values of CNP in the soil POOLS (From data generated in PHASE 1)
-# SPINUP 1 - PHASE 1 grd.run_caete <- Cycle the model n times with the 1979-1989 climate (11 * n Years) 
+# SPINUP 1 - PHASE 1 grd.run_caete <- Cycle the model n times with the 1979-1989 climate (11 * n Years)
 #                                     totalizing X years with fixed co2=1980 values [~340 µmol mol⁻¹]
 #                                     + Fixed N and P pools - i.e., No cycles of Nutrients
 # SPINUP 2 - PHASE 1 grd.run_caete <- Cycles the full model n times with the 1979-1989 climate (11 Years) 11 * n years
-# TOTAL SPINUP TIME = 418 years  
+# TOTAL SPINUP TIME = 418 years
 
 README = """SPINUP Breakdown - Initially all PLS receive 0.1 Kg (C) m⁻² for the Fine root and leaf reservoirs.
             The woody tissues start with 1 kg (C) m⁻². Then the model is cycled 4 years (1979-1983) using the method bdg_spinup
             of the grd class (caete.py) to estimate initial values of Water, and the approximate C, N, and P fluxes from vegetation
             to the the soil pools. Then these estimated fluxes are employed to run the sdc_spinup method (i.e. Run the soil cycles submodel)
             3000 times.
-            
-            After this initial numerical approximation of the soil POOLs of W,C,N,P the model is applied in a STANDARD DVM Spin-up 
+
+            After this initial numerical approximation of the soil POOLs of W,C,N,P the model is applied in a STANDARD DVM Spin-up
             divided into 2 PHASES:
             The numbers can variate. Look the funcion definitions to the exact values
             1 - Cycle the model 10 times with the 1979-1989 climate, total = 110 years, with fixed co2=1980 values
                 [~340 µmol mol⁻¹] & Fixed N and P pools - i.e., No cycling of Nutrients (Values fixed from reference data).
-            
+
             2 - Cycles the full model 28 times with the 1979-1989 climate, total = 308, years with fixed co2=1980 values
                 [~340 µmol mol⁻¹]. Full cycle of nutrients.
-            
+
             This end up with a set of grd objects with the initial conditions prepared to model experiments
-            
+
             The netCDF4 CF-compliant output generator do not work with data generated in the spinup PHASE.
             Thus, the calls to the grd.run_caete method during the spinup are set with the argument save=False
             Calling this method with save=True in the spinup calls can generate unexpected errors. (Because of the time data/metadata)
-            
+
             This is a script intended to execute model experiments for the Pan-Amazon region in a HPC environment.
-            Optionally you can run subsets of study area with ~60 grid points in a personal computer 
-            
+            Optionally you can run subsets of study area with ~60 grid points in a personal computer
+
             The grd class can be easily applied to experiments and tests as shown in the python scripts k43_experiment.py and task5_caete.py in /src
             After the spinup the chosen historical transient run is executed
             """
@@ -63,21 +63,35 @@ import _pickle as pkl
 import bz2
 import copy
 import multiprocessing as mp
+
 from pathlib import Path
 from random import shuffle
+from shutil import copy as cp
 
 import joblib
-from netCDF4 import Dataset
 import numpy as np
 
-import caete
-from caete import grd, mask, npls, print_progress, rbrk
-import plsgen as pls
+from caete import grd, print_progress, rbrk
+from caete_utils import read_pls_table
+from parameters import pls_path, ATTR_FILENAME
 
 __author__ = "João Paulo Darela Filho"
 __descr__ = """RUN CAETÊ"""
 
 FUNCALLS = 0
+
+while True:
+    maskp = input(
+        "TWO MASK OPTIONS: AMAZON BIOME (a); PAN-AMAZON (b) OR PLOT RUN (c): ")
+    if maskp == 'b':
+        mask = np.load("../input/mask/mask_raisg-360-720.npy")
+        break
+    if maskp == 'a':
+        mask = np.load("../input/mask/mask_BIOMA.npy")
+        break
+    if maskp == 'c':
+        mask = np.load("../input/mask/mask_raisg-360-720.npy")
+        break
 
 
 def check_start():
@@ -124,7 +138,7 @@ soil_texture = np.load("../input/hydra/soil_text.npy")
 
 hsoil = (theta_sat, psi_sat, soil_texture)
 
-
+pls_table = read_pls_table()
 
 if not sombrero:
     print("Set the folder to store outputs:")
@@ -212,8 +226,6 @@ if sombrero:
             co2_data = fh.readlines()
         run_breaks = rbrk[0]
         rbrk_index = 0
-        # save the attributes table to the HISTORICAL OBSERVED RUN - It will be used in all other experiments
-        pls_table = pls.table_gen(npls, dump_folder)
 
     else:
         clim_and_soil_data = Path(os.path.join(model_root, Path("historical")))
@@ -231,30 +243,18 @@ if sombrero:
         run_breaks = rbrk[1]
         rbrk_index = 1
 
-        # READ the PLS table employed in the base run
-        from parameters import pls_path, ATTR_FILENAME
-        if pls_path.exists():
-            from caete_utils import read_pls_table
-            print("Using PLS TABLE from BASE_RUN")
-            os.makedirs(dump_folder, exist_ok=True)
-            pls_table = read_pls_table(out=Path(os.path.join(dump_folder, ATTR_FILENAME)))
-        else:
-            print(f"WARNING: Creating a new PLS table for a historical simulated ({outf}) run ")
-            pls_table = pls.table_gen(npls, dump_folder)
-
     with open("stime.txt", 'w') as fh:
         fh.writelines([f"{stime['units']}\n",
                        f"{stime['calendar']}\n",
                        f"{outf}-ISIMIP2b-hist\n",
                        f"{rbrk_index}\n"])
-        
-    
-    
+
+
+
     nc_outputs = Path(os.path.join(dump_folder, Path("nc_outputs"))).resolve()
     print(f"The raw model results & the PLS table will be saved at: {dump_folder}\n")
     print(f"The final netCDF files will be stored at: {nc_outputs}\n")
-    
-        
+
 else:
     assert not sombrero
     # HISTORICAL OBSERVED DATA
@@ -280,12 +280,6 @@ else:
                        f"{stime['calendar']}\n",
                        f"historical-ISIMIP2b-TEST-{folder}\n",
                        f"{rbrk_index}\n"])
-    # FUNCTIONAL TRAITS DATA
-    pls_table = pls.table_gen(npls, dump_folder)
-
-
-
-
 
 # # Create the gridcell objects
 if sombrero:
@@ -304,7 +298,7 @@ else:
                 grid_mn.append(grd(X, Y, outf))
 
 
-def apply_init(grid:grd)->grd: 
+def apply_init(grid:grd)->grd:
     # wraper to the grd method
     grid.init_caete_dyn(input_path, stime, co2_data,
                         pls_table, tsoil, ssoil, hsoil)
@@ -336,13 +330,13 @@ def apply_spin(grid:grd)->grd:
 
 
 def apply_fun(grid:grd)->grd:
-    grid.run_caete('19790101', '19891231', spinup=5, 
+    grid.run_caete('19790101', '19891231', spinup=5,
                    fix_co2='1980', save=False, nutri_cycle=False)
     return grid
 
- 
+
 def apply_fun0(grid:grd)->grd:
-    grid.run_caete('19790101', '19891231', spinup=35,
+    grid.run_caete('19790101', '19891231', spinup=15,
                    fix_co2='1980', save=False)
     return grid
 
@@ -358,12 +352,10 @@ def apply_funX(grid:grd, brk:list)->grd:
     grid.run_caete(brk[0], brk[1])
     return grid
 
-# Garbage collection
-#
+cp(pls_path, os.path.join(dump_folder, ATTR_FILENAME))
 del pls_table
 del co2_data
 del stime
-
 
 if __name__ == "__main__":
 
@@ -380,7 +372,8 @@ if __name__ == "__main__":
     from post_processing import write_h5
     from h52nc import h52nc
 
-    n_proc = mp.cpu_count()
+    n_proc = mp.cpu_count() // 2
+    n_proc = 30
 
     fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())

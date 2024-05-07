@@ -38,7 +38,10 @@ contains
       use global_par, only: ntraits, npls
       use alloc
       use productivity
+
+#ifdef _OPENMP
       use omp_lib
+#endif
 
       use photo, only: pft_area_frac, sto_resp
       use water, only: evpot2, penman, available_energy, runoff
@@ -142,7 +145,7 @@ contains
       real(r_8),dimension(:),allocatable :: cl1_int
       real(r_8),dimension(:),allocatable :: cf1_int
       real(r_8),dimension(:),allocatable :: ca1_int
-      real(r_8),dimension(:),allocatable :: tra 
+      real(r_8),dimension(:),allocatable :: tra
       real(r_8),dimension(:),allocatable :: cl2
       real(r_8),dimension(:),allocatable :: cf2
       real(r_8),dimension(:),allocatable :: ca2    ! carbon pos-allocation
@@ -164,12 +167,12 @@ contains
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs/living grasses
 
       real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, pdia_aux
-      real(r_8), dimension(3,npls) :: sto_budg
+      real(r_8), dimension(:, :), allocatable :: sto_budg
       real(r_8) :: soil_sat, ar_aux
       real(r_8), dimension(:), allocatable :: idx_grasses, idx_pdia
-      
-      
-      
+
+
+      allocate(sto_budg(3, npls))
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
@@ -271,19 +274,20 @@ contains
       soil_temp = ts
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
-      !     =====================
-      ! FAZER NUmthreads função de nlen pra otimizar a criação de trheads
-      if (nlen .le. 20) then
+      !     =====================make it parallel=========================
+#ifdef _OPENMP
+      if (nlen .le. 500) then
          call OMP_SET_NUM_THREADS(1)
-      else if (nlen .le. 100) then
-         call OMP_SET_NUM_THREADS(1)
-      else if (nlen .le. 300) then
+      else if (nlen .le. 1500) then
          call OMP_SET_NUM_THREADS(2)
-      else if (nlen .le. 600) then
+      else if (nlen .le. 2500) then
          call OMP_SET_NUM_THREADS(3)
+      else if (nlen .le. 3500) then
+         call OMP_SET_NUM_THREADS(4)
       else
-         call OMP_SET_NUM_THREADS(3)
+         call OMP_SET_NUM_THREADS(5)
       endif
+#endif
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
@@ -322,8 +326,8 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
-         if (isnan(mr_sto)) mr_sto = 0.0D0
-         if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
+         ! if (isnan(mr_sto)) mr_sto = 0.0D0
+         ! if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
@@ -395,6 +399,8 @@ contains
 
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
+
+      deallocate(sto_budg)
       epavg = emax !mm/day
 
       ! FILL OUTPUT DATA
@@ -556,7 +562,7 @@ contains
       DEALLOCATE(idx_pdia)
       DEALLOCATE(ar_fix_hr)
 
-      
+
    end subroutine daily_budget
 
 end module budget

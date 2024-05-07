@@ -275,8 +275,9 @@ module alloc
 
       ctonfix = 0.0D0
 
-      
+
       ! Only a very small amount of total nutrients are available in fact
+      ! This is used to testing purposes only
       mult_factor_n  = 0.025D0
       mult_factor_p  = 0.0035D0
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
@@ -284,16 +285,16 @@ module alloc
 
       avail_n = (mult_factor_n * nmin) !g m⁻²
       if(nmin .le. 0.0) avail_n = 0.0D0
-      
+
       avail_p = (mult_factor_p * plab) !g m⁻²
       if(plab .le. 0.0) avail_p = 0.0D0
-      
+
       aux_on = on * mult_factor_n
       if (on .le. 0.0D0) aux_on = 0.0D0
 
       aux_op = op * mult_factor_p
       if (op .le. 0.0D0) aux_op = 0.0D0
-      
+
       aux_sop = sop * mult_factor_p
       if (sop .le. 0.0D0) aux_sop = 0.0D0
 
@@ -344,7 +345,7 @@ module alloc
 
       !# if you reach this point ---> There is C and nutrients to allocate!
       test35 = .false.
-      
+
       ! INTERNAL VARIABLES
       scf2_tmp = 0.0D0
       sca2_tmp = 0.0D0
@@ -366,7 +367,7 @@ module alloc
 
       ! SUM UP STORAGE AND NPP to create POTNPP
       if(storage(1) .gt. 0.0D0) then
-         from_sto2npp = 0.75D0 * storage(1)
+         from_sto2npp = 0.15D0 * storage(1)
          npp_pot = npp_pot + from_sto2npp
          storage_out_alloc(1) = storage(1) - from_sto2npp
       endif
@@ -822,9 +823,9 @@ module alloc
 
       ! CARBON AND NUTRIENTS TURNOVER
       test35 = .false. ! Ensure the normal calculations of allocation
-      
+
 294   continue ! Material going to soil + updating veg pools
-      
+
       if(test35) then
          nitrogen_uptake(:) = 0.0D0
          phosphorus_uptake(:) = 0.0D0
