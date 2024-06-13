@@ -2,6 +2,18 @@
 from pathlib import Path
 import numpy as np
 
+# Running in sombrero:
+input_in_sombrero = Path("/home/amazonfaceme/shared_data/").resolve()
+local_input = Path("../input").resolve()
+
+#masks
+# Pan-Amazon mask. Only forest dominated gridcells are considered.
+mask_am = np.load("../input/mask/mask_am_forest.npy")
+
+# Pan-Amazon mask.
+mask_pan_am = np.load("../input/mask/mask_raisg-360-720.npy")
+
+
 # Name of the base historical observed run.
 BASE_RUN = 'HISTORICAL-RUN' #"HISTORICAL-RUN" <- in sombrero this is the
                   # STANDARD name for the historical observed run
@@ -11,7 +23,6 @@ START_COND_FILENAME = f"CAETE_STATE_START_{BASE_RUN}_.pkz"
 
 run_path = Path(f"../outputs/{BASE_RUN}/{START_COND_FILENAME}")
 pls_path = Path(f"./{ATTR_FILENAME}")
-
 
 # Soil Parameters
 # Water saturation, field capacity & wilting point

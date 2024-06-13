@@ -217,7 +217,7 @@ def process_ustrat(u_strat, area):
 
 def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
-    h5_opt = tb.Filters(complevel=1, complib="blosc:blosclz")
+    h5_opt = tb.Filters(complevel=3, complib="blosc:blosclz")
 
     # Filters(complevel=0, complib='zlib', shuffle=True,
     # bitshuffle=False, fletcher32=False,
@@ -228,8 +228,8 @@ def write_h5(out_dir=Path('../outputs'), RUN=0, reclen=0):
 
         group_run = h5file.create_group(
             "/", f'RUN{RUN}', f'CAETÊ outputs tables Run {RUN}')
-        exp_rows = 41965625 # values for 60 grid points/// 916080 * (60/2749) 
-        exp_rows_snap = 57033 # 1254  * (60/2749)
+        exp_rows = 58099587
+        exp_rows_snap = 16744
         table_g1 = h5file.create_table(
             group_run, 'Outputs_G1', tt.run_g1, "out vars of g1",
             filters=h5_opt, expectedrows=exp_rows)

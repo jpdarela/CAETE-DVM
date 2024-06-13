@@ -58,12 +58,13 @@ README = """SPINUP Breakdown - Initially all PLS receive 0.1 Kg (C) m⁻² for t
             After the spinup the chosen historical transient run is executed
             """
 
-import os
-import _pickle as pkl
+from os import mkdir
 import bz2
 import copy
 import multiprocessing as mp
-
+import os
+import _pickle as pkl
+import time
 from pathlib import Path
 from random import shuffle
 from shutil import copy as cp
@@ -71,6 +72,8 @@ from shutil import copy as cp
 import joblib
 import numpy as np
 
+from post_processing import write_h5
+from h52nc import h52nc, catch_stime
 from caete import grd, print_progress, rbrk
 from caete_utils import read_pls_table
 from parameters import pls_path, ATTR_FILENAME
@@ -82,17 +85,16 @@ FUNCALLS = 0
 
 while True:
     maskp = input(
-        "TWO MASK OPTIONS: AMAZON BIOME (a); PAN-AMAZON (b) OR PLOT RUN (c): ")
-    if maskp == 'b':
+        "MASK OPTIONS: AMAZON BIOME (a)\n PAN-AMAZON (b)\n PAN-AMAZON[forest only] (c)\n PLOT RUN (d): ")
+    if maskp == 'b' or maskp == "d":
         mask = np.load("../input/mask/mask_raisg-360-720.npy")
         break
     if maskp == 'a':
         mask = np.load("../input/mask/mask_BIOMA.npy")
         break
     if maskp == 'c':
-        mask = np.load("../input/mask/mask_raisg-360-720.npy")
+        mask = np.load("../input/mask/mask_am_forest.npy")
         break
-
 
 def check_start():
     while True:
@@ -227,7 +229,7 @@ if sombrero:
         run_breaks = rbrk[0]
         rbrk_index = 0
 
-    else:
+    elif climatology in [2, 3, 4, 5]:
         clim_and_soil_data = Path(os.path.join(model_root, Path("historical")))
         clim_metadata = Path(os.path.join(
             clim_and_soil_data, f"{outf}-historical_METADATA.pbz2"))
@@ -245,9 +247,9 @@ if sombrero:
 
     with open("stime.txt", 'w') as fh:
         fh.writelines([f"{stime['units']}\n",
-                       f"{stime['calendar']}\n",
-                       f"{outf}-ISIMIP2b-hist\n",
-                       f"{rbrk_index}\n"])
+                    f"{stime['calendar']}\n",
+                    f"{outf}-ISIMIP2b-hist\n",
+                    f"{rbrk_index}\n"])
 
 
 
@@ -320,24 +322,41 @@ for i, g in enumerate(grid_mn):
     print_progress(i + 1, len(grid_mn), prefix='Progress:', suffix='Complete')
 
 
+# Define spinup time
+if climatology == 1: # historical OBS
+    spinup_0_dates = ["19790101", "19830101"]
+    spinup_x_dates = ["19790101", "19891231"]
+    spin0_n = 5
+    spinX_n = 15
+    y_co2 = "1980"
+elif climatology in [2, 3, 5, 4]: # historical CMIP5
+    spinup_0_dates = ["19010101", "19030101"]
+    spinup_x_dates = ["19010101", "19300101"]
+    spin0_n = 3
+    spinX_n = 12
+    y_co2 = "1902"
+
+
 # DEFINE HARVERSTERS - funcs that will apply grd methods(run the CAETÊ model) over the instanvces
 def apply_spin(grid:grd)->grd:
     """pre-spinup use some outputs of daily budget (water, litter C, N and P) to start soil organic pools"""
     w, ll, cwd, rl, lnc = grid.bdg_spinup(
-        start_date="19790101", end_date="19830101")
+        start_date=spinup_0_dates[0], end_date=spinup_0_dates[1])
     grid.sdc_spinup(w, ll, cwd, rl, lnc)
     return grid
 
 
 def apply_fun(grid:grd)->grd:
-    grid.run_caete('19790101', '19891231', spinup=5,
-                   fix_co2='1980', save=False, nutri_cycle=False)
+    # spinup part 1
+    grid.run_caete(spinup_x_dates[0], spinup_x_dates[1], spinup=spin0_n,
+                   fix_co2=y_co2, save=False, nutri_cycle=False)
     return grid
 
 
 def apply_fun0(grid:grd)->grd:
-    grid.run_caete('19790101', '19891231', spinup=15,
-                   fix_co2='1980', save=False)
+    # spinup part 2
+    grid.run_caete(spinup_x_dates[0], spinup_x_dates[1], spinup=spinX_n,
+                   fix_co2=y_co2, save=False)
     return grid
 
 
@@ -357,23 +376,21 @@ del pls_table
 del co2_data
 del stime
 
+
+print(run_breaks)
+
+
 if __name__ == "__main__":
+    pass
 
     output_path = Path("../outputs").resolve()
 
     if output_path.exists():
         pass
     else:
-        from os import mkdir
         mkdir(output_path)
 
-    import time
-
-    from post_processing import write_h5
-    from h52nc import h52nc
-
-    n_proc = mp.cpu_count() // 2
-    n_proc = 30
+    n_proc = mp.cpu_count()
 
     fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())
@@ -445,12 +462,18 @@ if __name__ == "__main__":
         print(f"Saving gridcells with END state in: {g1_path}\n")
         joblib.dump(result, fh2, compress=('zlib', 1), protocol=4)
 
-    fh.close()
 
+    fh.writelines(f"Start working on db: {time.ctime()}\n",)
     print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
-    print("Saving db - This will take some hours\n")
+    print("Saving db\n")
     write_h5(dump_folder)
-    print("\n\nSaving netCDF4 files")
+
+    fh.writelines(f"End working on db:{time.ctime()}\n",)
+    fh.writelines(f"Start working on netCDF's: {time.ctime()}\n",)
+    print("Saving netCDF4 files\n")
     h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
+    catch_stime("./stime.txt")
     h52nc(h5path, nc_outputs)
     print(time.ctime())
+    fh.writelines(f"END working on netCDF's: {time.ctime()}\n",)
+    fh.close()

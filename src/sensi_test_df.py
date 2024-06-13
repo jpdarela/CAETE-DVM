@@ -1,4 +1,3 @@
-
 # Copyright 2017- LabTerra
 
 #     This program is free software: you can redistribute it and/or modify
@@ -18,73 +17,41 @@
 
 # sensi_test.py
 import os
-import _pickle as pkl
-import bz2
 import shutil
-import copy
 import multiprocessing as mp
 from pathlib import Path
 import joblib
+import numpy as np
 from post_processing import write_h5
 import h52nc
 
-from parameters import pls_path, ATTR_FILENAME
-from caete import run_breaks_CMIP5_proj as rb
+from parameters import BASE_RUN, ATTR_FILENAME, run_path, pls_path
 
-model = "GFDL-ESM2M"
-rcp = "rcp26"
+# Experiment - hpr Precipitation halving - HISTORICAL
 
 
-base_run = f"../outputs/{model}"
-END_COND_FILENAME = f"CAETE_STATE_END_{model}_.pkz"
+assert run_path.exists(), "Wrong path to initial conditions"
+assert pls_path.exists(), "Wrong path to Attributes Table"
 
-# Path to the final conditions of the historical simulated period (31122005)
-# These will be the start conditions of the RCP simulations.
-run_path = Path(os.path.join(base_run, END_COND_FILENAME))
-
-
-# RCP X.X
-
-# new outputs folder
-dump_folder = Path(f"{model}_{rcp}")
-
-s_data = Path(f"/home/amazonfaceme/shared_data/{model}").resolve()
-input_fpath = Path(os.path.join(s_data, Path(rcp)))
-
-
-# READ METADATA
-metadata = Path(os.path.join(input_fpath, Path(f"{model}-{rcp}_METADATA.pbz2")))
-with bz2.BZ2File(metadata, mode='r') as fh:
-    clim_metadata = pkl.load(fh)
-
-# READ CO2
-co2p = Path(os.path.join(s_data, Path(f"co2-{model}-{rcp}.txt")))
-with open(co2p) as fh:
-    co2_data = fh.readlines()
-
-stime = copy.deepcopy(clim_metadata[0])
-del clim_metadata
 
 with open(run_path, 'rb') as fh:
     init_conditions = joblib.load(fh)
 
+# new outputs folder
+dump_folder = Path(f"{BASE_RUN}_df")
+
 for gridcell in init_conditions:
     gridcell.clean_run(dump_folder, "init_cond")
-    gridcell.change_clim_input(input_fpath, stime, co2_data)
+    # increase temperature
+    gridcell.tas += 4.0
+    gridcell.pr -= gridcell.pr * 0.5
+    # prevent negative values in precipitation
+    gridcell.pr[np.where(gridcell.pr < 0.0)[0]] = 0.0
+    assert np.all(gridcell.pr >= 0.0)
 
-print(f"Calendar is {h52nc.CALENDAR}")
-print(f"Time_UNITS  are {h52nc.TIME_UNITS}")
-print(f"EXPERIMENT is {h52nc.EXPERIMENT}")
+h52nc.EXPERIMENT = "df"
 
-h52nc.CALENDAR = stime['calendar']
-h52nc.TIME_UNITS = stime['units']
-h52nc.EXPERIMENT = f"{model}-{rcp}"
-h52nc.custom_rbrk(rb)
-
-print(f"Calendar is {h52nc.CALENDAR}")
-print(f"Time_UNITS  are {h52nc.TIME_UNITS}")
-print(f"EXPERIMENT is {h52nc.EXPERIMENT}")
-
+from caete import run_breaks_hist as rb
 
 def zip_gridtime(grd_pool, interval):
     res = []

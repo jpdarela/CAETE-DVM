@@ -94,8 +94,8 @@ def turnover_combinations(verbose=False):
 
     else:
         print("Building grassy allocation combinations: \n")
-        aleafg = np.arange(2, 80, 0.0125e1, dtype=np.float32)
-        arootg = np.arange(2, 80, 0.0125e1, dtype=np.float32)
+        aleafg = np.arange(5, 95, 0.0125e1, dtype=np.float32)
+        arootg = np.arange(5, 95, 0.0125e1, dtype=np.float32)
 
         plsa_grass = [[a, 0.0, c]
                       for a in aleafg for c in arootg if (a + c) == 100]
@@ -107,9 +107,9 @@ def turnover_combinations(verbose=False):
 
     else:
         print("Building woody allocation combinations: \n")
-        aleafw = np.arange(2, 60, 0.0125e1, dtype=np.float32)
-        arootw = np.arange(2, 90, 0.0125e1, dtype=np.float32)
-        awood = np.arange(2, 80, 0.0125e1, dtype=np.float32)
+        aleafw = np.arange(5, 95, 0.0125e1, dtype=np.float32)
+        arootw = np.arange(5, 95, 0.0125e1, dtype=np.float32)
+        awood = np.arange(5, 95, 0.0125e1, dtype=np.float32)
 
         plsa_wood = [[a, b, c] for a in aleafw for b in awood
                      for c in arootw if (a + b + c) == 100]
@@ -136,10 +136,10 @@ def calc_ratios1(NPLS):
     # Global patterns of plant leaf N and P in relation to temperature and latitude.
     # Proceedings of the National Academy of Sciences, 101(30), 11001–11006.
     # https://doi.org/10.1073/pnas.0403588101
-    N0 = 0.001
-    NM = 0.05
-    P0 = 0.0002
-    PM = 0.0095
+    N0 = 0.05
+    NM = 0.5
+    P0 = 0.0005
+    PM = 0.005
 
     if os.path.exists(Path("./NP1.npy")):
         x1 = np.load("./NP1.npy")
@@ -229,7 +229,7 @@ def table_gen(NPLS, fpath=None):
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime_leaf =  np.random.uniform(1.0, 2.0, r_ceil)
+    rtime_leaf =  np.random.uniform(1.0, 4.0, r_ceil)
     rtime_froot = np.random.uniform(1.0, 12.000000000, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
@@ -254,7 +254,7 @@ def table_gen(NPLS, fpath=None):
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(1, 200.0, r_ceil)
+    rtime_wood = np.random.uniform(1, 250.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
@@ -346,4 +346,4 @@ def table_gen(NPLS, fpath=None):
             # writer.writerows(pls_table)
 
     pls_table = np.vstack(stack[1:])
-    return np.asfortranarray(pls_table, dtype=np.float64)
+    return np.asfortranarray(pls_table, dtype=np.float32)

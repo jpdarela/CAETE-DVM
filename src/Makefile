@@ -38,10 +38,10 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
 # Sources for compilation in run mode (F2PY)
-sources = global.f90 funcs.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.F90
+sources = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.F90
 
 # Objects for compilation in debug mode
-objects = global.o funcs.o soil_dec.o cc.o allocation.o productivity.o budget.o debug_caete.o
+objects = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o budget.o debug_caete.o
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
@@ -80,8 +80,11 @@ funcs.o: funcs.f90
 photo.mod: funcs.o funcs.f90
 	$(FC) $(FLFLAGS) funcs.f90
 
-water.mod: funcs.o funcs.f90
-	$(FC) $(FLFLAGS) funcs.f90
+evap.o: evap.f90
+	$(FC) $(FLFLAGS) evap.f90
+
+water.mod: evap.o evap.f90
+	$(FC) $(FLFLAGS) evap.f90
 
 soil_dec.o: soil_dec.f90
 	$(FC) $(FLFLAGS) soil_dec.f90
