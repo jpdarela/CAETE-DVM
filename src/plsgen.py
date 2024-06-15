@@ -136,8 +136,8 @@ def calc_ratios1(NPLS):
     # Global patterns of plant leaf N and P in relation to temperature and latitude.
     # Proceedings of the National Academy of Sciences, 101(30), 11001–11006.
     # https://doi.org/10.1073/pnas.0403588101
-    N0 = 0.05
-    NM = 0.5
+    N0 = 0.005
+    NM = 0.05
     P0 = 0.0005
     PM = 0.005
 
@@ -162,7 +162,7 @@ def calc_ratios2(NPLS):
     # Heineman, K. D., Turner, B. L., & Dalling, J. W. (2016).
     # Variation in wood nutrients along a tropical soil fertility gradient.
     # New Phytologist, 211(2), 440?454. https://doi.org/10.1111/nph.13904
-    N0 = 0.001
+    N0 = 0.002
     NM = 0.01
     P0 = 3.12e-5
     PM = 0.0035
@@ -229,8 +229,8 @@ def table_gen(NPLS, fpath=None):
     index0 = 0
     # rtime = vec_ranging(np.random.beta(2, 4, r_ceil),
     #                     0.083333, 2)
-    rtime_leaf =  np.random.uniform(1.0, 4.0, r_ceil)
-    rtime_froot = np.random.uniform(1.0, 12.000000000, r_ceil)
+    rtime_leaf =  np.random.uniform(0.16, 2.0, r_ceil)
+    rtime_froot = np.random.uniform(0.16, 4.0, r_ceil)
     print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -247,14 +247,14 @@ def table_gen(NPLS, fpath=None):
         sys.stdout.write('\r%s' % (str(index0)))
     sys.stdout.flush()
     print("\n")
-    rtime_leaf =  np.random.uniform(1.0, 12.0, r_ceil)
-    rtime_froot = np.random.uniform(1.0, 4.000000000, r_ceil)
+    rtime_leaf =  np.random.uniform(0.16, 8.333, r_ceil)
+    rtime_froot = np.random.uniform(0.16, 4.0, r_ceil)
     print("CREATE WOODY STRATEGIES - Checking potential npp/alocation")
     # Creating woody plants (maybe herbaceous)
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(1, 250.0, r_ceil)
+    rtime_wood = np.random.uniform(1, 200.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]

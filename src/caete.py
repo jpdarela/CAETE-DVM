@@ -199,7 +199,7 @@ class grd:
     Defines the gridcell object - This object stores all the input data,
     the data comming from model runs for each grid point, all the state variables and all the metadata
     describing the life cycle of the gridcell and the filepaths to the generated model outputs
-    This class also provide several methods to apply the CAETÊ model with proper formated climatic and soil variables
+    This class also provides several methods to apply the CAETÊ model with proper formated climatic and soil variables
     """
 
     def __init__(self, x, y, dump_folder):
@@ -521,7 +521,7 @@ class grd:
     def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data
-            co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]\n)
+            co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]atm\n)
             pls_table: np.ndarray with functional traits of a set of PLant life strategies
         """
 
@@ -593,12 +593,12 @@ class grd:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.zeros(shape=(npls,), order='F')
-        self.vp_croot = np.zeros(shape=(npls,), order='F')
-        self.vp_cwood = np.zeros(shape=(npls,), order='F')
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.001
+        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.001
+        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.0
 
-        self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-            1.0, self.pls_table)
+        # self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
+        #     1.0, self.pls_table)
 
         self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
 
@@ -617,7 +617,7 @@ class grd:
 
         # # # SOIL
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
-        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.000001
+        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
         self.sp_available_p = self.soil_dict['ap']
         self.sp_available_n = 0.2 * self.soil_dict['tn']
         self.sp_in_n = 0.4 * self.soil_dict['tn']
@@ -1385,9 +1385,9 @@ class plot(grd):
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 1.0
-        self.vp_croot = np.zeros(shape=(npls,), order='F') + 1.0
-        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.3
+        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.3
+        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.01
         self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
 
         a, b, c, d = m.pft_area_frac(

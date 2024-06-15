@@ -27,8 +27,8 @@ module productivity
 contains
 
   subroutine prod(dt,light_limit,catm,temp,ts,p0,w,ipar,rh,emax,cl1_prod,&
-       & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,wmax,ph,ar,&
-       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla, e)
+       & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,wmax,constr,ph,ar,&
+       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,e)
 
     use types
     use global_par
@@ -49,7 +49,7 @@ contains
     real(r_8), intent(in) :: beta_awood
     real(r_8), intent(in) :: beta_froot, wmax
     logical(l_1), intent(in) :: light_limit                !True for no ligth limitation
-
+    real(r_8), intent(in) :: constr
 !     Output
 !     ------
     real(r_4), intent(out) :: ph                   !Canopy gross photosynthesis (kgC/m2/yr)
@@ -107,15 +107,14 @@ contains
 !     ==============
 !     Photosynthesis
 !     ==============
-! rate (molCO2/m2/s)
-
-    call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
-         & p2cl,tleaf,f1a,vm_out,jl_out)
-
+!     (molCO2/m2/s)
 
     ! VPD
     !========
     vpd = vapor_p_defcit(temp, rh)
+
+    call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
+         & p2cl,tleaf,real(vpd, r_8),f1a,vm_out,jl_out)
 
     !Stomatal resistence
     !===================
@@ -135,7 +134,7 @@ contains
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif
 
-    
+
     rc_aux = canopy_resistence(vpd, f1, g1, catm)  ! RCM leaf level -!s m-1
 
     wue = water_ue(f1, rc_aux, p0, vpd)
@@ -166,7 +165,8 @@ contains
 
 ! c     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
 ! c     2003; Levis et al. 2004)
-    rg = g_resp(beta_leaf,beta_awood, beta_froot,awood)
+    ! rg = g_resp(beta_leaf,beta_awood, beta_froot,awood)
+    rg = g_resp(constr)
 
     if (rg.lt.0) then
        rg = 0.0

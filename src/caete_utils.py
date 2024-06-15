@@ -85,7 +85,7 @@ def make_table_HD(nx, ny, reg, NPLS):
     names = []
     def lplss():
         print("FST", end="-")
-        nx, ny = get_random_grd(mask_am)
+        # nx, ny = get_random_grd(mask_am)
         grid_cell_in = make_grd(nx=nx, ny=ny, reg=reg, NPLS=NPLS)
         area = get_var(grid_cell_in, 'area', (1, 2))
         lpls = area[:, -1] > 0.0
@@ -151,10 +151,9 @@ def main():
     nx, ny = get_random_grd(mask_am)
     make_table_HD(nx, ny, "rd", npls)
 
-    # names = []
-    for i in range(999):
-        nx, ny = get_random_grd(mask_am)
-        make_table_HD(nx, ny, "rd", npls)
+    # for i in range(999):
+    #     nx, ny = get_random_grd(mask_am)
+    #     make_table_HD(nx, ny, "rd", npls)
     # reg_table(240, 185, "k34", npls)
     # reg_table(238, 183, "central", npls)
     # reg_table(238, 175, "central", npls)
@@ -176,5 +175,5 @@ def main():
     # reg_table(230, 205, "south", npls)
 
 if __name__ == "__main__":
-    # main()
-    f = merge_tables()
+    main()
+    # f = merge_tables()

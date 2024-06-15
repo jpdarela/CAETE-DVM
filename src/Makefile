@@ -46,7 +46,7 @@ objects = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o bu
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
 	@echo "Creating fortran interfaces for caete_module using f2py..."
-	$(PYEXEC) ask_npls.py
+	$(PYEXEC) ask_npls.py $(NPLS)
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so_parallel: $(sources) interface
@@ -110,7 +110,7 @@ productivity.o: productivity.f90
 productivity.mod: productivity.o productivity.f90
 	$(FC) $(FLFLAGS) productivity.f90
 
-budget.o: budget.f90
+budget.o: budget.F90
 	$(FC) $(FLFLAGS) budget.F90
 
 budget.mod: budget.o budget.F90

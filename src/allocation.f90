@@ -43,7 +43,7 @@ module alloc
       & sop,op,scl1,sca1,scf1,storage,storage_out_alloc,scl2,sca2,scf2,&
       & leaf_litter,cwd,root_litter,nitrogen_uptake, phosphorus_uptake,&
       & litter_nutrient_content, limiting_nutrient, c_costs_of_uptake,&
-      & uptk_strategy, ctonfix)
+      & uptk_strategy, ctonfix, construction_c)
 
 
       ! PARAMETERS
@@ -106,6 +106,7 @@ module alloc
       real(r_8), intent(out) :: c_costs_of_uptake
       integer(i_4), dimension(2), intent(out) :: uptk_strategy
       real(r_8),intent(out) :: ctonfix
+      real(r_8) :: construction_c
 
       ! Auxiliary variables
       real(r_8) :: nuptk ! N plant uptake g(N) m-2
@@ -932,6 +933,8 @@ module alloc
       c_costs_of_uptake = active_nupt_cost + active_pupt_cost &
       &                   + n_cost_resorpt + p_cost_resorpt + negative_one
       ! END OF CALCULATIONS
+
+      construction_c = sum(daily_growth) ! g m-2
 
    contains
 

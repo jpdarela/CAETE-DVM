@@ -94,7 +94,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 500
+NPLS = 1000
 
 
 def apply_spin(grid):
@@ -368,12 +368,13 @@ if __name__ == "__main__":
     # ld = run_experiment(pls_table)
 
     # INTERMEDIATE FD
-    pls_table = read_pls_table()
+    pls.table_gen(NPLS, Path("./"))
+    pls_table = read_pls_table(Path(f"./pls_attrs-{NPLS}.csv"))
     md1 = run_experiment(pls_table, "exp1")
-    a = get_spin(md1, 16)
-    print(a["ls"][-1])
-    print(a["area"][:,-1][a["area"][:,-1] > 0])
-    print(a["cawood"])
+    # a = get_spin(md1, 16)
+    # print(a["ls"][-1])
+    # print(a["area"][:,-1][a["area"][:,-1] > 0])
+    # print(a["cawood"])
 
 
     # md2 = run_experiment(pls_table, "exp2")

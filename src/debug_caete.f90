@@ -11,8 +11,8 @@ program test_caete
 
    print *, "Testing/debugging bdgt"
 
-   call test_c3()
-   !call test_budg()
+   !call test_c3()
+   call test_budg()
 
    contains
 
@@ -65,7 +65,7 @@ subroutine test_budg()
    real(r_8) :: litter_fr_1      ! g m-2
    real(r_8),dimension(2) :: nupt_1         ! g m-2 (1) from Soluble (2) from organic
    real(r_8),dimension(3) :: pupt_1         ! g m-2
-   real(r_8),dimension(6) :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables  
+   real(r_8),dimension(6) :: lit_nut_content_1 ! g(Nutrient)m-2 ! Lit_nut_content variables
    !    ! FULL OUTPUT
    real(r_8),dimension(npls) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
    real(r_8),dimension(npls) :: cawoodavg_pft  !

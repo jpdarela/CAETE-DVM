@@ -51,7 +51,9 @@ module photo
         pft_area_frac          ,& ! (s), area fraction by biomass
         water_ue               ,&
         leap                   ,&
-        vec_ranging
+        vec_ranging            ,&
+        g                      ,& ! respiration auxiliary functions
+        f
 
 contains
 
@@ -456,7 +458,8 @@ contains
 
       ndw = npa
       pdw = ppa
-
+      ! print *, 'ndw', ndw
+      ! print *, 'pdw', pdw
       lma = sla ** (-1) ! g/m2
 
       ! CALCULATE VCMAX
@@ -527,8 +530,8 @@ contains
    !=================================================================
    !=================================================================
 
-   subroutine photosynthesis_rate(c_atm, temp,p0,ipar,ll,c4,nbio,pbio,&
-        & leaf_turnover,f1ab,vm, amax)
+   subroutine photosynthesis_rate(c_atm,temp,p0,ipar,ll,c4,nbio,pbio,&
+        & leaf_turnover,vpd,f1ab,vm,amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
@@ -544,6 +547,7 @@ contains
       logical(l_1),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_8),intent(in) :: leaf_turnover   ! y
+      real(r_8),intent(in) :: vpd
       ! O
       real(r_8),intent(out) :: f1ab ! Gross CO2 Assimilation Rate mol m-2 s-1
       real(r_8),intent(out) :: vm   ! PLS Vcmax mol m-2 s-1
@@ -572,43 +576,23 @@ contains
       real(r_8) :: vpm, v4m
       real(r_8) :: cm, cm0, cm1, cm2
 
-      ! real(r_8) :: vm_nutri
-      real(r_8) :: nbio2, pbio2  ! , cbio_aux
+      real(r_8) :: nbio2, pbio2, vpd_effect, dark_respiration  ! , cbio_aux
       real(r_8), parameter :: light_penalization = 0.0D0
-      ! real(r_8) :: nmgg, pmgg
-      ! real(r_8) :: coeffa, coeffb
 
-      nbio2 = nbio !nrubisco(leaf_turnover, nbio)
-      pbio2 = pbio !nrubisco(leaf_turnover, pbio)
 
-      ! if (nbio2 .lt. 0.01D0) nbio2 = 0.01D0
-      ! if (pbio2 .lt. 0.01D0) pbio2 = 0.01D0
+      vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))
+      dark_respiration = 1.0D0 - 0.20D0
 
-      ! ! ! Calculation of reference carboxilation rate of rubisco
-      ! !### WALKER et al. 2014
-      ! vm_nutri = 3.946D0 + (0.921D0 * dlog(nbio2)) - (0.121D0 * dlog(pbio2))
-      ! vm_nutri = vm_nutri + (0.282D0 * dlog(nbio2) * dlog(pbio2))
-      ! vm = (dexp(vm_nutri)) * 1.0D-6 ! Vcmax convert µmol m-2 s-1 to mol m-2 s-1
-      ! ! !### DOMINGUES et al. 2010
-      ! cbio_aux = cbio
-      ! if(cbio .le. 0.0D0) cbio_aux = 0.01D0
 
-      ! nmgg = nbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
-      ! pmgg = pbio2 / cbio_aux ! g(Nutrient) kg(Carbon)-1
+      nbio2 = nbio * 0.28 !nrubisco(leaf_turnover, nbio)
+      pbio2 = pbio * 0.30 !nrubisco(leaf_turnover, pbio)
 
-      ! coeffa = 1.57D0
-      ! coeffb = 0.55D0
-
-      ! vm_nutri = coeffa + (coeffb * dlog10(nbio2))
-
-      vm = vcmax_a(nbio2 * 0.8 , pbio2, spec_leaf_area(leaf_turnover))  ! 10**vm_nutri * 1D-6  !
-      ! if(vm + 1 .eq. vm) vm = 1.0D-5 ! If Vc max is inf give it a low value
-      if(vm .gt. p25) vm = p25
+      vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) * vpd_effect  ! 10**vm_nutri * 1D-6
+      ! if(vm .gt. p25) vm = p25
 
       ! Rubisco Carboxilation Rate - temperature dependence
-      vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0)))
-      ! if(vm_in + 1 .eq. vm_in) vm_in = p25 - 5.0D-5
-      if(vm_in .gt. p25) vm_in = p25
+      vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0D0)))
+      ! if(vm_in .gt. p25) vm_in = p25
 
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
@@ -660,7 +644,7 @@ contains
          f1a = dmin1(j1,j2)
 
 
-         f1ab = f1a
+         f1ab = f1a * dark_respiration
          ! f1ab = max(f1a - (vm_in * 0.10), 0.0D0)
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
          return
@@ -712,7 +696,7 @@ contains
          j2 = (-b2+(sqrt(delta2)))/(2.0*a2)
          f1a = dmin1(j1,j2)
 
-
+         f1ab = f1a * dark_respiration
          ! f1ab = max(f1a - (vm_in * 0.10), 0.0D0)
          if(f1ab .lt. 0.0D0) f1ab = 0.0D0
          return
@@ -952,7 +936,37 @@ contains
 
   !===================================================================
   !===================================================================
+  function g(temp) result(gtemp)
 
+  real(r_4), intent(in) :: temp
+  real(r_4) :: gtemp
+
+  if (temp .ge.  -50.0) then
+     gtemp = exp(308.56 * (1.0 / 56.02 - 1.0 / (temp + 273.15 + 46.02)))
+  else
+     gtemp = 0.0
+  endif
+
+  end function g
+
+  !===================================================================
+  !===================================================================
+  function f(temp) result(gtemp)
+
+  real(r_4), intent(in) :: temp
+  real(r_4), parameter :: beta = 0.069
+  real(r_4) :: gtemp
+
+  if (temp .ge.  -50.0) then
+     gtemp = exp(beta * (temp + 273.15))
+  else
+     gtemp = 0.0
+  endif
+
+  end function f
+
+  !===================================================================
+  !===================================================================
    function m_resp(temp, ts,cl1_mr,cf1_mr,ca1_mr,&
         & n2cl,n2cw,n2cf,aawood_mr) result(rm)
 
@@ -971,29 +985,28 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
+      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.5D0
+
       !   Autothrophic respiration
       !   ========================
-      !   Maintenance respiration (kgC/m2/yr) (based in Ryan 1991)
+      !   Maintenance respiration (kgC/m2/yr)
 
-      ! sapwood carbon content (kgC/m2). X% of woody tissues (Pavlick, 2013)
-      ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1D3)) * a1 * dexp(a2 * temp))
+         rms64 =  rcoeff * k * csa * n2cw * g(temp)
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1D3)) * a1 * dexp(a2 * temp))
+      rml64 = rcoeff * k * cl1_mr * n2cl * g(temp)
 
-      rmf64 = ((n2cf * (cf1_mr * 1D3)) * a1 * dexp(a2 * ts))
+      rmf64 = rcoeff * k * cf1_mr * n2cf * g(ts)
 
-      rm64 = (rml64 + rmf64 + rms64) * 1D-3
+      rm64 = rml64 + rmf64 + rms64 !* 1D-3
 
       rm = real(rm64,r_4)
 
-      if (rm .lt. 0) then
+      if (rm .lt. 0.0) then
          rm = 0.0
       endif
 
@@ -1010,7 +1023,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: a1 = 27.0D0, a2 = 0.07D0
+      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.0D0
 
     !   Autothrophic respiration
     !   ========================
@@ -1024,13 +1037,14 @@ contains
        return
     endif
 
-    if(ston .lt. 0.0D0) then
+    if(ston .le. 0.0D0) then
       ston = 1.0D0/300.0D0
     else
       ston = ston/stoc
     endif
 
-    rm = ((ston * stoc) * a1 * dexp(a2 * temp))
+   !  rm = ((ston * stoc) * a1 * dexp(a2 * temp))
+    rm = rcoeff * k  * stoc * ston * g(temp)
 
     if (rm .lt. 0) then
        rm = 0.0
@@ -1044,51 +1058,68 @@ contains
    !====================================================================
    !====================================================================
 
-   function g_resp(beta_leaf,beta_awood, beta_froot,aawood_rg) result(rg)
-      !implicit none
+ function g_resp(construction) result(rg)
+   !implicit none
 
-      real(r_8), intent(in) :: beta_leaf
-      real(r_8), intent(in) :: beta_froot
-      real(r_8), intent(in) :: beta_awood
-      real(r_8), intent(in) :: aawood_rg
-      real(r_4) :: rg
+   real(r_8), intent(in) :: construction
+   real(r_4) :: rg
 
-      real(r_8) :: rg64, rgl64, rgf64, rgs64
-      real(r_8) :: a1,a2,a3
+   !     Autothrophic respiration
+   !     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
+   !     2003; Levis et al. 2004)
+   rg = real(0.25D0 * construction * 1.0D-3, kind=r_4)
 
-      !     Autothrophic respiration
-      !     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
-      !     2003; Levis et al. 2004)
+end function g_resp
 
-      a1 = beta_leaf
-      a2 = beta_froot
-      a3 = beta_awood
+!====================================================================
+!====================================================================
 
-      if(a1 .le. 0.0D0) a1 = 0.0D0
-      if(a2 .le. 0.0D0) a2 = 0.0D0
-      if(a3 .le. 0.0D0) a3 = 0.0D0
 
-      rgl64 = 0.25D0 * a1
-      rgf64 = 0.25D0 * a2
+   ! function g_resp(beta_leaf,beta_awood, beta_froot,aawood_rg) result(rg)
+   !    !implicit none
 
-      if(aawood_rg .gt. 0.0D0) then
-         rgs64 = 0.25D0 * a3
-      else
-         rgs64 = 0.0D0
-      endif
+   !    real(r_8), intent(in) :: beta_leaf
+   !    real(r_8), intent(in) :: beta_froot
+   !    real(r_8), intent(in) :: beta_awood
+   !    real(r_8), intent(in) :: aawood_rg
+   !    real(r_4) :: rg
 
-      rg64 = rgl64 + rgf64 + rgs64
+   !    real(r_8) :: rg64, rgl64, rgf64, rgs64
+   !    real(r_8) :: a1,a2,a3
 
-      rg = real(rg64,r_4)
+   !    !     Autothrophic respiration
+   !    !     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
+   !    !     2003; Levis et al. 2004)
 
-      if (rg.lt.0) then
-         rg = 0.0
-      endif
+   !    a1 = beta_leaf
+   !    a2 = beta_froot
+   !    a3 = beta_awood
 
-   end function g_resp
+   !    if(a1 .le. 0.0D0) a1 = 0.0D0
+   !    if(a2 .le. 0.0D0) a2 = 0.0D0
+   !    if(a3 .le. 0.0D0) a3 = 0.0D0
 
-   !====================================================================
-   !====================================================================
+   !    rgl64 = 0.25D0 * a1
+   !    rgf64 = 0.25D0 * a2
+
+   !    if(aawood_rg .gt. 0.0D0) then
+   !       rgs64 = 0.25D0 * a3
+   !    else
+   !       rgs64 = 0.0D0
+   !    endif
+
+   !    rg64 = rgl64 + rgf64 + rgs64
+
+   !    rg = real(rg64,r_4)
+
+   !    if (rg.lt.0) then
+   !       rg = 0.0
+   !    endif
+
+   ! end function g_resp
+
+   ! !====================================================================
+   ! !====================================================================
 
    function tetens(t) result(es)
       ! returns Saturation Vapor Pressure (hPa), using Buck equation
