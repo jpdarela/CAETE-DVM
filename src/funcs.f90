@@ -1023,7 +1023,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.0D0
+      real(r_8), parameter :: k=0.095218D0, rcoeff = 0.5D0
 
     !   Autothrophic respiration
     !   ========================

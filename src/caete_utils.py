@@ -76,16 +76,16 @@ def make_grd(nx, ny, reg, NPLS):
 
     grid_cell_in.run_caete('19010101', '19301231', spinup=3, fix_co2="1900", save=False, nutri_cycle=False)
     # grid_cell_in.run_caete('19010101', '19301231', spinup=2, fix_co2="1850", save=False)
-    grid_cell_in.run_caete('19010101', '19301231', spinup=2, fix_co2="1900", save=True)
+    grid_cell_in.run_caete('19010101', '19301231', spinup=5, fix_co2="1900", save=True)
     return grid_cell_in
 
 def make_table_HD(nx, ny, reg, NPLS):
     """ Call this function to build a PLS table filled with adapted EV for the Amazon region."""
-    lim = 10
+    lim = 2000
     names = []
     def lplss():
         print("FST", end="-")
-        # nx, ny = get_random_grd(mask_am)
+        nx, ny = get_random_grd(mask_am)
         grid_cell_in = make_grd(nx=nx, ny=ny, reg=reg, NPLS=NPLS)
         area = get_var(grid_cell_in, 'area', (1, 2))
         lpls = area[:, -1] > 0.0
@@ -148,12 +148,12 @@ def merge_tables():
 def main():
     pass
     npls = 2000
-    nx, ny = get_random_grd(mask_am)
-    make_table_HD(nx, ny, "rd", npls)
+    # nx, ny = get_random_grd(mask_am)
+    # make_table_HD(nx, ny, "rd", npls)
 
-    # for i in range(999):
-    #     nx, ny = get_random_grd(mask_am)
-    #     make_table_HD(nx, ny, "rd", npls)
+    for i in range(20):
+        nx, ny = get_random_grd(mask_am)
+        make_table_HD(nx, ny, "rd", npls)
     # reg_table(240, 185, "k34", npls)
     # reg_table(238, 183, "central", npls)
     # reg_table(238, 175, "central", npls)
