@@ -63,7 +63,7 @@ import bz2
 import copy
 import multiprocessing as mp
 import os
-import _pickle as pkl
+import pickle as pkl
 import time
 from pathlib import Path
 from random import shuffle
@@ -82,6 +82,7 @@ __author__ = "João Paulo Darela Filho"
 __descr__ = """RUN CAETÊ"""
 
 FUNCALLS = 0
+climatology = 0
 
 while True:
     maskp = input(

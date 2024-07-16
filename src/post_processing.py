@@ -20,6 +20,14 @@
 # Process raw outputs from CAETÊ-DVM
 # USe pytables to create h5 tables
 import os
+import sys
+
+if sys.platform == "win32":
+    try:
+        os.add_dll_directory(r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin")
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
 from pathlib import Path
 import joblib
 import numpy as np

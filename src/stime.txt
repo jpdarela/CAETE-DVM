@@ -1,4 +1,0 @@
-days since 1861-1-1 00:00:00
-proleptic_gregorian
-GFDL-ESM2M-ISIMIP2b-hist
-1
