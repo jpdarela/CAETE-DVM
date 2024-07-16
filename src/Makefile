@@ -137,7 +137,7 @@ clean_NP:
 clean_win:
 	del /s *.mod
 	del /s pls_ex.txt
-	del __pycache__
+	del /s /q __pycache__
 	del run_debug
 	del logfile.log
 	del /s *.obj
@@ -145,3 +145,15 @@ clean_win:
 clean_win_so: clean_win
 	del /s *.pyd
 	del /s *.pyf
+
+clean_win_alloc: clean_win
+	del /s wallo.npy
+	del /s gallo.npy
+
+clean_win_NP: clean_win
+	del /s NP1.npy
+	del /s NP2.npy
+	del /s NP3.npy
+
+clean_win_all: clean_win clean_win_so clean_win_alloc clean_win_NP
+

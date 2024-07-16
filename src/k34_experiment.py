@@ -5,6 +5,7 @@ from pathlib import Path
 
 from numpy import asfortranarray
 from pandas import read_csv
+import joblib
 
 import cfunits
 import numpy as np
@@ -94,7 +95,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 1000
+NPLS = 2000
 
 
 def apply_spin(grid):
@@ -244,7 +245,6 @@ def run_experiment(pls_table, fname):
 
 
 def get_spin(grd: mod.plot, spin) -> dict:
-    import joblib
     if spin < 10:
         name = f'spin0{spin}.pkz'
     else:
@@ -368,9 +368,9 @@ if __name__ == "__main__":
     # ld = run_experiment(pls_table)
 
     # INTERMEDIATE FD
-    pls.table_gen(NPLS, Path("./"))
+    tb = pls.table_gen(NPLS, Path("./"))
     pls_table = read_pls_table(Path(f"./pls_attrs-{NPLS}.csv"))
-    md1 = run_experiment(pls_table, "exp1")
+    md1 = run_experiment(pls_table, "exp2")
     # a = get_spin(md1, 16)
     # print(a["ls"][-1])
     # print(a["area"][:,-1][a["area"][:,-1] > 0])

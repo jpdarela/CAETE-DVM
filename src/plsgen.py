@@ -17,10 +17,18 @@ Copyright 2017-2018 LabTerra
 """
 
 # Procedures to create the set of PLant life strategies for CAETÊ runs
-from math import ceil
-import csv
 import os
 import sys
+
+if sys.platform == "win32":
+    try:
+        os.add_dll_directory(r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin")
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
+
+from math import ceil
+import csv
 from pathlib import Path
 import numpy as np
 from caete_module import photo as model
@@ -47,7 +55,6 @@ def vec_ranging(values, new_min, new_max):
         output.append(new_v)
 
     return np.array(output, dtype=np.float32)
-
 
 def check_viability(trait_values, wood):
     """ Check the viability of allocation(a) & residence time(ŧ) combinations.
@@ -80,6 +87,19 @@ def assertion_data_size(dsize):
     diffw = int(dsize - diffg)
     assert diffg + diffw == dsize
     return diffg, diffw
+
+def allocation_combinations(verbose=False):
+    num_samples = 10000
+    woody_comb = np.random.dirichlet(np.ones(3), num_samples)
+    grassy_tmp = np.random.dirichlet(np.ones(2), num_samples)
+
+    grassy_comb = np.zeros((num_samples, 3))
+    grassy_comb[:, 0] = grassy_tmp[:, 0]
+    grassy_comb[:, 1] = 0.0
+    grassy_comb[:, 2] = grassy_tmp[:, 1]
+
+
+    return woody_comb, grassy_comb
 
 def turnover_combinations(verbose=False):
     """CREATE the residence time and allocation combinations"""
@@ -219,11 +239,11 @@ def table_gen(NPLS, fpath=None):
     """AKA main - generate a trait table for CAETÊ - save it to a .csv"""
 
     diffg, diffw = assertion_data_size(NPLS)
-    plsa_wood, plsa_grass = turnover_combinations(True)
+    plsa_wood, plsa_grass = allocation_combinations()
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 15000
+    r_ceil = 10000
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
@@ -338,7 +358,7 @@ def table_gen(NPLS, fpath=None):
         if not fpath.exists():
             os.system(f" mkdir -p {fpath.resolve()}")
         fnp = Path(os.path.join(fpath, f'pls_attrs-{NPLS}.csv')).resolve()
-        with open(fnp, mode='w') as fh:
+        with open(fnp, mode='w', newline="\n") as fh:
             writer = csv.writer(fh, delimiter=',')
             writer.writerow(head)
             for x in range(pls_table.shape[1]):
