@@ -81,7 +81,8 @@ contains
     real(r_8) :: jl_out
 
     real(r_8) :: f1       !Leaf level gross photosynthesis (molCO2/m2/s)
-    real(r_8) :: f1a      !auxiliar_f1
+    real(r_8) :: f1a, co2_pp      !auxiliar_f1
+
     real(r_4) :: rc_pot, rc_aux
 
 !getting pls parameters
@@ -134,8 +135,8 @@ contains
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif
 
-
-    rc_aux = canopy_resistence(vpd, f1, g1, catm)  ! RCM leaf level -!s m-1
+    co2_pp = (catm * (p0 * 1.0D2) / 1.0D6) /  (p0 * 1.0D2) ! term used in the medlyn model
+    rc_aux = canopy_resistence(vpd, f1, g1, co2_pp)  ! RCM leaf level -!s m-1
 
     wue = water_ue(f1, rc_aux, p0, vpd)
 

@@ -254,7 +254,7 @@ def table_gen(NPLS, fpath=None):
     index1 = 0
     # rtime_wood = vec_ranging(np.random.beta(
     # 2, 4, r_ceil), 1.0, 150)
-    rtime_wood = np.random.uniform(1, 200.0, r_ceil)
+    rtime_wood = np.random.uniform(1, 100.0, r_ceil)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float64)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
@@ -277,7 +277,7 @@ def table_gen(NPLS, fpath=None):
     # # # COMBINATIONS
     # # # Random samples from  distributions (g1, tleaf ...)
     # # # Random variables
-    g1 = np.random.uniform(0.5, 19.0, NPLS)
+    g1 = np.random.uniform(2, 15.0, NPLS)
     # g1 = vec_ranging(np.random.beta(1.2, 2, NPLS), 1.0, 15.0) # dimensionles
     # # vcmax = np.random.uniform(3e-5, 100e-5,N) # molCO2 m-2 s-1
     resorption = np.random.uniform(0.2, 0.7, NPLS)

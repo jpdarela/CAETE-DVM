@@ -94,7 +94,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 1000
+NPLS = 2000
 
 
 def apply_spin(grid):

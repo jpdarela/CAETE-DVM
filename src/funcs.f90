@@ -272,6 +272,7 @@ contains
       real(r_8) :: D1       !sqrt(kPA)
       real(r_4) :: vapour_p_d
 
+
       vapour_p_d = vpd_in
       ! Assertions
       if(vpd_in .le. 0.01) vapour_p_d = 0.01
@@ -281,9 +282,10 @@ contains
       ! endif
 
       D1 = sqrt(vapour_p_d)
-      gs = 0.003 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0e6)/ca) ! mol m-2 s-1
-      gs = gs * 0.02520D0! convrt from  mol/m²/s to m s-1
-      rc2_in = real( 1.0D0 / gs, r_4)  !  s m-1
+      gs = 100.0D0 + 1.6D0 * (1.0D0 + (g1/D1)) * ((f1_in * 1.0D6)/ca) ! micromol m-2 s-1
+
+      gs = gs * 1.0D-6 * 0.02520D0 ! convrt from  micromol/m²/s to m s-1
+      rc2_in = real(1.0D0 / gs, r_4)  !  s m-1
 
       if(rc2_in .ge. rcmax) rc2_in = rcmax
       if(rc2_in .lt. rcmin) rc2_in = rcmin
@@ -294,7 +296,7 @@ contains
    !=================================================================
 
    function stomatal_conductance(vpd_in,f1_in,g1,ca) result(gs)
-    ! return stomatal resistence based on Medlyn et al. 2011a
+    ! return stomatal conductance based on Medlyn et al. 2011
     ! Coded by Helena Alves do Prado
 
 
@@ -577,22 +579,24 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: nbio2, pbio2, vpd_effect, dark_respiration  ! , cbio_aux
-      real(r_8), parameter :: light_penalization = 0.0D0
+      real(r_8), parameter :: light_penalization = 0.0D0, alpha_a = 0.5D0
 
 
       vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))
-      dark_respiration = 1.0D0 - 0.20D0
+      dark_respiration = 1.0D0 - 0.15D0
 
 
-      nbio2 = nbio * 0.28 !nrubisco(leaf_turnover, nbio)
-      pbio2 = pbio * 0.30 !nrubisco(leaf_turnover, pbio)
+      nbio2 = nbio * 0.4 !nrubisco(leaf_turnover, nbio)
+      pbio2 = pbio * 0.4 !nrubisco(leaf_turnover, pbio)
 
       vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) * vpd_effect  ! 10**vm_nutri * 1D-6
-      ! if(vm .gt. p25) vm = p25
+      if(vm .gt. p25) vm = p25
+      vm = alpha_a * vm
 
       ! Rubisco Carboxilation Rate - temperature dependence
       vm_in = (vm*2.0D0**(0.1D0*(temp-25.0D0)))/(1.0D0+dexp(0.3D0*(temp-36.0D0)))
-      ! if(vm_in .gt. p25) vm_in = p25
+
+      if(vm_in .gt. p25) vm_in = p25
 
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
@@ -985,7 +989,7 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.5D0
+      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.0D0
 
       !   Autothrophic respiration
       !   ========================
@@ -1023,7 +1027,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: k=0.095218D0, rcoeff = 0.5D0
+      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.0D0
 
     !   Autothrophic respiration
     !   ========================
