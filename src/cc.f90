@@ -42,8 +42,7 @@ module carbon_costs
    implicit none
    private
 
-   public :: abrt                   ,&
-           & calc_passive_uptk1     ,&
+   public :: calc_passive_uptk1     ,&
            & passive_uptake         ,&
            & cc_active              ,&
            & active_cost            ,&
@@ -62,12 +61,12 @@ module carbon_costs
            & prep_out_p
 
    contains
-   ! HElPERS
-   subroutine abrt(arg1)
-      character(*), intent(in) :: arg1
-      print *, arg1
-      call abort()
-   end subroutine abrt
+   !! HElPERS
+   !subroutine abrt(arg1)
+   !   character(*), intent(in) :: arg1
+   !   print *, arg1
+   !   call abort()
+   !end subroutine abrt
 
 
    ! CONVERSIONS -- LOOK eq 150 onwards in Reis 2020
@@ -393,7 +392,6 @@ module carbon_costs
             out_array(on) = to_pay
          case default
             print*, 'NAQW', nut_aqui_strat
-            call abrt("Problem in N output case default - cc.f90 325")
       end select
       ! Soluble inorg_n_pool = (1, 2, 3, 4)
       ! Organic N pool = (5, 6)
@@ -424,7 +422,7 @@ module carbon_costs
             out_array(op) = 0.0D0
          case default
             print*, 'NAQW', nut_aqui_strat
-            call abrt("Problem in P output case default - cc.f90 362")
+            !call abrt("Problem in P output case default - cc.f90 362")
       end select
       ! Soluble inorg_n_pool = (1, 2, 3, 4)
       ! Organic N pool = (5, 6)

@@ -17,13 +17,17 @@ Copyright 2017- LabTerra
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+import sys
+
+if sys.platform == "win32":
+    os.add_dll_directory(r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin")
+
 from threading import Thread
 from time import sleep
 from pathlib import Path
-import os
-import sys
 import copy
-import _pickle as pkl
+import pickle as pkl
 import random as rd
 import warnings
 import bz2
@@ -33,6 +37,8 @@ import cftime
 import numpy as np
 
 from hydro_caete import soil_water
+
+
 from caete_module import global_par as gp
 from caete_module import budget as model
 from caete_module import water as st

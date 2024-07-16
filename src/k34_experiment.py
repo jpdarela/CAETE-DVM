@@ -1,5 +1,5 @@
 import os
-import _pickle as pkl
+import pickle as pkl
 import bz2
 from pathlib import Path
 
@@ -94,7 +94,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 2000
+NPLS = 1000
 
 
 def apply_spin(grid):

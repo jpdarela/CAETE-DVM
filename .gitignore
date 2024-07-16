@@ -1,10 +1,14 @@
 src/*.o
+src/*.obj
+src/*.i90
 src/*.mod
 src/*.pyf
+src/*.pyd
 src/*.so
 src/__pycache__
 src/*.npy
 src/*.cfg
+src/*.csv
 src/RUN*
 outputs/*
 nc_outputs/*
@@ -14,6 +18,7 @@ src/logfile.log
 input/.python-version
 run_debug
 .vscode
+.vs
 .python-version
 SANDBOX/
 BENCHMARK/

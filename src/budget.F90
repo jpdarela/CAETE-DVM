@@ -39,9 +39,9 @@ contains
       use alloc
       use productivity
 
-#ifdef _OPENMP
-      use omp_lib
-#endif
+!#ifdef _OPENMP
+!      use omp_lib
+!#endif
 
       use photo, only: pft_area_frac, sto_resp
       use water, only: evpot2, penman, available_energy, runoff
@@ -276,19 +276,19 @@ contains
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================make it parallel=========================
-#ifdef _OPENMP
-      if (nlen .le. 500) then
-         call OMP_SET_NUM_THREADS(1)
-      else if (nlen .le. 1500) then
-         call OMP_SET_NUM_THREADS(2)
-      else if (nlen .le. 2500) then
-         call OMP_SET_NUM_THREADS(3)
-      else if (nlen .le. 3500) then
-         call OMP_SET_NUM_THREADS(4)
-      else
-         call OMP_SET_NUM_THREADS(5)
-      endif
-#endif
+!#ifdef _OPENMP
+!      if (nlen .le. 500) then
+!         call OMP_SET_NUM_THREADS(1)
+!      else if (nlen .le. 1500) then
+!         call OMP_SET_NUM_THREADS(2)
+!      else if (nlen .le. 2500) then
+!         call OMP_SET_NUM_THREADS(3)
+!      else if (nlen .le. 3500) then
+!         call OMP_SET_NUM_THREADS(4)
+!      else
+!         call OMP_SET_NUM_THREADS(5)
+!      endif
+!#endif
       construction = 0.0D0
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &

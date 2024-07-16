@@ -55,8 +55,11 @@ so_parallel: $(sources) interface
 
 so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) "
-	@echo "Serial version of caete_module.so created"
+	@echo "Serial version of caete_module.so created using gfortran"
 
+so_ifx: $(sources) interface
+	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifort" --f90flags="-QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77"
+	@echo "Serial version of caete_module.so created using IFORT"
 # Build objects for DEBUG mode
 debug: $(objects) so
 	$(PYEXEC) create_plsbin.py
@@ -130,3 +133,15 @@ clean_alloc:
 	rm -rf wallo.npy gallo.npy
 clean_NP:
 	rm -rf NP1.npy NP2.npy NP3.npy
+
+clean_win:
+	del /s *.mod
+	del /s pls_ex.txt
+	del __pycache__
+	del run_debug
+	del logfile.log
+	del /s *.obj
+
+clean_win_so: clean_win
+	del /s *.pyd
+	del /s *.pyf
