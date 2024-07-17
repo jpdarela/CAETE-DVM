@@ -52,7 +52,7 @@ module photo
         water_ue               ,&
         leap                   ,&
         vec_ranging            ,&
-        g                      ,& ! respiration auxiliary functions
+        resp_aux                      ,& ! respiration auxiliary functions
         f
 
 contains
@@ -546,7 +546,7 @@ contains
       real(r_4),intent(in) :: ipar  ! mol Photons m-2 s-1
       real(r_8),intent(in) :: nbio, c_atm  ! mg g-1, ppm
       real(r_8),intent(in) :: pbio  ! mg g-1
-      logical(l_1),intent(in) :: ll ! is light limited?
+      integer(i_4),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_8),intent(in) :: leaf_turnover   ! y
       real(r_8),intent(in) :: vpd
@@ -579,7 +579,7 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: nbio2, pbio2, vpd_effect, dark_respiration  ! , cbio_aux
-      real(r_8), parameter :: light_penalization = 0.0D0, alpha_a = 0.5D0
+      real(r_8), parameter :: light_penalization = 0.3D0, alpha_a = 0.7D0
 
 
       vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))
@@ -715,7 +715,7 @@ contains
       implicit none
 
       !parameters
-      integer(kind=i_4),parameter :: ntl=36525
+      integer(kind=i_4),parameter :: ntl=65000
 
       ! inputs
       integer(kind=i_4) :: kk, k
@@ -763,7 +763,7 @@ contains
       allocate(cfrooti_aux(ntl))
       allocate(cawoodi_aux(ntl))
 
-      sensitivity = 1.001
+      sensitivity = 1.0001
       if(nppot .le. 0.0) goto 200
       nppot2 = nppot !/real(npls,kind=r_4)
       do k=1,ntl
@@ -940,7 +940,7 @@ contains
 
   !===================================================================
   !===================================================================
-  function g(temp) result(gtemp)
+  function resp_aux(temp) result(gtemp)
 
   real(r_4), intent(in) :: temp
   real(r_4) :: gtemp
@@ -951,7 +951,7 @@ contains
      gtemp = 0.0
   endif
 
-  end function g
+  end function resp_aux
 
   !===================================================================
   !===================================================================
@@ -989,7 +989,8 @@ contains
 
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
-      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.0D0
+      real(r_8), parameter :: k=0.095218D0
+      real(r_8), parameter :: rcoeff_leaf = 3.2D0, rcoeff_wood = 1.0D0, rcoeff_froot = 3.0D0
 
       !   Autothrophic respiration
       !   ========================
@@ -997,14 +998,14 @@ contains
 
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 =  rcoeff * k * csa * n2cw * g(temp)
+         rms64 =  rcoeff_wood * k * csa * n2cw * resp_aux(temp)
       else
          rms64 = 0.0
       endif
 
-      rml64 = rcoeff * k * cl1_mr * n2cl * g(temp)
+      rml64 = rcoeff_leaf * k * cl1_mr * n2cl * resp_aux(temp)
 
-      rmf64 = rcoeff * k * cf1_mr * n2cf * g(ts)
+      rmf64 = rcoeff_froot * k * cf1_mr * n2cf * resp_aux(ts)
 
       rm64 = rml64 + rmf64 + rms64 !* 1D-3
 
@@ -1027,7 +1028,7 @@ contains
       real(r_8) :: rm
 
       real(r_8) :: stoc,ston
-      real(r_8), parameter :: k=0.095218D0, rcoeff = 1.0D0
+      real(r_8), parameter :: k=0.095218D0, rcoeff = 2.0D0
 
     !   Autothrophic respiration
     !   ========================
@@ -1048,7 +1049,7 @@ contains
     endif
 
    !  rm = ((ston * stoc) * a1 * dexp(a2 * temp))
-    rm = rcoeff * k  * stoc * ston * g(temp)
+    rm = rcoeff * k  * stoc * ston * resp_aux(temp)
 
     if (rm .lt. 0) then
        rm = 0.0
@@ -1165,7 +1166,7 @@ end function g_resp
 
       real(kind=r_8),dimension(npft),intent( in) :: cleaf1, cfroot1, cawood1, awood
       real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs
-      logical(kind=l_1),dimension(npft),intent(out) :: ocp_wood
+      integer(kind=i_4),dimension(npft),intent(out) :: ocp_wood
       integer(kind=i_4),dimension(npft),intent(out) :: run_pls
       real(kind=r_8), dimension(npls), intent(out) :: c_to_soil ! NOT IMPLEMENTED IN BUDGET
       logical(kind=l_1),dimension(npft) :: is_living
@@ -1175,6 +1176,7 @@ end function g_resp
       integer(kind=i_4),dimension(1) :: max_index
       real(kind=r_8) :: total_biomass, total_wood
       integer(kind=i_4) :: five_percent
+      integer(kind=i_4) :: living_plss
 
       total_biomass = 0.0D0
       total_wood = 0.0D0
@@ -1194,7 +1196,7 @@ end function g_resp
          total_w_pft(p) = 0.0D0
          total_biomass_pft(p) = 0.0D0
          ocp_coeffs(p) = 0.0D0
-         ocp_wood(p) = .false.
+         ocp_wood(p) = 0
       enddo
 
       ! check for nan in cleaf cawood cfroot
@@ -1246,21 +1248,27 @@ end function g_resp
       endif
 
       !     gridcell pft ligth limitation by wood content
-      five_percent = nint(real(npft) * 0.05)
+      living_plss = sum(run_pls)
+      five_percent = nint(living_plss * 0.05)
+      ! print*, 'five_percent', five_percent
+      ! print*, 'living_plss', living_plss
+
       if(five_percent .eq. 0) five_percent = 1
       if(five_percent .eq. 1) then
          if(total_wood .gt. 0.0) then
             max_index = maxloc(total_w_pft)
             i = max_index(1)
-            ocp_wood(i) = .true.
+            ocp_wood(i) = 1
          endif
       else
          do p = 1,five_percent
             if(total_wood .gt. 0.0D0) then
                max_index = maxloc(total_w_pft)
+               ! print*, 'max_index', max_index
+
                i = max_index(1)
                total_w_pft(i) = 0.0D0
-               ocp_wood(i) = .true.
+               ocp_wood(i) = 1
             endif
          enddo
       endif

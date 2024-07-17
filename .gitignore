@@ -1,5 +1,6 @@
 src/*.o
 src/stime.txt
+src/test.py
 src/*.obj
 src/*.i90
 src/*.mod

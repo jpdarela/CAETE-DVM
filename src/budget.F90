@@ -39,9 +39,9 @@ contains
       use alloc
       use productivity
 
-!#ifdef _OPENMP
-!      use omp_lib
-!#endif
+#ifdef _OPENMP
+   use omp_lib
+#endif
 
       use photo, only: pft_area_frac, sto_resp
       use water, only: evpot2, penman, available_energy, runoff
@@ -114,7 +114,7 @@ contains
       real(r_8) :: testcdef
       real(r_8) :: sr, mr_sto, growth_stoc
       real(r_8),dimension(npls) :: ocp_mm      ! TODO include cabon of dead plssss in the cicle?
-      logical(l_1),dimension(npls) :: ocp_wood
+      integer(i_4),dimension(npls) :: ocp_wood
       integer(i_4),dimension(npls) :: run
 
       real(r_4),parameter :: tsnow = -1.0
@@ -276,19 +276,21 @@ contains
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================make it parallel=========================
-!#ifdef _OPENMP
-!      if (nlen .le. 500) then
-!         call OMP_SET_NUM_THREADS(1)
-!      else if (nlen .le. 1500) then
-!         call OMP_SET_NUM_THREADS(2)
-!      else if (nlen .le. 2500) then
-!         call OMP_SET_NUM_THREADS(3)
-!      else if (nlen .le. 3500) then
-!         call OMP_SET_NUM_THREADS(4)
-!      else
-!         call OMP_SET_NUM_THREADS(5)
-!      endif
-!#endif
+#ifdef _OPENMP
+     if (nlen .le. 500) then
+        call OMP_SET_NUM_THREADS(1)
+     else if (nlen .le. 1500) then
+        call OMP_SET_NUM_THREADS(2)
+     else if (nlen .le. 2500) then
+        call OMP_SET_NUM_THREADS(3)
+     else if (nlen .le. 3500) then
+        call OMP_SET_NUM_THREADS(4)
+      else if (nlen .le. 7000) then
+         call OMP_SET_NUM_THREADS(8)
+     else
+        call OMP_SET_NUM_THREADS(16)
+     endif
+#endif
       construction = 0.0D0
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
@@ -376,9 +378,9 @@ contains
 
          if(c_def(p) .gt. 0.0) then
             if(dt1(7) .gt. 0.0D0) then
-               cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
-               ca1_int(p) = ca2(p) - ((c_def(p) * 1e-3) * 0.333333333)
-               cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.333333333)
+               cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
+               ca1_int(p) = ca2(p) - ((c_def(p) * 1e-3) * 1.0)
+               cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
             else
                cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
                ca1_int(p) = 0.0D0

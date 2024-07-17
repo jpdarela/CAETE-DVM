@@ -36,6 +36,8 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+# ifx flags for f2py
+IFX_FLAGS = -fpp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
 
 # Sources for compilation in run mode (F2PY)
 sources = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.F90
@@ -45,21 +47,29 @@ objects = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o bu
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
-	@echo "Creating fortran interfaces for caete_module using f2py..."
+	@echo "Creating fortran interfaces for the caete_module using f2py..."
 	$(PYEXEC) ask_npls.py $(NPLS)
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so_parallel: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp
-	@echo "Parallel version of caete_module.so created"
+	@echo "Parallel version of caete_module created using gfortran"
 
 so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) "
-	@echo "Serial version of caete_module.so created using gfortran"
+	@echo "Serial version of caete_module created using gfortran"
 
 so_ifx: $(sources) interface
-	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifort" --f90flags="-QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77"
-	@echo "Serial version of caete_module.so created using IFORT"
+	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="-fpp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77"
+	@echo "Serial version of caete_module created using IFX"
+
+so_ifx_parallel: $(sources) interface
+	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="-fpp -qopenmp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77"
+	@echo "Parallel version of caete_module created using IFX"
+
+fortran_module: $(sources)
+	ifx -fpp -c $(sources)
+
 # Build objects for DEBUG mode
 debug: $(objects) so
 	$(PYEXEC) create_plsbin.py
@@ -146,14 +156,5 @@ clean_win_so: clean_win
 	del /s *.pyd
 	del /s *.pyf
 
-clean_win_alloc: clean_win
-	del /s wallo.npy
-	del /s gallo.npy
-
-clean_win_NP: clean_win
-	del /s NP1.npy
-	del /s NP2.npy
-	del /s NP3.npy
-
-clean_win_all: clean_win clean_win_so clean_win_alloc clean_win_NP
+clean_win_all: clean_win clean_win_so
 

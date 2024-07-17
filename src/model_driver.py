@@ -347,14 +347,14 @@ def apply_spin(grid:grd)->grd:
     return grid
 
 
-def apply_fun(grid:grd)->grd:
+def spinup1(grid:grd)->grd:
     # spinup part 1
     grid.run_caete(spinup_x_dates[0], spinup_x_dates[1], spinup=spin0_n,
                    fix_co2=y_co2, save=False, nutri_cycle=False)
     return grid
 
 
-def apply_fun0(grid:grd)->grd:
+def spinup2(grid:grd)->grd:
     # spinup part 2
     grid.run_caete(spinup_x_dates[0], spinup_x_dates[1], spinup=spinX_n,
                    fix_co2=y_co2, save=False)
@@ -393,26 +393,26 @@ if __name__ == "__main__":
 
     n_proc = mp.cpu_count()
 
-    fh = open('logfile.log', mode='w')
+    # fh = open('logfile.log', mode='w')
     print("START: ", time.ctime())
-    fh.writelines(time.ctime(),)
-    fh.writelines("\n\n",)
-    fh.writelines("SOIL SPINUP...\n",)
-    start = time.time()
+    # fh.writelines(time.ctime(),)
+    # fh.writelines("\n\n",)
+    # fh.writelines("SOIL SPINUP...\n",)
+    # start = time.time()
     print("SOIL SPINUP...")
 
     # SOIL SPINUP
     with mp.Pool(processes=n_proc) as p:
         _spinup_ = p.map(apply_spin, grid_mn)
-    end_spinup = time.time() - start
-    fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
+    # end_spinup = time.time() - start
+    # fh.writelines(f"END_OF_SPINUP after (s){end_spinup}\n",)
     del grid_mn
 
-    # MAIN SPINUP
+    # APPLYING THE MODEL TO THE GRIDCELLS
     def applyXy(fun, input):
         global FUNCALLS
         FUNCALLS += 1
-        fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
+        # fh.writelines(f"MODEL EXEC - {FUNCALLS} - \n",)
         print(f"MODEL EXEC - RUN {FUNCALLS}")
         with mp.Pool(processes=n_proc) as p:
             # reserve 2 funcalls for the main spinup
@@ -425,8 +425,8 @@ if __name__ == "__main__":
                 # for l in chunks(input, n_proc * 2):
                 #     r1 = p.map(fun, input)
                 # result += r1
-        end_spinup = time.time() - start
-        fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
+        # end_spinup = time.time() - start
+        # fh.writelines(f"MODEL EXEC - spinup coup END after (s){end_spinup}\n",)
         return result
 
     print("Applying main spinup. This process can take hours (RUN 1 & 2)")
@@ -434,21 +434,17 @@ if __name__ == "__main__":
     # The first 2 calls of applyXy are reserved to the MAIN spinup
     # These 2 calls will use the method map of the Pool(multiprocessing)
     # the remaining calls will use the starmap method
-    result = applyXy(apply_fun, _spinup_)
-    del _spinup_
+    result = applyXy(spinup1, _spinup_)
 
-    result1 = applyXy(apply_fun0, result)
-    del result
+    result = applyXy(spinup2, result)
 
     # Save Ground 0 # END OF SPINUP
     g0_path = Path(os.path.join(
         dump_folder, Path(f"CAETE_STATE_START_{outf}_.pkz"))).resolve()
     with open(g0_path, 'wb') as fh2:
         print(f"Saving gridcells with init(POST-SPINUP) state in: {g0_path}\n")
-        joblib.dump(result1, fh2, compress=('zlib', 1), protocol=4)
+        joblib.dump(result, fh2, compress=('zlib', 1), protocol=4)
 
-    result = result1
-    del result1
 
     # RUNNING THE experiment
     for i, brk in enumerate(run_breaks):
@@ -464,17 +460,17 @@ if __name__ == "__main__":
         joblib.dump(result, fh2, compress=('zlib', 1), protocol=4)
 
 
-    fh.writelines(f"Start working on db: {time.ctime()}\n",)
+    # fh.writelines(f"Start working on db: {time.ctime()}\n",)
     print("\nEND OF MODEL EXECUTION ", time.ctime(), "\n\n")
     print("Saving db\n")
     write_h5(dump_folder)
 
-    fh.writelines(f"End working on db:{time.ctime()}\n",)
-    fh.writelines(f"Start working on netCDF's: {time.ctime()}\n",)
+    # fh.writelines(f"End working on db:{time.ctime()}\n",)
+    # fh.writelines(f"Start working on netCDF's: {time.ctime()}\n",)
     print("Saving netCDF4 files\n")
     h5path = Path(os.path.join(dump_folder, Path('CAETE.h5'))).resolve()
     catch_stime("./stime.txt")
     h52nc(h5path, nc_outputs)
     print(time.ctime())
-    fh.writelines(f"END working on netCDF's: {time.ctime()}\n",)
+    # fh.writelines(f"END working on netCDF's: {time.ctime()}\n",)
     fh.close()

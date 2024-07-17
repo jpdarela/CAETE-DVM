@@ -48,7 +48,7 @@ contains
     real(r_8), intent(in) :: beta_leaf            !npp allocation to carbon pools (kg/m2/day)
     real(r_8), intent(in) :: beta_awood
     real(r_8), intent(in) :: beta_froot, wmax
-    logical(l_1), intent(in) :: light_limit                !True for no ligth limitation
+    integer(i_4), intent(in) :: light_limit                !True for no ligth limitation
     real(r_8), intent(in) :: constr
 !     Output
 !     ------
@@ -88,15 +88,15 @@ contains
 !getting pls parameters
 
 
-    g1  = dt(1)
-    tleaf = dt(3)
-    awood = dt(7)
-    c4  = dt(9)
-    n2cl = dt(10)
-    n2cl_resp = n2cl
-    n2cw_resp = dt(11)
-    n2cf_resp = dt(12)
-    p2cl = dt(13)
+    g1         = dt(1)
+    tleaf      = dt(3)
+    awood      = dt(7)
+    c4         = dt(9)
+    n2cl       = dt(10)
+    n2cl_resp  = n2cl
+    n2cw_resp  = dt(11)
+    n2cf_resp  = dt(12)
+    p2cl       = dt(13)
 
 
     n2cl = n2cl * 1.0D3 ! N in leaf mg g-1

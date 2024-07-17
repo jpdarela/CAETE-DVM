@@ -19,10 +19,11 @@ Copyright 2017- LabTerra
 """
 import os
 import sys
+from config import fortran_compiler_dlls
 
 if sys.platform == "win32":
     try:
-        os.add_dll_directory(r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin")
+        os.add_dll_directory(fortran_compiler_dlls)
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 
@@ -602,9 +603,9 @@ class grd:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.zeros(shape=(npls,), order='F') + 0.01
-        self.vp_croot = np.zeros(shape=(npls,), order='F') + 0.01
-        self.vp_cwood = np.zeros(shape=(npls,), order='F') + 0.01
+        self.vp_cleaf = np.random.uniform(0.009,0.01,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_croot = np.random.uniform(0.009,0.01,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cwood = np.random.uniform(4.9,5.0,npls)#np.zeros(shape=(npls,), order='F') + 0.1
 
         # self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
         #     1.0, self.pls_table)
@@ -1293,7 +1294,7 @@ class grd:
             lnco.append(daily_output['lnc'])
 
         f = np.array
-        def x(a): return a * 1.25
+        def x(a): return a * 1.0
 
         return x(f(wo).mean()), x(f(llo).mean()), x(f(cwdo).mean()), x(f(rlo).mean()), x(f(lnco).mean(axis=0,))
 

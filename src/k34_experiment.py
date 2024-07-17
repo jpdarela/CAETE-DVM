@@ -95,7 +95,7 @@ with open(AMB, 'r') as fh:
 EXP = ['AMB_LD', 'AMB_MD', 'AMB_HD', 'ELE_LD', 'ELE_MD', 'ELE_HD']
 
 # PLS DATA:
-NPLS = 2000
+NPLS = mod.gp.npls
 
 
 def apply_spin(grid):
@@ -120,10 +120,10 @@ def make_table_HD():
 
         k34_plot = apply_spin(k34_plot)
 
-        k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
-        k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
+        k34_plot.run_caete('20000102', '20151231', 5, save=True, nutri_cycle=False)
+        k34_plot.run_caete('20000102', '20151231', spinup=5, save=True)
 
-        area = get_var(k34_plot, 'area', (19, 20))
+        area = get_var(k34_plot, 'area', (9, 10))
         lpls = area[:, -1] > 0.0
         arr1 = k34_plot.pls_table[:, lpls]
         print(f"INIT SUCC EV UN: {lpls.sum()}")
@@ -138,10 +138,10 @@ def make_table_HD():
                                 ssoil=ssoil, hsoil=hsoil)
                 k34_plot = apply_spin(k34_plot)
                 print("RUNNING")
-                k34_plot.run_caete('20000102', '20151231', 10, save=True, nutri_cycle=False)
-                k34_plot.run_caete('20000102', '20151231', spinup=10, save=True)
+                k34_plot.run_caete('20000102', '20151231', 5, save=True, nutri_cycle=False)
+                k34_plot.run_caete('20000102', '20151231', spinup=5, save=True)
 
-                area = get_var(k34_plot, 'area', (19, 20))
+                area = get_var(k34_plot, 'area', (9, 10))
                 lpls = area[:, -1] > 0.0
                 lpls_arr = k34_plot.pls_table[:, lpls]
                 arr1 = np.concatenate((arr1, lpls_arr), axis=1)
@@ -223,7 +223,7 @@ def run_experiment(pls_table, fname):
                        pls_table=pls_table, tsoil=tsoil,
                        ssoil=ssoil, hsoil=hsoil)
 
-    # Apply a numerical spinup in the soil pools of resources
+    # Apply a spinup in the soil pools of resources
     k34_plot = apply_spin(k34_plot)
 
     # Run the first sequence of repetitions with co2 fixed at 2000 year values
@@ -232,7 +232,7 @@ def run_experiment(pls_table, fname):
     k34_plot.run_caete('20000101', '20151231', spinup=5,
                        fix_co2='2000', save=True, nutri_cycle=False)
 
-    k34_plot.run_caete('20000101', '20151231', spinup=10,
+    k34_plot.run_caete('20000101', '20151231', spinup=5,
                        fix_co2='2000', save=True)
 
     # Run the year of the experiment! the CO2 increases are generated here
@@ -369,16 +369,10 @@ if __name__ == "__main__":
 
     # INTERMEDIATE FD
     tb = pls.table_gen(NPLS, Path("./"))
-    pls_table = read_pls_table(Path(f"./pls_attrs-{NPLS}.csv"))
-    md1 = run_experiment(pls_table, "exp2")
-    # a = get_spin(md1, 16)
-    # print(a["ls"][-1])
-    # print(a["area"][:,-1][a["area"][:,-1] > 0])
-    # print(a["cawood"])
+    # pls_table = read_pls_table(Path(f"./pls_attrs-{NPLS}.csv"))
+    md1 = run_experiment(tb, "exp2")
 
-
-    # md2 = run_experiment(pls_table, "exp2")
-
-    # Open HIGH FD traits table
-    # pls_table = np.load("./pls_attrs_HD.npy")
-    # hd = run_experiment(pls_table)
+    a = get_spin(md1, 10)
+    print(a["ls"][-1])
+    print(a["area"][:,-1][a["area"][:,-1] > 0])
+    print(a["cawood"])
