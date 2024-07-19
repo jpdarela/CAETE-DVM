@@ -27,7 +27,6 @@ if sys.platform == "win32":
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 
-from dataclasses import dataclass
 from typing import Tuple, Union
 from threading import Thread
 from time import sleep
@@ -217,47 +216,6 @@ def str_or_path(fpath: Union[Path, str]) -> Path:
     assert isinstance(fpath, (str, Path)), "fpath must be a string or a Path object"
     return fpath if isinstance(fpath, Path) else Path(fpath)
 
-
-class pls_table:
-    def __init__(self, npls: int=0, fpath: Union[Path, str, None] = None) -> None:
-        self.npls = npls
-        if fpath is not None:
-            fpath = str_or_path(fpath)
-            self.file_path = fpath
-            self.table = read_pls_table(self.file_path)
-        else:
-            assert self.npls > 0, "npls must be greater than 0"
-            from uuid import uuid4
-            # Create a file for this table
-            self.file_path = Path(f"./pls_data-{uuid4().hex}/pls_attrs-{npls}.csv")
-            self.table = table_gen(NPLS=npls, fpath=self.file_path)
-
-    def __len__(self):
-        return self.npls
-
-    def __getitem__(self, index):
-        return self.table[:,index]
-
-    def get_random_pls(self):
-        id = rd.randint(0, self.npls-1)
-        return self.table[:,id]
-
-
-class community:
-
-    def __init__(self, pls_table) -> None:
-        assert pls_table.shape[1] == npls
-        assert pls_table.shape[0] == ntraits
-
-        self.pls_table = pls_table # np.array with functional traits data (initial state)
-        self.alive = np.ones(npls, dtype=bool)
-        self.living_pls = {}
-
-    def update_table():
-        pass
-
-class metacommunity:
-    pass
 
 class grd:
 
@@ -600,6 +558,9 @@ class grd:
 
         os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = 0
+
+        # # Metacomunity
+        # self.metacomm = metacommunity(pls_table=self.pls_table)
 
         self.pr = self.data['pr']
         self.ps = self.data['ps']
@@ -1362,7 +1323,6 @@ class grd:
             soil_out = catch_out_carbon3(s_out)
             self.sp_csoil = soil_out['cs']
             self.sp_snc = soil_out['snc']
-
 
 class plot(grd):
     """i and j are the latitude and longitude (in that order) of plot location in decimal degrees"""
