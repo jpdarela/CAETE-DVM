@@ -542,6 +542,125 @@ class grd:
             dump(data_obj, fh, compress=('lz4', 9), protocol=4)
         self.flush_data = 0
 
+
+    def init_gridcell(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
+        """ PREPARE A GRIDCELL TO RUN
+            input_fpath:(str or pathlib.Path) path to Files with climate and soil data
+            co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]atm\n)
+            pls_table: np.ndarray with functional traits of a set of PLant life strategies
+        """
+
+        assert self.filled == False, "already done"
+        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
+        assert self.input_fpath.exists()
+
+        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+            self.data = pkl.load(fh)
+
+        os.makedirs(self.out_dir, exist_ok=True)
+        self.flush_data = 0
+
+        # # Metacomunity
+        # self.metacomm = metacommunity(pls_table=self.pls_table)
+
+        self.pr = self.data['pr']
+        self.ps = self.data['ps']
+        self.rsds = self.data['rsds']
+        self.tas = self.data['tas']
+        self.rhs = self.data['hurs']
+
+        # SOIL AND NUTRIENTS
+        self.input_nut = []
+        self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
+        for nut in self.nutlist:
+            self.input_nut.append(self.data[nut])
+        self.soil_dict = dict(zip(self.nutlist, self.input_nut))
+        self.data = None
+
+        # TIME
+        self.stime = copy.deepcopy(stime_i)
+        self.calendar = self.stime['calendar']
+        self.time_index = self.stime['time_index']
+        self.time_unit = self.stime['units']
+        self.ssize = self.time_index.size
+        self.sind = int(self.time_index[0])
+        self.eind = int(self.time_index[-1])
+        self.start_date = cftime.num2date(
+            self.time_index[0], self.time_unit, calendar=self.calendar)
+        self.end_date = cftime.num2date(
+            self.time_index[-1], self.time_unit, calendar=self.calendar)
+
+        # OTHER INPUTS
+        self.pls_table = copy.deepcopy(pls_table)
+        # self.neighbours = neighbours_index(self.pos, mask)
+        self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
+
+        # Prepare co2 inputs (we have annually means)
+        self.co2_data = copy.deepcopy(co2)
+
+        self.tsoil = []
+        self.emaxm = []
+
+       # Biomass
+        self.vp_cleaf = np.random.uniform(0.3,0.4,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_croot = np.random.uniform(0.3,0.4,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cwood = np.random.uniform(5.0,6.0,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+
+        self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
+
+        a, b, c, d = m.pft_area_frac(
+            self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
+        del b # not used
+        del c # not used
+        del d # not used
+        self.vp_lsid = np.where(a > 0.0)[0]
+        self.ls = self.vp_lsid.size
+        self.vp_dcl = np.zeros(shape=(npls,), order='F')
+        self.vp_dca = np.zeros(shape=(npls,), order='F')
+        self.vp_dcf = np.zeros(shape=(npls,), order='F')
+        self.vp_ocp = np.zeros(shape=(npls,), order='F')
+        self.vp_sto = np.zeros(shape=(3, npls), order='F')
+
+        # GRIDCELL STATE
+        # Water
+        ws1 = tsoil[0][self.y, self.x].copy()
+        fc1 = tsoil[1][self.y, self.x].copy()
+        wp1 = tsoil[2][self.y, self.x].copy()
+
+        ws2 = ssoil[0][self.y, self.x].copy()
+        fc2 = ssoil[1][self.y, self.x].copy()
+        wp2 = ssoil[2][self.y, self.x].copy()
+
+        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.wp_water_upper_mm = self.swp.w1
+        self.wp_water_lower_mm = self.swp.w2
+        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
+
+        self.theta_sat = hsoil[0][self.y, self.x].copy()
+        self.psi_sat = hsoil[1][self.y, self.x].copy()
+        self.soil_texture = hsoil[2][self.y, self.x].copy()
+
+
+
+        # # # SOIL
+        self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
+        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
+        self.sp_available_p = self.soil_dict['ap']
+        self.sp_available_n = 0.2 * self.soil_dict['tn']
+        self.sp_in_n = 0.4 * self.soil_dict['tn']
+        self.sp_so_n = 0.2 * self.soil_dict['tn']
+        self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
+        self.sp_in_p = self.soil_dict['ip']
+        self.sp_uptk_costs = np.zeros(npls, order='F')
+        self.sp_organic_n = 0.1 * self.soil_dict['tn']
+        self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
+        self.sp_organic_p = 0.5 * self.soil_dict['op']
+        self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
+
+        self.outputs = dict()
+        self.filled = True
+        return None
+
     def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN
             input_fpath:(str or pathlib.Path) path to Files with climate and soil data

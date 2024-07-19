@@ -39,7 +39,9 @@ from caete_module import photo as model
 __author__ = 'JP Darela'
 
 # Read the pls_gen.toml file to get the parameters
-with open('pls_gen.toml', 'rb') as f:
+
+CONFIG_FILE = 'plsgen.toml'
+with open(CONFIG_FILE, 'rb') as f:
     data = tl.load(f)
 
 GRASS_FRAC = data["parameters"]["grass_pls_fraction"]
@@ -62,7 +64,7 @@ def vec_ranging(values, new_min, new_max):
 def get_parameters():
     """ Get parameters from the pls_gen.toml file """
 
-    with open('pls_gen.toml', 'rb') as f:
+    with open(CONFIG_FILE, 'rb') as f:
         data = tl.load(f)
 
     return data
@@ -143,6 +145,8 @@ def nutrient_ratios(n, N_min, N_max, P_min, P_max):
 def table_gen(NPLS, fpath=None):
     """AKA main - generate a trait table for CAETÊ - save it to a .csv"""
 
+    assert NPLS > 1, "Number of PLSs must be greater than 1"
+
     # Read the pls_gen.toml file to get the parameters
     data = get_parameters()
 
@@ -212,7 +216,7 @@ def table_gen(NPLS, fpath=None):
         alloc = np.concatenate((alloc_g, alloc_w), axis=0,)
 
     # # # COMBINATIONS
-    g1 = np.random.uniform(2, 20.0, NPLS)
+    g1 = np.random.uniform(0.5, 20.0, NPLS)
     resorption = np.random.uniform(0.1, 0.8, NPLS)
 
     # # C4 type

@@ -1,7 +1,7 @@
 # Parameters used to create Plant life strategies. Used in
 title = "Parameters used to create Plant life strategies"
 language = "pt-BR"
-author = "Joao Paulo Darela Filho"
+author = "João Paulo Darela Filho"
 
 [parameters]
 grass_pls_fraction = 0.05
@@ -12,8 +12,8 @@ wood_cmin = 0.001
 wood_low_npp = 0.001
 
 [residence_time]
-woody = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.1666, wood_max = 300, root_min = 0.08333, root_max = 4}
-grass = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.0, wood_max = 0.0, root_min = 0.08333, root_max = 4}
+woody = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.1666, wood_max = 600, root_min = 0.16, root_max = 3}
+grass = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.0, wood_max = 0.0, root_min = 0.16, root_max = 3}
 
 [nutrient_carbon_ratios]
 leaf_n2c = {min = 0.005, max = 0.05}
