@@ -16,11 +16,9 @@
 # ! AUTHORS: Gabriel Marandola & JP Darela
 
 import warnings
-import numpy as np
 from math import log as ln
-import caete_module as caete_mod
-
-
+# from numba import jit
+# import caete_module as caete_mod
 
 
 def rwarn(txt='RuntimeWarning'):
@@ -42,7 +40,7 @@ def B_func(Th33, Th1500):
 
     return lbd_func(B)
 
-
+# @jit(nopython=True)
 def ksat_func(ThS, Th33, lbd):
     """soil conductivity in saturated condition. Output in mm/h"""
 
@@ -50,7 +48,7 @@ def ksat_func(ThS, Th33, lbd):
     ksat = 1930 * (ThS - Th33) ** (3 - lbd)
     return ksat
 
-
+# @jit(nopython=True)
 def kth_func(Th, ThS, lbd, ksat):
     """soil conductivity in unsaturated condition. Output in mm/h"""
     if Th < 0.0:
@@ -79,28 +77,28 @@ class soil_water:
         assert fc2 > 0.0 and fc2 <= 1.0
         assert wp2 > 0.0 and wp2 <= 1.0
 
-        self.ws1 = np.float64(ws1)
-        self.fc1 = np.float64(fc1)
-        self.wp1 = np.float64(wp1)
+        self.ws1 = ws1
+        self.fc1 = fc1
+        self.wp1 = wp1
 
-        self.ws2 = np.float64(ws2)
-        self.fc2 = np.float64(fc2)
-        self.wp2 = np.float64(wp2)
+        self.ws2 = ws2
+        self.fc2 = fc2
+        self.wp2 = wp2
 
         # Soil Water POols mm (Kg m-2)
-        self.w1 = np.float64(20.0)
-        self.w2 = np.float64(60.0)
+        self.w1 = 20.0
+        self.w2 = 60.0
 
         # Set pool sizes
         # Kilograms of water that would fit the  soil layers in the ausence of soil
-        self.p1_vol = np.float64(300.0)  # Kg(H2O) - Layer 1
-        self.p2_vol = np.float64(700.0)  # Kg(H2O) - Layer 2
+        self.p1_vol = 300.0  # Kg(H2O) - Layer 1
+        self.p2_vol = 700.0  # Kg(H2O) - Layer 2
 
         # MAX soil water depth kg m-2
         self.w1_max = self.p1_vol * self.ws1
         self.w2_max = self.p2_vol * self.ws2
 
-        self.wmax = np.float64(self.w1_max + self.w2_max)
+        self.wmax = self.w1_max + self.w2_max
 
         self.lbd_1 = B_func(self.fc1, self.wp1)
 
@@ -173,12 +171,11 @@ class soil_water:
 
         return runoff1 + runoff2
 
-def CPTEC_PVM2_bdget(temp, p0, rh):
-   return  caete_mod.water.evpot2(p0, temp, rh, caete_mod.water.available_energy(temp))
+# def CPTEC_PVM2_bdget(temp, p0, rh):
+#    return  caete_mod.water.evpot2(p0, temp, rh, caete_mod.water.available_energy(temp))
 
-
-
-if __name__ == "__main__":
+def main():
+    import numpy as np
 
     ws1, ws2 = 0.45, 0.48
     fc1, fc2 = 0.39, 0.43
@@ -186,11 +183,15 @@ if __name__ == "__main__":
 
     wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
 
-    for x in range(5000):
+    for x in range(10000):
         evapo = 5 if np.random.normal() > 0 else 0
         roff = wp._update_pool(evapo, evapo)
-        wp.w1 = np.float(0.0) if wp.w1 < 0.0 else wp.w1
-        wp.w2 = np.float(0.0) if wp.w2 < 0.0 else wp.w2
-        print(wp.w1, ':w1')
-        print(wp.w2, ':w2')
-        print(roff, ' :runoff')
+        wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
+        wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
+        # print(wp.w1, ':w1')
+        # print(wp.w2, ':w2')
+        # print(roff, ' :runoff')
+
+
+if __name__ == "__main__":
+    main()

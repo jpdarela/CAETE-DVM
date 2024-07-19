@@ -27,6 +27,8 @@ if sys.platform == "win32":
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 
+from dataclasses import dataclass
+from typing import Tuple, Union
 from threading import Thread
 from time import sleep
 from pathlib import Path
@@ -39,9 +41,11 @@ import bz2
 from joblib import dump
 import cftime
 import numpy as np
+from numba import jit
+from pandas import read_csv
 
 from hydro_caete import soil_water
-
+from plsgen import table_gen
 
 from caete_module import global_par as gp
 from caete_module import budget as model
@@ -50,10 +54,10 @@ from caete_module import photo as m
 from caete_module import soil_dec
 
 NO_DATA = [-9999.0, -9999.0]
-# print(f"RUNNING CAETÊ with {gp.npls} Plant Life Strategies")
 # GLOBAL
 out_ext = ".pkz"
 npls = gp.npls
+ntraits = gp.ntraits
 
 Pan_Amazon_RECTANGLE = "y = 160:221 x = 201:272"
 
@@ -163,45 +167,97 @@ def catch_out_carbon3(out):
     return dict(zip(lst, out))
 
 
-def find_coord(N, W):
-    """ Given a pair of geographic (WGS84) coordinates (decimal degrees)
-        returns the Y and X indices in the array (360,720//0.5° lon-lat)
-        (C_contiguous) Tested only in south america"""
-    Yc = round(N, 2)
-    Xc = round(W, 2)
+@jit(nopython=True)
+def find_coord(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tuple[int, int]:
+    """It finds the indices for a given latitude and longitude in a planar grid
 
-    if abs(Yc) > 89.75:
-        if Yc < 0:
-            Yc = -89.75
-        else:
-            Yc = 89.75
+    Args:
+        N (float): latitude in decimal degrees north
+        W (float): longitude in decimal degrees west
+        res (float, optional): grid resolution. Defaults to 0.5 degrees.
+        rounding (int, optional): decimal significant digits. Defaults to 2.
 
-    if abs(Xc) > 179.75:
-        if Xc < 0:
-            Xc = -179.75
-        else:
-            Xc = 179.75
+    Returns:
+        tuple[int, int]: (y, x) indices for the given latitude and longitude
+        in the grid (0,0) is the upper left corner. Feeding the function with
+        lat/long outside the boundaries(-180 - 180; -90 - 90) of the geographic coordinates
+        will cause the function to return invalid indices in the grid.
+    """
 
-    Yind = 0
-    Xind = 0
+    Yc:float = round(N, rounding)
+    Xc:float = round(W, rounding)
 
-    lon = np.arange(-179.75, 180, 0.5)
-    lat = np.arange(89.75, -90, -0.5)
+    half_res:float = res / 2
+    Ymin:float = -90 + half_res
+    Xmin:float = -180 + half_res
 
-    if True:
-        while Yc < lat[Yind]:
-            Yind += 1
+    # Generate longitude and latitude arrays (cell center coordinates)
+    lon = np.arange(Xmin, 180, res)
+    lat = np.arange(Ymin, 90, res)
 
-    if Xc <= 0:
-        while Xc > lon[Xind]:
-            Xind += 1
-    else:
-        Xind += lon.size // 2
-        while Xc > lon[Xind]:
-            Xind += 1
+    # Find indices for Yc and Xc using searchsorted
+    # Yc is negative because our origin (-90 degrees north) is in the upper left corner.
+    Yind = np.searchsorted(lat, -Yc - half_res, side='left')
+    Xind = np.searchsorted(lon, Xc - half_res, side='left')
+
+    if Yc > 90:
+        Yind = -1
+    if Xc < -180:
+        Xind = -1
 
     return Yind, Xind
 
+def read_pls_table(pls_file):
+    """Read the standard attributes table saved in csv format.
+       Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
+    return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T)
+
+def str_or_path(fpath: Union[Path, str]) -> Path:
+    """Converts a string to a Path object"""
+    assert isinstance(fpath, (str, Path)), "fpath must be a string or a Path object"
+    return fpath if isinstance(fpath, Path) else Path(fpath)
+
+
+class pls_table:
+    def __init__(self, npls: int=0, fpath: Union[Path, str, None] = None) -> None:
+        self.npls = npls
+        if fpath is not None:
+            fpath = str_or_path(fpath)
+            self.file_path = fpath
+            self.table = read_pls_table(self.file_path)
+        else:
+            assert self.npls > 0, "npls must be greater than 0"
+            from uuid import uuid4
+            # Create a file for this table
+            self.file_path = Path(f"./pls_data-{uuid4().hex}/pls_attrs-{npls}.csv")
+            self.table = table_gen(NPLS=npls, fpath=self.file_path)
+
+    def __len__(self):
+        return self.npls
+
+    def __getitem__(self, index):
+        return self.table[:,index]
+
+    def get_random_pls(self):
+        id = rd.randint(0, self.npls-1)
+        return self.table[:,id]
+
+
+class community:
+
+    def __init__(self, pls_table) -> None:
+        assert pls_table.shape[1] == npls
+        assert pls_table.shape[0] == ntraits
+
+        self.pls_table = pls_table # np.array with functional traits data (initial state)
+        self.alive = np.ones(npls, dtype=bool)
+        self.living_pls = {}
+
+    def update_table():
+        pass
+
+class metacommunity:
+    pass
 
 class grd:
 
@@ -603,12 +659,9 @@ class grd:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
         # Biomass
-        self.vp_cleaf = np.random.uniform(0.009,0.01,npls)#np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_croot = np.random.uniform(0.009,0.01,npls)#np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_cwood = np.random.uniform(4.9,5.0,npls)#np.zeros(shape=(npls,), order='F') + 0.1
-
-        # self.vp_cleaf, self.vp_croot, self.vp_cwood = m.spinup2(
-        #     1.0, self.pls_table)
+        self.vp_cleaf = np.random.uniform(0.3,0.4,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_croot = np.random.uniform(0.3,0.4,npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cwood = np.random.uniform(5.0,6.0,npls)#np.zeros(shape=(npls,), order='F') + 0.1
 
         self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
 

@@ -12,8 +12,10 @@ src/*.npy
 src/*.cfg
 src/*.csv
 src/RUN*
+src/pls_data-*
 outputs/*
 nc_outputs/*
+
 h5/*
 src/.python-version
 src/logfile.log

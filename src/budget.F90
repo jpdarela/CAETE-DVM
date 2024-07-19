@@ -18,6 +18,10 @@
 ! This program is based on the work of those that gave us the INPE-CPTEC-PVM2 model
 
 module budget
+   use types
+   use global_par, only: ntraits, npls
+   use alloc
+   use productivity
    implicit none
    private
 
@@ -33,11 +37,6 @@ contains
         &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
         &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
 
-
-      use types
-      use global_par, only: ntraits, npls
-      use alloc
-      use productivity
 
 #ifdef _OPENMP
    use omp_lib
@@ -110,23 +109,21 @@ contains
       !     -----------------------Internal Variables------------------------
       integer(i_4) :: p, counter, nlen, ri, i, j
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
-      real(r_8) :: carbon_in_storage
-      real(r_8) :: testcdef
-      real(r_8) :: sr, mr_sto, growth_stoc
-      real(r_8),dimension(npls) :: ocp_mm      ! TODO include cabon of dead plssss in the cicle?
-      integer(i_4),dimension(npls) :: ocp_wood
-      integer(i_4),dimension(npls) :: run
+      real(r_8) :: carbon_in_storage ! Carbon stored in the storage pool
+      real(r_8) :: testcdef ! Test if the carbon deficit can be compensated by stored carbon
+      real(r_8) :: sr, mr_sto, growth_stoc ! Storage growth respiration, maintenance respiration of stored C, growth of storage C pool
+      real(r_8),dimension(npls) :: ocp_mm  ! Biomass based abundance
+      integer(i_4),dimension(npls) :: ocp_wood ! 1 if PLS is not shaded
+      integer(i_4),dimension(npls) :: run ! 1 if PLS is alive
 
-      real(r_4),parameter :: tsnow = -1.0
-      real(r_4),parameter :: tice  = -2.5
 
-      real(r_8),dimension(npls) :: cl1_pft, cf1_pft, ca1_pft
-      real(r_4) :: soil_temp
-      real(r_4) :: emax
-      real(r_8) :: w                               !Daily soil moisture storage (mm)
-      real(r_8) :: construction
+      real(r_8),dimension(npls) :: cl1_pft, cf1_pft, ca1_pft ! Initial carbon pools kg m-2
+      real(r_4) :: soil_temp ! Soil temperature (oC)
+      real(r_4) :: emax ! Maximum evapotranspiration (mm/day)
+      real(r_8) :: w ! Soil moisture storage (mm)
+      real(r_8) :: construction ! Allocated NPP
 
-      real(r_8),dimension(:),allocatable :: ocp_coeffs
+      real(r_8),dimension(:),allocatable :: ocp_coeffs ! Occupation coefficients Biomass baseed abundance (Biomas-Ratio hypothesis)
 
       real(r_4),dimension(:),allocatable :: evap   !Actual evapotranspiration (mm/day)
       !c     Carbon Cycle
@@ -135,22 +132,21 @@ contains
       real(r_4),dimension(:),allocatable :: nppa   !Net primary productivity / auxiliar
       real(r_8),dimension(:),allocatable :: laia   !Leaf area index (m2 leaf/m2 area)
       real(r_4),dimension(:),allocatable :: rc2    !Canopy resistence (s/m)
-      real(r_4),dimension(:),allocatable :: f1     !
       real(r_8),dimension(:),allocatable :: f5     !Photosynthesis (mol/m2/s)
       real(r_4),dimension(:),allocatable :: vpd    !Vapor Pressure deficit
       real(r_4),dimension(:),allocatable :: rm     !maintenance & growth a.resp
-      real(r_4),dimension(:),allocatable :: rg
-      real(r_4),dimension(:),allocatable :: wue
-      real(r_4),dimension(:),allocatable :: cue
-      real(r_4),dimension(:),allocatable :: c_def
-      real(r_8),dimension(:),allocatable :: cl1_int
-      real(r_8),dimension(:),allocatable :: cf1_int
-      real(r_8),dimension(:),allocatable :: ca1_int
-      real(r_8),dimension(:),allocatable :: tra
-      real(r_8),dimension(:),allocatable :: cl2
-      real(r_8),dimension(:),allocatable :: cf2
+      real(r_4),dimension(:),allocatable :: rg     !maintenance & growth a.resp
+      real(r_4),dimension(:),allocatable :: wue    !Water use efficiency
+      real(r_4),dimension(:),allocatable :: cue    !Carbon use efficiency
+      real(r_4),dimension(:),allocatable :: c_def  !Carbon deficit due to negative NPP - i.e. ph < ar
+      real(r_8),dimension(:),allocatable :: cl1_int ! carbon auxiliar allocation
+      real(r_8),dimension(:),allocatable :: cf1_int ! carbon auxiliar allocation
+      real(r_8),dimension(:),allocatable :: ca1_int ! carbon auxiliar allocation
+      real(r_8),dimension(:),allocatable :: tra    !transpiration (mm/day) or (mm/s)
+      real(r_8),dimension(:),allocatable :: cl2    ! carbon pos-allocation
+      real(r_8),dimension(:),allocatable :: cf2    ! carbon pos-allocation
       real(r_8),dimension(:),allocatable :: ca2    ! carbon pos-allocation
-      real(r_8),dimension(:,:),allocatable :: day_storage      ! D0=3 g m-2
+      real(r_8),dimension(:,:),allocatable :: day_storage ! D0=3 g m-2
       real(r_8),dimension(:),allocatable   :: vcmax            ! µmol m-2 s-1
       real(r_8),dimension(:),allocatable   :: specific_la      ! m2 g(C)-1
       real(r_8),dimension(:,:),allocatable :: nupt             !d0 =2      ! g m-2 (1) from Soluble (2) from organic
@@ -239,7 +235,6 @@ contains
       allocate(ar(nlen))
       allocate(laia(nlen))
       allocate(f5(nlen))
-      allocate(f1(nlen))
       allocate(vpd(nlen))
       allocate(rc2(nlen))
       allocate(rm(nlen))
@@ -305,11 +300,14 @@ contains
          ri = lp(p)
          dt1 = dt(:,ri) ! Pick up the pls functional attributes list
 
+         ! TODO: input storage pool to prod function; We need to calculate the respiratory costs  of storage inside
+         ! use the dleaf dwwood and droot trio.
          call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
                &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
                &, soil_sat, construction, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
+         ! TODO: Implement the degree of coupling between the soil-vegetation-atmosphere system using stomatal conductance and VPD
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 
          ! Check if the carbon deficit can be compensated by stored carbon
@@ -533,7 +531,6 @@ contains
       deallocate(ar)
       deallocate(laia)
       deallocate(f5)
-      deallocate(f1)
       deallocate(vpd)
       deallocate(rc2)
       deallocate(rm)

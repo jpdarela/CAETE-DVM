@@ -617,7 +617,7 @@ contains
          !Rubisco carboxilation limited photosynthesis rate (molCO2/m2/s)
          jc = vm_in*((ci-mgama)/(ci+(f2*(1.+(p3/f3)))))
          !Light limited photosynthesis rate (molCO2/m2/s)
-         if (ll) then
+         if (ll .eq. 1) then
             aux_ipar = ipar
          else
             aux_ipar = ipar - (ipar * light_penalization)
@@ -660,7 +660,7 @@ contains
          t25 = 273.15 + 25.0          ! K
          kp = kp25 * (2.1**(0.1*(tk-t25))) ! ppm
 
-         if (ll) then
+         if (ll .eq. 1) then
             aux_ipar = ipar
          else
             aux_ipar = ipar - (ipar * light_penalization)
@@ -1162,11 +1162,12 @@ end function g_resp
       use global_par, only: npls, cmin, sapwood
       !implicit none
 
-      integer(kind=i_4),parameter :: npft = npls ! plss futuramente serao
+      integer(kind=i_4),parameter :: npft = npls
 
-      real(kind=r_8),dimension(npft),intent( in) :: cleaf1, cfroot1, cawood1, awood
-      real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs
-      integer(kind=i_4),dimension(npft),intent(out) :: ocp_wood
+      real(kind=r_8),dimension(npft),intent( in) :: cleaf1, cfroot1, cawood1 ! carbon content (kg m-2)
+      real(kind=r_8),dimension(npft),intent( in) :: awood ! npp allocation coefficient to wood
+      real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs ! occupation coefficients (area fraction)
+      integer(kind=i_4),dimension(npft),intent(out) :: ocp_wood ! 
       integer(kind=i_4),dimension(npft),intent(out) :: run_pls
       real(kind=r_8), dimension(npls), intent(out) :: c_to_soil ! NOT IMPLEMENTED IN BUDGET
       logical(kind=l_1),dimension(npft) :: is_living

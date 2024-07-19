@@ -40,10 +40,37 @@ EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 IFX_FLAGS = -fpp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
 
 # Sources for compilation in run mode (F2PY)
-sources = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.F90
+src_lib = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
+sources = $(src_lib) budget.F90
+# sources = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.F90
 
 # Objects for compilation in debug mode
-objects = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o budget.o debug_caete.o
+src_obj = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
+src_obj_w = global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
+objects = $(src_obj) budget.o debug_caete.o
+
+# # Build a static library for the caete_module
+# # Compile objects for libcaete.a
+# objf: $(src_lib)
+# 	$(FC) -c -fPIC $(src_lib)
+
+# libf: $(src_obj) objf
+# 	$(FC) -shared -o libcaete.so $(src_obj)
+# 	@echo "Static library libcaete.a created"
+
+# # Build a static library for the caete_module using the ifx compiler ussing lib (INTEL) in windows
+# objf_ifx: $(src_lib)
+# 	ifx /c /Qcoarray:single $(src_lib)
+# # Build a static library for the caete_module
+
+# libf_ifx: $(src_obj_w) objf_ifx
+#     ifx /dll /out:libcaete.dll $(src_obj_w)
+# 	@echo "Static library libcaete.a created using IFX"
+
+# # build budget.F90 with libcate.a with f2py, creating the caete_module.so (UNIX)
+# so_fast: libf
+# 	$(F2PY) $(CFLAG) -m $(MODNAME)  budget.F90 --f90flags="-Wall -L. -lcaete"
+# 	@echo "Fast version of caete_module created using gfortran"
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
@@ -133,12 +160,12 @@ debug_caete.o: debug_caete.f90
 	$(FC) $(FLFLAGS) debug_caete.f90
 
 
-# CLEAN DIR
+# CLEAN
 clean:
 	rm -rf test *.mod *.s *.o  pls_ex.txt __pycache__ run_debug logfile.log
 	clear
 clean_so: clean
-	rm -rf *.so *.pyf
+	rm -rf *.so *.pyf *.obj *.pyd *.a *.i90 *.mod
 clean_alloc:
 	rm -rf wallo.npy gallo.npy
 clean_NP:
@@ -146,6 +173,8 @@ clean_NP:
 
 clean_win:
 	del /s *.mod
+	del /s *.o
+	del /s *.s
 	del /s pls_ex.txt
 	del /s /q __pycache__
 	del run_debug
