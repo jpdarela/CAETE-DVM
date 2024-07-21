@@ -14,6 +14,7 @@ import cftime as cf
 import caete as mod
 import plsgen as pls
 from aux_plot import get_var
+from parameters import tsoil, ssoil, hsoil
 
 #
 
@@ -24,27 +25,6 @@ idxT = pd.date_range("2000-01-01", "2015-12-31", freq='D')
 dt = pd.read_csv("../k34/MetData_AmzFACE2000_2015_CAETE.csv")
 dt.index = idxT
 
-# Soil Parameters
-# Water saturation, field capacity & wilting point
-# Topsoil
-map_ws = np.load("../input/soil/ws.npy")
-map_fc = np.load('../input/soil/fc.npy')
-map_wp = np.load('../input/soil/wp.npy')
-
-# Subsoil
-map_subws = np.load("../input/soil/sws.npy")
-map_subfc = np.load("../input/soil/sfc.npy")
-map_subwp = np.load("../input/soil/swp.npy")
-
-tsoil = (map_ws, map_fc, map_wp)
-ssoil = (map_subws, map_subfc, map_subwp)
-
-# Hydraulics
-theta_sat = np.load("../input/hydra/theta_sat.npy")
-psi_sat = np.load("../input/hydra/psi_sat.npy")
-soil_texture = np.load("../input/hydra/soil_text.npy")
-
-hsoil = (theta_sat, psi_sat, soil_texture)
 
 with bz2.BZ2File("../k34/input_data_185-240.pbz2", mode='rb') as fh:
     dth = pkl.load(fh)
@@ -218,6 +198,7 @@ def run_experiment(pls_table, fname):
     # Create the plot object
     k34_plot = mod.plot(-2.61, -60.20, fname)
 
+
     # Fill the plot object with input data
     k34_plot.init_plot(sdata=sdata, stime_i=stime_i, co2=co2,
                        pls_table=pls_table, tsoil=tsoil,
@@ -378,4 +359,3 @@ if __name__ == "__main__":
     print(a["cawood"])
     print(a["cfroot"])
     print(a["cleaf"])
-    

@@ -1,5 +1,8 @@
-[metcom]
+[metacom]
 n = 99
+
+[crs]
+res = 0.5
 
 [paths]
 output = "../outputs"

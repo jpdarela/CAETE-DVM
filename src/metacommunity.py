@@ -20,6 +20,7 @@ def read_pls_table(pls_file):
        Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
     return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T)
 
+
 class pls_table:
     """ Interface for the main table of lant life strategies (Plant prototypes).
         Random subsamples without replacement are taken from this table to

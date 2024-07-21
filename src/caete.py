@@ -44,7 +44,7 @@ import numpy as np
 
 from hydro_caete import soil_water
 from config import get_parameters
-from _geos import find_coord
+from _geos import find_indices, find_coordinates, calculate_area
 import metacommunity as mc
 from parameters import tsoil, ssoil, hsoil, output_path
 
@@ -217,7 +217,6 @@ class region:
         for f,pos in zip(self.climate_files, self.indices):
             y, x = pos
             file_name = self.output_path/Path(f"grd_{y}-{x}")
-            # print(f, y, x)
             grd_cell = grd_mt(y, x, file_name, self.pls_table)
             grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
                                     tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
@@ -225,6 +224,12 @@ class region:
             print_progress(i+1, len(self.indices), prefix='Progress:', suffix='Complete')
             i += 1
 
+
+    def run_region(self, start:int, end:int):
+        pass
+
+    def manage_outputs(self):
+        pass
 
     def get_mask(self)->np.ndarray:
         return self.grid
@@ -261,14 +266,18 @@ class state_zero:
         """
 
         assert type(y) == type(x), "x and y must be of the same type"
+        self.config = get_parameters("caete.toml")
+        self.res = self.config["crs"]["res"]
 
-        self.y, self.x = find_coord(N = y, W = x, res=0.5, rounding=4) if isinstance(x, float) else (y, x)
+        self.y, self.x = find_indices(N = y, W = x, res=self.res, rounding=2) if isinstance(x, float) else (y, x)
+        self.lat, self.lon = find_coordinates(self.y, self.x, res=self.res) if isinstance(x, int) else (y, x)
+        self.area = calculate_area(self.lat, self.lon, dx=self.res, dy=self.res)
         self.xyname = f"{self.y}-{self.x}"
         self.grid_filename = f"gridcell{self.xyname}"
         self.input_fname = f"input_data_{self.xyname}.pbz2"
         self.input_fpath = None
         self.data = None
-        self.config = get_parameters("caete.toml")
+
 
         self.plot_name = dump_folder
         self.plot = None
@@ -281,11 +290,13 @@ class state_zero:
         self.realized_runs = []
         self.co2_data = None
 
+        # OUTPUT FOLDER STRUCTURE
         self.outputs = {}       # dict, store filepaths of output data
-        self.out_dir = output_path/Path(dump_folder)/Path(self.plot_name)
+        # Root dir for the region outputs
+        self.out_dir = output_path/Path(dump_folder)
         os.makedirs(self.out_dir, exist_ok=True)
-        # self.out_dir = Path("../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
         self.flush_data = None
+
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
 
@@ -298,13 +309,12 @@ class climate:
         self.tas = None
         self.rhs = None
 
-    def read_clim(self, data:Dict):
+    def _read_clim(self, data:Dict):
         self.pr = data['pr']
         self.ps = data['ps']
         self.rsds = data['rsds']
         self.tas = data['tas']
         self.rhs = data['hurs']
-    pass
 
 
 class time:
@@ -319,7 +329,7 @@ class time:
         self.sind = None
         self.eind = None
 
-    def set_time(self, stime_i:Dict):
+    def _set_time(self, stime_i:Dict):
         self.stime = copy.deepcopy(stime_i)
         self.calendar = self.stime['calendar']
         self.time_index = self.stime['time_index']
@@ -414,7 +424,7 @@ class soil:
         self.psi_sat = None
         self.soil_texture = None
 
-    def init_soil_cnp(self, data:Dict):
+    def _init_soil_cnp(self, data:Dict):
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
         self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
         self.input_nut = []
@@ -434,7 +444,7 @@ class soil:
         self.sp_organic_p = 0.5 * self.soil_dict['op']
         self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
 
-    def init_soil_water(self, tsoil:Tuple, ssoil:Tuple, hsoil:Tuple):
+    def _init_soil_water(self, tsoil:Tuple, ssoil:Tuple, hsoil:Tuple):
         """Initializes the soil pools
 
         Args:
@@ -450,32 +460,15 @@ class soil:
 
         # GRIDCELL STATE
         # Water
-        ws1 = tsoil[0][self.y, self.x].copy()
-        fc1 = tsoil[1][self.y, self.x].copy()
-        wp1 = tsoil[2][self.y, self.x].copy()
+        self.ws1 = tsoil[0][self.y, self.x].copy()
+        self.fc1 = tsoil[1][self.y, self.x].copy()
+        self.wp1 = tsoil[2][self.y, self.x].copy()
 
-        ws2 = ssoil[0][self.y, self.x].copy()
-        fc2 = ssoil[1][self.y, self.x].copy()
-        wp2 = ssoil[2][self.y, self.x].copy()
+        self.ws2 = ssoil[0][self.y, self.x].copy()
+        self.fc2 = ssoil[1][self.y, self.x].copy()
+        self.wp2 = ssoil[2][self.y, self.x].copy()
 
-        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
-        self.wp_water_upper_mm = self.swp.w1
-        self.wp_water_lower_mm = self.swp.w2
-        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
-
-        self.theta_sat = hsoil[0][self.y, self.x].copy()
-        self.psi_sat = hsoil[1][self.y, self.x].copy()
-        self.soil_texture = hsoil[2][self.y, self.x].copy()
-
-        ws1 = tsoil[0][self.y, self.x].copy()
-        fc1 = tsoil[1][self.y, self.x].copy()
-        wp1 = tsoil[2][self.y, self.x].copy()
-
-        ws2 = ssoil[0][self.y, self.x].copy()
-        fc2 = ssoil[1][self.y, self.x].copy()
-        wp2 = ssoil[2][self.y, self.x].copy()
-
-        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.swp = soil_water(self.ws1, self.ws2, self.fc1, self.fc2, self.wp1, self.wp2)
         self.wp_water_upper_mm = self.swp.w1
         self.wp_water_lower_mm = self.swp.w2
         self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
@@ -557,29 +550,28 @@ class grd_mt(grd_base):
         """
 
         self.input_fpath = str_or_path(input_fpath)
-        os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = 0
 
         # # Meta-community
         self.main_table = mc.pls_table(self.table_array) # PLS table
-        self.ncomms = self.config["metcom"]["n"]  # Number of communities
+        self.ncomms = self.config["metacom"]["n"]  # Number of communities
         self.metacomm = mc.metacommunity(self.ncomms, self.main_table) # Metacommunity object
 
         # REad climate drivers and soil characteristics, incl. nutrients, for this gridcell
         self.data = read_bz2_file(self.input_fpath)
 
         # Read climate data
-        self.read_clim(self.data)
+        self._read_clim(self.data)
 
         # get CO2 data
         self.co2_data = copy.deepcopy(co2)
 
         # SOIL: NUTRIENTS and WATER
-        self.init_soil_cnp(self.data)
-        self.init_soil_water(tsoil, ssoil, hsoil)
+        self._init_soil_cnp(self.data)
+        self._init_soil_water(tsoil, ssoil, hsoil)
 
         # TIME
-        self.set_time(stime_i)
+        self._set_time(stime_i)
 
         return None
 
@@ -587,6 +579,8 @@ class grd_mt(grd_base):
 class grd_std(grd_base):
     pass # will substitute grd below
 
+
+# ----------------------------
 # OLD CAETÊ
 class grd:
 
@@ -973,15 +967,14 @@ class grd:
 
         # STATE
         # Water
-        ws1 = tsoil[0][self.y, self.x].copy()
-        fc1 = tsoil[1][self.y, self.x].copy()
-        wp1 = tsoil[2][self.y, self.x].copy()
+        self.ws1 = tsoil[0][self.y, self.x].copy()
+        self.fc1 = tsoil[1][self.y, self.x].copy()
+        self.wp1 = tsoil[2][self.y, self.x].copy()
+        self.ws2 = ssoil[0][self.y, self.x].copy()
+        self.fc2 = ssoil[1][self.y, self.x].copy()
+        self.wp2 = ssoil[2][self.y, self.x].copy()
 
-        ws2 = ssoil[0][self.y, self.x].copy()
-        fc2 = ssoil[1][self.y, self.x].copy()
-        wp2 = ssoil[2][self.y, self.x].copy()
-
-        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.swp = soil_water(self.ws1, self.ws2, self.fc1, self.fc2, self.wp1, self.wp2)
         self.wp_water_upper_mm = self.swp.w1
         self.wp_water_lower_mm = self.swp.w2
         self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
@@ -1695,11 +1688,12 @@ class grd:
             self.sp_csoil = soil_out['cs']
             self.sp_snc = soil_out['snc']
 
+
 class plot(grd):
     """i and j are the latitude and longitude (in that order) of plot location in decimal degrees"""
 
     def __init__(self, i, j, dump_folder):
-        y, x = find_coord(i, j)
+        y, x = find_indices(i, j, res=0.5)
         super().__init__(x, y, dump_folder)
 
         self.plot = True
@@ -1761,18 +1755,17 @@ class plot(grd):
 
         # STATE
         # Water
-        ws1 = tsoil[0][self.y, self.x].copy()
-        fc1 = tsoil[1][self.y, self.x].copy()
-        wp1 = tsoil[2][self.y, self.x].copy()
+        self.ws1 = tsoil[0][self.y, self.x].copy()
+        self.fc1 = tsoil[1][self.y, self.x].copy()
+        self.wp1 = tsoil[2][self.y, self.x].copy()
+        self.ws2 = ssoil[0][self.y, self.x].copy()
+        self.fc2 = ssoil[1][self.y, self.x].copy()
+        self.wp2 = ssoil[2][self.y, self.x].copy()
 
-        ws2 = ssoil[0][self.y, self.x].copy()
-        fc2 = ssoil[1][self.y, self.x].copy()
-        wp2 = ssoil[2][self.y, self.x].copy()
-
-        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.swp = soil_water(self.ws1, self.ws2, self.fc1, self.fc2, self.wp1, self.wp2)
         self.wp_water_upper_mm = self.swp.w1
         self.wp_water_lower_mm = self.swp.w2
-        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
+        self.wmax_mm = self.swp.w1_max + self.swp.w2_max
 
         self.theta_sat = hsoil[0][self.y, self.x].copy()
         self.psi_sat = hsoil[1][self.y, self.x].copy()
