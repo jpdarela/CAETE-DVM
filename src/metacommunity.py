@@ -1,15 +1,30 @@
+import os
+import sys
+from config import fortran_compiler_dlls
+
+if sys.platform == "win32":
+    try:
+        os.add_dll_directory(fortran_compiler_dlls)
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
 from pathlib import Path
+from typing import Union
 import numpy as np
-from caete import read_pls_table
+from pandas import read_csv
 from caete_module import global_par as gp
 from caete_module import photo as m
 
-
+def read_pls_table(pls_file):
+    """Read the standard attributes table saved in csv format.
+       Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
+    return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T)
 
 class pls_table:
-    """ Interface for the main table of PLSs. Random subsamples without replacement
-        are taken from this table to create communities. The main table should've
-        a large number of PLSs (npls ~ 20000, for example).
+    """ Interface for the main table of lant life strategies (Plant prototypes).
+        Random subsamples without replacement are taken from this table to
+        create communities. The main table should've a large number
+        of PLSs (npls ~ 20000, for example).
     """
     def __init__(self, array:np.ndarray) -> None:
         """Provides an interface for the main table of PLSs.
@@ -17,11 +32,14 @@ class pls_table:
         Args:
             array (np.ndarray(ntraits,npls)): PLS table.
         """
-        self.table = array
+        self.table = array.copy(order='F')
         self.npls = self.table.shape[1]
         self.ntraits = self.table.shape[0]
         self.shape = self.table.shape
         self.id = np.arange(self.npls)
+
+        assert self.npls > gp.npls, "The number of PLSs in the main table should be greater than the number of PLSs in a community."
+        assert self.ntraits == gp.ntraits, "The number of traits in the main table should be equal to the number of traits in a community."
 
 
     def __len__(self):
@@ -80,21 +98,23 @@ class community:
         self.alive = np.ones(gp.npls, dtype=bool)
 
         # BIOMASS_STATE
-        self.vp_cleaf = np.random.uniform(0.3,0.4,self.npls)#np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_croot = np.random.uniform(0.3,0.4,self.npls)#np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_cwood = np.random.uniform(5.0,6.0,self.npls)#np.zeros(shape=(npls,), order='F') + 0.1
+        self.vp_cleaf = np.random.uniform(0.3,0.4,self.npls)
+        self.vp_croot = np.random.uniform(0.3,0.4,self.npls)
+        self.vp_cwood = np.random.uniform(5.0,6.0,self.npls)
 
         self.vp_cwood[self.pls_table[6,:] == 0.0] = 0.0
 
-        self.vp_ocp, b, c, d = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
+        self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
                                                self.vp_cwood, self.pls_table[6, :])
-        del b, c, d
+
         self.vp_lsid = np.where(self.vp_ocp > 0.0)[0]
         self.ls = self.vp_lsid.size
         self.vp_sto = np.zeros(shape=(3, self.npls), order='F')
 
+        # Define objects to store the "clean" state of the community, i.e. withouth dark diversity
+
     def __getitem__(self, index:int):
-        """Gets a PLS (1D array) given index.
+        """Gets a PLS (1D array) for given index.
 
         Args:
             index (int): _description_
@@ -104,13 +124,30 @@ class community:
         """
         return self.pls_table[:,index]
 
+    def __setitem__(self, index:int, value:np.ndarray):
+        """_summary_
+
+        Args:
+            index (int): _description_
+            value (np.ndarray): _description_
+        """
+        self.pls_table[:,index] = value
+
     def __len__(self):
         return self.shape[1]
 
 
 class metacommunity:
+    """_summary_
+    """
 
     def __init__(self, n:int, main_table:pls_table) -> None:
+        """_summary_
+
+        Args:
+            n (int): number of communities
+            main_table (pls_table): an pls_table interface object
+        """
 
         self.communities = {}
         self.pls_table = main_table
@@ -118,8 +155,22 @@ class metacommunity:
         for i in range(n):
             self.communities[i] = community(self.pls_table.create_npls_table(gp.npls))
 
-    def __getitem__(self, index):
-        return self.communities[index]
+    def __getitem__(self, index:Union[int, str]):
+        """_summary_
+
+        Args:
+            index (Union[int, str]): _description_
+
+        Raises:
+            KeyError: _description_
+
+        Returns:
+            _type_: _description_
+        """
+        __val__ = self.communities.get(index)
+        if __val__ is None:
+            raise KeyError(f"Key {index} is not a community in this metacommunity.")
+        return __val__
 
     def __len__(self):
         return len(self.communities)

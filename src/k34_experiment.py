@@ -369,10 +369,13 @@ if __name__ == "__main__":
 
     # INTERMEDIATE FD
     tb = pls.table_gen(NPLS, Path("./"))
-    # pls_table = read_pls_table(Path(f"./pls_attrs-{NPLS}.csv"))
+    # tb = read_pls_table(Path(f"./pls_attrs-{NPLS}.csv"))
     md1 = run_experiment(tb, "exp2")
 
     a = get_spin(md1, 10)
     print(a["ls"][-1])
     print(a["area"][:,-1][a["area"][:,-1] > 0])
     print(a["cawood"])
+    print(a["cfroot"])
+    print(a["cleaf"])
+    

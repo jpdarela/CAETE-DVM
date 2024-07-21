@@ -18,6 +18,7 @@ Copyright 2017- LabTerra
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
+import csv
 import sys
 from config import fortran_compiler_dlls
 
@@ -27,7 +28,7 @@ if sys.platform == "win32":
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 
-from typing import Tuple, Union
+from typing import Union, Tuple, Dict
 from threading import Thread
 from time import sleep
 from pathlib import Path
@@ -40,11 +41,11 @@ import bz2
 from joblib import dump
 import cftime
 import numpy as np
-from numba import jit
-from pandas import read_csv
 
 from hydro_caete import soil_water
-from plsgen import table_gen
+from config import get_parameters
+from _geos import find_coord
+import metacommunity as mc
 
 from caete_module import global_par as gp
 from caete_module import budget as model
@@ -52,65 +53,18 @@ from caete_module import water as st
 from caete_module import photo as m
 from caete_module import soil_dec
 
-NO_DATA = [-9999.0, -9999.0]
-# GLOBAL
+
+# GLOBAL variables
 out_ext = ".pkz"
 npls = gp.npls
-ntraits = gp.ntraits
+from config import run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj, rbrk, NO_DATA
+# -----
 
-Pan_Amazon_RECTANGLE = "y = 160:221 x = 201:272"
-
-Pan_Amazon_CORNERS = {'ulc': (201, 160),
-                      'lrc': (271, 220)}
-
-run_breaks_hist = [('19790101', '19801231'),
-                   ('19810101', '19821231'),
-                   ('19830101', '19841231'),
-                   ('19850101', '19861231'),
-                   ('19870101', '19881231'),
-                   ('19890101', '19901231'),
-                   ('19910101', '19921231'),
-                   ('19930101', '19941231'),
-                   ('19950101', '19961231'),
-                   ('19970101', '19981231'),
-                   ('19990101', '20001231'),
-                   ('20010101', '20021231'),
-                   ('20030101', '20041231'),
-                   ('20050101', '20061231'),
-                   ('20070101', '20081231'),
-                   ('20090101', '20101231'),
-                   ('20110101', '20121231'),
-                   ('20130101', '20141231'),
-                   ('20150101', '20161231')]
-
-run_breaks_CMIP5_hist = [('19300101', '19391231'),
-                        ('19400101', '19491231'),
-                        ('19500101', '19591231'),
-                        ('19600101', '19691231'),
-                        ('19700101', '19791231'),
-                        ('19800101', '19891231'),
-                        ('19900101', '19991231'),
-                        ('20000101', '20051231')]
-
-run_breaks_CMIP5_proj = [('20060101', '20091231'),
-                         ('20100101', '20191231'),
-                         ('20200101', '20291231'),
-                         ('20300101', '20391231'),
-                         ('20400101', '20491231'),
-                         ('20500101', '20591231'),
-                         ('20600101', '20691231'),
-                         ('20700101', '20791231'),
-                         ('20800101', '20891231'),
-                         ('20900101', '20991231')]
-
-# historical and projection periods respectively
-rbrk = [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
-
+# Set warnings to default
 warnings.simplefilter("default")
 
 def rwarn(txt='RuntimeWarning'):
     warnings.warn(f"{txt}", RuntimeWarning)
-
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=30):
     """FROM Stack Overflow/GIST, THANKS
@@ -137,20 +91,19 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_lengt
         sys.stdout.write('\n')
     sys.stdout.flush()
 
+def neighbours_index(pos, matrix):
+    neighbours = []
+    rows = len(matrix)
+    cols = len(matrix[0]) if rows else 0
+    for i in range(max(0, pos[0] - 1), min(rows, pos[0] + 2)):
+        for j in range(max(0, pos[1] - 1), min(cols, pos[1] + 2)):
+            if (i, j) != pos:
+                neighbours.append((i, j))
+    return neighbours
 
-# def neighbours_index(pos, matrix):
-#     neighbours = []
-#     rows = len(matrix)
-#     cols = len(matrix[0]) if rows else 0
-#     for i in range(max(0, pos[0] - 1), min(rows, pos[0] + 2)):
-#         for j in range(max(0, pos[1] - 1), min(cols, pos[1] + 2)):
-#             if (i, j) != pos:
-#                 neighbours.append((i, j))
-#     return neighbours
-
-
-# WARNING keep the lists of budget/carbon3 outputs updated with fortran code
 def catch_out_budget(out):
+    # WARNING keep the lists of budget/carbon3 outputs updated with fortran code
+
     lst = ["evavg", "epavg", "phavg", "aravg", "nppavg",
            "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
            "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
@@ -159,64 +112,385 @@ def catch_out_budget(out):
 
     return dict(zip(lst, out))
 
-
 def catch_out_carbon3(out):
     lst = ['cs', 'snc', 'hr', 'nmin', 'pmin']
 
     return dict(zip(lst, out))
-
-
-@jit(nopython=True)
-def find_coord(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tuple[int, int]:
-    """It finds the indices for a given latitude and longitude in a planar grid
-
-    Args:
-        N (float): latitude in decimal degrees north
-        W (float): longitude in decimal degrees west
-        res (float, optional): grid resolution. Defaults to 0.5 degrees.
-        rounding (int, optional): decimal significant digits. Defaults to 2.
-
-    Returns:
-        tuple[int, int]: (y, x) indices for the given latitude and longitude
-        in the grid (0,0) is the upper left corner. Feeding the function with
-        lat/long outside the boundaries(-180 - 180; -90 - 90) of the geographic coordinates
-        will cause the function to return invalid indices in the grid.
-    """
-
-    Yc:float = round(N, rounding)
-    Xc:float = round(W, rounding)
-
-    half_res:float = res / 2
-    Ymin:float = -90 + half_res
-    Xmin:float = -180 + half_res
-
-    # Generate longitude and latitude arrays (cell center coordinates)
-    lon = np.arange(Xmin, 180, res)
-    lat = np.arange(Ymin, 90, res)
-
-    # Find indices for Yc and Xc using searchsorted
-    # Yc is negative because our origin (-90 degrees north) is in the upper left corner.
-    Yind = np.searchsorted(lat, -Yc - half_res, side='left')
-    Xind = np.searchsorted(lon, Xc - half_res, side='left')
-
-    if Yc > 90:
-        Yind = -1
-    if Xc < -180:
-        Xind = -1
-
-    return Yind, Xind
-
-def read_pls_table(pls_file):
-    """Read the standard attributes table saved in csv format.
-       Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
-    return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T)
 
 def str_or_path(fpath: Union[Path, str]) -> Path:
     """Converts a string to a Path object"""
     assert isinstance(fpath, (str, Path)), "fpath must be a string or a Path object"
     return fpath if isinstance(fpath, Path) else Path(fpath)
 
+def get_co2_concentration(filename:Union[Path, str]):
+    fname = str_or_path(filename)
+    with open(fname, 'r') as file:
+        # Use the Sniffer class to detect the dialect
+        sample = file.read(1024)
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(sample)
+        file.seek(0)  # Reset file pointer to the beginning
+        data = list(csv.reader(file, dialect))
+    if sniffer.has_header:
+        data = data[1:]
+    return dict(map(lambda x: (int(x[0]), float(x[1])), data))
 
+def read_bz2_file(filepath:Union[Path, str]):
+    fpath = str_or_path(filepath)
+    with bz2.BZ2File(fpath, mode='r') as fh:
+        data = pkl.load(fh)
+    return data
+
+def write_bz2_file(data:Dict, filepath:Union[Path, str]):
+    fpath = str_or_path(filepath)
+    with bz2.BZ2File(fpath, mode='wb') as fh:
+        pkl.dump(data, fh)
+
+
+class state_zero:
+    """base class with input/output related data (paths, filenames, etc)
+    """
+
+    def __init__(self, y:Union[int, float], x:Union[int, float], dump_folder:str)->None:
+        """Construct the basic gridcell object
+
+        if you give a pair of integers, the gridcell will understand that you are giving the indices of the
+        gridcell in a 2D numpy array of gridcells representing the area of simulation
+        if you give a pair of floats, the gridcell will understand that you are giving the coordinates
+        of the gridcell in the real world (latitude and longitude). The indices are used to locate
+        the input file that contains the climatic and soil data. The files must be named as grd_x-y.pbz2 where x and y are the indices of the gridcell
+        """
+
+        assert type(y) == type(x), "x and y must be of the same type"
+
+        self.y, self.x = find_coord(N = y, W = x, res=0.5, rounding=4) if isinstance(x, float) else (y, x)
+        self.xyname = f"{self.y}-{self.x}"
+        self.grid_filename = f"gridcell{self.xyname}"
+        self.input_fname = f"input_data_{self.xyname}.pbz2"
+        self.input_fpath = None
+        self.data = None
+        self.config = get_parameters("caete.toml")
+
+        self.plot_name = dump_folder
+        self.plot = None
+
+        self.pls_table = None
+        self.main_table = None
+        self.ncomms = None
+        self.metacomm = None
+
+        self.realized_runs = []
+        self.co2_data = None
+
+        self.outputs = {}       # dict, store filepaths of output data
+        self.out_dir = Path("../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
+        self.flush_data = None
+        # counts the execution of a time slice (a call of self.run_spinup)
+        self.run_counter = 0
+
+
+class climate:
+    def __init__(self):
+        self.pr = None
+        self.ps = None
+        self.rsds = None
+        self.tas = None
+        self.rhs = None
+
+    def read_clim(self, data:Dict):
+        self.pr = data['pr']
+        self.ps = data['ps']
+        self.rsds = data['rsds']
+        self.tas = data['tas']
+        self.rhs = data['hurs']
+    pass
+
+
+class time:
+    def __init__(self):
+        # Time attributes
+        self.time_index = None  # Array with the time stamps
+        self.calendar = None    # Calendar name
+        self.time_unit = None   # Time unit
+        self.start_date = None
+        self.end_date = None
+        self.ssize = None
+        self.sind = None
+        self.eind = None
+
+    def set_time(self, stime_i:Dict):
+        self.stime = copy.deepcopy(stime_i)
+        self.calendar = self.stime['calendar']
+        self.time_index = self.stime['time_index']
+        self.time_unit = self.stime['units']
+        self.ssize = self.time_index.size
+        self.sind = int(self.time_index[0])
+        self.eind = int(self.time_index[-1])
+        self.start_date = cftime.num2date(
+            self.time_index[0], self.time_unit, calendar=self.calendar)
+        self.end_date = cftime.num2date(
+            self.time_index[-1], self.time_unit, calendar=self.calendar)
+
+
+class output:
+    """Class to store the outputs of the model
+    """
+    def __init__(self):
+        self.soil_temp = None
+        self.emaxm = None
+        self.tsoil = None
+        self.photo = None
+        self.ls  = None
+        self.aresp = None
+        self.npp = None
+        self.lai = None
+        self.csoil = None
+        self.inorg_n = None
+        self.inorg_p = None
+        self.sorbed_n = None
+        self.sorbed_p = None
+        self.snc = None
+        self.hresp = None
+        self.rcm = None
+        self.f5 = None
+        self.runom = None
+        self.evapm = None
+        self.wsoil = None
+        self.swsoil = None
+        self.rm = None
+        self.rg = None
+        self.cleaf = None
+        self.cawood = None
+        self.cfroot = None
+        self.area = None
+        self.wue = None
+        self.cue = None
+        self.cdef = None
+        self.nmin = None
+        self.pmin = None
+        self.vcmax = None
+        self.specific_la = None
+        self.nupt = None
+        self.pupt = None
+        self.litter_l = None
+        self.cwd = None
+        self.litter_fr = None
+        self.lnc = None
+        self.storage_pool = None
+        self.lim_status = None
+        self.uptake_strategy = None
+        self.carbon_costs = None
+
+
+class soil:
+
+    def __init__(self):
+
+        # C,N & P
+        self.sp_csoil = None
+        self.sp_snc = None
+        self.input_nut = None
+        self.sp_available_p = None
+        self.sp_available_n = None
+        self.sp_so_n = None
+        self.sp_in_n = None
+        self.sp_so_p = None
+        self.sp_in_p = None
+        self.sp_csoil = None
+        self.sp_snr = None
+        self.sp_uptk_costs = None
+        self.sp_organic_n = None
+        self.sp_sorganic_n = None
+        self.sp_organic_p = None
+        self.sp_sorganic_p = None
+
+        # Water
+        # Water content for each soil layer
+        self.wp_water_upper_mm = None  # mm
+        self.wp_water_lower_mm = None  # mm
+        self.wmax_mm = None  # mm
+        self.theta_sat = None
+        self.psi_sat = None
+        self.soil_texture = None
+
+    def init_soil_cnp(self, data:Dict):
+        self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
+        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
+        self.input_nut = []
+        self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
+        for nut in self.nutlist:
+            self.input_nut.append(data[nut])
+        self.soil_dict = dict(zip(self.nutlist, self.input_nut))
+        self.sp_available_p = self.soil_dict['ap']
+        self.sp_available_n = 0.2 * self.soil_dict['tn']
+        self.sp_in_n = 0.4 * self.soil_dict['tn']
+        self.sp_so_n = 0.2 * self.soil_dict['tn']
+        self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
+        self.sp_in_p = self.soil_dict['ip']
+        self.sp_uptk_costs = np.zeros(npls, order='F')
+        self.sp_organic_n = 0.1 * self.soil_dict['tn']
+        self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
+        self.sp_organic_p = 0.5 * self.soil_dict['op']
+        self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
+
+    def init_soil_water(self, tsoil:Tuple, ssoil:Tuple, hsoil:Tuple):
+        """Initializes the soil pools
+
+        Args:
+            tsoil (Tuple): tuple with the soil water content for the upper layer
+            ssoil (Tuple): tuple with the soil water content for the lower layer
+            hsoil (Tuple): tuple with the soil texture, saturation point and water potential at saturation
+        """
+        assert self.tas is not None, "Climate data not loaded"
+        self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
+
+        self.tsoil = []
+        self.emaxm = []
+
+        # GRIDCELL STATE
+        # Water
+        ws1 = tsoil[0][self.y, self.x].copy()
+        fc1 = tsoil[1][self.y, self.x].copy()
+        wp1 = tsoil[2][self.y, self.x].copy()
+
+        ws2 = ssoil[0][self.y, self.x].copy()
+        fc2 = ssoil[1][self.y, self.x].copy()
+        wp2 = ssoil[2][self.y, self.x].copy()
+
+        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.wp_water_upper_mm = self.swp.w1
+        self.wp_water_lower_mm = self.swp.w2
+        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
+
+        self.theta_sat = hsoil[0][self.y, self.x].copy()
+        self.psi_sat = hsoil[1][self.y, self.x].copy()
+        self.soil_texture = hsoil[2][self.y, self.x].copy()
+
+        ws1 = tsoil[0][self.y, self.x].copy()
+        fc1 = tsoil[1][self.y, self.x].copy()
+        wp1 = tsoil[2][self.y, self.x].copy()
+
+        ws2 = ssoil[0][self.y, self.x].copy()
+        fc2 = ssoil[1][self.y, self.x].copy()
+        wp2 = ssoil[2][self.y, self.x].copy()
+
+        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+        self.wp_water_upper_mm = self.swp.w1
+        self.wp_water_lower_mm = self.swp.w2
+        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
+
+        self.theta_sat = hsoil[0][self.y, self.x].copy()
+        self.psi_sat = hsoil[1][self.y, self.x].copy()
+        self.soil_texture = hsoil[2][self.y, self.x].copy()
+
+
+class grd_base(state_zero, climate, time, soil, output):
+
+    def __init__(self, y: int | float, x: int | float, dump_folder):
+        super().__init__(y, x, dump_folder)
+
+
+    def find_co2(self, year:int)->float:
+        assert isinstance(year, int), "year must be an integer"
+        assert self.co2_data, "CO2 data not loaded"
+        _val_ = self.co2_data.get(year)
+        if _val_ is None:
+            raise ValueError(f"Year {year} not in ATM[CO₂] data")
+        return _val_
+
+
+    def find_index(self, start:int, end:int)->list:
+        """_summary_
+
+        Args:
+            start (int): _description_
+            end (int): _description_
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            list: _description_
+        """
+
+        # Ensure start and end are within the bounds
+        if start < self.sind or end > self.eind:
+            raise ValueError("start or end out of bounds")
+
+        # Directly find the indices
+        start_index = np.where(np.arange(self.sind, self.eind + 1) == start)[0]
+        end_index = np.where(np.arange(self.sind, self.eind + 1) == end)[0]
+
+        # Combine and return the results
+        return np.concatenate((start_index, end_index)).tolist()
+
+
+class grd_mt(grd_base):
+
+    """A gridcell object to run the model in the meta-community mode
+
+    Args:
+        grd_base (grd_base): base class with climatic and soil data ans some common methods to a gridcell object
+    """
+
+    def __init__(self, y: int | float, x: int | float, dump_folder: str)->None:
+        super().__init__(y, x, dump_folder)
+
+    def set_gridcell(self,
+                      input_fpath:Union[Path, str],
+                      stime_i: Dict,
+                      co2: Dict,
+                      pls_table: np.ndarray,
+                      tsoil: Tuple[np.ndarray],
+                      ssoil: Tuple[np.ndarray],
+                      hsoil: Tuple[np.ndarray]):
+        """ PREPARE A GRIDCELL TO RUN in the meta-community mode
+
+        Args:
+            input_fpath (Union[Path, str]): path to the input file with climatic and soil data
+            stime_i (Dict): dictionary with the time index and units
+            co2 (Dict): dictionary with the CO2 data
+            pls_table (np.ndarray): np.array with the functional traits data
+            tsoil (Tuple[np.ndarray]):
+            ssoil (Tuple[np.ndarray]):
+            hsoil (Tuple[np.ndarray]):
+        """
+
+        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
+        assert self.input_fpath.exists(), f"Input file not found: {self.input_fpath}"
+
+        os.makedirs(self.out_dir, exist_ok=True)
+        self.flush_data = 0
+
+        # # Meta-community
+        self.main_table = mc.pls_table(pls_table)
+        self.ncomms = self.config["metcom"]["n"]
+        self.metacomm = mc.metacommunity(self.ncomms, self.main_table)
+
+        # REad climate drivers for this gridcell
+        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+            self.data = pkl.load(fh)
+
+        # Read climate data
+        self.read_clim(self.data)
+
+        # get CO2 data
+        self.co2_data = copy.deepcopy(co2)
+
+        # SOIL: NUTRIENTS and WATER
+        self.init_soil_cnp(self.data)
+        self.init_soil_water(tsoil, ssoil, hsoil)
+
+        # TIME
+        self.set_time(stime_i)
+
+        return None
+
+
+class grd_std(grd_base):
+    pass # will substitute grd below
+
+# OLD CAETÊ
 class grd:
 
     """
@@ -541,125 +815,6 @@ class grd:
         with open(self.outputs[fpath], 'wb') as fh:
             dump(data_obj, fh, compress=('lz4', 9), protocol=4)
         self.flush_data = 0
-
-
-    def init_gridcell(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
-        """ PREPARE A GRIDCELL TO RUN
-            input_fpath:(str or pathlib.Path) path to Files with climate and soil data
-            co2: (list) a alist (association list) with yearly cCO2 ATM data(yyyy\t[CO2]atm\n)
-            pls_table: np.ndarray with functional traits of a set of PLant life strategies
-        """
-
-        assert self.filled == False, "already done"
-        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
-        assert self.input_fpath.exists()
-
-        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
-            self.data = pkl.load(fh)
-
-        os.makedirs(self.out_dir, exist_ok=True)
-        self.flush_data = 0
-
-        # # Metacomunity
-        # self.metacomm = metacommunity(pls_table=self.pls_table)
-
-        self.pr = self.data['pr']
-        self.ps = self.data['ps']
-        self.rsds = self.data['rsds']
-        self.tas = self.data['tas']
-        self.rhs = self.data['hurs']
-
-        # SOIL AND NUTRIENTS
-        self.input_nut = []
-        self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
-        for nut in self.nutlist:
-            self.input_nut.append(self.data[nut])
-        self.soil_dict = dict(zip(self.nutlist, self.input_nut))
-        self.data = None
-
-        # TIME
-        self.stime = copy.deepcopy(stime_i)
-        self.calendar = self.stime['calendar']
-        self.time_index = self.stime['time_index']
-        self.time_unit = self.stime['units']
-        self.ssize = self.time_index.size
-        self.sind = int(self.time_index[0])
-        self.eind = int(self.time_index[-1])
-        self.start_date = cftime.num2date(
-            self.time_index[0], self.time_unit, calendar=self.calendar)
-        self.end_date = cftime.num2date(
-            self.time_index[-1], self.time_unit, calendar=self.calendar)
-
-        # OTHER INPUTS
-        self.pls_table = copy.deepcopy(pls_table)
-        # self.neighbours = neighbours_index(self.pos, mask)
-        self.soil_temp = st.soil_temp_sub(self.tas[:1095] - 273.15)
-
-        # Prepare co2 inputs (we have annually means)
-        self.co2_data = copy.deepcopy(co2)
-
-        self.tsoil = []
-        self.emaxm = []
-
-       # Biomass
-        self.vp_cleaf = np.random.uniform(0.3,0.4,npls)#np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_croot = np.random.uniform(0.3,0.4,npls)#np.zeros(shape=(npls,), order='F') + 0.1
-        self.vp_cwood = np.random.uniform(5.0,6.0,npls)#np.zeros(shape=(npls,), order='F') + 0.1
-
-        self.vp_cwood[pls_table[6,:] == 0.0] = 0.0
-
-        a, b, c, d = m.pft_area_frac(
-            self.vp_cleaf, self.vp_croot, self.vp_cwood, self.pls_table[6, :])
-        del b # not used
-        del c # not used
-        del d # not used
-        self.vp_lsid = np.where(a > 0.0)[0]
-        self.ls = self.vp_lsid.size
-        self.vp_dcl = np.zeros(shape=(npls,), order='F')
-        self.vp_dca = np.zeros(shape=(npls,), order='F')
-        self.vp_dcf = np.zeros(shape=(npls,), order='F')
-        self.vp_ocp = np.zeros(shape=(npls,), order='F')
-        self.vp_sto = np.zeros(shape=(3, npls), order='F')
-
-        # GRIDCELL STATE
-        # Water
-        ws1 = tsoil[0][self.y, self.x].copy()
-        fc1 = tsoil[1][self.y, self.x].copy()
-        wp1 = tsoil[2][self.y, self.x].copy()
-
-        ws2 = ssoil[0][self.y, self.x].copy()
-        fc2 = ssoil[1][self.y, self.x].copy()
-        wp2 = ssoil[2][self.y, self.x].copy()
-
-        self.swp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
-        self.wp_water_upper_mm = self.swp.w1
-        self.wp_water_lower_mm = self.swp.w2
-        self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
-
-        self.theta_sat = hsoil[0][self.y, self.x].copy()
-        self.psi_sat = hsoil[1][self.y, self.x].copy()
-        self.soil_texture = hsoil[2][self.y, self.x].copy()
-
-
-
-        # # # SOIL
-        self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
-        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
-        self.sp_available_p = self.soil_dict['ap']
-        self.sp_available_n = 0.2 * self.soil_dict['tn']
-        self.sp_in_n = 0.4 * self.soil_dict['tn']
-        self.sp_so_n = 0.2 * self.soil_dict['tn']
-        self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
-        self.sp_in_p = self.soil_dict['ip']
-        self.sp_uptk_costs = np.zeros(npls, order='F')
-        self.sp_organic_n = 0.1 * self.soil_dict['tn']
-        self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
-        self.sp_organic_p = 0.5 * self.soil_dict['op']
-        self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
-
-        self.outputs = dict()
-        self.filled = True
-        return None
 
     def init_caete_dyn(self, input_fpath, stime_i, co2, pls_table, tsoil, ssoil, hsoil):
         """ PREPARE A GRIDCELL TO RUN

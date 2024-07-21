@@ -61,7 +61,7 @@ def vec_ranging(values, new_min, new_max):
 
     return np.array(output, dtype=np.float32)
 
-def get_parameters():
+def get_parameters(config=CONFIG_FILE):
     """ Get parameters from the pls_gen.toml file """
 
     with open(CONFIG_FILE, 'rb') as f:

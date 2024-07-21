@@ -1,0 +1,5 @@
+[metcom]
+n = 99
+
+[paths]
+output = "../outputs"

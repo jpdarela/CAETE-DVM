@@ -308,6 +308,7 @@ contains
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
          ! TODO: Implement the degree of coupling between the soil-vegetation-atmosphere system using stomatal conductance and VPD
+         ! as in Köstner et al. 1992
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 
          ! Check if the carbon deficit can be compensated by stored carbon

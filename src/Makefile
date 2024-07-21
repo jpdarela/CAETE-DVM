@@ -22,6 +22,7 @@ F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
 DEBUG_PROGRAM = run_debug
+NPLS = 999
 
 # RUN MODE FLAGS
 MFLAG = -m
