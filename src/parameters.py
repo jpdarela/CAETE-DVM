@@ -21,6 +21,7 @@ BASE_RUN = 'HISTORICAL-RUN' #"HISTORICAL-RUN" <- in sombrero this is the
 ATTR_FILENAME = "pls_attrs-2000.csv"
 START_COND_FILENAME = f"CAETE_STATE_START_{BASE_RUN}_.pkz"
 
+output_path = Path(f"../outputs").resolve()
 run_path = Path(f"../outputs/{BASE_RUN}/{START_COND_FILENAME}")
 pls_path = Path(f"./{ATTR_FILENAME}")
 

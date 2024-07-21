@@ -146,7 +146,7 @@ class metacommunity:
 
         Args:
             n (int): number of communities
-            main_table (pls_table): an pls_table interface object
+            main_table (pls_table): a pls_table interface object
         """
 
         self.communities = {}

@@ -46,6 +46,7 @@ from hydro_caete import soil_water
 from config import get_parameters
 from _geos import find_coord
 import metacommunity as mc
+from parameters import tsoil, ssoil, hsoil, output_path
 
 from caete_module import global_par as gp
 from caete_module import budget as model
@@ -66,7 +67,7 @@ warnings.simplefilter("default")
 def rwarn(txt='RuntimeWarning'):
     warnings.warn(f"{txt}", RuntimeWarning)
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=30):
+def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
     """FROM Stack Overflow/GIST, THANKS
     Call in a loop to create terminal progress bar
 
@@ -118,9 +119,15 @@ def catch_out_carbon3(out):
     return dict(zip(lst, out))
 
 def str_or_path(fpath: Union[Path, str]) -> Path:
-    """Converts a string to a Path object"""
-    assert isinstance(fpath, (str, Path)), "fpath must be a string or a Path object"
-    return fpath if isinstance(fpath, Path) else Path(fpath)
+    """Converts a string to a Path object, do some checks and return the Path object"""
+    is_path = isinstance(fpath, (Path))
+    is_str = isinstance(fpath, (str))
+    is_str_or_path = is_str or is_path
+
+    assert is_str_or_path, "fpath must be a string or a Path object"
+    _val_ = fpath if is_path else Path(fpath)
+    assert _val_.exists(), f"File not found: {_val_}"
+    return _val_
 
 def get_co2_concentration(filename:Union[Path, str]):
     fname = str_or_path(filename)
@@ -129,7 +136,7 @@ def get_co2_concentration(filename:Union[Path, str]):
         sample = file.read(1024)
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(sample)
-        file.seek(0)  # Reset file pointer to the beginning
+        file.seek(0)
         data = list(csv.reader(file, dialect))
     if sniffer.has_header:
         data = data[1:]
@@ -147,11 +154,103 @@ def write_bz2_file(data:Dict, filepath:Union[Path, str]):
         pkl.dump(data, fh)
 
 
+class region:
+    """Region class containing the gridcells for a given region
+    """
+
+    def __init__(self,
+                name:str,
+                clim_data:Union[str,Path],
+                soil_data:Tuple[Tuple[np.ndarray], Tuple[np.ndarray], Tuple[np.ndarray]],
+                co2:Union[str, Path],
+                pls_table:np.ndarray)->None:
+        """_summary_
+
+        Args:
+            name (str): this will be the name of the region and the name of the output folder
+            clim_data (Union[str,Path]): Path for the climate data
+            soil_data (Tuple[Tuple[np.ndarray], Tuple[np.ndarray], Tuple[np.ndarray]]): _description_
+            output_folder (Union[str, Path]): _description_
+            co2 (Union[str, Path]): _description_
+            pls_table (np.ndarray): _description_
+        """
+        # Get co2 data
+        self.name = Path(name)
+        self.co2_path = str_or_path(co2)
+        self.co2_data = get_co2_concentration(self.co2_path)
+
+        # IO
+        self.climate_files = []
+        self.input_data = str_or_path(clim_data)
+        self.soil_data = copy.deepcopy(soil_data)
+        self.pls_table = pls_table
+        self.grid = np.ones((360, 720), dtype=bool)
+
+
+        mtd = str_or_path(list(self.input_data.glob("*_METADATA.pbz2"))[0])
+        self.metadata = read_bz2_file(mtd)
+        self.stime = copy.deepcopy(self.metadata[0])
+
+        for file_path in self.input_data.glob("input_data_*-*.pbz2"):
+            self.climate_files.append(file_path)
+
+        self.indices = []
+        for f in self.climate_files:
+            y, x = f.stem.split("_")[-1].split("-")
+            self.indices.append((int(y), int(x)))
+            self.grid[int(y), int(x)] = False
+
+        # create the output folder structure
+        # This is the output path for the regions, Create it if it does not exist
+        os.makedirs(output_path, exist_ok=True)
+        # This is the output path for this region
+        self.output_path = output_path/self.name
+        os.makedirs(self.output_path, exist_ok=True)
+
+        self.gridcells = []
+
+
+    def set_gridcells(self):
+        print("Starting gridcells")
+        i = 0
+        print_progress(i, len(self.indices), prefix='Progress:', suffix='Complete')
+        for f,pos in zip(self.climate_files, self.indices):
+            y, x = pos
+            file_name = self.output_path/Path(f"grd_{y}-{x}")
+            # print(f, y, x)
+            grd_cell = grd_mt(y, x, file_name, self.pls_table)
+            grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
+                                    tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+            self.gridcells.append(grd_cell)
+            print_progress(i+1, len(self.indices), prefix='Progress:', suffix='Complete')
+            i += 1
+
+
+    def get_mask(self)->np.ndarray:
+        return self.grid
+
+
+    def __getitem__(self, idx:int):
+        try:
+            _val_ = self.gridcells[idx]
+        except IndexError:
+            raise IndexError(f"Cannot get item at index {idx}. Region has {self.__len__()} gridcells")
+        return _val_
+
+
+    def __len__(self):
+        return len(self.gridcells)
+
+
+    def __iter__(self):
+        yield from self.gridcells
+
+
 class state_zero:
     """base class with input/output related data (paths, filenames, etc)
     """
 
-    def __init__(self, y:Union[int, float], x:Union[int, float], dump_folder:str)->None:
+    def __init__(self, y:Union[int, float], x:Union[int, float], dump_folder:str, table:np.ndarray)->None:
         """Construct the basic gridcell object
 
         if you give a pair of integers, the gridcell will understand that you are giving the indices of the
@@ -174,7 +273,7 @@ class state_zero:
         self.plot_name = dump_folder
         self.plot = None
 
-        self.pls_table = None
+        self.table_array = table
         self.main_table = None
         self.ncomms = None
         self.metacomm = None
@@ -183,7 +282,9 @@ class state_zero:
         self.co2_data = None
 
         self.outputs = {}       # dict, store filepaths of output data
-        self.out_dir = Path("../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
+        self.out_dir = output_path/Path(dump_folder)/Path(self.plot_name)
+        os.makedirs(self.out_dir, exist_ok=True)
+        # self.out_dir = Path("../outputs/{}/gridcell{}/".format(dump_folder, self.xyname)).resolve()
         self.flush_data = None
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
@@ -386,8 +487,8 @@ class soil:
 
 class grd_base(state_zero, climate, time, soil, output):
 
-    def __init__(self, y: int | float, x: int | float, dump_folder):
-        super().__init__(y, x, dump_folder)
+    def __init__(self, y: int | float, x: int | float, dump_folder, table:np.ndarray=None)->None:
+        super().__init__(y, x, dump_folder, table)
 
 
     def find_co2(self, year:int)->float:
@@ -433,14 +534,13 @@ class grd_mt(grd_base):
         grd_base (grd_base): base class with climatic and soil data ans some common methods to a gridcell object
     """
 
-    def __init__(self, y: int | float, x: int | float, dump_folder: str)->None:
-        super().__init__(y, x, dump_folder)
+    def __init__(self, y: int | float, x: int | float, dump_folder: str, table:np.ndarray)->None:
+        super().__init__(y, x, dump_folder, table)
 
     def set_gridcell(self,
                       input_fpath:Union[Path, str],
                       stime_i: Dict,
                       co2: Dict,
-                      pls_table: np.ndarray,
                       tsoil: Tuple[np.ndarray],
                       ssoil: Tuple[np.ndarray],
                       hsoil: Tuple[np.ndarray]):
@@ -456,20 +556,17 @@ class grd_mt(grd_base):
             hsoil (Tuple[np.ndarray]):
         """
 
-        self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
-        assert self.input_fpath.exists(), f"Input file not found: {self.input_fpath}"
-
+        self.input_fpath = str_or_path(input_fpath)
         os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = 0
 
         # # Meta-community
-        self.main_table = mc.pls_table(pls_table)
-        self.ncomms = self.config["metcom"]["n"]
-        self.metacomm = mc.metacommunity(self.ncomms, self.main_table)
+        self.main_table = mc.pls_table(self.table_array) # PLS table
+        self.ncomms = self.config["metcom"]["n"]  # Number of communities
+        self.metacomm = mc.metacommunity(self.ncomms, self.main_table) # Metacommunity object
 
-        # REad climate drivers for this gridcell
-        with bz2.BZ2File(self.input_fpath, mode='r') as fh:
-            self.data = pkl.load(fh)
+        # REad climate drivers and soil characteristics, incl. nutrients, for this gridcell
+        self.data = read_bz2_file(self.input_fpath)
 
         # Read climate data
         self.read_clim(self.data)
