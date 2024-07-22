@@ -5,16 +5,16 @@ import pyproj
 
 def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.5)->float:
     """Calculates the area of a cell on the Earth's surface given the center coordinates and the cell resolution
-    using a geographic coordinate system with WGS84 datum.
+    using a geographic coordinate system with the WGS84 datum.
 
     Args:
-        center_lat (_type_): Center latitude, degrees North
-        center_lon (_type_): Center longitude, degrees East
-        dx (_type_): Cell resolution in the x-direction, degrees
-        dy (_type_): Cell resolution in the y-direction, degrees
+        center_lat (float): Center latitude, degrees North
+        center_lon (float): Center longitude, degrees East
+        dx (float): Cell resolution in the x-direction, degrees
+        dy (float): Cell resolution in the y-direction, degrees
 
     Returns:
-        _type_: area of the grid cell in square meters
+        float: Area of the grid cell in square meters
     """
 
     # do not allow negative dx and dy and crappy center_lat and center_lon

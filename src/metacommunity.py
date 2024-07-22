@@ -20,9 +20,24 @@ def read_pls_table(pls_file):
        Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
     return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T)
 
+class pls:
+
+    trait_names = ('g1', 'resopfrac', 'tleaf', 'twood', 'troot',
+                   'aleaf', 'awood', 'aroot', 'c4', 'leaf_n2c',
+                   'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c',
+                   'froot_p2c', 'amp', 'pdia')
+
+    def __init__(self, id:int, pls_data:np.ndarray) -> None:
+        self.id = id
+        self.traits = pls_data
+
+class community_strategies:
+
+    def __init__(self)->None:
+        pass
 
 class pls_table:
-    """ Interface for the main table of lant life strategies (Plant prototypes).
+    """ Interface for the main table of plant life strategies (Plant prototypes).
         Random subsamples without replacement are taken from this table to
         create communities. The main table should've a large number
         of PLSs (npls ~ 20000, for example).
@@ -102,6 +117,7 @@ class community:
         self.vp_cleaf = np.random.uniform(0.3,0.4,self.npls)
         self.vp_croot = np.random.uniform(0.3,0.4,self.npls)
         self.vp_cwood = np.random.uniform(5.0,6.0,self.npls)
+        self.vp_sto = np.zeros(shape=(3, self.npls), order='F')
 
         self.vp_cwood[self.pls_table[6,:] == 0.0] = 0.0
 
@@ -111,6 +127,7 @@ class community:
         self.vp_lsid = np.where(self.vp_ocp > 0.0)[0]
         self.ls = self.vp_lsid.size
         self.vp_sto = np.zeros(shape=(3, self.npls), order='F')
+        self.uptk_costs = np.zeros(self.npls, order='F')
 
         # Define objects to store the "clean" state of the community, i.e. withouth dark diversity
 

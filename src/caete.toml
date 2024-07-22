@@ -1,8 +1,13 @@
 [metacom]
-n = 99
+n = 30
 
 [crs]
 res = 0.5
 
 [paths]
 output = "../outputs"
+
+[fertilization]
+afex_mode =  "N"  # "P" or "NP"
+n = 12.5  # (12.5 g m-2 y-1 == 125 kg ha-1 y-1)
+p = 5.0   # (5 g m-2 y-1 == 50 kg ha-1 y-1)

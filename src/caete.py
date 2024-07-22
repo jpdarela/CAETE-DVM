@@ -28,7 +28,9 @@ if sys.platform == "win32":
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 
-from typing import Union, Tuple, Dict
+
+from datetime import datetime, timedelta
+from typing import Union, Tuple, Dict, List
 from threading import Thread
 from time import sleep
 from pathlib import Path
@@ -41,6 +43,8 @@ import bz2
 from joblib import dump
 import cftime
 import numpy as np
+import pandas as pd
+
 
 from hydro_caete import soil_water
 from config import get_parameters
@@ -118,19 +122,31 @@ def catch_out_carbon3(out):
 
     return dict(zip(lst, out))
 
-def str_or_path(fpath: Union[Path, str]) -> Path:
-    """Converts a string to a Path object, do some checks and return the Path object"""
+def str_or_path(fpath: Union[Path, str], check_exists:bool=True,
+                check_is_dir:bool=False, check_is_file:bool=False) -> Path:
+
+    """Converts fpath to a Path object if necessay, do some checks and return the Path object"""
+
     is_path = isinstance(fpath, (Path))
     is_str = isinstance(fpath, (str))
     is_str_or_path = is_str or is_path
 
     assert is_str_or_path, "fpath must be a string or a Path object"
     _val_ = fpath if is_path else Path(fpath)
-    assert _val_.exists(), f"File not found: {_val_}"
+
+    if check_exists:
+        assert _val_.exists(), f"File/directory not found: {_val_}"
+    if check_is_dir:
+        assert not check_is_file, "Cannot check if a path is a file and a directory at the same time"
+        assert _val_.is_dir(), f"Path is not a directory: {_val_}"
+    if check_is_file:
+        assert not check_is_dir, "Cannot check if a path is a file and a directory at the same time"
+        assert _val_.is_file(), f"Path is not a file: {_val_}"
+
     return _val_
 
 def get_co2_concentration(filename:Union[Path, str]):
-    fname = str_or_path(filename)
+    fname = str_or_path(filename, check_is_file=True)
     with open(fname, 'r') as file:
         # Use the Sniffer class to detect the dialect
         sample = file.read(1024)
@@ -153,10 +169,27 @@ def write_bz2_file(data:Dict, filepath:Union[Path, str]):
     with bz2.BZ2File(fpath, mode='wb') as fh:
         pkl.dump(data, fh)
 
+def parse_date(date_string):
+    formats = ['%Y%m%d', '%Y/%m/%d', '%Y-%m-%d', '%Y.%m.%d']
+    for fmt in formats:
+        try:
+            dt = datetime.strptime(date_string, fmt)
+            return cftime.real_datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
+        except ValueError:
+            pass
+    raise ValueError('No valid date format found')
+
+
+class stations:
+    """Class manage several stations (e.g. fluxnet) Enable a different timespan for each station
+    """
+    pass
+
 
 class region:
     """Region class containing the gridcells for a given region
     """
+    gridcell_type = None
 
     def __init__(self,
                 name:str,
@@ -174,7 +207,9 @@ class region:
             co2 (Union[str, Path]): _description_
             pls_table (np.ndarray): _description_
         """
-        # Get co2 data
+
+        # Get co2 data. We assume that the co2 data is a csv/tsv file with two columns,
+        # the first with the year (yyyy) and the second with the atmospheric co2 concentration (ppm)
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
         self.co2_data = get_co2_concentration(self.co2_path)
@@ -186,8 +221,16 @@ class region:
         self.pls_table = pls_table
         self.grid = np.ones((360, 720), dtype=bool)
 
+        try:
+            metadata_file = list(self.input_data.glob("*_METADATA.pbz2"))[0]
+        except:
+            raise FileNotFoundError("Metadata file not found in the input data folder")
 
-        mtd = str_or_path(list(self.input_data.glob("*_METADATA.pbz2"))[0])
+        try:
+            mtd = str_or_path(metadata_file, check_is_file=True)
+        except:
+            raise AssertionError("Metadata file path could not be resolved. Cannot proceed without metadata")
+
         self.metadata = read_bz2_file(mtd)
         self.stime = copy.deepcopy(self.metadata[0])
 
@@ -228,8 +271,10 @@ class region:
     def run_region(self, start:int, end:int):
         pass
 
+
     def manage_outputs(self):
         pass
+
 
     def get_mask(self)->np.ndarray:
         return self.grid
@@ -239,7 +284,7 @@ class region:
         try:
             _val_ = self.gridcells[idx]
         except IndexError:
-            raise IndexError(f"Cannot get item at index {idx}. Region has {self.__len__()} gridcells")
+            raise IndexError(f"Cannot get item at index {idx}. Region has {self.__len__()} (zero indexed) gridcells")
         return _val_
 
 
@@ -267,6 +312,7 @@ class state_zero:
 
         assert type(y) == type(x), "x and y must be of the same type"
         self.config = get_parameters("caete.toml")
+        self.afex_config = self.config["fertilization"]
         self.res = self.config["crs"]["res"]
 
         self.y, self.x = find_indices(N = y, W = x, res=self.res, rounding=2) if isinstance(x, float) else (y, x)
@@ -309,25 +355,39 @@ class climate:
         self.tas = None
         self.rhs = None
 
-    def _read_clim(self, data:Dict):
+    def _set_clim(self, data:Dict):
         self.pr = data['pr']
         self.ps = data['ps']
         self.rsds = data['rsds']
         self.tas = data['tas']
         self.rhs = data['hurs']
 
+    def _set_tas(self, data:Dict):
+        self.tas = data['tas']
+    def _set_pr(self, data:Dict):
+        self.pr = data['pr']
+    def _set_ps(self, data:Dict):
+        self.ps = data['ps']
+    def _set_rsds(self, data:Dict):
+        self.rsds = data['rsds']
+    def _set_rhs(self, data:Dict):
+        self.rhs = data['hurs']
+    def _set_co2(self, fpath:Union[Path, str]):
+        self.co2_path = str_or_path(fpath, check_is_file=True)
+        self.co2_data = get_co2_concentration(self.co2_path)
+
 
 class time:
     def __init__(self):
         # Time attributes
-        self.time_index = None  # Array with the time stamps
-        self.calendar = None    # Calendar name
-        self.time_unit = None   # Time unit
-        self.start_date = None
-        self.end_date = None
+        self.time_index:np.ndarray = None  # Array with the time indices
+        self.calendar:str = None    # Calendar name
+        self.time_unit:str = None   # Time unit
+        self.start_date:str = None
+        self.end_date:str = None
         self.ssize = None
-        self.sind = None
-        self.eind = None
+        self.sind = None # Start index  of the time array
+        self.eind = None # End index of the time array
 
     def _set_time(self, stime_i:Dict):
         self.stime = copy.deepcopy(stime_i)
@@ -424,6 +484,7 @@ class soil:
         self.psi_sat = None
         self.soil_texture = None
 
+
     def _init_soil_cnp(self, data:Dict):
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
         self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
@@ -438,11 +499,11 @@ class soil:
         self.sp_so_n = 0.2 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
         self.sp_in_p = self.soil_dict['ip']
-        self.sp_uptk_costs = np.zeros(npls, order='F')
         self.sp_organic_n = 0.1 * self.soil_dict['tn']
         self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
         self.sp_organic_p = 0.5 * self.soil_dict['op']
         self.sp_sorganic_p = self.soil_dict['op'] - self.sp_organic_p
+
 
     def _init_soil_water(self, tsoil:Tuple, ssoil:Tuple, hsoil:Tuple):
         """Initializes the soil pools
@@ -478,10 +539,47 @@ class soil:
         self.soil_texture = hsoil[2][self.y, self.x].copy()
 
 
+    def add_soil_nutrients(self, data:Dict):
+        # will deal with fertilizatin experiments
+        pass
+
+
+    def add_soil_water(self, data:Dict):
+        # will deal with irrigation experiments and possibly water table depth
+        pass
+
+
 class grd_base(state_zero, climate, time, soil, output):
 
-    def __init__(self, y: int | float, x: int | float, dump_folder, table:np.ndarray=None)->None:
-        super().__init__(y, x, dump_folder, table)
+    """Base class for the gridcell object. All gridcell types will inherit from this class.
+    Currently, there are two types of gridcells: grd_mt and grd_std. The first is used to run
+    the model in the metacommunity mode and the second is used to run the model in the community mode.
+    The main difference between them is the way the functional traits data is used.
+    The metacommunity mode uses a metacommunity object to create a number communities for the gridcell
+    and the community mode uses the functional traits data directly to create the one community of the gridcell.
+    The latter is the default mode of the model for now and the former is still under development.
+
+    Args:
+        state_zero (state_zero): Defines the basic attributes of the gridcell, e.g. filepaths, area, etc
+        climate (climate): Defines the climatic data and methods to deal with it
+        time (time): Defines the time metadata and methods to deal with it
+        soil (soil): Defines the soil data and methods to deal with it
+        output (output): Defines the output data basic architecture and methods to deal with it
+    """
+
+    def __init__(self, y: int | float, x: int | float, data_dump_directory, table:np.ndarray=None)->None:
+        """Construct the base gridcell object. All methods and attributes in the parent classes are inherited
+        and there is no method overloading. Each parent class has methods to deal with its own related data.
+        In this class implements some methods to deal basic (and common) operations in gridcells.
+
+        Args:
+            y (int | float): latitude(float) or index(int) in the y dimension
+            x (int | float): longitude(float) or index(int) in the x dimension
+            data_dump_directory (str): Where this gridcell will dump model outputs
+            table (np.ndarray): np.array with the functional traits data that the
+            grifcell will use as a community or to create the metacommunity of this gridcell
+        """
+        super().__init__(y, x, data_dump_directory, table)
 
 
     def find_co2(self, year:int)->float:
@@ -519,6 +617,42 @@ class grd_base(state_zero, climate, time, soil, output):
         return np.concatenate((start_index, end_index)).tolist()
 
 
+    def change_input(self,
+                    input_fpath:Union[Path, str]=None,
+                    stime_i:Union[Dict, None]=None,
+                    co2:Union[Dict, str, Path, None]=None)->None:
+        """modify the input data for the gridcell
+
+        Args:
+            input_fpath (Union[Path, str], optional): _description_. Defaults to None.
+            stime_i (Union[Dict, None], optional): _description_. Defaults to None.
+            co2 (Union[Dict, str, Path, None], optional): _description_. Defaults to None.
+
+        Returns:
+            None: Changes the input data for the gridcell
+        """
+        #TODO: Add checks to ensure the data is time consistent
+        if input_fpath is not None:
+            self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
+            assert self.input_fpath.exists()
+
+            with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+                self.data = pkl.load(fh)
+
+            self._set_clim(self.data)
+
+        if stime_i is not None:
+            self._set_time(stime_i)
+
+        if co2 is not None:
+            if isinstance(co2, (str, Path)):
+                self._set_co2(co2)
+            elif isinstance(co2, dict):
+                self.co2_data = copy.deepcopy(co2)
+
+        return None
+
+
 class grd_mt(grd_base):
 
     """A gridcell object to run the model in the meta-community mode
@@ -527,8 +661,18 @@ class grd_mt(grd_base):
         grd_base (grd_base): base class with climatic and soil data ans some common methods to a gridcell object
     """
 
-    def __init__(self, y: int | float, x: int | float, dump_folder: str, table:np.ndarray)->None:
-        super().__init__(y, x, dump_folder, table)
+    def __init__(self, y: int | float, x: int | float, data_dump_directory: str, table:np.ndarray)->None:
+        """Construct the gridcell object
+
+        Args:
+            y (int | float): latitude(float) or index(int) in the y dimension
+            x (int | float): longitude(float) or index(int) in the x dimension
+            data_dump_directory (str): Where this gridcell will dump model outputs
+            table (np.ndarray): np.array with the functional traits data that the grifcell will use
+            to create the metacommunity of this gridcell
+        """
+
+        super().__init__(y, x, data_dump_directory, table)
 
     def set_gridcell(self,
                       input_fpath:Union[Path, str],
@@ -561,7 +705,7 @@ class grd_mt(grd_base):
         self.data = read_bz2_file(self.input_fpath)
 
         # Read climate data
-        self._read_clim(self.data)
+        self._set_clim(self.data)
 
         # get CO2 data
         self.co2_data = copy.deepcopy(co2)
@@ -574,6 +718,451 @@ class grd_mt(grd_base):
         self._set_time(stime_i)
 
         return None
+
+    def run_gridcell(self,
+                  start_date,
+                  end_date,
+                  spinup=0,
+                  fix_co2=None,
+                  save=True,
+                  nutri_cycle=True,
+                  afex=False):
+        """ start_date [str]   "yyyymmdd" Start model execution
+
+            end_date   [str]   "yyyymmdd" End model execution
+
+            spinup     [int]   Number of repetitions in spinup. 0 for no spinup
+
+            fix_co2    [Float] Fixed value for ATM [CO2]
+                       [int]   Fixed value for ATM [CO2]
+                       [str]   "yyyy" Corresponding year of an ATM [CO2]
+
+            This function run the fortran subroutines and manage data flux. It
+            is the proper CAETÊ-DVM execution in the start_date - end_date period
+        """
+
+        assert not fix_co2 or type(
+            fix_co2) == str or fix_co2 > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string "
+
+        # Define start and end dates (read actual arguments)
+        start = parse_date(start_date)
+        end = parse_date(end_date)
+
+        # Check dates sanity
+        assert start < end, "Start date must be before end date"
+        assert start >= self.start_date, "initial date out of bounds for the time array"
+        assert end <= self.end_date, f"Final date out of bounds for the time array"
+
+
+        # Define time index bounds for this run
+        start_index = int(cftime.date2num(
+            start, self.time_unit, self.calendar))
+        end_index = int(cftime.date2num(end, self.time_unit, self.calendar))
+
+        lb, hb = self.find_index(start_index, end_index)
+        steps = np.arange(lb, hb + 1)
+        day_indexes = np.arange(start_index, end_index + 1)
+        spin = 1 if spinup == 0 else spinup
+
+        # Catch climatic input and make conversions
+        temp = self.tas[lb: hb + 1] - 273.15  # ! K to °C
+        prec = self.pr[lb: hb + 1] * 86400  # kg m-2 s-1 to  mm/day
+        # transforamando de Pascal pra mbar (hPa)
+        p_atm = self.ps[lb: hb + 1] * 0.01
+        # W m-2 to mol m-2 s-1 ! 0.5 converts RSDS to PAR
+        ipar = self.rsds[lb: hb + 1] * 0.5 / 2.18e5
+        ru = self.rhs[lb: hb + 1] / 100.0
+
+
+        # Define the predicate for fixed co2 concentrations
+        if fix_co2 is None:
+            # In this case, the co2 concentration will be updated daily
+            fix_co2_p = False
+            co2 = self.find_co2(start.year)
+        elif isinstance(fix_co2, int) or  isinstance(fix_co2, float):
+            # In this case, the co2 concentration will be fixed
+            # According to the numeric value provided in the argument
+            co2 = fix_co2
+            fix_co2_p = True
+        elif isinstance(fix_co2, str):
+            # In this case, the co2 concentration will be fixed
+            # According to the year provided in the argument
+            # as a string. Format "yyyy".
+            try:
+                co2_year = int(fix_co2)
+            except:
+                raise ValueError(
+                    "The string(\"yyyy\") must be a number in the {self.start_date.year} - {self.end_date.year} interval")
+            co2 = self.find_co2(co2_year)
+            fix_co2_p = True
+
+        # Start loops
+        # THis outer loop is used to run the model for a number
+        # of times defined by the spinup argument. THe model is
+        # executed repeatedly between the start and end dates
+        # provided in the arguments
+        for s in range(spin):
+            # if save:
+            #     self._allocate_output(steps.size)
+            #     self.save = True
+            # else:
+            #     self._allocate_output_nosave(steps.size)
+            #     self.save = False
+
+            # Create a datetime object to track the dates
+            today = datetime(start.year, start.month, start.day, start.hour, start.minute, start.second)
+            # Calculate the number of days remaining in the year
+            remaining = (datetime(today.year, 12, 31) - today).days
+            # Define the time step
+            time_step = timedelta(days=1)
+            # Go back one day
+            today -= time_step
+            for step in range(steps.size):
+                today += time_step
+                julian_day = today.timetuple().tm_yday
+                if step > 0:
+                    remaining = (datetime(today.year, 12, 31) - today).days + 1
+                # Check how co2 is set. If it is not fixed, the annual increment
+                # between the present year and the next year is calculated and then divided
+                # by the number of (remaining) days in the year. THis daily increment is then
+                # added to the current co2 concentration for every day, enabling a smooth annual
+                # increment of the co2 concentration
+                if fix_co2_p:
+                    pass
+                else:
+                    daily_fraction = (self.find_co2(today.year + 1) - co2) / (remaining + 1)
+                    co2 += daily_fraction
+
+                # Update soil temperature
+                self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
+
+                # AFEX
+                afex_mode = self.afex_config["afex_mode"]
+                if julian_day == 364 and afex:
+
+                    if afex_mode == 'N':
+
+                        self.sp_available_n += self.afex_config["n"]
+                    elif afex_mode == 'P':
+
+                        self.sp_available_p += self.afex_config["p"]
+                    elif afex_mode == 'NP':
+                        self.sp_available_n += self.afex_config["n"]
+                        self.sp_available_p += self.afex_config["p"]
+
+                # <- Daily loop indent level
+                # Loop over communities
+                for community in self.metacomm:
+                    # Loop over species
+                    # INFLATe VARS
+                    sto =        np.zeros(shape=(3, community.npls), order='F')
+                    cleaf =      np.zeros(community.npls, order='F')
+                    cwood =      np.zeros(community.npls, order='F')
+                    croot =      np.zeros(community.npls, order='F')
+                    uptk_costs = np.zeros(community.npls, order='F')
+
+                    sto[0, community.vp_lsid] = community.vp_sto[0, :]
+                    sto[1, community.vp_lsid] = community.vp_sto[1, :]
+                    sto[2, community.vp_lsid] = community.vp_sto[2, :]
+                    # Just Check the integrity of the data
+                    assert community.vp_lsid.size == community.vp_cleaf.size, 'different array sizes'
+                    c = 0
+                    for n in community.vp_lsid:
+                        cleaf[n] = community.vp_cleaf[c]
+                        cwood[n] = community.vp_cwood[c]
+                        croot[n] = community.vp_croot[c]
+                        uptk_costs[n] = community.uptk_costs[c]
+                        c += 1
+        #         ton = self.sp_organic_n #+ self.sp_sorganic_n
+        #         top = self.sp_organic_p #+ self.sp_sorganic_p
+        #         # TODO need to adapt no assimilation with water content lower than thw wilting point
+        #         # self.swp.w1_max ...
+        #         out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
+        #                                  self.soil_temp, temp[step], p_atm[step],
+        #                                  ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
+        #                                  ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
+        #                                  dcl, dca, dcf, uptk_costs, self.wmax_mm)
+
+        #         # del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
+        #         # Create a dict with the function output
+        #         daily_output = catch_out_budget(out)
+
+        #         self.vp_lsid = np.where(daily_output['ocpavg'] > 0.0)[0]
+        #         self.vp_ocp = daily_output['ocpavg'][self.vp_lsid]
+        #         self.ls[step] = self.vp_lsid.size
+
+        #         if self.vp_lsid.size < 1 and not save:
+        #             self.vp_lsid = np.sort(
+        #                 np.array(
+        #                     rd.sample(list(np.arange(gp.npls)), int(gp.npls - 5))))
+        #             rwarn(
+        #                 f"Gridcell {self.xyname} has no living Plant Life Strategies - Re-populating")
+        #             # REPOPULATE]
+        #             # UPDATE vegetation pools
+        #             self.vp_cleaf = np.zeros(shape=(self.vp_lsid.size,)) + 0.01
+        #             self.vp_cwood = np.zeros(shape=(self.vp_lsid.size,))
+        #             self.vp_croot = np.zeros(shape=(self.vp_lsid.size,)) + 0.01
+        #             awood = self.pls_table[6, :]
+        #             for i0, i in enumerate(self.vp_lsid):
+        #                 if awood[i] > 0.0:
+        #                     self.vp_cwood[i0] = 0.01
+
+        #             self.vp_dcl = np.zeros(shape=(self.vp_lsid.size,))
+        #             self.vp_dca = np.zeros(shape=(self.vp_lsid.size,))
+        #             self.vp_dcf = np.zeros(shape=(self.vp_lsid.size,))
+        #             self.vp_sto = np.zeros(shape=(3, self.vp_lsid.size))
+        #             self.sp_uptk_costs = np.zeros(shape=(self.vp_lsid.size,))
+
+        #             self.vp_ocp = np.zeros(shape=(self.vp_lsid.size,))
+        #             del awood
+        #             self.ls[step] = self.vp_lsid.size
+        #         else:
+        #             if self.vp_lsid.size < 1:
+        #                 ABORT = 1
+        #                 rwarn(f"Gridcell {self.xyname} has"  + \
+        #                        " no living Plant Life Strategies")
+        #             # UPDATE vegetation pools
+        #             self.vp_cleaf = daily_output['cleafavg_pft'][self.vp_lsid]
+        #             self.vp_cwood = daily_output['cawoodavg_pft'][self.vp_lsid]
+        #             self.vp_croot = daily_output['cfrootavg_pft'][self.vp_lsid]
+        #             self.vp_dcl = daily_output['delta_cveg'][0][self.vp_lsid]
+        #             self.vp_dca = daily_output['delta_cveg'][1][self.vp_lsid]
+        #             self.vp_dcf = daily_output['delta_cveg'][2][self.vp_lsid]
+        #             self.vp_sto = daily_output['stodbg'][:, self.vp_lsid]
+        #             self.sp_uptk_costs = daily_output['npp2pay'][self.vp_lsid]
+
+        #         # UPDATE STATE VARIABLES
+        #         # WATER CWM
+        #         self.runom[step] = self.swp._update_pool(
+        #             prec[step], daily_output['evavg'])
+        #         self.swp.w1 = np.float64(
+        #             0.0) if self.swp.w1 < 0.0 else self.swp.w1
+        #         self.swp.w2 = np.float64(
+        #             0.0) if self.swp.w2 < 0.0 else self.swp.w2
+        #         self.wp_water_upper_mm = self.swp.w1
+        #         self.wp_water_lower_mm = self.swp.w2
+
+        #         # Plant uptake and Carbon costs of nutrient uptake
+        #         self.nupt[:, step] = daily_output['nupt']
+        #         self.pupt[:, step] = daily_output['pupt']
+
+        #         # CWM of STORAGE_POOL
+        #         for i in range(3):
+        #             self.storage_pool[i, step] = np.sum(
+        #                 self.vp_ocp * self.vp_sto[i])
+
+        #         # OUTPUTS for SOIL CWM
+        #         self.litter_l[step] = daily_output['litter_l'] + \
+        #             daily_output['cp'][3]
+        #         self.cwd[step] = daily_output['cwd']
+        #         self.litter_fr[step] = daily_output['litter_fr']
+        #         self.lnc[:, step] = daily_output['lnc']
+        #         wtot = self.wp_water_upper_mm + self.wp_water_lower_mm
+        #         s_out = soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
+        #                                  self.cwd[step], self.litter_fr[step], self.lnc[:, step],
+        #                                  self.sp_csoil, self.sp_snc)
+
+        #         soil_out = catch_out_carbon3(s_out)
+
+        #         # Organic C N & P
+        #         self.sp_csoil = soil_out['cs']
+        #         self.sp_snc = soil_out['snc']
+        #         idx = np.where(self.sp_snc < 0.0)[0]
+        #         if len(idx) > 0:
+        #             for i in idx:
+        #                 self.sp_snc[i] = 0.0
+
+        #         # IF NUTRICYCLE:
+        #         if nutri_cycle:
+        #             # UPDATE ORGANIC POOLS
+        #             self.sp_organic_n = self.sp_snc[:2].sum()
+        #             self.sp_sorganic_n = self.sp_snc[2:4].sum()
+        #             self.sp_organic_p = self.sp_snc[4:6].sum()
+        #             self.sp_sorganic_p = self.sp_snc[6:].sum()
+        #             self.sp_available_p += soil_out['pmin']
+        #             self.sp_available_n += soil_out['nmin']
+        #             # NUTRIENT DINAMICS
+        #             # Inorganic N
+        #             self.sp_in_n += self.sp_available_n + self.sp_so_n
+        #             self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
+        #             self.sp_available_n = soil_dec.solution_n_equil(
+        #                 self.sp_in_n)
+        #             self.sp_in_n -= self.sp_so_n + self.sp_available_n
+
+        #             # Inorganic P
+        #             self.sp_in_p += self.sp_available_p + self.sp_so_p
+        #             self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
+        #             self.sp_available_p = soil_dec.solution_p_equil(
+        #                 self.sp_in_p)
+        #             self.sp_in_p -= self.sp_so_p + self.sp_available_p
+
+        #             # Sorbed P
+        #             if self.pupt[1, step] > 0.75:
+        #                 rwarn(
+        #                     f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
+        #                 self.pupt[1, step] = 0.0
+
+        #             if self.pupt[1, step] > self.sp_so_p:
+        #                 rwarn(
+        #                     f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
+
+        #             self.sp_so_p -= self.pupt[1, step]
+
+        #             try:
+        #                 t1 = np.all(self.sp_snc > 0.0)
+        #             except:
+        #                 if self.sp_snc is None:
+        #                     self.sp_snc = np.zeros(shape=8,)
+        #                     t1 = True
+        #                 elif self.sp_snc is not None:
+        #                     t1 = True
+        #                 rwarn(f"Exception while handling sp_snc pool")
+        #             if not t1:
+        #                 self.sp_snc[np.where(self.sp_snc < 0)[0]] = 0.0
+        #             # ORGANIC nutrients uptake
+        #             # N
+        #             if self.nupt[1, step] < 0.0:
+        #                 rwarn(
+        #                     f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
+        #                 self.nupt[1, step] = 0.0
+        #             if self.nupt[1, step] > 2.5:
+        #                 rwarn(
+        #                     f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
+        #                 self.nupt[1, step] = 0.0
+
+        #             total_on = self.sp_snc[:4].sum()
+
+        #             if total_on > 0.0:
+        #                 frsn = [i / total_on for i in self.sp_snc[:4]]
+        #             else:
+        #                 frsn = [0.0, 0.0, 0.0, 0.0]
+
+        #             for i, fr in enumerate(frsn):
+        #                 self.sp_snc[i] -= self.nupt[1, step] * fr
+
+        #             idx = np.where(self.sp_snc < 0.0)[0]
+        #             if len(idx) > 0:
+        #                 for i in idx:
+        #                     self.sp_snc[i] = 0.0
+
+        #             self.sp_organic_n = self.sp_snc[:2].sum()
+        #             self.sp_sorganic_n = self.sp_snc[2:4].sum()
+
+        #             # P
+        #             if self.pupt[2, step] < 0.0:
+        #                 rwarn(
+        #                     f"PuptkO < 0 - 1020 | in spin{s}, step{step} - {self.pupt[2, step]}")
+        #                 self.pupt[2, step] = 0.0
+        #             if self.pupt[2, step] > 1.0:
+        #                 rwarn(
+        #                     f"PuptkO  > max - 1024 | in spin{s}, step{step} - {self.pupt[2, step]}")
+        #                 self.pupt[2, step] = 0.0
+        #             total_op = self.sp_snc[4:].sum()
+        #             if total_op > 0.0:
+        #                 frsp = [i / total_op for i in self.sp_snc[4:]]
+        #             else:
+        #                 frsp = [0.0, 0.0, 0.0, 0.0]
+        #             for i, fr in enumerate(frsp):
+        #                 self.sp_snc[i + 4] -= self.pupt[2, step] * fr
+
+        #             idx = np.where(self.sp_snc < 0.0)[0]
+        #             if len(idx) > 0:
+        #                 for i in idx:
+        #                     self.sp_snc[i] = 0.0
+
+        #             self.sp_organic_p = self.sp_snc[4:6].sum()
+        #             self.sp_sorganic_p = self.sp_snc[6:].sum()
+
+        #             # Raise some warnings
+        #             if self.sp_organic_n < 0.0:
+        #                 self.sp_organic_n = 0.0
+        #                 rwarn(f"ON negative in spin{s}, step{step}")
+        #             if self.sp_sorganic_n < 0.0:
+        #                 self.sp_sorganic_n = 0.0
+        #                 rwarn(f"SON negative in spin{s}, step{step}")
+        #             if self.sp_organic_p < 0.0:
+        #                 self.sp_organic_p = 0.0
+        #                 rwarn(f"OP negative in spin{s}, step{step}")
+        #             if self.sp_sorganic_p < 0.0:
+        #                 self.sp_sorganic_p = 0.0
+        #                 rwarn(f"SOP negative in spin{s}, step{step}")
+
+        #             # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
+        #             # Soluble and inorganic pools
+        #             if self.pupt[0, step] > 1e2:
+        #                 rwarn(
+        #                     f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
+        #                 self.pupt[0, step] = 0.0
+        #             self.sp_available_p -= self.pupt[0, step]
+
+        #             if self.nupt[0, step] > 1e3:
+        #                 rwarn(
+        #                     f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
+        #                 self.nupt[0, step] = 0.0
+        #             self.sp_available_n -= self.nupt[0, step]
+
+        #         # END SOIL NUTRIENT DYNAMICS
+
+        #         # # #  store (np.array) outputs
+        #         if save:
+        #             assert self.save == True
+        #             self.carbon_costs[step] = daily_output['c_cost_cwm']
+        #             self.emaxm.append(daily_output['epavg'])
+        #             self.tsoil.append(self.soil_temp)
+        #             self.photo[step] = daily_output['phavg']
+        #             self.aresp[step] = daily_output['aravg']
+        #             self.npp[step] = daily_output['nppavg']
+        #             self.lai[step] = daily_output['laiavg']
+        #             self.rcm[step] = daily_output['rcavg']
+        #             self.f5[step] = daily_output['f5avg']
+        #             self.evapm[step] = daily_output['evavg']
+        #             self.wsoil[step] = self.wp_water_upper_mm
+        #             self.swsoil[step] = self.wp_water_lower_mm
+        #             self.rm[step] = daily_output['rmavg']
+        #             self.rg[step] = daily_output['rgavg']
+        #             self.wue[step] = daily_output['wueavg']
+        #             self.cue[step] = daily_output['cueavg']
+        #             self.cdef[step] = daily_output['c_defavg']
+        #             self.vcmax[step] = daily_output['vcmax']
+        #             self.specific_la[step] = daily_output['specific_la']
+        #             self.cleaf[step] = daily_output['cp'][0]
+        #             self.cawood[step] = daily_output['cp'][1]
+        #             self.cfroot[step] = daily_output['cp'][2]
+        #             self.hresp[step] = soil_out['hr']
+        #             self.csoil[:, step] = soil_out['cs']
+        #             self.inorg_n[step] = self.sp_in_n
+        #             self.inorg_p[step] = self.sp_in_p
+        #             self.sorbed_n[step] = self.sp_so_n
+        #             self.sorbed_p[step] = self.sp_so_p
+        #             self.snc[:, step] = soil_out['snc']
+        #             self.nmin[step] = self.sp_available_n
+        #             self.pmin[step] = self.sp_available_p
+        #             self.area[self.vp_lsid, step] = self.vp_ocp
+        #             self.lim_status[:, self.vp_lsid,
+        #                             step] = daily_output['limitation_status'][:, self.vp_lsid]
+        #             self.uptake_strategy[:, self.vp_lsid,
+        #                                  step] = daily_output['uptk_strat'][:, self.vp_lsid]
+        #         if ABORT:
+        #             rwarn("NO LIVING PLS - ABORT")
+        #     if save:
+        #         if s > 0:
+        #             while True:
+        #                 if sv.is_alive():
+        #                     sleep(0.5)
+        #                 else:
+        #                     break
+
+        #         self.flush_data = self._flush_output(
+        #             'spin', (start_index, end_index))
+        #         sv = Thread(target=self._save_output, args=(self.flush_data,))
+        #         sv.start()
+        # if save:
+        #     while True:
+        #         if sv.is_alive():
+        #             sleep(0.5)
+        #         else:
+        #             break
+        # return None
 
 
 class grd_std(grd_base):
@@ -1692,8 +2281,8 @@ class grd:
 class plot(grd):
     """i and j are the latitude and longitude (in that order) of plot location in decimal degrees"""
 
-    def __init__(self, i, j, dump_folder):
-        y, x = find_indices(i, j, res=0.5)
+    def __init__(self, latitude, longitude, dump_folder):
+        y, x = find_indices(latitude, longitude, res=0.5)
         super().__init__(x, y, dump_folder)
 
         self.plot = True
@@ -1807,3 +2396,34 @@ class plot(grd):
         self.filled = True
 
         return None
+
+
+if __name__ == '__main__':
+    import pickle as pkl
+    import bz2
+    from pathlib import Path
+    import copy
+    import os
+    from metacommunity import read_pls_table
+
+    from parameters import *
+
+    # Read time metadata
+    with bz2.BZ2File("../cax/ISIMIP_HISTORICAL_METADATA.pbz2", mode='rb') as fh:
+        mdt = pkl.load(fh)
+    stime = copy.deepcopy(mdt[0])
+
+    # Read CO2 data
+    co2_path = Path("../input/co2/historical_CO2_annual_1765_2018.txt")
+    co2_data = get_co2_concentration(co2_path)
+
+    main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
+    r = region("region_test",
+                   "../input/central",
+                   (tsoil, ssoil, hsoil),
+                   co2_path,
+                   main_table)
+    r.set_gridcells()
+
+    a = r[0]
+    c = a.run_gridcell("19920101", "19921231", afex=True)
