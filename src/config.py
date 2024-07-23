@@ -1,5 +1,17 @@
 import tomllib as tl
 
+
+def get_parameters(config):
+    """ Get parameters from the pls_gen.toml file """
+
+    with open(config, 'rb') as f:
+        data = tl.load(f)
+    return data
+
+# Global config defined below
+pls_gen_config = get_parameters('plsgen.toml')
+caete_config = get_parameters('caete.toml')
+
 # path to the fortran compiler dlls, used in windows systems.
 fortran_compiler_dlls = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
 
@@ -49,9 +61,3 @@ run_breaks_CMIP5_proj = [('20060101', '20091231'),
 rbrk = [run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj]
 
 
-def get_parameters(config):
-    """ Get parameters from the pls_gen.toml file """
-
-    with open(config, 'rb') as f:
-        data = tl.load(f)
-    return data

@@ -1,8 +1,20 @@
+[conversion_factors_isimip] # Conversion factors used to convert units of input data
+tas = 273.15  # ! K to °C (subtract) [input(K) to model(°C)]
+pr = 86400.0  # ! kg m-2 s-1 to mm day-1 (multiply) [input(kg m-2 s-1) to model(mm day-1)]
+ps = 0.01  # ! Pa to hPa (multiply) [input(Pa) to model(hPa)]
+rhs = 0.01  # ! % to kg kg-1  (multiply) [input(%) to model(kg kg-1)]
+rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to MJ m-2 day-1 (multiply) [input(W m-2) to model(MJ m-2 day-1)]
+
+[output]
+mode = "detailed"  # "simple" or "detailed
+
 [metacom]
-n = 30
+n = 10
 
 [crs]
 res = 0.5
+xres = 0.5
+yres = 0.5
 
 [paths]
 output = "../outputs"
