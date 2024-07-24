@@ -166,7 +166,7 @@ def table_gen(NPLS, fpath=None):
         index0 = 0
         rtime_leaf =  np.random.uniform(rgrass["leaf_min"], rgrass["leaf_max"], r_ceil)
         rtime_froot = np.random.uniform(rgrass["root_min"], rgrass["root_max"], r_ceil)
-        # print("CREATE GRASSy STRATEGIES - Checking potential npp/alocation")
+        print("Checking potential npp/alocation and creating grasses")
         while index0 < diffg:
             restime = np.zeros(shape=(3,), dtype=np.float64)
 
@@ -179,10 +179,11 @@ def table_gen(NPLS, fpath=None):
             if check_viability(data_to_test0):
                 alloc_g.append(data_to_test0)
                 index0 += 1
-        #     sys.stdout.write('\r%s' % (str(index0)))
-        # sys.stdout.flush()
+            sys.stdout.write('\r%s' % (str(index0)))
+        sys.stdout.flush()
+        print("\n")
+        alloc_g = np.array(alloc_g)
 
-    # print("\n")
     if GRASS_FRAC == 1.0:
         pass
     else:
@@ -190,7 +191,7 @@ def table_gen(NPLS, fpath=None):
         rtime_leaf =  np.random.uniform(rwoody["leaf_min"], rwoody["leaf_max"], r_ceil)
         rtime_froot = np.random.uniform(rwoody["root_min"], rwoody["root_max"], r_ceil)
         rtime_wood = np.random.uniform(rwoody["wood_min"], rwoody["wood_max"], r_ceil)
-        # print("CREATE WOODY STRATEGIES - Checking potential npp/alocation")
+        print("Checking potential npp/alocation and creating woody plants")
         while index1 < diffw:
             restime = np.zeros(shape=(3,), dtype=np.float64)
             allocatio = alloc_wood[np.random.randint(0, alloc_wood.shape[0])]
@@ -201,12 +202,10 @@ def table_gen(NPLS, fpath=None):
             if check_viability(data_to_test1, True):
                 alloc_w.append(data_to_test1)
                 index1 += 1
-        #     sys.stdout.write('\r%s' % (str(index1)))
-        # sys.stdout.flush()
-        # print("\n")
-
-    alloc_g = np.array(alloc_g)
-    alloc_w = np.array(alloc_w)
+            sys.stdout.write('\r%s' % (str(index1)))
+        sys.stdout.flush()
+        print("\n")
+        alloc_w = np.array(alloc_w)
 
     if GRASS_FRAC == 0.0:
         alloc = alloc_w
@@ -321,11 +320,10 @@ def table_gen(NPLS, fpath=None):
             writer.writerow(head)
             for x in range(pls_table.shape[1]):
                 writer.writerow(list(pls_table[:, x]))
-            # writer.writerows(pls_table)
 
     pls_table = np.vstack(stack[1:])
     return np.asfortranarray(pls_table, dtype=np.float32)
 
 
 if  __name__ == "__main__":
-    table = table_gen(2000)
+    table = table_gen(25000, Path("./PLS_MAIN").resolve())

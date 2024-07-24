@@ -22,7 +22,7 @@ F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
 DEBUG_PROGRAM = run_debug
-NPLS = 999
+NPLS = 200
 
 # RUN MODE FLAGS
 MFLAG = -m
@@ -76,7 +76,7 @@ objects = $(src_obj) budget.o debug_caete.o
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
-	$(PYEXEC) ask_npls.py $(NPLS)
+	$(PYEXEC) set_npls.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so_parallel: $(sources) interface
@@ -185,6 +185,3 @@ clean_win:
 clean_win_so: clean_win
 	del /s *.pyd
 	del /s *.pyf
-
-clean_win_all: clean_win clean_win_so
-

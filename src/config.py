@@ -1,3 +1,5 @@
+import os
+import sys
 import tomllib as tl
 
 
@@ -8,12 +10,15 @@ def get_parameters(config):
         data = tl.load(f)
     return data
 
-# Global config defined below
-pls_gen_config = get_parameters('plsgen.toml')
-caete_config = get_parameters('caete.toml')
 
 # path to the fortran compiler dlls, used in windows systems.
 fortran_compiler_dlls = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
+
+if sys.platform == "win32":
+      try:
+         os.add_dll_directory(fortran_compiler_dlls)
+      except:
+         raise ImportError("Could not add the DLL directory to the PATH")
 
 NO_DATA = [-9999.0, -9999.0]
 

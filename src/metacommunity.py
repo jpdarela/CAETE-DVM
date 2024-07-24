@@ -12,6 +12,8 @@ from collections import namedtuple
 from functools import lru_cache
 from pathlib import Path
 from typing import Union, Dict, Tuple
+
+import copy
 import numpy as np
 from pandas import read_csv
 from caete_module import global_par as gp
@@ -127,6 +129,15 @@ class community:
         self.uptk_costs = np.zeros(self.npls, order='F')
 
 
+    def update_lsid(self, occupation:np.ndarray):
+        """_summary_
+
+        Args:
+            occupation (np.ndarray): _description_
+        """
+        self.vp_lsid = np.where(occupation > 0.0)[0]
+
+
     def restore_from_main_table(self, pls_data:Tuple[np.ndarray[int], np.ndarray[float]]) -> None:
         """A call to the __init__ method.
         This is used to reset the community to a initial state
@@ -187,6 +198,8 @@ class metacommunity:
 
         self.communities:dict = {}
         self.pls_table = main_table
+        self.comm_npls = copy.deepcopy(gp.npls)
+        
 
         for i in range(n):
             self.communities[i] = community(self.pls_table.create_npls_table(gp.npls))

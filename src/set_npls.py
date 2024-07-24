@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-from sys import argv
+from config import get_parameters
 
-descrp = "This script creates a global.f90 file with an asked inital NPLS number"
+caete_config = get_parameters('caete.toml')
 
+descrp = "This script creates a global.f90 file with parameters defined in the caete.toml file."
 
-s = argv[1] if len(argv) > 1 else int(input("Number of PLSs: "))
-
+NPLS = caete_config["metacomm"]["npls_max"] # Max number of Plant Life Strategies per community
 
 global_f90 = f"""
 ! Copyright 2017- LabTerra
@@ -62,7 +62,7 @@ module global_par
    real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
-   integer(i_4),parameter,public :: npls = {s}                  ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: npls = {NPLS}                  ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = 17                 ! Number of traits for each PLS
 
 end module global_par
