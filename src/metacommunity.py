@@ -149,14 +149,6 @@ class community:
         self.__init__(pls_data)
 
 
-    def update_pools(self, budget_output:Dict):
-        """_summary_
-
-        Args:
-            tstep (int): _description_
-        """
-        pass
-
     # @lru_cache(maxsize=None)
     def __getitem__(self, index:int):
         """Gets a PLS (1D array) for given index.
@@ -199,7 +191,7 @@ class metacommunity:
         self.communities:dict = {}
         self.pls_table = main_table
         self.comm_npls = copy.deepcopy(gp.npls)
-        
+
 
         for i in range(n):
             self.communities[i] = community(self.pls_table.create_npls_table(gp.npls))
@@ -223,7 +215,7 @@ class metacommunity:
             raise KeyError(f"Key {index} is not a community in this metacommunity.")
         return __val__
 
-
+    @lru_cache(maxsize=None)
     def __len__(self):
         return len(self.communities)
 

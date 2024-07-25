@@ -30,12 +30,12 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
-        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in, dleaf_in, dwood_in&
-        &, droot_in, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg&
-        &, laiavg, rcavg, f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
-        &, cfrootavg_pft, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg&
-        &, vcmax_1, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, delta_cveg_1, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
+        &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in&
+        &, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg&
+        &,  f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft&
+        &, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg, vcmax_1&
+        &, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
+        &, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
 
 
 #ifdef _OPENMP
@@ -65,9 +65,6 @@ contains
       real(r_8),dimension(npls),intent(in) :: cl1_in  ! initial BIOMASS cleaf compartment kgm-2
       real(r_8),dimension(npls),intent(in) :: cf1_in  !                 froot
       real(r_8),dimension(npls),intent(in) :: ca1_in  !                 cawood
-      real(r_8),dimension(npls),intent(in) :: dleaf_in  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
-      real(r_8),dimension(npls),intent(in) :: droot_in  ! k gm-2
-      real(r_8),dimension(npls),intent(in) :: dwood_in  ! k gm-2
       real(r_8),dimension(npls),intent(in) :: uptk_costs_in ! g m-2
 
 
@@ -99,7 +96,7 @@ contains
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
-      real(r_8),dimension(3,npls),intent(out) :: delta_cveg_1
+
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
       integer(i_4),dimension(2,npls),intent(out) :: uptk_strat_1
@@ -156,14 +153,13 @@ contains
       real(r_8),dimension(:),allocatable   :: litter_fr        ! g m-2
       real(r_8),dimension(:),allocatable   :: npp2pay          ! G M-2
       real(r_8),dimension(:,:),allocatable :: lit_nut_content  ! d0=6 g(Nutrient)m-2 ! Lit_nut_content variables         [(lln),(rln),(cwdn),(llp),(rl),(cwdp)]
-      real(r_8),dimension(:,:),allocatable :: delta_cveg       ! d0 = 3
       real(r_8),dimension(:,:),allocatable :: storage_out_bdgt ! d0 = 3
       real(r_8),dimension(:),allocatable :: ar_fix_hr ! store plss npp (C) exchanged with N fixer µorganisms GOTO HR
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs/living grasses
 
-      real(r_8), dimension(npls) :: awood_aux, dleaf, dwood, droot, uptk_costs, pdia_aux
+      real(r_8), dimension(npls) :: awood_aux, uptk_costs, pdia_aux
       real(r_8), dimension(:, :), allocatable :: sto_budg
       real(r_8) :: soil_sat, ar_aux
       real(r_8), dimension(:), allocatable :: idx_grasses, idx_pdia
@@ -182,9 +178,6 @@ contains
          cl1_pft(i) = cl1_in(i)
          ca1_pft(i) = ca1_in(i)
          cf1_pft(i) = cf1_in(i)
-         dleaf(i) = dleaf_in(i)
-         dwood(i) = dwood_in(i)
-         droot(i) = droot_in(i)
          uptk_costs(i) = uptk_costs_in(i)
          do j = 1,3
             sto_budg(j,i) = sto_budg_in(j,i)
@@ -252,7 +245,6 @@ contains
       allocate(cwd(nlen))
       allocate(litter_fr(nlen))
       allocate(lit_nut_content(6, nlen))
-      allocate(delta_cveg(3, nlen))
       allocate(npp2pay(nlen))
       allocate(limitation_status(3,nlen))
       allocate(uptk_strat(2,nlen))
@@ -303,8 +295,8 @@ contains
          ! TODO: input storage pool to prod function; We need to calculate the respiratory costs  of storage inside
          ! use the dleaf dwwood and droot trio.
          call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
-               &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), dleaf(ri), dwood(ri), droot(ri)&
-               &, soil_sat, construction, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
+               &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), soil_sat, construction&
+               &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
          ! TODO: Implement the degree of coupling between the soil-vegetation-atmosphere system using stomatal conductance and VPD
@@ -349,7 +341,7 @@ contains
          storage_out_bdgt(:,p) = day_storage(:,p)
 
          ! Calculate storage GROWTH respiration
-         sr = 0.05D0 * growth_stoc ! g m-2
+         sr = 0.25D0 * growth_stoc ! g m-2
          if(sr .gt. 1.0D2) sr = 0.0D0
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
@@ -364,14 +356,6 @@ contains
          else
             cue(p) = nppa(p)/ph(p)
          endif
-
-         delta_cveg(1,p) = cl2(p) - cl1_pft(ri)  !kg m-2
-         if(dt1(4) .lt. 0.0D0) then
-            delta_cveg(2,p) = 0.0D0
-         else
-            delta_cveg(2,p) = ca2(p) - ca1_pft(ri)
-         endif
-         delta_cveg(3,p) = cf2(p) - cf1_pft(ri)
 
          ! Mass Balance
 
@@ -431,7 +415,6 @@ contains
       cleafavg_pft(:) = 0.0D0
       cawoodavg_pft(:) = 0.0D0
       cfrootavg_pft(:) = 0.0D0
-      delta_cveg_1(:, :) = 0.0D0
       storage_out_bdgt_1(:, :) = 0.0D0
       limitation_status_1(:,:) = 0
       uptk_strat_1(:,:) = 0
@@ -517,7 +500,6 @@ contains
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)
-         delta_cveg_1(:,ri) = delta_cveg(:,p)
          storage_out_bdgt_1(:,ri) = storage_out_bdgt(:,p)
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
@@ -549,7 +531,6 @@ contains
       deallocate(cwd)
       deallocate(litter_fr)
       deallocate(lit_nut_content)
-      deallocate(delta_cveg)
       deallocate(npp2pay)
       deallocate(limitation_status)
       deallocate(uptk_strat)

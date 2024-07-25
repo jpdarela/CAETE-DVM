@@ -38,10 +38,9 @@ module photo
         vcmax_b                ,& ! (f), VCmax from domingues et al. 2010 (eq.1 Table SM)
         canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m)
         stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
-        vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
+        vapor_p_deficit         ,& ! (f), Vapor pressure defcit  (kPa)
         transpiration          ,&
         tetens                 ,& ! (f), Maximum vapor pressure (hPa)
-        nrubisco               ,& ! (f), Fraction of N not in lignin (disponible to rubisco)
         m_resp                 ,& ! (f), maintenance respiration (plants)
         sto_resp               ,&
         realized_npp           ,&
@@ -376,7 +375,7 @@ contains
    !=================================================================
    !=================================================================
 
-   function vapor_p_defcit(t,rh) result(vpd_0)
+   function vapor_p_deficit(t,rh) result(vpd_0)
       real(r_4),intent(in) :: t
       real(r_4),intent(in) :: rh
 
@@ -394,7 +393,7 @@ contains
       vpd_ac = es * rh       ! RESULT in hPa == mbar! we want kPa (DIVIDE by 10.)
       !Vapor Pressure Deficit
       vpd_0 = (es - vpd_ac) / 10.
-   end function vapor_p_defcit
+   end function vapor_p_deficit
 
 !=================================================================
 !=================================================================
@@ -425,20 +424,6 @@ contains
 
       end subroutine realized_npp
 
-   !=================================================================
-   !=================================================================
-
-   function nrubisco(leaf_t,n_in) result(nb)
-      real(r_8), intent(in) :: leaf_t
-      real(r_8), intent(in) :: n_in
-      real(r_8) :: nb, tl
-      real(r_8) :: e = 2.718281828459045D0
-
-      tl = e**(-(leaf_t + 1.2)) + 0.04
-
-      nb = tl * n_in
-
-   end function nrubisco
 
    !=================================================================
    !=================================================================
@@ -1167,7 +1152,7 @@ end function g_resp
       real(kind=r_8),dimension(npft),intent( in) :: cleaf1, cfroot1, cawood1 ! carbon content (kg m-2)
       real(kind=r_8),dimension(npft),intent( in) :: awood ! npp allocation coefficient to wood
       real(kind=r_8),dimension(npft),intent(out) :: ocp_coeffs ! occupation coefficients (area fraction)
-      integer(kind=i_4),dimension(npft),intent(out) :: ocp_wood ! 
+      integer(kind=i_4),dimension(npft),intent(out) :: ocp_wood !
       integer(kind=i_4),dimension(npft),intent(out) :: run_pls
       real(kind=r_8), dimension(npls), intent(out) :: c_to_soil ! NOT IMPLEMENTED IN BUDGET
       logical(kind=l_1),dimension(npft) :: is_living

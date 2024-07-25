@@ -8,8 +8,12 @@ class budget_output:
                   "cleafavg_pft", "cawoodavg_pft", "cfrootavg_pft",
                   "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg",
                   "vcmax", "specific_la", "nupt", "pupt", "litter_l",
-                  "cwd", "litter_fr", "npp2pay", "lnc", "delta_cveg",
-                  "limitation_status", "uptk_strat", 'cp', 'c_cost_cwm']
-        
+                  "cwd", "litter_fr", "npp2pay", "lnc", "limitation_status",
+                  "uptk_strat", 'cp', 'c_cost_cwm']
+
         for field, value in zip(fields, args):
             setattr(self, field, value)
+
+
+class netcdf_output:
+    pass

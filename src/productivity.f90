@@ -27,8 +27,7 @@ module productivity
 contains
 
   subroutine prod(dt,light_limit,catm,temp,ts,p0,w,ipar,rh,emax,cl1_prod,&
-       & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,wmax,constr,ph,ar,&
-       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,e)
+       & ca1_prod,cf1_prod,wmax,constr,ph,ar, nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,e)
 
     use types
     use global_par
@@ -45,9 +44,8 @@ contains
     real(r_4), intent(in) :: ipar                 !Incident photosynthetic active radiation (w/m2)
     real(r_4), intent(in) :: rh,emax !Relative humidity/MAXIMUM EVAPOTRANSPIRATION
     real(r_8), intent(in) :: catm, cl1_prod, cf1_prod, ca1_prod        !Carbon in plant tissues (kg/m2)
-    real(r_8), intent(in) :: beta_leaf            !npp allocation to carbon pools (kg/m2/day)
-    real(r_8), intent(in) :: beta_awood
-    real(r_8), intent(in) :: beta_froot, wmax
+
+    real(r_8), intent(in) :: wmax
     integer(i_4), intent(in) :: light_limit                !True for no ligth limitation
     real(r_8), intent(in) :: constr
 !     Output
@@ -112,7 +110,7 @@ contains
 
     ! VPD
     !========
-    vpd = vapor_p_defcit(temp, rh)
+    vpd = vapor_p_deficit(temp, rh)
 
     call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
          & p2cl,tleaf,real(vpd, r_8),f1a,vm_out,jl_out)

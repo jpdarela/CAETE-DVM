@@ -18,72 +18,68 @@ module water
 
   contains
 
-     !====================================================================
-     !====================================================================
 
-  function wtt(t) result(es)
-     ! returns Saturation Vapor Pressure (hPa), using Buck equation
+    function wtt(t) result(es)
+      ! returns Saturation Vapor Pressure (hPa), using Buck equation
 
-     ! buck equation...references:
-     ! http://www.hygrometers.com/wp-content/uploads/CR-1A-users-manual-2009-12.pdf
-     ! Hartmann 1994 - Global Physical Climatology p.351
-     ! https://en.wikipedia.org/wiki/Arden_Buck_equation#CITEREFBuck1996
+      ! buck equation...references:
+      ! http://www.hygrometers.com/wp-content/uploads/CR-1A-users-manual-2009-12.pdf
+      ! Hartmann 1994 - Global Physical Climatology p.351
+      ! https://en.wikipedia.org/wiki/Arden_Buck_equation#CITEREFBuck1996
 
-     ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
-     !      J. Appl. Meteorol. 20:1527–1532.
+      ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
+      !      J. Appl. Meteorol. 20:1527–1532.
 
-     use types, only: r_4
-     !implicit none
+      use types, only: r_4
+      !implicit none
 
-     real(r_4),intent( in) :: t
-     real(r_4) :: es
+      real(r_4),intent( in) :: t
+      real(r_4) :: es
 
-     if (t .ge. 0.) then
-        es = 6.1121 * exp((18.729-(t/227.5))*(t/(257.87+t))) ! Arden Buck
-        !es = es * 10 ! transform kPa in mbar == hPa
-        return
-     else
-        es = 6.1115 * exp((23.036-(t/333.7))*(t/(279.82+t))) ! Arden Buck
-        !es = es * 10 ! mbar == hPa ! mbar == hPa
-        return
-     endif
+      if (t .ge. 0.) then
+          es = 6.1121 * exp((18.729-(t/227.5))*(t/(257.87+t))) ! Arden Buck
+          !es = es * 10 ! transform kPa in mbar == hPa
+          return
+      else
+          es = 6.1115 * exp((23.036-(t/333.7))*(t/(279.82+t))) ! Arden Buck
+          !es = es * 10 ! mbar == hPa ! mbar == hPa
+          return
+      endif
 
-  end function wtt
+    end function wtt
 
-  !====================================================================
-  !====================================================================
+    !====================================================================
+    !====================================================================
 
-    !=================================================================
-    !=================================================================
 
     subroutine soil_temp_sub(temp, tsoil)
-    ! Calcula a temperatura do solo. Aqui vamos mudar no futuro!
-    ! a tsoil deve ter relacao com a et realizada...
-    ! a profundidade do solo (H) e o coef de difusao (DIFFU) devem ser
-    ! variaveis (MAPA DE SOLO?; agua no solo?)
-    use types
-    use global_par
-    !implicit none
-    integer(i_4),parameter :: m = 1095
+      ! Calcula a temperatura do solo. Aqui vamos mudar no futuro!
+      ! a tsoil deve ter relacao com a et realizada...
+      ! a profundidade do solo (H) e o coef de difusao (DIFFU) devem ser
+      ! variaveis (MAPA DE SOLO?; agua no solo?)
+      use types
+      use global_par
+      !implicit none
+      integer(i_4),parameter :: m = 1095
 
-    real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
-    real(r_4), intent(out) :: tsoil
+      real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
+      real(r_4), intent(out) :: tsoil
 
-    ! internal vars
+      ! internal vars
 
-    integer(i_4) :: n, k
-    real(r_4) :: t0 = 0.0
-    real(r_4) :: t1 = 0.0
+      integer(i_4) :: n, k
+      real(r_4) :: t0 = 0.0
+      real(r_4) :: t1 = 0.0
 
-    tsoil = -9999.0
+      tsoil = -9999.0
 
-    do n=1,m !run to attain equilibrium
-       k = mod(n,12)
-       if (k.eq.0) k = 12
-       t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp(k)
-       tsoil = (t0 + t1)/2.0
-       t0 = t1
-    enddo
+      do n=1,m !run to attain equilibrium
+        k = mod(n,12)
+        if (k.eq.0) k = 12
+        t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp(k)
+        tsoil = (t0 + t1)/2.0
+        t0 = t1
+      enddo
     end subroutine soil_temp_sub
 
     !=================================================================
@@ -196,18 +192,18 @@ module water
       !implicit none
 
       !Commments from CPTEC-PVM2 code
-  !    c Entradas
-  !c --------
-  !c spre   = pressao aa supeficie (mb)
-  !c temp   = temperatura (oC)
-  !c ur     = umidade relativa  (0-1,adimensional)
-  !c rn     = saldo de radiacao (W m-2)
-  !c
-  !c Saida
-  !c -----
-  !c evap  = evapotranspiracao potencial sem estresse (mm/dia)
+      !    c Entradas
+      !c --------
+      !c spre   = pressao aa supeficie (mb)
+      !c temp   = temperatura (oC)
+      !c ur     = umidade relativa  (0-1,adimensional)
+      !c rn     = saldo de radiacao (W m-2)
+      !c
+      !c Saida
+      !c -----
+      !c evap  = evapotranspiracao potencial sem estresse (mm/dia)
 
-      !     Inputs
+        !     Inputs
 
       real(r_4),intent(in) :: spre                 !Surface pressure (mb)
       real(r_4),intent(in) :: temp                 !Temperature (oC)
