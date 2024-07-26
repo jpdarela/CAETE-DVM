@@ -9,8 +9,8 @@ rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to MJ m-2 day-1 (multiply) [
 mode = "detailed"  # "simple" or "detailed
 
 [metacomm]
-n = 20 # Number of communities to be considered in the metacombinations
-npls_max = 500 # Maximum number of PLS to be considered in the metacombinations
+n = 5 # Number of communities to be considered in the metacombinations
+npls_max = 300 # Maximum number of PLS to be considered in the metacombinations
 
 [crs]
 res = 0.5

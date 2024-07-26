@@ -3,6 +3,13 @@ import sys
 import tomllib as tl
 
 
+class Config:
+    def __init__(self, d=None) -> None:
+        if d is not None:
+            self.__dict__ = d
+            for k, v in d.items():
+                setattr(self, k, v)
+
 def get_parameters(config):
     """ Get parameters from the pls_gen.toml file """
 
@@ -21,6 +28,7 @@ if sys.platform == "win32":
          raise ImportError("Could not add the DLL directory to the PATH")
 
 NO_DATA = [-9999.0, -9999.0]
+
 
 run_breaks_hist = [('19790101', '19801231'),
                    ('19810101', '19821231'),

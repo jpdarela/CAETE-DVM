@@ -106,5 +106,6 @@ end module photo_par"""
 
 
 root = Path(os.getcwd()).resolve()
+print(f"\n\n\nSeting the number of Plant Life Strategies (n PLSs = {NPLS}) to the global.f90 file\n\n\n")
 with open(f"{root}/global.f90", 'w') as fh:
     fh.write(global_f90)

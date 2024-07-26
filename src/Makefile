@@ -22,15 +22,12 @@ F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
 DEBUG_PROGRAM = run_debug
-NPLS = 200
 
 # RUN MODE FLAGS
 MFLAG = -m
 HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
-
-# fortran compiler
 FC = gfortran
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
@@ -50,33 +47,11 @@ src_obj = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
 src_obj_w = global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
 objects = $(src_obj) budget.o debug_caete.o
 
-# # Build a static library for the caete_module
-# # Compile objects for libcaete.a
-# objf: $(src_lib)
-# 	$(FC) -c -fPIC $(src_lib)
-
-# libf: $(src_obj) objf
-# 	$(FC) -shared -o libcaete.so $(src_obj)
-# 	@echo "Static library libcaete.a created"
-
-# # Build a static library for the caete_module using the ifx compiler ussing lib (INTEL) in windows
-# objf_ifx: $(src_lib)
-# 	ifx /c /Qcoarray:single $(src_lib)
-# # Build a static library for the caete_module
-
-# libf_ifx: $(src_obj_w) objf_ifx
-#     ifx /dll /out:libcaete.dll $(src_obj_w)
-# 	@echo "Static library libcaete.a created using IFX"
-
-# # build budget.F90 with libcate.a with f2py, creating the caete_module.so (UNIX)
-# so_fast: libf
-# 	$(F2PY) $(CFLAG) -m $(MODNAME)  budget.F90 --f90flags="-Wall -L. -lcaete"
-# 	@echo "Fast version of caete_module created using gfortran"
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
-	$(PYEXEC) set_npls.py
+	@$(PYEXEC) set_npls.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so_parallel: $(sources) interface
@@ -88,11 +63,11 @@ so: $(sources) interface
 	@echo "Serial version of caete_module created using gfortran"
 
 so_ifx: $(sources) interface
-	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="-fpp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77"
+	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="$(IFX_FLAGS)"
 	@echo "Serial version of caete_module created using IFX"
 
 so_ifx_parallel: $(sources) interface
-	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="-fpp -qopenmp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77"
+	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="$(IFX_FLAGS) -qopenmp "
 	@echo "Parallel version of caete_module created using IFX"
 
 fortran_module: $(sources)

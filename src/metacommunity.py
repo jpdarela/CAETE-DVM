@@ -67,6 +67,7 @@ class pls_table:
     def __len__(self):
         return self.npls
 
+
     def __getitem__(self, index:int):
         return self.table[:,index]
 
@@ -215,9 +216,20 @@ class metacommunity:
             raise KeyError(f"Key {index} is not a community in this metacommunity.")
         return __val__
 
-    @lru_cache(maxsize=None)
+
+    def __setitem__(self, index:int, value:community):
+        """_summary_
+
+        Args:
+            index (int): _description_
+            value (community): _description_
+        """
+        self.communities[index] = value
+
+
     def __len__(self):
         return len(self.communities)
+
 
     def __iter__(self):
         return iter(self.communities.values())
