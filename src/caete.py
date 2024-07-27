@@ -1434,7 +1434,7 @@ class worker:
 
     @staticmethod
     def soil_pools_spinup(gridcell:grd_mt):
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=20, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
         gc.collect()
         return gridcell

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
 
     r = region("region_test",
-                   "../input/test_input",
+                   "../input/central",
                    (tsoil, ssoil, hsoil),
                    co2_path,
                    main_table)

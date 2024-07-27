@@ -326,4 +326,4 @@ def table_gen(NPLS, fpath=None):
 
 
 if  __name__ == "__main__":
-    table = table_gen(5000, Path("./PLS_MAIN").resolve())
+    table = table_gen(25000, Path("./PLS_MAIN").resolve())
