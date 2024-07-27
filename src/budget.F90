@@ -264,19 +264,20 @@ contains
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================make it parallel=========================
 #ifdef _OPENMP
-     if (nlen .le. 500) then
-        call OMP_SET_NUM_THREADS(1)
-     else if (nlen .le. 1500) then
-        call OMP_SET_NUM_THREADS(2)
-     else if (nlen .le. 2500) then
-        call OMP_SET_NUM_THREADS(3)
-     else if (nlen .le. 3500) then
-        call OMP_SET_NUM_THREADS(4)
-      else if (nlen .le. 7000) then
-         call OMP_SET_NUM_THREADS(8)
-     else
-        call OMP_SET_NUM_THREADS(16)
-     endif
+   call OMP_SET_NUM_THREADS(2)
+   !   if (nlen .le. 500) then
+   !      call OMP_SET_NUM_THREADS(1)
+   !   else if (nlen .le. 1500) then
+   !      call OMP_SET_NUM_THREADS(2)
+   !   else if (nlen .le. 2500) then
+   !      call OMP_SET_NUM_THREADS(3)
+   !   else if (nlen .le. 3500) then
+   !      call OMP_SET_NUM_THREADS(4)
+   !    else if (nlen .le. 7000) then
+   !       call OMP_SET_NUM_THREADS(8)
+   !   else
+   !      call OMP_SET_NUM_THREADS(16)
+   !   endif
 #endif
       construction = 0.0D0
       !$OMP PARALLEL DO &
@@ -360,15 +361,9 @@ contains
          ! Mass Balance
 
          if(c_def(p) .gt. 0.0) then
-            if(dt1(7) .gt. 0.0D0) then
-               cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-               ca1_int(p) = ca2(p) - ((c_def(p) * 1e-3) * 1.0)
-               cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
-            else
-               cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-               ca1_int(p) = 0.0D0
-               cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
-            endif
+            cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
+            ca1_int(p) = ca2(p)
+            cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
          else
             if(dt1(7) .gt. 0.0D0) then
                cl1_int(p) = cl2(p)

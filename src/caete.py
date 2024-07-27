@@ -43,7 +43,7 @@ import random as rd
 import warnings
 
 from joblib import dump, load
-from memory_profiler import profile
+# from memory_profiler import profile
 from numba import jit
 from numba import float32 as f32
 
@@ -63,7 +63,7 @@ from caete_module import water as st
 from caete_module import photo as m
 from caete_module import soil_dec
 
-
+from memory_profiler import profile
 # GLOBAL variables
 out_ext = ".pkz"
 npls = gp.npls
@@ -457,6 +457,7 @@ class gridcell_output:
     """Class to manage gridcell outputs
     """
     def __init__(self):
+        self.flush_data = None
         self.soil_temp = None
         self.emaxm = None
         self.tsoil = None
@@ -582,6 +583,7 @@ class gridcell_output:
         self.uptake_strategy = np.zeros(
             shape=(2, npls, ncomms, n), dtype=np.dtype('int8'), order='F')
 
+
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
            2 - Fill self.outputs dict with filepats of output data
@@ -691,6 +693,7 @@ class gridcell_output:
 
         return to_pickle
 
+
     def _save_output(self, data_obj):
         """Compress and save output data
         data_object: dict; the dict returned from _flush_output"""
@@ -699,8 +702,9 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext)
         with open(self.outputs[fpath], 'wb') as fh:
-            dump(data_obj, fh, compress=('lz4', 9), protocol=4)
-        self.flush_data = 0
+            dump(data_obj, fh, compress=('lz4', 4), protocol=4)
+        self.flush_data = None
+
 
 class grd_base(state_zero, climate, time, soil, gridcell_output):
 
@@ -880,7 +884,7 @@ class grd_mt(grd_base):
 
         return None
 
-
+    # @profile
     def run_gridcell(self,
                   start_date,
                   end_date,
@@ -1013,13 +1017,8 @@ class grd_mt(grd_base):
 
                 # AFEX
                 if afex and today.timetuple().tm_yday == 364:
-                    if afex_mode == 'N':
-                        self.sp_available_n += self.afex_config["n"]
-                    elif afex_mode == 'P':
-                        self.sp_available_p += self.afex_config["p"]
-                    elif afex_mode == 'NP':
-                        self.sp_available_n += self.afex_config["n"]
-                        self.sp_available_p += self.afex_config["p"]
+                    self.add_soil_nutrients(afex_mode)
+
 
                 # Arrays to store values for each community in a simulated day
                 xsize = len(self.metacomm)
@@ -1048,7 +1047,7 @@ class grd_mt(grd_base):
                     aresp = np.zeros(xsize, dtype=np.float32)
                     npp = np.zeros(xsize, dtype=np.float32)
                     lai = np.zeros(xsize, dtype=np.float32)
-                    sla = np.zeros(xsize, dtype=np.float32)
+                    # sla = np.zeros(xsize, dtype=np.float32)
                     rcm = np.zeros(xsize, dtype=np.float32)
                     f5 = np.zeros(xsize, dtype=np.float32)
                     wsoil = np.zeros(xsize, dtype=np.float32)
@@ -1070,20 +1069,23 @@ class grd_mt(grd_base):
                 # <- Daily loop indent level
                 # Loop over communities
                 sto =        np.zeros(shape=(3, self.metacomm.comm_npls), order='F')
-                cleaf =      np.zeros(self.metacomm.comm_npls, order='F')
-                cwood =      np.zeros(self.metacomm.comm_npls, order='F')
-                croot =      np.zeros(self.metacomm.comm_npls, order='F')
+                cleaf_in =   np.zeros(self.metacomm.comm_npls, order='F')
+                cwood_in =   np.zeros(self.metacomm.comm_npls, order='F')
+                croot_in =   np.zeros(self.metacomm.comm_npls, order='F')
                 uptk_costs = np.zeros(self.metacomm.comm_npls, order='F')
+
                 for i, community in enumerate(self.metacomm):
+
+
 
                     sto[0, :] = inflate_array(community.npls, community.vp_sto[0, :], community.vp_lsid)
                     sto[1, :] = inflate_array(community.npls, community.vp_sto[1, :], community.vp_lsid)
                     sto[2, :] = inflate_array(community.npls, community.vp_sto[2, :], community.vp_lsid)
 
-                    cleaf = inflate_array(community.npls, community.vp_cleaf, community.vp_lsid)
-                    cwood = inflate_array(community.npls, community.vp_cwood, community.vp_lsid)
-                    croot = inflate_array(community.npls, community.vp_croot, community.vp_lsid)
-                    uptk_costs = inflate_array(community.npls, community.uptk_costs, community.vp_lsid)
+                    cleaf_in[:] = inflate_array(community.npls, community.vp_cleaf, community.vp_lsid)
+                    cwood_in[:] = inflate_array(community.npls, community.vp_cwood, community.vp_lsid)
+                    croot_in[:] = inflate_array(community.npls, community.vp_croot, community.vp_lsid)
+                    uptk_costs[:] = inflate_array(community.npls, community.uptk_costs, community.vp_lsid)
 
                     ton = self.sp_organic_n #+ self.sp_sorganic_n
                     top = self.sp_organic_p #+ self.sp_sorganic_p
@@ -1093,8 +1095,7 @@ class grd_mt(grd_base):
                                             self.wp_water_lower_mm, self.soil_temp, temp[step],
                                             p_atm[step], ipar[step], ru[step], self.sp_available_n,
                                             self.sp_available_p, ton, top, self.sp_organic_p,
-                                            co2, sto, cleaf, cwood, croot, uptk_costs, self.wmax_mm)
-
+                                            co2, sto, cleaf_in, cwood_in, croot_in, uptk_costs, self.wmax_mm)
 
                     # Create a namedtuple with the function output
                     daily_output = budget_daily_result(out)
@@ -1117,6 +1118,7 @@ class grd_mt(grd_base):
                         # While the spinup
                         new_life_strategies = self.main_table.create_npls_table(community.npls)
                         community.restore_from_main_table(new_life_strategies)
+                        del daily_output
                         continue
 
                     # Store values for each community
@@ -1127,9 +1129,6 @@ class grd_mt(grd_base):
                     c_to_nfixers[i] = daily_output.cp[3]
 
                     if save:
-                        cleaf[i] = community.vp_cleaf.mean()
-                        cwood[i] = community.vp_cwood.mean()
-                        croot[i] = community.vp_croot.mean()
                         evavg[i] = daily_output.evavg
                         epavg[i] = daily_output.epavg
                         nupt[:, i] = daily_output.nupt
@@ -1140,14 +1139,12 @@ class grd_mt(grd_base):
                         root_litter[i] = daily_output.litter_fr
                         lnc[:, i] = daily_output.lnc
                         cc[i] = daily_output.c_cost_cwm
-                        tsoil[i] = self.soil_temp
                         npp[i] = daily_output.nppavg
                         photo[i] = daily_output.phavg
                         aresp[i] = daily_output.aravg
                         lai[i] = daily_output.laiavg
                         rcm[i] = daily_output.rcavg
                         f5[i] = daily_output.f5avg
-                        wsoil[i] = self.wp_water_upper_mm + self.wp_water_lower_mm
                         rm[i] = daily_output.rmavg
                         rg[i] = daily_output.rgavg
                         cleaf[i] = daily_output.cp[0]
@@ -1162,8 +1159,8 @@ class grd_mt(grd_base):
                         ocp_area[:, i] = np.array(daily_output.ocpavg * 1e6, dtype='int32')
                         lim_status[:, :, i] = daily_output.limitation_status
                         uptake_strategy[:, :, i] = daily_output.uptk_strat
-                        sla[i] = daily_output.specific_la
-
+                        # sla[i] = daily_output.specific_la
+                    del daily_output
                 #<- Out of the community loop
                 vpd = m.vapor_p_deficit(temp[step], ru[step])
                 self.evapm[step] = atm_canopy_coupling(epavg.mean(), evavg.mean(), temp[step], vpd)
@@ -1335,6 +1332,7 @@ class grd_mt(grd_base):
                             f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
                         self.nupt[0, step] = 0.0
                     self.sp_available_n -= self.nupt[0, step]
+
                 # END SOIL NUTRIENT DYNAMICS
                 # <- Out of the community loop
             # <- Out of the daily loop
@@ -1351,19 +1349,19 @@ class grd_mt(grd_base):
                     self.lai[step] = lai.mean()
                     self.rcm[step] = rcm.mean()
                     self.f5[step] = f5.mean()
-                    self.wsoil[step] = wsoil.mean()
                     self.rm[step] = rm.mean()
                     self.rg[step] = rg.mean()
                     self.wue[step] = wue.mean()
                     self.cue[step] = cue.mean()
                     self.cdef[step] = cdef.mean()
                     self.vcmax[step] = vcmax.mean()
-                    self.specific_la[step] = sla.mean()
+                    self.specific_la[step] = specific_la.mean()
                     self.cleaf[step] = cleaf.mean()
                     self.cawood[step] = cawood.mean()
                     self.cfroot[step] = cfroot.mean()
                     self.hresp[step] = soil_out['hr']
                     self.csoil[:, step] = soil_out['cs']
+                    self.wsoil[step] = self.wp_water_upper_mm + self.wp_water_lower_mm
                     self.inorg_n[step] = self.sp_in_n
                     self.inorg_p[step] = self.sp_in_p
                     self.sorbed_n[step] = self.sp_so_n
@@ -1374,6 +1372,8 @@ class grd_mt(grd_base):
                     self.ocp_area[:,:, step] = ocp_area
                     self.lim_status[:, :, :, step] = lim_status
                     self.uptake_strategy[:, :, :, step] = uptake_strategy
+                    del nupt, pupt, cc, tsoil, photo, aresp, npp, lai, rcm, f5
+                    del wsoil, rm, rg, wue, cue, cdef, vcmax, specific_la, cleaf, cawood, cfroot
                 # <- Out of the community loop
                 # gc.collect()
             # <- Out of the daily loop
@@ -1382,18 +1382,18 @@ class grd_mt(grd_base):
                 if s > 0:
                     while True:
                         if sv.is_alive():
-                            sleep(0.5)
+                            sleep(0.05)
                         else:
                             break
                 self.flush_data = self._flush_output(
                     'spin', (start_index, end_index))
                 sv = Thread(target=self._save_output, args=(self.flush_data,))
                 sv.start()
-        # Work on the last spin
+        # Finish the last thread
         if save:
             while True:
                 if sv.is_alive():
-                    sleep(0.5)
+                    sleep(0.05)
                 else:
                     break
 
@@ -1436,40 +1436,41 @@ class worker:
     def soil_pools_spinup(gridcell:grd_mt):
         gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
+        gc.collect()
         return gridcell
 
     @staticmethod
     def community_spinup(gridcell):
         gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True, reset_community=True, kill_and_reset=False)
+        gc.collect()
         return gridcell
 
     @staticmethod
     def final_spinup(gridcell):
         gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=0, fixed_co2_atm_conc=None,
                               save=True, nutri_cycle=True, reset_community=False, kill_and_reset=False)
+        gc.collect()
         return gridcell
 
     @staticmethod
     def transient_run(gridcell):
         gridcell.run_gridcell("1931-01-01", "2016-12-31", spinup=0, fixed_co2_atm_conc=None,
                               save=True, nutri_cycle=True, reset_community=False, kill_and_reset=False)
+        gc.collect()
         return gridcell
-
 
 
 class region:
     """Region class containing the gridcells for a given region
     """
-    gridcell_type = None
 
     def __init__(self,
                 name:str,
                 clim_data:Union[str,Path],
                 soil_data:Tuple[Tuple[np.ndarray], Tuple[np.ndarray], Tuple[np.ndarray]],
                 co2:Union[str, Path],
-                pls_table:np.ndarray,
-                nproc:int=mp.cpu_count())->None:
+                pls_table:np.ndarray)->None:
         """_summary_
 
         Args:
@@ -1483,7 +1484,8 @@ class region:
 
         # Get co2 data. We assume that the co2 data is a csv/tsv file with two columns,
         # the first with the year (yyyy) and the second with the atmospheric co2 concentration (ppm)
-        self.nproc = nproc
+        #
+        self.nproc = mp.cpu_count() - 6
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
         self.co2_data = get_co2_concentration(self.co2_path)
@@ -1545,16 +1547,9 @@ class region:
 
 
     def run_region(self, func:Callable):
-        # # Define the function to be run in parallel
-        # def func(gridcell):
-        #     # Replace this with the actual function you want to run
-        #     return gridcell.run_your_function(start, end)
-
-        # Create a multiprocessing Pool
         with mp.Pool(processes=self.nproc, maxtasksperchild=1) as p:
-            result = p.map(func, self.gridcells, chunksize=1)
-        self.gridcells = result
-        # gc.collect()
+            self.gridcells = p.map(func, self.gridcells, chunksize=1)
+        gc.collect()
         return None
 
 
@@ -2818,7 +2813,7 @@ if __name__ == '__main__':
     main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
 
     r = region("region_test",
-                   "../input/central",
+                   "../input/test_input",
                    (tsoil, ssoil, hsoil),
                    co2_path,
                    main_table)

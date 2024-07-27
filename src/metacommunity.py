@@ -22,24 +22,24 @@ from caete_module import photo as m
 def read_pls_table(pls_file):
     """Read the standard attributes table saved in csv format.
        Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
-    return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T)
+    return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T).astype(np.float32)
 
 
-class pls:
-    """Plant Life Strategies (PLS) class. Instances of this class are used to define a
-        PLS as a structured array.
-    """
+# class pls:
+#     """Plant Life Strategies (PLS) class. Instances of this class are used to define a
+#         PLS as a structured array.
+#     """
 
-    trait_names = ('g1', 'resopfrac', 'tleaf', 'twood', 'troot',
-                   'aleaf', 'awood', 'aroot', 'c4', 'leaf_n2c',
-                   'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c',
-                   'froot_p2c', 'amp', 'pdia')
+#     trait_names = ('g1', 'resopfrac', 'tleaf', 'twood', 'troot',
+#                    'aleaf', 'awood', 'aroot', 'c4', 'leaf_n2c',
+#                    'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c',
+#                    'froot_p2c', 'amp', 'pdia')
 
-    dtypes = np.dtype([(name, _dtype) for name, _dtype in zip(trait_names, [np.float32] * len(trait_names))])
+#     dtypes = np.dtype([(name, _dtype) for name, _dtype in zip(trait_names, [np.float32] * len(trait_names))])
 
-    def __init__(self, id:int, pls_data:np.ndarray) -> None:
-        self.id = id
-        self.functional_identity = np.core.records.fromarrays(pls_data, dtype=pls.dtypes)
+#     def __init__(self, id:int, pls_data:np.ndarray) -> None:
+#         self.id = id
+#         self.functional_identity = np.core.records.fromarrays(pls_data, dtype=pls.dtypes)
 
 
 class pls_table:
@@ -54,7 +54,7 @@ class pls_table:
         Args:
             array (np.ndarray(ntraits,npls)): PLS table.
         """
-        self.table = array.copy(order='F')
+        self.table = array.astype(np.float32).copy(order='F')
         self.npls = self.table.shape[1]
         self.ntraits = self.table.shape[0]
         self.shape = self.table.shape

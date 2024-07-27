@@ -14,6 +14,11 @@ class budget_output:
         for field, value in zip(fields, args):
             setattr(self, field, value)
 
+class daily_out_manager:
+    "write a class that manages n instances of the above class budget_output"
+    def __init__(self) -> None:
+        pass
+
 
 class netcdf_output:
     pass

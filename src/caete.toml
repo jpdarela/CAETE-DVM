@@ -10,7 +10,7 @@ mode = "detailed"  # "simple" or "detailed
 
 [metacomm]
 n = 5 # Number of communities to be considered in the metacombinations
-npls_max = 300 # Maximum number of PLS to be considered in the metacombinations
+npls_max = 999 # Maximum number of PLS to be considered in the metacombinations
 
 [crs]
 res = 0.5
