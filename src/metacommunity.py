@@ -9,9 +9,8 @@ if sys.platform == "win32":
         raise ImportError("Could not add the DLL directory to the PATH")
 
 from collections import namedtuple
-from functools import lru_cache
 from pathlib import Path
-from typing import Union, Dict, Tuple
+from typing import Union, Tuple, Callable
 
 import copy
 import numpy as np
@@ -23,23 +22,6 @@ def read_pls_table(pls_file):
     """Read the standard attributes table saved in csv format.
        Return numpy array (shape=(ntraits, npls), F_CONTIGUOUS)"""
     return np.asfortranarray(read_csv(pls_file).__array__()[:,1:].T).astype(np.float32)
-
-
-# class pls:
-#     """Plant Life Strategies (PLS) class. Instances of this class are used to define a
-#         PLS as a structured array.
-#     """
-
-#     trait_names = ('g1', 'resopfrac', 'tleaf', 'twood', 'troot',
-#                    'aleaf', 'awood', 'aroot', 'c4', 'leaf_n2c',
-#                    'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c',
-#                    'froot_p2c', 'amp', 'pdia')
-
-#     dtypes = np.dtype([(name, _dtype) for name, _dtype in zip(trait_names, [np.float32] * len(trait_names))])
-
-#     def __init__(self, id:int, pls_data:np.ndarray) -> None:
-#         self.id = id
-#         self.functional_identity = np.core.records.fromarrays(pls_data, dtype=pls.dtypes)
 
 
 class pls_table:
@@ -74,7 +56,7 @@ class pls_table:
 
     def get_random_pls(self):
         pls_ids = np.random.randint(0, self.npls-1)
-        return pls_ids, self.table[:,id]
+        return pls_ids, self.table[:, pls_ids]
 
 
     def create_npls_table(self, comm_npls) -> Tuple[np.ndarray[int], np.ndarray[float]]:
@@ -88,7 +70,7 @@ class pls_table:
         """
         idx = np.random.randint(0, self.npls-1, comm_npls)
         table = self.table[:,idx]
-        output = namedtuple("pls_data", ["id", "pls_table"])
+        output = namedtuple("pls_data", ["pls_id", "pls_array"])
         return output(idx, table)
 
 
@@ -103,8 +85,8 @@ class community:
             pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): Two arrays, the first stores the
                 ids of the PLSs in the main table, the second stores the functional identity of PLSs.
         """
-        self.id = pls_data.id
-        self.pls_array = pls_data.pls_table
+        self.id = pls_data[0]
+        self.pls_array = pls_data[1]
         self.npls = self.pls_array.shape[1]
         self.shape = self.pls_array.shape
         self.alive = np.ones(gp.npls, dtype=bool)
@@ -178,10 +160,10 @@ class community:
 
 
 class metacommunity:
-    """Represents a collwction of plant communities.
+    """Represents a collection of plant communities.
     """
 
-    def __init__(self, n:int, main_table:pls_table) -> None:
+    def __init__(self, n:int, get_from_main_table:Callable) -> None:
         """A collection of plant communities.
 
         Args:
@@ -190,12 +172,12 @@ class metacommunity:
         """
 
         self.communities:dict = {}
-        self.pls_table = main_table
+        self.get_table = get_from_main_table
         self.comm_npls = copy.deepcopy(gp.npls)
 
 
         for i in range(n):
-            self.communities[i] = community(self.pls_table.create_npls_table(gp.npls))
+            self.communities[i] = community(self.get_table(self.comm_npls))
 
     # @lru_cache(maxsize=None)
     def __getitem__(self, index:Union[int, str]):

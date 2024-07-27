@@ -63,13 +63,13 @@ from caete_module import water as st
 from caete_module import photo as m
 from caete_module import soil_dec
 
-from memory_profiler import profile
+# from memory_profiler import profile
 # GLOBAL variables
 out_ext = ".pkz"
 npls = gp.npls
 from config import run_breaks_hist, run_breaks_CMIP5_hist, run_breaks_CMIP5_proj, rbrk, NO_DATA
 # -----
-
+lock = mp.Lock()
 # Set warnings to default
 warnings.simplefilter("default")
 
@@ -229,7 +229,9 @@ class state_zero:
     """base class with input/output related data (paths, filenames, etc)
     """
 
-    def __init__(self, y:Union[int, float], x:Union[int, float], output_dump_folder:str, table:np.ndarray)->None:
+    def __init__(self, y:Union[int, float], x:Union[int, float],
+                output_dump_folder:str,
+                get_main_table:Callable)->None:
         """Construct the basic gridcell object
 
         if you give a pair of integers, the gridcell will understand that you are giving the indices of the
@@ -277,8 +279,7 @@ class state_zero:
         self.plot_name = output_dump_folder
 
         # Plant life strategies table
-        self.table_array = table
-        self.main_table = None
+        self.get_from_main_array = get_main_table
         self.ncomms = None
         self.metacomm = None
 
@@ -505,27 +506,12 @@ class gridcell_output:
         self.carbon_costs = None
 
 
-    def _allocate_output_nosave(self, n):
-        """allocate space for some tracked variables during spinup
-
-        n: int NUmber of days being simulated"""
-
-        self.runom = np.zeros(shape=(n,), order='F')
-        self.nupt = np.zeros(shape=(2, n), order='F')
-        self.pupt = np.zeros(shape=(3, n), order='F')
-        self.litter_l = np.zeros(shape=(n,), order='F')
-        self.cwd = np.zeros(shape=(n,), order='F')
-        self.litter_fr = np.zeros(shape=(n,), order='F')
-        self.lnc = np.zeros(shape=(6, n), order='F')
-        self.storage_pool = np.zeros(shape=(3, n), order='F')
-        self.ls = np.zeros(shape=(n,), order='F')
-
-
     def _allocate_output(self, n, npls, ncomms, save=True):
         """allocate space for the outputs
         n: int NUmber of days being simulated"""
 
         if not save:
+            self.evapm = np.zeros(shape=(n,), order='F')
             self.runom = np.zeros(shape=(n,), order='F')
             self.nupt = np.zeros(shape=(2, n), order='F')
             self.pupt = np.zeros(shape=(3, n), order='F')
@@ -535,6 +521,7 @@ class gridcell_output:
             self.lnc = np.zeros(shape=(6, n), order='F')
             self.storage_pool = np.zeros(shape=(3, n), order='F')
             self.ls = np.zeros(shape=(n,), order='F')
+            return None
 
         self.emaxm = []
         self.tsoil = []
@@ -706,37 +693,30 @@ class gridcell_output:
         self.flush_data = None
 
 
-class grd_base(state_zero, climate, time, soil, gridcell_output):
+    #     return self.get_from_main_array
 
-    """Base class for the gridcell object. All gridcell types will inherit from this class.
-    Currently, there are two types of gridcells: grd_mt and grd_std. The first is used to run
-    the model in the metacommunity mode and the second is used to run the model in the community mode.
-    The main difference between them is the way the functional traits data is used.
-    The metacommunity mode uses a metacommunity object to create a number communities for the gridcell
-    and the community mode uses the functional traits data directly to create the one community of the gridcell.
-    The latter is the default mode of the model for now and the former is still under development.
+
+class grd_mt(state_zero, climate, time, soil, gridcell_output):
+
+    """A gridcell object to run the model in the meta-community mode
 
     Args:
-        state_zero (state_zero): Defines the basic attributes of the gridcell, e.g. filepaths, area, etc
-        climate (climate): Defines the climatic data and methods to deal with it
-        time (time): Defines the time metadata and methods to deal with it
-        soil (soil): Defines the soil data and methods to deal with it
-        output (output): Defines the output data basic architecture and methods to deal with it
+        base classes with climatic, soil data, and some common methods to manage gridcells
     """
 
-    def __init__(self, y: int | float, x: int | float, data_dump_directory, table:np.ndarray=None)->None:
-        """Construct the base gridcell object. All methods and attributes in the parent classes are inherited
-        and there is no method overloading. Each parent class has methods to deal with its own related data.
-        In this class implements some methods to deal basic (and common) operations in gridcells.
+
+    def __init__(self, y: int | float, x: int | float, data_dump_directory: str, get_main_table:Callable)->None:
+        """Construct the gridcell object
 
         Args:
             y (int | float): latitude(float) or index(int) in the y dimension
             x (int | float): longitude(float) or index(int) in the x dimension
             data_dump_directory (str): Where this gridcell will dump model outputs
-            table (np.ndarray): np.array with the functional traits data that the
-            grifcell will use as a community or to create the metacommunity of this gridcell
+            table (np.ndarray): np.array with the functional traits data that the gridcell will use
+            to create the metacommunity.
         """
-        super().__init__(y, x, data_dump_directory, table)
+
+        super().__init__(y, x, data_dump_directory, get_main_table)
 
 
     def find_co2(self, year:int)->float:
@@ -811,29 +791,6 @@ class grd_base(state_zero, climate, time, soil, gridcell_output):
         return None
 
 
-class grd_mt(grd_base):
-
-    """A gridcell object to run the model in the meta-community mode
-
-    Args:
-        grd_base (grd_base): base class with climatic and soil data ans some common methods to a gridcell object
-    """
-
-
-    def __init__(self, y: int | float, x: int | float, data_dump_directory: str, table:np.ndarray)->None:
-        """Construct the gridcell object
-
-        Args:
-            y (int | float): latitude(float) or index(int) in the y dimension
-            x (int | float): longitude(float) or index(int) in the x dimension
-            data_dump_directory (str): Where this gridcell will dump model outputs
-            table (np.ndarray): np.array with the functional traits data that the gridcell will use
-            to create the metacommunity.
-        """
-
-        super().__init__(y, x, data_dump_directory, table)
-
-
     def set_gridcell(self,
                       input_fpath:Union[Path, str],
                       stime_i: Dict,
@@ -857,12 +814,11 @@ class grd_mt(grd_base):
 
         # # Meta-community
         # We want to run queues of gridcells in parallel. So each gridcell receives a copy of the PLS table object
-        self.main_table = mc.pls_table(self.table_array) # PLS table
 
         # Number of communities in the metacommunity. Defined in the config file {caete.toml}
         self.ncomms = self.config["metacomm"]["n"]  # Number of communities
         # Metacommunity object
-        self.metacomm = mc.metacommunity(self.ncomms, self.main_table)
+        self.metacomm = mc.metacommunity(self.ncomms, self.get_from_main_array)
 
         # Read climate drivers and soil characteristics, incl. nutrients, for this gridcell
         # Having all data to one gridcell in a file enables to create/start the gricells in parallel (threading)
@@ -1032,8 +988,6 @@ class grd_mt(grd_base):
 
 
                 if save:
-                    evavg = np.zeros(xsize, dtype=np.float32)
-                    epavg = np.zeros(xsize, dtype=np.float32)
                     nupt = np.zeros(shape=(2, xsize), dtype=np.float32)
                     pupt = np.zeros(shape=(3, xsize), dtype=np.float32)
                     leaf_litter = np.zeros(xsize, dtype=np.float32)
@@ -1075,9 +1029,6 @@ class grd_mt(grd_base):
                 uptk_costs = np.zeros(self.metacomm.comm_npls, order='F')
 
                 for i, community in enumerate(self.metacomm):
-
-
-
                     sto[0, :] = inflate_array(community.npls, community.vp_sto[0, :], community.vp_lsid)
                     sto[1, :] = inflate_array(community.npls, community.vp_sto[1, :], community.vp_lsid)
                     sto[2, :] = inflate_array(community.npls, community.vp_sto[2, :], community.vp_lsid)
@@ -1114,12 +1065,13 @@ class grd_mt(grd_base):
 
                     # Restore if  it is the case
                     if community.vp_lsid.size < 1 and reset_community:
-                        rwarn(f"Reseting community in spin:{s}, step:{step}")
-                        # While the spinup
-                        new_life_strategies = self.main_table.create_npls_table(community.npls)
-                        community.restore_from_main_table(new_life_strategies)
-                        del daily_output
-                        continue
+                        with lock:
+                            rwarn(f"Reseting community in spin:{s}, step:{step}")
+                            # While the spinup
+                            new_life_strategies = self.get_from_main_array(community.npls)
+                            community.restore_from_main_table(new_life_strategies)
+                            del daily_output
+                            continue
 
                     # Store values for each community
                     leaf_litter[i] = daily_output.litter_l
@@ -1127,10 +1079,10 @@ class grd_mt(grd_base):
                     cwd[i] = daily_output.cwd
                     lnc[:, i] = daily_output.lnc
                     c_to_nfixers[i] = daily_output.cp[3]
+                    evavg[i] = daily_output.evavg
+                    epavg[i] = daily_output.epavg
 
                     if save:
-                        evavg[i] = daily_output.evavg
-                        epavg[i] = daily_output.epavg
                         nupt[:, i] = daily_output.nupt
                         pupt[:, i] = daily_output.pupt
                         leaf_litter[i] = daily_output.litter_l
@@ -1161,7 +1113,10 @@ class grd_mt(grd_base):
                         uptake_strategy[:, :, i] = daily_output.uptk_strat
                         # sla[i] = daily_output.specific_la
                     del daily_output
+
                 #<- Out of the community loop
+                del sto, cleaf_in, croot_in, cwood_in, uptk_costs # clean
+
                 vpd = m.vapor_p_deficit(temp[step], ru[step])
                 self.evapm[step] = atm_canopy_coupling(epavg.mean(), evavg.mean(), temp[step], vpd)
 
@@ -1191,7 +1146,6 @@ class grd_mt(grd_base):
 
 
                 # Organic C N & P
-
                 self.sp_csoil = soil_out['cs']
 
                 self.sp_snc = soil_out['snc']
@@ -1332,11 +1286,8 @@ class grd_mt(grd_base):
                             f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
                         self.nupt[0, step] = 0.0
                     self.sp_available_n -= self.nupt[0, step]
-
                 # END SOIL NUTRIENT DYNAMICS
-                # <- Out of the community loop
-            # <- Out of the daily loop
-        # <- Out of spin loop
+
                 if save:
                     # Plant uptake and Carbon costs of nutrient uptake
                     self.nupt[:, step] = nupt.mean(axis=1,)
@@ -1375,7 +1326,6 @@ class grd_mt(grd_base):
                     del nupt, pupt, cc, tsoil, photo, aresp, npp, lai, rcm, f5
                     del wsoil, rm, rg, wue, cue, cdef, vcmax, specific_la, cleaf, cawood, cfroot
                 # <- Out of the community loop
-                # gc.collect()
             # <- Out of the daily loop
         # <- Out of spin loop
             if save:
@@ -1398,10 +1348,10 @@ class grd_mt(grd_base):
                     break
 
         if kill_and_reset:
-            for community in self.metacomm:
-                new_life_strategies = self.main_table.create_npls_table(community.npls)
-                community.restore_from_main_table(new_life_strategies)
-        # gc.collect()
+            with lock:
+                for community in self.metacomm:
+                    new_life_strategies = self.get_from_main_array(community.npls)
+                    community.restore_from_main_table(new_life_strategies)
         return None
 
 
@@ -1434,28 +1384,22 @@ class worker:
 
     @staticmethod
     def soil_pools_spinup(gridcell:grd_mt):
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=20, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
         gc.collect()
         return gridcell
 
     @staticmethod
     def community_spinup(gridcell):
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=20, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True, reset_community=True, kill_and_reset=False)
         gc.collect()
         return gridcell
 
-    @staticmethod
-    def final_spinup(gridcell):
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=0, fixed_co2_atm_conc=None,
-                              save=True, nutri_cycle=True, reset_community=False, kill_and_reset=False)
-        gc.collect()
-        return gridcell
 
     @staticmethod
     def transient_run(gridcell):
-        gridcell.run_gridcell("1931-01-01", "2016-12-31", spinup=0, fixed_co2_atm_conc=None,
+        gridcell.run_gridcell("1901-01-01", "2016-12-31", spinup=0, fixed_co2_atm_conc=None,
                               save=True, nutri_cycle=True, reset_community=False, kill_and_reset=False)
         gc.collect()
         return gridcell
@@ -1485,10 +1429,11 @@ class region:
         # Get co2 data. We assume that the co2 data is a csv/tsv file with two columns,
         # the first with the year (yyyy) and the second with the atmospheric co2 concentration (ppm)
         #
-        self.nproc = mp.cpu_count() - 6
+        self.nproc = mp.cpu_count()
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
         self.co2_data = get_co2_concentration(self.co2_path)
+        # self.lock = mp.Lock()
 
 
 
@@ -1496,8 +1441,9 @@ class region:
         self.climate_files = []
         self.input_data = str_or_path(clim_data)
         self.soil_data = copy.deepcopy(soil_data)
-        self.pls_table = pls_table
+        self.pls_table = mc.pls_table(pls_table)
         self.grid = np.ones((360, 720), dtype=bool)
+        self.npls_main_table = self.pls_table.npls
 
         try:
             metadata_file = list(self.input_data.glob("*_METADATA.pbz2"))[0]
@@ -1515,10 +1461,10 @@ class region:
         for file_path in self.input_data.glob("input_data_*-*.pbz2"):
             self.climate_files.append(file_path)
 
-        self.indices = []
+        self.yx_indices = []
         for f in self.climate_files:
             y, x = f.stem.split("_")[-1].split("-")
-            self.indices.append((int(y), int(x)))
+            self.yx_indices.append((int(y), int(x)))
             self.grid[int(y), int(x)] = False
 
         # create the output folder structure
@@ -1531,18 +1477,23 @@ class region:
         self.gridcells = []
 
 
+    def get_from_main_table(self, comm_npls):
+        idx = np.random.randint(0, self.npls_main_table - 1, comm_npls)
+        return idx, self.pls_table.table[:, idx]
+
+
     def set_gridcells(self):
         print("Starting gridcells")
         i = 0
-        print_progress(i, len(self.indices), prefix='Progress:', suffix='Complete')
-        for f,pos in zip(self.climate_files, self.indices):
+        print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
+        for f,pos in zip(self.climate_files, self.yx_indices):
             y, x = pos
             file_name = self.output_path/Path(f"grd_{y}-{x}")
-            grd_cell = grd_mt(y, x, file_name, self.pls_table)
+            grd_cell = grd_mt(y, x, file_name, self.get_from_main_table)
             grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
                                     tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
             self.gridcells.append(grd_cell)
-            print_progress(i+1, len(self.indices), prefix='Progress:', suffix='Complete')
+            print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
             i += 1
 
 
@@ -1561,7 +1512,7 @@ class region:
         try:
             _val_ = self.gridcells[idx]
         except IndexError:
-            raise IndexError(f"Cannot get item at index {idx}. Region has {self.__len__()} (zero indexed) gridcells")
+            raise IndexError(f"Cannot get item at index {idx}. Region has {self.__len__()} gridcells")
         return _val_
 
 
@@ -2808,17 +2759,19 @@ if __name__ == '__main__':
     from metacommunity import read_pls_table
     from parameters import *
 
-    # Read CO2 data
+    # # Read CO2 data
     co2_path = Path("../input/co2/historical_CO2_annual_1765_2018.txt")
     main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
+
+    # gridcell = grd_mt(175, 234, "test", lambda x: x +  1)
 
     r = region("region_test",
                    "../input/test_input",
                    (tsoil, ssoil, hsoil),
                    co2_path,
                    main_table)
-    r.set_gridcells()
-    # r.run_region(worker.soil_pools_spinup)
+    c = r.set_gridcells()
+    # # r.run_region(worker.soil_pools_spinup)
 
     gridcell = r[0]
 
@@ -2830,5 +2783,5 @@ if __name__ == '__main__':
 
     else:
         run_result = gridcell.run_gridcell("1901-01-01", "1901-12-31", spinup=3, fixed_co2_atm_conc=None,
-                                       save=True, nutri_cycle=True, reset_community=True, kill_and_reset=True)
+                                       save=False, nutri_cycle=True, reset_community=True, kill_and_reset=True)
         comm = gridcell.metacomm[0]
