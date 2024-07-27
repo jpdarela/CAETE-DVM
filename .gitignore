@@ -1,7 +1,6 @@
 src/*.o
 src/stime.txt
 src/PLS_MAIN
-src/test.py
 src/*.obj
 src/*.i90
 src/*.mod
