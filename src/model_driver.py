@@ -82,7 +82,7 @@ __author__ = "João Paulo Darela Filho"
 __descr__ = """RUN CAETÊ"""
 
 FUNCALLS = 0
-climatology = 0
+climatology = 1
 
 while True:
     maskp = input(

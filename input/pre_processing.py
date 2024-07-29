@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import _pickle as pkl
+import pickle as pkl
 import bz2
 import numpy as np
 from netCDF4 import MFDataset

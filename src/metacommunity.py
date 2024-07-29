@@ -9,6 +9,7 @@ if sys.platform == "win32":
         raise ImportError("Could not add the DLL directory to the PATH")
 
 from collections import namedtuple
+from multiprocessing import Lock
 from pathlib import Path
 from typing import Union, Tuple, Callable
 
@@ -54,24 +55,24 @@ class pls_table:
         return self.table[:,index]
 
 
-    def get_random_pls(self):
-        pls_ids = np.random.randint(0, self.npls-1)
-        return pls_ids, self.table[:, pls_ids]
+    # def get_random_pls(self):
+    #     pls_ids = np.random.randint(0, self.npls-1)
+    #     return pls_ids, self.table[:, pls_ids]
 
 
-    def create_npls_table(self, comm_npls) -> Tuple[np.ndarray[int], np.ndarray[float]]:
-        """_summary_
+    # def create_npls_table(self, comm_npls) -> Tuple[np.ndarray[int], np.ndarray[float]]:
+    #     """_summary_
 
-        Args:
-            comm_npls (_type_): _description_
+    #     Args:
+    #         comm_npls (_type_): _description_
 
-        Returns:
-            _type_: _description_
-        """
-        idx = np.random.randint(0, self.npls-1, comm_npls)
-        table = self.table[:,idx]
-        output = namedtuple("pls_data", ["pls_id", "pls_array"])
-        return output(idx, table)
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     idx = np.random.randint(0, self.npls-1, comm_npls)
+    #     table = self.table[:,idx]
+    #     output = namedtuple("pls_data", ["pls_id", "pls_array"])
+    #     return output(idx, table)
 
 
 class community:
@@ -172,7 +173,7 @@ class metacommunity:
         """
 
         self.communities:dict = {}
-        self.get_table = get_from_main_table
+        self.get_table = get_from_main_table # Function defined in
         self.comm_npls = copy.deepcopy(gp.npls)
 
 

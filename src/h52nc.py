@@ -1242,10 +1242,11 @@ def create_nc_area(table, nc_out):
 
 def h52nc(input_file, dump_nc_folder, new_index=True):
 
+
     import time
 
-    drv = "H5FD_CORE" # "H5FD_SEC2" #
-    mod = "r"
+    drv = "H5FD_CORE" # Change the default load. ->> LOAD the h5 database in primary memory
+    mod = "a"
 
     ip = Path(input_file).resolve()
     print(f"Loading file: {ip}", end='-')
@@ -1253,35 +1254,31 @@ def h52nc(input_file, dump_nc_folder, new_index=True):
     print('Loaded')
 
     g1_table = h5f.root.RUN0.Outputs_G1
+    print('Creating Sorted table for g1', time.ctime())
+    index_dt1 = g1_table.cols.date.create_csindex()
+    t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
+    g1_table.close()
+    # t1d = h5f.root.RUN0.indexedT1date
+
     g2_table = h5f.root.RUN0.Outputs_G2
+    print('Creating Sorted table for g2', time.ctime())
+    index_dt2 = g2_table.cols.date.create_csindex()
+    t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
+    g2_table.close()
+    # t2d = h5f.root.RUN0.indexedT2date
+
     g3_table = h5f.root.RUN0.Outputs_G3
-
-
-    if new_index:
-        print('Creating Sorted table for g1', time.ctime())
-        index_dt1 = g1_table.cols.date.create_csindex()
-        t1d = g1_table.copy(newname='indexedT1date', sortby=g1_table.cols.date)
-    t1d = h5f.root.RUN0.indexedT1date
-
-
-    if new_index:
-        print('Creating Sorted table for g2', time.ctime())
-        index_dt2 = g2_table.cols.date.create_csindex()
-        t2d = g2_table.copy(newname='indexedT2date', sortby=g2_table.cols.date)
-    t2d = h5f.root.RUN0.indexedT2date
-
-
-    if new_index:
-        print('Creating Sorted table for g3', time.ctime())
-        index_dt3 = g3_table.cols.date.create_csindex()
-        t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
-    t3d = h5f.root.RUN0.indexedT3date
-
+    print('Creating Sorted table for g3', time.ctime())
+    index_dt3 = g3_table.cols.date.create_csindex()
+    t3d = g3_table.copy(newname='indexedT3date', sortby=g3_table.cols.date)
+    g3_table.close()
+    # t3d = h5f.root.RUN0.indexedT3date
 
     for interval in run_breaks:
         create_ncG1(t1d, interval, dump_nc_folder)
         create_ncG2(t2d, interval, dump_nc_folder)
         create_ncG3(t3d, interval, dump_nc_folder)
+
 
     snap_table = h5f.root.RUN0.spin_snapshot
     lim_data(snap_table, dump_nc_folder)
@@ -1291,9 +1288,4 @@ def h52nc(input_file, dump_nc_folder, new_index=True):
     pls_table = h5f.root.RUN0.PLS
     ccc(snap_table, pls_table, dump_nc_folder)
 
-    g1_table.close(); t1d.close()
-    g2_table.close(); t2d.close()
-    g3_table.close(); t3d.close()
-    snap_table.close()
-    pls_table.close()
     h5f.close()

@@ -1,5 +1,4 @@
 src/*.o
-src/stime.txt
 src/PLS_MAIN
 src/*.obj
 src/*.i90
@@ -13,9 +12,10 @@ src/*.cfg
 src/*.csv
 src/RUN*
 src/pls_data-*
+src/*.pkz
+src/*pbz2
 outputs/*
 nc_outputs/*
-
 h5/*
 src/.python-version
 src/logfile.log
