@@ -208,7 +208,7 @@ contains
 
       real(r_8),intent(in) :: w      !soil water mm
       real(r_8),intent(in) :: cfroot !carbon in fine roots kg m-2
-      real(r_4),intent(in) :: rc     !Canopy resistence 1/(micromol(CO2) m-2 s-1)
+      real(r_4),intent(in) :: rc     !Canopy resistence s/m)
       real(r_4),intent(in) :: ep
       real(r_8),intent(in) :: wmax     !potential evapotranspiration
       real(r_8) :: f5

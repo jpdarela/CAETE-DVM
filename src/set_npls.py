@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-from config import get_parameters
+from config import fetch_config
 
-caete_config = get_parameters('caete.toml')
+caete_config = fetch_config('caete.toml')
 
 descrp = "This script creates a global.f90 file with parameters defined in the caete.toml file."
 
-NPLS = caete_config["metacomm"]["npls_max"] # Max number of Plant Life Strategies per community
+NPLS = caete_config.metacomm.npls_max # Max number of Plant Life Strategies per community
 
 global_f90 = f"""
 ! Copyright 2017- LabTerra
@@ -106,6 +106,6 @@ end module photo_par"""
 
 
 root = Path(os.getcwd()).resolve()
-print(f"\n\n\nSeting the number of Plant Life Strategies (n PLSs = {NPLS}) to the global.f90 file\n\n\n")
+print(f"\n\n\nSetting the number of Plant Life Strategies (n PLSs = {NPLS}) to the global.f90 file\n\n\n")
 with open(f"{root}/global.f90", 'w') as fh:
     fh.write(global_f90)

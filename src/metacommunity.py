@@ -11,7 +11,7 @@ if sys.platform == "win32":
 from collections import namedtuple
 from multiprocessing import Lock
 from pathlib import Path
-from typing import Union, Tuple, Callable
+from typing import Union, Tuple, Callable, Dict
 
 import copy
 import numpy as np
@@ -55,26 +55,6 @@ class pls_table:
         return self.table[:,index]
 
 
-    # def get_random_pls(self):
-    #     pls_ids = np.random.randint(0, self.npls-1)
-    #     return pls_ids, self.table[:, pls_ids]
-
-
-    # def create_npls_table(self, comm_npls) -> Tuple[np.ndarray[int], np.ndarray[float]]:
-    #     """_summary_
-
-    #     Args:
-    #         comm_npls (_type_): _description_
-
-    #     Returns:
-    #         _type_: _description_
-    #     """
-    #     idx = np.random.randint(0, self.npls-1, comm_npls)
-    #     table = self.table[:,idx]
-    #     output = namedtuple("pls_data", ["pls_id", "pls_array"])
-    #     return output(idx, table)
-
-
 class community:
     """Represents a community of plants. Instances of this class are used to
        create metacommunities."""
@@ -90,7 +70,6 @@ class community:
         self.pls_array = pls_data[1]
         self.npls = self.pls_array.shape[1]
         self.shape = self.pls_array.shape
-        self.alive = np.ones(gp.npls, dtype=bool)
 
         # BIOMASS_STATE - we add some biomass to the plants
         # in the community to start the simulation
@@ -110,7 +89,7 @@ class community:
 
         self.vp_lsid = np.where(self.vp_ocp > 0.0)[0]
         self.ls = self.vp_lsid.size
-        self.uptk_costs = np.zeros(self.npls, order='F')
+        self.sp_uptk_costs = np.zeros(self.npls, order='F')
 
 
     def update_lsid(self, occupation:np.ndarray):
@@ -128,12 +107,11 @@ class community:
         with a new reandom sample of PLSs from the main table.
 
         Args:
-            pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): a named tuple
+            pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): a tuple of arrays with the ids and the PLSs.
         """
         self.__init__(pls_data)
 
 
-    # @lru_cache(maxsize=None)
     def __getitem__(self, index:int):
         """Gets a PLS (1D array) for given index.
 
@@ -169,16 +147,18 @@ class metacommunity:
 
         Args:
             n (int): number of communities that will be created in the metacommunity.
-            main_table (pls_table): a pls_table interface object. The main table of plant life strategies.
+            get_from_main_table (Callable): a function that returns a random sample of PLSs from the main table.
+            The get_from_main_table function is passed from the region class. It is used to create new communities.
         """
 
-        self.communities:dict = {}
-        self.get_table = get_from_main_table # Function defined in
+        self.communities:Dict[community] = {}
+        self.get_table = get_from_main_table # Function defined in the region class [caete.py L ~1400]
         self.comm_npls = copy.deepcopy(gp.npls)
 
 
         for i in range(n):
             self.communities[i] = community(self.get_table(self.comm_npls))
+
 
     # @lru_cache(maxsize=None)
     def __getitem__(self, index:Union[int, str]):
@@ -218,13 +198,23 @@ class metacommunity:
         return iter(self.communities.values())
 
 
+
 def main():
     main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
-    table_obj = pls_table(main_table)
+
+    def get_from_main_table(comm_npls, table = main_table):
+
+        """Returns a number of IDs (in the main table) and the respective
+        functional identities (PLS table) to set or reset a community
+
+        Args:
+        comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
+        idx = np.random.randint(0, comm_npls, comm_npls)
+        return idx, table[:, idx]
 
     # comm = community(table_obj.create_npls_table(10))
 
-    return metacommunity(99, table_obj)
+    return metacommunity(99, get_from_main_table)
     # # print(mt[0].pls_table.table)
     # # print(mt[0].pls_table.id)
     # # print(mt[0].pls_table.get_random_pls())

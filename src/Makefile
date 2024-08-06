@@ -1,19 +1,3 @@
-# ! Copyright 2017- LabTerra
-
-# !     This program is free software: you can redistribute it and/or modify
-# !     it under the terms of the GNU General Public License as published by
-# !     the Free Software Foundation, either version 3 of the License, or
-# !     (at your option) any later version.)
-
-# !     This program is distributed in the hope that it will be useful,
-# !     but WITHOUT ANY WARRANTY; without even the implied warranty of
-# !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# !     GNU General Public License for more details.
-
-# !     You should have received a copy of the GNU General Public License
-# !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-# ! AUTHOR: JP Darela
 
 
 # Build caete_module & debug programs
@@ -22,6 +6,7 @@ F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
 DEBUG_PROGRAM = run_debug
+MOD_DIR = ./
 
 # RUN MODE FLAGS
 MFLAG = -m
@@ -35,7 +20,7 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 # ifx flags for f2py
-IFX_FLAGS = -fpp -QxHost -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
+IFX_FLAGS = -fpp -QxHost -I$(MOD_DIR) -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
 
 # Sources for compilation in run mode (F2PY)
 src_lib = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90

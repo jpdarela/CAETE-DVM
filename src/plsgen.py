@@ -41,6 +41,7 @@ __author__ = 'JP Darela'
 # Read the pls_gen.toml file to get the parameters
 
 CONFIG_FILE = 'plsgen.toml'
+
 with open(CONFIG_FILE, 'rb') as f:
     data = tl.load(f)
 
@@ -64,7 +65,7 @@ def vec_ranging(values, new_min, new_max):
 def get_parameters(config=CONFIG_FILE):
     """ Get parameters from the pls_gen.toml file """
 
-    with open(CONFIG_FILE, 'rb') as f:
+    with open(config, 'rb') as f:
         data = tl.load(f)
 
     return data
@@ -326,4 +327,9 @@ def table_gen(NPLS, fpath=None):
 
 
 if  __name__ == "__main__":
-    table = table_gen(25000, Path("./PLS_MAIN").resolve())
+    if sys.argv[1] and sys.argv[2]:
+        table = table_gen(int(sys.argv[1]), Path(sys.argv[2]).resolve())
+    elif sys.argv[1]:
+        table = table_gen(int(sys.argv[1]), Path("./PLS_MAIN").resolve())
+    else:
+        table = table_gen(25000, Path("./PLS_MAIN").resolve())

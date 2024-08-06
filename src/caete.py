@@ -32,7 +32,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Union, Tuple, Dict, Callable
+from typing import Union, Tuple, Dict, Callable, List
 
 import bz2
 import copy
@@ -50,7 +50,7 @@ import cftime
 import numpy as np
 
 from hydro_caete import soil_water
-from config import get_parameters
+from config import fetch_config
 from _geos import find_indices_xy, find_indices, find_coordinates_xy, calculate_area
 import metacommunity as mc
 from parameters import tsoil, ssoil, hsoil, output_path
@@ -220,6 +220,7 @@ def atm_canopy_coupling(emaxm, evapm, air_temp, vpd):
     return coupling
 
 
+
 class state_zero:
     """base class with input/output related data (paths, filenames, etc)
     """
@@ -247,13 +248,13 @@ class state_zero:
         assert type(y) == type(x), "x and y must be of the same type"
 
         # Configuration data
-        self.config = get_parameters("caete.toml")
-        self.afex_config = self.config["fertilization"]
+        self.config = fetch_config("caete.toml")
+        self.afex_config = self.config.fertilization
 
 
         # CRS
-        self.yres = self.config["crs"]["yres"]
-        self.xres = self.config["crs"]["xres"]
+        self.yres = self.config.crs.yres
+        self.xres = self.config.crs.xres
 
         self.y, self.x = find_indices_xy(N = y, W = x, res_y=self.yres,
                                          res_x=self.xres,rounding=2) if isinstance(x, float) else (y, x)
@@ -519,13 +520,13 @@ class gridcell_output:
             self.ls = np.zeros(shape=(n,), order='F')
             return None
 
+        # Daily outputs
         self.emaxm = []
         self.tsoil = []
         self.photo = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.aresp = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.npp = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.lai = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.csoil = np.zeros(shape=(4, n), order='F', dtype=np.dtype("float32"))
+
         self.inorg_n = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.inorg_p = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.sorbed_n = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
@@ -536,20 +537,14 @@ class gridcell_output:
         self.f5 = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.runom = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.evapm = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.wsoil = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.swsoil = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.rm = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.rg = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.cleaf = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.cawood = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.cfroot = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.wue = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.cue = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.cdef = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.nmin = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.pmin = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.vcmax = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-        self.specific_la = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.nupt = np.zeros(shape=(2, n), order='F', dtype=np.dtype("float32"))
         self.pupt = np.zeros(shape=(3, n), order='F', dtype=np.dtype("float32"))
         self.litter_l = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
@@ -557,15 +552,23 @@ class gridcell_output:
         self.litter_fr = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.lnc = np.zeros(shape=(6, n), order='F', dtype=np.dtype("float32"))
         self.storage_pool = np.zeros(shape=(3, n), order='F', dtype=np.dtype("float32"))
-        self.ls = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
         self.carbon_costs = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
-
         self.ocp_area = np.zeros(shape=(npls, ncomms, n), dtype=('int32'), order='F')
         self.lim_status = np.zeros(
             shape=(3, npls, ncomms, n), dtype=np.dtype('int8'), order='F')
         self.uptake_strategy = np.zeros(
             shape=(2, npls, ncomms, n), dtype=np.dtype('int8'), order='F')
 
+        # Annual outputs TODO:
+        self.lai = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.csoil = np.zeros(shape=(4, n), order='F', dtype=np.dtype("float32"))
+        self.wsoil = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.swsoil = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.cleaf = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.cawood = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.cfroot = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.specific_la = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
+        self.ls = np.zeros(shape=(n,), order='F', dtype=np.dtype("float32"))
 
     def _flush_output(self, run_descr, index):
         """1 - Clean variables that receive outputs from the fortran subroutines
@@ -790,7 +793,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                       co2: Dict,
                       tsoil: Tuple[np.ndarray],
                       ssoil: Tuple[np.ndarray],
-                      hsoil: Tuple[np.ndarray]):
+                      hsoil: Tuple[np.ndarray],
+                      from_state: Union[bool, None]=None)->None:
         """ PREPARE A GRIDCELL TO RUN in the meta-community mode
 
         Args:
@@ -809,9 +813,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # We want to run queues of gridcells in parallel. So each gridcell receives a copy of the PLS table object
 
         # Number of communities in the metacommunity. Defined in the config file {caete.toml}
-        self.ncomms = self.config["metacomm"]["n"]  # Number of communities
+        self.ncomms = self.config.metacomm.n  # Number of communities
+
         # Metacommunity object
         self.metacomm = mc.metacommunity(self.ncomms, self.get_from_main_array)
+
 
         # Read climate drivers and soil characteristics, incl. nutrients, for this gridcell
         # Having all data to one gridcell in a file enables to create/start the gricells in parallel (threading)
@@ -863,7 +869,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         assert not fixed_co2_atm_conc or isinstance(fixed_co2_atm_conc, str) or\
             fixed_co2_atm_conc > 0, "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string with the year - e.g., 'yyyy'"
 
-        # Define start and end dates (read argument parameters)
+        # Define start and end dates (read parameters)
         start = parse_date(start_date)
         end = parse_date(end_date)
 
@@ -895,13 +901,13 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         afex_mode = self.afex_config["afex_mode"]
 
         # Slice&Catch climatic input and make conversions
-        cv = self.config["conversion_factors_isimip"]
+        cv = self.config.conversion_factors_isimip
 
-        temp = self.tas[lb: hb + 1] - cv["tas"]   # Air temp: model uses °C
-        prec = self.pr[lb: hb + 1] * cv["pr"]     # Precipitation: model uses  mm/day
-        p_atm = self.ps[lb: hb + 1] * cv["ps"]    # Atmospheric pressure: model uses hPa
-        ipar = self.rsds[lb: hb + 1] * cv["rsds"] # PAR: model uses  mol(photons) m-2 s-1
-        ru = self.rhs[lb: hb + 1]  * cv["rhs"]    # Relative humidity: model uses 0-1
+        temp = self.tas[lb: hb + 1] - cv.tas   # Air temp: model uses °C
+        prec = self.pr[lb: hb + 1] * cv.pr     # Precipitation: model uses  mm/day
+        p_atm = self.ps[lb: hb + 1] * cv.ps    # Atmospheric pressure: model uses hPa
+        ipar = self.rsds[lb: hb + 1] * cv.rsds # PAR: model uses  mol(photons) m-2 s-1
+        ru = self.rhs[lb: hb + 1] *  cv.rhs    # Relative humidity: model uses 0-1
 
         # Define the daily values for co2 concentrations
         co2_daily_values = np.zeros(steps.size, dtype=np.float32)
@@ -951,7 +957,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             # Create a datetime object to track the dates
             today = datetime(start.year, start.month, start.day, start.hour, start.minute, start.second)
             # Calculate the number of days remaining in the year
-            remaining = (datetime(today.year, 12, 31) - today).days
+            # remaining = (datetime(today.year, 12, 31) - today).days
             # Define the time step
             time_step = timedelta(days=1)
             # Go back one day
@@ -1029,7 +1035,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     cleaf_in[:] = inflate_array(community.npls, community.vp_cleaf, community.vp_lsid)
                     cwood_in[:] = inflate_array(community.npls, community.vp_cwood, community.vp_lsid)
                     croot_in[:] = inflate_array(community.npls, community.vp_croot, community.vp_lsid)
-                    uptk_costs[:] = inflate_array(community.npls, community.uptk_costs, community.vp_lsid)
+                    uptk_costs[:] = inflate_array(community.npls, community.sp_uptk_costs, community.vp_lsid)
 
                     ton = self.sp_organic_n #+ self.sp_sorganic_n
                     top = self.sp_organic_p #+ self.sp_sorganic_p
@@ -1382,8 +1388,8 @@ class region:
             co2 (Union[str, Path]): _description_
             pls_table (np.ndarray): _description_
         """
-        self.config = get_parameters("caete.toml")
-        self.nproc = self.config["multiprocessing"]["nprocs"]
+        self.config = fetch_config("caete.toml")
+        self.nproc = self.config.multiprocessing.nprocs
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
         self.co2_data = get_co2_concentration(self.co2_path)
@@ -1427,7 +1433,7 @@ class region:
         os.makedirs(self.output_path, exist_ok=True)
 
         # A list to store this region's gridcells
-        self.gridcells = []
+        self.gridcells:List[grd_mt] = []
 
 
     def get_from_main_table(self, comm_npls):
@@ -2846,6 +2852,8 @@ class plot(grd):
 
 if __name__ == '__main__':
 
+    # Short example of how to run the model. Also used to do some profiling
+
     from metacommunity import read_pls_table
     from parameters import *
 
@@ -2853,15 +2861,14 @@ if __name__ == '__main__':
     co2_path = Path("../input/co2/historical_CO2_annual_1765_2018.txt")
     main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
 
-    # gridcell = grd_mt(175, 234, "test", lambda x: x +  1)
 
     r = region("region_test",
                    "../input/test_input",
                    (tsoil, ssoil, hsoil),
                    co2_path,
                    main_table)
+
     c = r.set_gridcells()
-    # # r.run_region(worker.soil_pools_spinup)
 
     gridcell = r[0]
 
