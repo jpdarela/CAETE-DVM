@@ -1,0 +1,77 @@
+# ! Copyright 2017- LabTerra
+
+# !     This program is free software: you can redistribute it and/or modify
+# !     it under the terms of the GNU General Public License as published by
+# !     the Free Software Foundation, either version 3 of the License, or
+# !     (at your option) any later version.)
+
+# !     This program is distributed in the hope that it will be useful,
+# !     but WITHOUT ANY WARRANTY; without even the implied warranty of
+# !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# !     GNU General Public License for more details.
+
+# !     You should have received a copy of the GNU General Public License
+# !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ! AUTHOR: JP Darela
+
+# Variables
+PYEXEC = python
+F2PY = $(PYEXEC) -m numpy.f2py
+MODNAME = caete_module
+INTERFACES = $(MODNAME).pyf
+DEBUG_PROGRAM = run_debug
+MOD_DIR = ./
+
+# Compiler
+IFC = ifx
+
+# Flags
+# f2py flags
+MFLAG = -m
+HFLAG = -h
+CFLAG = -c
+OVRTFLAG = --overwrite-signature
+
+
+# ifx flags
+IFX_FLAGS = -fpp -QxHost -I$(MOD_DIR) -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
+
+# Sources
+src_lib = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
+sources = $(src_lib) budget.F90
+src_obj_w = global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
+
+# Targets
+.PHONY: interface so so_parallel clean clean_so modules
+
+interface: $(sources)
+	echo "Creating Fortran interfaces for the caete_module using f2py..."
+	@$(PYEXEC) set_npls.py
+	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
+
+so: $(sources) interface
+	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(IFC)" --f90flags="$(IFX_FLAGS)" --quiet
+	@echo "Serial version of caete_module created using $(IFC)"
+
+so_parallel: $(sources) interface
+	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(IFC)" --f90flags="$(IFX_FLAGS) -qopenmp"
+	@echo "Parallel version of caete_module created using $(IFC)"
+
+modules: $(sources)
+	ifx -fpp -c $(sources)
+
+clean:
+	del /s *.mod
+	del /s *.o
+	del /s *.s
+	del pls_ex.txt
+	del /s /q __pycache__
+	del run_debug
+	del logfile.log
+	del /s *.obj
+
+clean_so: clean
+	del /s *.pyd
+	del /s *.pyf
+	cls

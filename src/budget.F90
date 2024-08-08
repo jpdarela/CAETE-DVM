@@ -265,21 +265,9 @@ contains
       !     =====================make it parallel=========================
 #ifdef _OPENMP
    call OMP_SET_NUM_THREADS(2)
-   !   if (nlen .le. 500) then
-   !      call OMP_SET_NUM_THREADS(1)
-   !   else if (nlen .le. 1500) then
-   !      call OMP_SET_NUM_THREADS(2)
-   !   else if (nlen .le. 2500) then
-   !      call OMP_SET_NUM_THREADS(3)
-   !   else if (nlen .le. 3500) then
-   !      call OMP_SET_NUM_THREADS(4)
-   !    else if (nlen .le. 7000) then
-   !       call OMP_SET_NUM_THREADS(8)
-   !   else
-   !      call OMP_SET_NUM_THREADS(16)
-   !   endif
 #endif
-      construction = 0.0D0
+
+      construction = 0.0D0 !TODO: Implement the construction (Real NPP) of the plant tissues
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &

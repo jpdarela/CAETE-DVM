@@ -6,7 +6,7 @@ from pathlib import Path
 
 if __name__ == "__main__":
 
-    from metacommunity import read_pls_table
+    from metacommunity import pls_table
     from parameters import tsoil, ssoil, hsoil
     from caete import region, worker
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     co2_path = Path("../input/co2/historical_CO2_annual_1765_2018.txt")
 
     # Read PLS
-    main_table = read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
 
     r = region(region_name,
                input_files,

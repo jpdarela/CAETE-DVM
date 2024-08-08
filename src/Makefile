@@ -19,24 +19,22 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
-# ifx flags for f2py
-IFX_FLAGS = -fpp -QxHost -I$(MOD_DIR) -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
 
 # Sources for compilation in run mode (F2PY)
 src_lib = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
 sources = $(src_lib) budget.F90
-# sources = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 budget.F90
+
 
 # Objects for compilation in debug mode
 src_obj = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
-src_obj_w = global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
 objects = $(src_obj) budget.o debug_caete.o
 
+.PHONY: interface so so_parallel clean clean_so modules debug 
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
-	@$(PYEXEC) set_npls.py
+	@$(PYEXEC) set_npls.py ## Set the number of PLS in the global module
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so_parallel: $(sources) interface
@@ -47,16 +45,9 @@ so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) "
 	@echo "Serial version of caete_module created using gfortran"
 
-so_ifx: $(sources) interface
-	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="$(IFX_FLAGS)"
-	@echo "Serial version of caete_module created using IFX"
 
-so_ifx_parallel: $(sources) interface
-	$(F2PY)  $(INTERFACES) -c $(sources) --f90exec="ifx" --f90flags="$(IFX_FLAGS) -qopenmp "
-	@echo "Parallel version of caete_module created using IFX"
-
-fortran_module: $(sources)
-	ifx -fpp -c $(sources)
+modules: $(sources)
+	$(FC) -c $(sources)
 
 # Build objects for DEBUG mode
 debug: $(objects) so
@@ -120,28 +111,10 @@ budget.mod: budget.o budget.F90
 debug_caete.o: debug_caete.f90
 	$(FC) $(FLFLAGS) debug_caete.f90
 
-
 # CLEAN
 clean:
-	rm -rf test *.mod *.s *.o  pls_ex.txt __pycache__ run_debug logfile.log
-	clear
+	rm -rf *.s *.o pls_ex.txt __pycache__ run_debug logfile.log
+
 clean_so: clean
-	rm -rf *.so *.pyf *.obj *.pyd *.a *.i90 *.mod
-clean_alloc:
-	rm -rf wallo.npy gallo.npy
-clean_NP:
-	rm -rf NP1.npy NP2.npy NP3.npy
-
-clean_win:
-	del /s *.mod
-	del /s *.o
-	del /s *.s
-	del /s pls_ex.txt
-	del /s /q __pycache__
-	del run_debug
-	del logfile.log
-	del /s *.obj
-
-clean_win_so: clean_win
-	del /s *.pyd
-	del /s *.pyf
+	rm -rf *.so *.pyf *.mod
+	clear

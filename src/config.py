@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import Union
-import os
-import sys
 import tomllib as tl
+
+# path to the fortran compiler dlls, used in windows systems.
+fortran_compiler_dlls = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
 
 
 class Config:
@@ -88,16 +89,3 @@ def fetch_config(config: Union[str, Path]) -> Config:
     """ Get parameters from the a toml file.
     Returns a Config object"""
     return Config(fetch_config_parameters(config))
-
-
-# path to the fortran compiler dlls, used in windows systems.
-fortran_compiler_dlls = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
-
-if sys.platform == "win32":
-      try:
-         os.add_dll_directory(fortran_compiler_dlls)
-      except:
-         raise ImportError("Could not add the DLL directory to the PATH")
-
-
-
