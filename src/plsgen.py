@@ -20,10 +20,10 @@ Copyright 2017-2018 LabTerra
 # Residence times and nutrient ratios are randomly generated. Parameters are descibed in the pls_gen.toml file
 import os
 import sys
-from config import fortran_compiler_dlls
+from config import fortran_runtime
 if sys.platform == "win32":
     try:
-        os.add_dll_directory(fortran_compiler_dlls)
+        os.add_dll_directory(fortran_runtime)
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 

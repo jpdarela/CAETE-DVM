@@ -18,60 +18,66 @@ Copyright 2017- LabTerra
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
-import os
+import bz2
+import copy
 import csv
+import gc
+import multiprocessing as mp
+import os
+import pickle as pkl
+import random as rd
+from re import L
 import sys
-from config import fortran_compiler_dlls
-
-if sys.platform == "win32":
-    try:
-        os.add_dll_directory(fortran_compiler_dlls)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
-
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Union, Tuple, Dict, Callable, List, Optional
-from numpy.typing import NDArray
-import bz2
-import copy
-import gc
-import multiprocessing as mp
-import pickle as pkl
-import random as rd
-import warnings
-
-from joblib import dump, load
-from numba import jit
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cftime
+import numba
 import numpy as np
+from joblib import dump, load
+from numpy.typing import NDArray
+import zstandard as zstd
 
+from _geos import calculate_area, find_coordinates_xy, find_indices, find_indices_xy
+from config import Config, fetch_config, fortran_runtime
 from hydro_caete import soil_water
-from config import fetch_config
-from _geos import find_indices_xy, find_indices, find_coordinates_xy, calculate_area
 import metacommunity as mc
-from parameters import tsoil, ssoil, hsoil, output_path
 from output import budget_output
 
-from caete_module import global_par as gp
+# Tuples with hydrological parameters for the soil water calculations
+from parameters import hsoil, ssoil, tsoil
+from parameters import output_path
+
+# This code is only relevant in Windows systems. It adds the fortran compiler dlls to the PATH
+# so the shared library can find the fortran runtime libraries of the intel one API compiler
+# Note: This is only necessary in Windows systems
+if sys.platform == "win32":
+    try:
+        os.add_dll_directory(fortran_runtime)
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
+# shared library
 from caete_module import budget as model
-from caete_module import water as st
+from caete_module import global_par as gp
 from caete_module import photo as m
 from caete_module import soil_dec
+from caete_module import water as st
 
-# from memory_profiler import profile
+from memory_profiler import profile
 
-# Global lock
+# Global lock. Used to lock the access to the main table of Plant Life Strategies
 lock = mp.Lock()
 
-# Set warnings to default
 warnings.simplefilter("default")
 
+# Define some util functions #
 def rwarn(txt:str='RuntimeWarning'):
+    """Raise a RuntimeWarning"""
     warnings.warn(f"{txt}", RuntimeWarning)
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
@@ -99,11 +105,11 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
         sys.stdout.write('\n')
     sys.stdout.flush()
 
-def budget_daily_result(out: Tuple[Union[NDArray, str, List]]) -> budget_output:
+def budget_daily_result(out: Tuple[Union[NDArray, str, List, int, float]]) -> budget_output:
     return budget_output(*out)
 
-def catch_out_budget(out):
-    # This is currently used in the ond implementation (classes grd and plot)
+def catch_out_budget(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict[str, Union[NDArray, str, List, int, float]]:
+    # This is currently used in the old implementation (classes grd and plot)
     # WARNING keep the lists of budget/carbon3 outputs updated with fortran code
 
     lst = ["evavg", "epavg", "phavg", "aravg", "nppavg",
@@ -114,7 +120,7 @@ def catch_out_budget(out):
 
     return dict(zip(lst, out))
 
-def catch_out_carbon3(out):
+def catch_out_carbon3(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict:
     lst = ['cs', 'snc', 'hr', 'nmin', 'pmin']
 
     return dict(zip(lst, out))
@@ -176,8 +182,8 @@ def parse_date(date_string):
             pass
     raise ValueError('No valid date format found')
 
-@jit(nopython=True)
-def neighbours_index(pos, matrix):
+@numba.jit(nopython=True)
+def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:
     neighbours = []
     rows = len(matrix)
     cols = len(matrix[0]) if rows else 0
@@ -187,8 +193,8 @@ def neighbours_index(pos, matrix):
                 neighbours.append((i, j))
     return neighbours
 
-@jit(nopython=True)
-def inflate_array(nsize, partial, id_living):
+@numba.jit(nopython=True)
+def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.intp]):
     c = 0
     complete = np.zeros(nsize, dtype=np.float32)
     for n in id_living:
@@ -196,8 +202,11 @@ def inflate_array(nsize, partial, id_living):
         c += 1
     return complete
 
-@jit(nopython=True)
-def linear_func(temp, vpd, T_max=45, VPD_max=3):
+@numba.jit(nopython=True)
+def linear_func(temp: float,
+                vpd: float,
+                T_max: Union[int, float] = 45,
+                VPD_max :Union[int, float] = 3):
     """Linear function to calculate the coupling between the atmosphere and the canopy"""
     linear_func = (temp / T_max + vpd / VPD_max) / 2.0
 
@@ -212,9 +221,19 @@ def linear_func(temp, vpd, T_max=45, VPD_max=3):
 
     return linear_func
 
-@jit(nopython=True)
-def atm_canopy_coupling(emaxm, evapm, air_temp, vpd):
-    # Linear function
+# TODO: Add type hints. Adapt to get VPD_max and T_max from caete.toml (in grd_mt.config)
+@numba.jit(nopython=True)
+def atm_canopy_coupling(emaxm, evapm, air_temp, vpd) -> float:
+    """Calculate the coupling between the atmosphere and the canopy based on a simple linear function
+    of the air temperature and the vapor pressure deficit.
+    Args:
+        emaxm: float -> maximum evaporation rate mm/day
+        evapm: float -> evaporation rate mm/day
+        air_temp: float -> air temperature in Celsius
+        vpd: float -> vapor pressure deficit in kPa
+    Returns:
+        float: Evapotranspiration rate mm/day
+        """
     omega = linear_func(air_temp, vpd)
 
     # Coupling
@@ -222,8 +241,41 @@ def atm_canopy_coupling(emaxm, evapm, air_temp, vpd):
 
     return coupling
 
+@numba.jit(numba.float32(numba.int8[:], numba.float32[:]), nopython=True)
+def masked_mean(mask: NDArray[np.int8], values: NDArray[np.float32]) -> float:
+    """Calculate the mean of the values array ignoring the masked values"""
+    mean = 0.0
+    count = np.logical_not(mask).sum()
+    if count == 0:
+        return np.nan
+
+    for i in range(mask.size):
+        if mask[i] == 0:
+            mean += values[i] / count
+    return mean
 
 
+"""_summary_
+This module contains the classes that define the gridcell and the region objects. The gridcell object is the basic unit of the simulation. It contains the data and the methods to run the simulation for a single gridcell. The region object is a collection of gridcells.
+It contains the data and the methods to run the simulation for a collection of gridcells.
+THe architecture of the code is defined by the following classes:
+- state_zero: base class with input/output related data (paths, filenames, etc)
+- climate: class with climate data
+- time: class with time data
+- soil: class with soil data
+- gridcell_output: class to manage gridcell outputs
+
+ All these classes also have some particular methods to namage the data
+ They are isolated in these classes to make the code more readable and maintainable.
+ All the above classes are used as base for the class that regresents a gricell
+ in the simulation:
+- grd_mt: class to manage the gridcell simulation
+
+Finally, the region class is defined. It is a collection of gridcells and
+it is used to run the simulation for a collection of gridcells.
+- region: class to manage the region simulation
+- worker: class to manage the worker processes in the region simulation. It only has @staticmethods
+"""
 class state_zero:
     """base class with input/output related data (paths, filenames, etc)
     """
@@ -251,7 +303,7 @@ class state_zero:
         assert type(y) == type(x), "x and y must be of the same type"
 
         # Configuration data
-        self.config = fetch_config("caete.toml")
+        self.config:Config = fetch_config("caete.toml")
         self.afex_config = self.config.fertilization # type: ignore
 
 
@@ -274,8 +326,10 @@ class state_zero:
         self.input_fname = f"input_data_{self.xyname}.pbz2"
         self.input_fpath = None
         self.data = None
+        self.doy_months = (1,31,62,92,123,153,183,214,244,275,305,336)
 
-        # Name of the dump folder where this gridcell will dump model outputs. It is a child from ../outputs - defined in config.py
+        # Name of the dump folder where this gridcell will dump model outputs.
+        # It is a child from ../outputs - defined in caete.toml
         self.plot_name = output_dump_folder
 
         # Plant life strategies table
@@ -864,29 +918,53 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
     # @profile
     def run_gridcell(self,
-                  start_date,
-                  end_date,
-                  spinup=0,
-                  fixed_co2_atm_conc=None,
-                  save=True,
-                  nutri_cycle=True,
-                  afex=False,
-                  reset_community=False,
-                  kill_and_reset=False,
-                  verbose=True):
-        """ start_date [str]   "yyyymmdd" Start model execution
+                  start_date: str,
+                  end_date: str,
+                  spinup: int = 0,
+                  fixed_co2_atm_conc: Optional[str] = None,
+                  save: bool = True,
+                  nutri_cycle: bool = True,
+                  afex: bool = False,
+                  reset_community: bool = False,
+                  kill_and_reset: bool = False,
+                  env_filter: bool = False,
+                  verbose: bool = True):
+        """
+        Run the model for a specific grid cell.
 
-            end_date   [str]   "yyyymmdd" End model execution
+        CAETÊ-DVM execution in the start_date - end_date period, can be used for spinup or transient runs.
 
-            spinup     [int]   Number of repetitions in spinup. 0 for a transient run between start_date and end_date
+        Args:
+            start_date (str): Start date for model execution in "yyyymmdd" format.
+            end_date (str): End date for model execution in "yyyymmdd" format.
+            spinup (int, optional): Number of repetitions in spinup. Set to 0 for a transient run between start_date and end_date. Default is 0.
+            fixed_co2_atm_conc (Optional[float], optional): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels. Default is None.
+            save (bool, optional): Whether to save the results. Default is True.
+            nutri_cycle (bool, optional): Whether to include nutrient cycling in the model. Default is True.
+            afex (bool, optional): Whether to apply additional effects (AFEX) in the model. Default is False.
+            reset_community (bool, optional): Whether to reset the community structure at the start. Default is False.
+            kill_and_reset (bool, optional): Whether to kill and reset the community structure during the run. Default is False.
+            env_filter (bool, optional): Whether to apply environmental filtering. Default is False.
+            verbose (bool, optional): Whether to print detailed logs during execution. Default is True.
 
-            fix_co2    [Float] Fixed value for ATM [CO2]
-                       [int]   Fixed value for ATM [CO2]
-                       [str]   "yyyy" Corresponding year of an ATM [CO2]. Note that the text (csv/tsv) file with ATM [CO2]
-                                data must have the year in the first column and the ATM [CO2] in the second column
+        Returns:
+            None
 
-            This function run the fortran subroutines and manage data flux. It
-            is the proper CAETÊ-DVM execution in the start_date - end_date period, can be used for spinup or transient runs
+        Notes:
+            - If reset_community is true a new community will be set (reset) when there is no PLSs remaining.
+            - If the kill_and_reset is true, after n spins (integer given by spinup parameter - i.e. in the end
+              of function execution) all the communities in a gridcell are reset. The reset_community and
+              kill_and_reset  arguments are not mutually exclusive. You can use both as true at the same time.
+            - The env_filter argument is used to define if new unique PLSs from the main table will be
+              seed in the communities that have free slots (PLSs that are not producing). At the moment, the
+              interval for the env_filter to add a new PLS to the community is set to 30 days.
+              If env filter argument is true, then the reset_community argument will have a very low
+              probability to trigger a reset because the communities will be constantly filled with new PLS.
+              Nonetheless, the reset_community argument will still be able to trigger a reset if the community loses all PLSs.
+              With the probability of a reset_community increasing as the interval between new seeds increases.
+
+              TODO: Implement a more flexible way to define the interval for
+                    the env_filter to add a new PLS to the community.
         """
 
         assert not fixed_co2_atm_conc or\
@@ -1002,9 +1080,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.add_soil_nutrients(afex_mode)
 
                 # Arrays to store values for each community in a simulated day
+                # TODO: Get rid of these masked arrays. Use a 2D mask for communities instead
                 xsize: int = len(self.metacomm)
-                evavg: np.ma.MaskedArray = np.ma.masked_all(xsize, dtype=np.float32)
-                epavg: np.ma.MaskedArray = np.ma.masked_all(xsize, dtype=np.float32)
+                evavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+                epavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
                 leaf_litter: np.ma.MaskedArray = np.ma.masked_all(xsize, dtype=np.float32)
                 cwd: np.ma.MaskedArray = np.ma.masked_all(xsize, dtype=np.float32)
                 root_litter: np.ma.MaskedArray = np.ma.masked_all(xsize, dtype=np.float32)
@@ -1083,11 +1162,17 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     community.vp_cleaf = daily_output.cleafavg_pft[community.vp_lsid]
                     community.vp_cwood = daily_output.cawoodavg_pft[community.vp_lsid]
                     community.vp_croot = daily_output.cfrootavg_pft[community.vp_lsid]
-                    community.vp_sto = daily_output.stodbg[:, community.vp_lsid]
+                    community.vp_sto = daily_output.stodbg[:, community.vp_lsid].astype('float32')
                     community.sp_uptk_costs = daily_output.npp2pay[community.vp_lsid]
                     living_pls += community.ls
 
                     # Restore if it is the case or cycle if there is no PLS
+                    if community.ls < self.metacomm.comm_npls and env_filter:
+                        if julian_day in self.doy_months:
+                            if verbose:
+                                print(f"PLS seed in Community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+                            new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
+                            community.seed_pls(new_id, new_PLS)
                     if community.vp_lsid.size < 1:
                         if reset_community:
                             assert not save, "Cannot save data when resetting communities"
@@ -1095,11 +1180,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             if verbose:
                                 print(f"Reseting community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
                             # Get the new life strategies. This is a method from the region class
-                            with lock:
-                                new_life_strategies = self.get_from_main_array(community.npls)
+                            # with lock:
+                            new_life_strategies = self.get_from_main_array(community.npls)
                             community.restore_from_main_table(new_life_strategies)
                             continue
                         else:
+                            # In this case, the community is masked
+                            # Mask the community if there is no PLS
+                            self.metacomm.mask[i] = np.int8(1)
                             continue # cycle
 
                     # Store values for each community
@@ -1146,8 +1234,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                 vpd = m.vapor_p_deficit(temp[step], ru[step])
 
-                et_pot = epavg.mean()
-                et = evavg.mean()
+                et_pot = masked_mean(self.metacomm.mask, np.array(epavg).astype(np.float32)) #epavg.mean()
+                et = masked_mean(self.metacomm.mask, epavg) #evavg.mean()
 
                 self.evapm[step] = atm_canopy_coupling(et_pot, et, temp[step], vpd)
                 self.runom[step] = self.swp._update_pool(prec[step], self.evapm[step])
@@ -1370,8 +1458,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # Restablish new communities in the end, if applicable
         if kill_and_reset:
             for community in self.metacomm:
-                with lock:
-                    new_life_strategies = self.get_from_main_array(community.npls)
+                # with lock:
+                new_life_strategies = self.get_from_main_array(community.npls)
                 community.restore_from_main_table(new_life_strategies)
         return None
 
@@ -1419,7 +1507,7 @@ class region:
             co2 (Union[str, Path]): _description_
             pls_table (np.ndarray): _description_
         """
-        self.config = fetch_config("caete.toml")
+        self.config: Config = fetch_config("caete.toml")
         self.nproc = self.config.multiprocessing.nprocs # type: ignore
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
@@ -1467,19 +1555,24 @@ class region:
         self.gridcells:List[grd_mt] = []
 
 
-    def get_from_main_table(self, comm_npls):
+    def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[NDArray[np.intp],NDArray[np.float32]]:
 
         """Returns a number of IDs (in the main table) and the respective
         functional identities (PLS table) to set or reset a community
+
+        This method is passed as an argument for the gridcell class. It is used to read
+        the main table and the PLS table to set or reset a community. In parallel, this method
+        must be called with a lock.
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
         if comm_npls == 1:
             idx = np.random.randint(0, self.npls_main_table - 1)
-            return idx, self.pls_table.table[:, idx]
-
+            with lock:
+                return idx, self.pls_table.table[:, idx]
         idx = np.random.randint(0, self.npls_main_table - 1, comm_npls)
-        return idx, self.pls_table.table[:, idx]
+        with lock:
+            return idx, self.pls_table.table[:, idx]
 
 
     def set_gridcells(self):
@@ -1532,12 +1625,8 @@ class region:
 
 
 class worker:
+
     """Worker functions used to run the model in parallel"""
-
-
-    def __init__(self):
-        return None
-
 
     @staticmethod
     def create_run_breaks(start_year:int, end_year:int, interval:int):
@@ -1562,7 +1651,7 @@ class worker:
 
     @staticmethod
     def soil_pools_spinup(gridcell:grd_mt):
-        """spin to attain equilibrium in soil pools"""
+        """spin to attain equilibrium in soil pools, In this phase the communities are reset if there are no PLS"""
         gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
         gc.collect()
@@ -1571,21 +1660,29 @@ class worker:
 
     @staticmethod
     def community_spinup(gridcell:grd_mt):
-        """spin to attain equilibrium in the community"""
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
-                              save=False, nutri_cycle=True, reset_community=True, kill_and_reset=False)
+        """spin to attain equilibrium in the community, In this phase, communities can be reset if there are no PLS"""
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=12, fixed_co2_atm_conc="1901",
+                              save=False, nutri_cycle=True, reset_community=True)
         gc.collect()
         return gridcell
 
 
     @staticmethod
-    def transient_run(gridcell:grd_mt):
-        """transient run"""
-        gridcell.run_gridcell("1901-01-01", "2016-12-31", spinup=0, fixed_co2_atm_conc=None,
-                              save=True, nutri_cycle=True, reset_community=False, kill_and_reset=False)
+    def env_filter_spinup(gridcell:grd_mt):
+        """spin to attain equilibrium in the community while adding new PLS if there are free slots"""
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=3, fixed_co2_atm_conc="1901",
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True,
+                              verbose=False)
         gc.collect()
         return gridcell
 
+    @staticmethod
+    def final_spinup(gridcell:grd_mt):
+        """spin to attain equilibrium in the community while adding new PLS if there are free slots"""
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+                              save=False, nutri_cycle=True)
+        gc.collect()
+        return gridcell
 
     @staticmethod
     def transient_run_brk(gridcell:grd_mt, interval:Tuple[str, str]):
@@ -1602,9 +1699,26 @@ class worker:
         with bz2.BZ2File(fname, mode='wb') as fh:
             pkl.dump(region, fh)
 
+    @staticmethod
+    def save_state_zstd(region: region, fname: Union[str, Path]):
+        with open(fname, 'wb') as fh:
+            compressor = zstd.ZstdCompressor(level=22, threads=12)
+            with compressor.stream_writer(fh) as compressor_writer:
+                pkl.dump(region, compressor_writer)
+
+
+    @staticmethod
+    def load_state_std(fname:Union[str, Path]):
+        with open(fname, 'rb') as fh:
+            decompressor = zstd.ZstdDecompressor()
+            with decompressor.stream_reader(fh) as decompressor_reader:
+                region = pkl.load(decompressor_reader)
+        return region
+
+
 
 DESCRIPTION = """ CAETÊ - A model to simulate the dynamics of tropical forests"""
-#### -----------------------------------
+#### -----------------------------------                          github copilot
 # OLD CAETÊ
 # This is the prototype of CAETÊ that I created during my PhD.
 # Will continue here for some time until I can migrate everything to the new version (ABOVE)
@@ -2890,7 +3004,7 @@ class plot(grd):
 
 if __name__ == '__main__':
 
-    # Short example of how to run the model. Also used to do some profiling
+    # Short example of how to run the new version of the model. Also used to do some profiling
 
     from metacommunity import pls_table
     from parameters import *
@@ -2919,6 +3033,6 @@ if __name__ == '__main__':
         cProfile.run(command, sort="cumulative", filename="profile.prof")
 
     else:
-        run_result = gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=1, fixed_co2_atm_conc=None,
-                                       save=False, nutri_cycle=True, reset_community=True, kill_and_reset=False)
+        run_result = gridcell.run_gridcell("1901-01-01", "1905-12-31", spinup=4, fixed_co2_atm_conc=None,
+                                       save=True, nutri_cycle=True, reset_community=True, kill_and_reset=False)
         comm = gridcell.metacomm[0]

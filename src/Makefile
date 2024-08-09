@@ -2,6 +2,7 @@
 
 # Build caete_module & debug programs
 PYEXEC = python
+PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
 INTERFACES = $(MODNAME).pyf
@@ -29,7 +30,14 @@ sources = $(src_lib) budget.F90
 src_obj = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
 objects = $(src_obj) budget.o debug_caete.o
 
-.PHONY: interface so so_parallel clean clean_so modules debug 
+# Targets
+.PHONY: setup interface so so_parallel clean clean_so modules
+
+# Python setup
+setup:
+	@echo "Installing dependencies..."
+	$(PIP) install -r requirements.txt
+
 
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)

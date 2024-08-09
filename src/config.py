@@ -1,79 +1,60 @@
+# -*-coding:utf-8-*-
+# "CAETÊ"
+# Author:  João Paulo Darela Filho
+"""
+Copyright 2017- LabTerra
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 from pathlib import Path
-from typing import Union
-import tomllib as tl
+from typing import Union, Dict , Any, Optional
+import tomllib
+
+
+"""This file contains some parameters that are used in the code.
+   Thehe is a class that read parameters stored in a toml file.
+   The configurations can be accessed using the fetch_config function."""
 
 # path to the fortran compiler dlls, used in windows systems.
-fortran_compiler_dlls = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
+fortran_runtime = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
 
 
 class Config:
-    """ Class to store the parameters from a toml file.
+    """
+    Class to store the parameters from a toml file.
     Reads nested dictionaries as Config objects
     All the parameters are stored as attributes of the object
+    Types are stored in the __annotations__ attribute
     """
-
-    def __init__(self, d=None) -> None:
+    def __init__(self, d: Optional[Dict[str, Any]] = None) -> None:
+        self.__annotations__ = {}
         if d is not None:
             for k, v in d.items():
                 if isinstance(v, dict):
                     setattr(self, k, Config(v))
+                    self.__annotations__[k] = Config
                 else:
                     setattr(self, k, v)
+                    self.__annotations__[k] = type(v)
 
 
     def __repr__(self) -> str:
-        return str(self.__dict__)
+        return f"Config({self.__dict__})"
 
 
-    def __str__(self) -> str:
-        return str(self.__dict__)
-
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-
-    def __iter__(self):
-        return iter(self.__dict__)
-
-
-    def __len__(self):
-        return len(self.__dict__)
-
-
-    def __contains__(self, key):
-        return key in self.__dict__
-
-
-    def items(self):
-        return self.__dict__.items()
-
-
-    def keys(self):
-        return self.__dict__.keys()
-
-
-    def values(self):
-        return self.__dict__.values()
-
-
-    def get(self, key, default=None):
-        return getattr(self, key, default)
-
-
-    def update(self, d):
-        for k, v in d.items():
-            if isinstance(v, dict):
-                setattr(self, k, Config(v))
-            else:
-                setattr(self, k, v)
-
-
-def fetch_config_parameters(config: Union[str, Path]) -> dict:
+def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
     """ Get parameters from the a toml file rerturning a dictionary."""
 
     cfg = Path(config)
@@ -82,10 +63,12 @@ def fetch_config_parameters(config: Union[str, Path]) -> dict:
     assert cfg.is_file(), f"{cfg} is not a file."
 
     with open(config, 'rb') as f:
-        data = tl.load(f)
+        # Works only with python 3.11 and above
+        data = tomllib.load(f)
     return data
 
+# Can be used in the code to get the parameters any the toml file
 def fetch_config(config: Union[str, Path]) -> Config:
     """ Get parameters from the a toml file.
     Returns a Config object"""
-    return Config(fetch_config_parameters(config))
+    return Config(_fetch_config_parameters(config))

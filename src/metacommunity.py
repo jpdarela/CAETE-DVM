@@ -1,7 +1,6 @@
 import copy
 import csv
 import os
-import re
 import sys
 from pathlib import Path
 from typing import Callable, Dict, Tuple, Union, Any
@@ -9,13 +8,13 @@ from numpy.typing import NDArray
 
 import numpy as np
 
-from config import fortran_compiler_dlls
+from config import fortran_runtime
 
 # Add the fortran compiler DLLs to the PATH
 # This is necessary to load the fortran compiled DLLs in windows systems
 if sys.platform == "win32":
     try:
-        os.add_dll_directory(fortran_compiler_dlls)
+        os.add_dll_directory(fortran_runtime)
     except:
         raise ImportError("Could not add the DLL directory to the PATH")
 
@@ -24,11 +23,14 @@ from caete_module import photo as m
 
 
 class pls_table:
+
     """ Interface for the main table of plant life strategies (Plant prototypes).
         Random subsamples without replacement are taken from this table to
         create communities. The main table should've a large number
-        of PLSs (npls ~ 20000, for example).
+        of PLSs (npls ~ 20000, for example.
+        Use the plsgen.py script to generate a PLS table).
     """
+
     def __init__(self, array:NDArray[np.float32]) -> None:
         """Initializes the PLS table.
         Args:
@@ -105,33 +107,34 @@ class community:
         self.id: NDArray[np.int32] = pls_data[0]
         self.pls_array: NDArray[np.float32] = pls_data[1]
         self.npls: int = self.pls_array.shape[1]
-        self.shape: Tuple[int, int] = self.pls_array.shape
+        self.shape: Tuple[int, ...] = self.pls_array.shape
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
-        self.vp_cleaf: NDArray[np.float32] = np.random.uniform(0.3,0.4,self.npls)
-        self.vp_croot: NDArray[np.float32] = np.random.uniform(0.3,0.4,self.npls)
-        self.vp_cwood: NDArray[np.float32] = np.random.uniform(5.0,6.0,self.npls)
-        self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F')
+        self.vp_cleaf: NDArray[np.float32] = np.random.uniform(0.3,0.4,self.npls).astype(np.float32)
+        self.vp_croot: NDArray[np.float32] = np.random.uniform(0.3,0.4,self.npls).astype(np.float32)
+        self.vp_cwood: NDArray[np.float32] = np.random.uniform(5.0,6.0,self.npls).astype(np.float32)
+        self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
         self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
         self.vp_sto[1,:] = np.random.uniform(0.0, 0.01, self.npls)
         self.vp_sto[2,:] = np.random.uniform(0.0, 0.001, self.npls)
 
-        # we set the wood biomass of the plants that are not woody to zero
+        # Set the wood biomass of the plants that are not woody to zero
         self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
 
         # PFT_AREA_FRAC based on the mass-ratio hypothesis (Grime 1998)
         self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
                                                self.vp_cwood, self.pls_array[6, :])
 
-        # we get the indices of the plants that are present in the community
+        # Get the indices of the plants that are present in the community
         self.vp_lsid: NDArray[np.intp] = np.where(self.vp_ocp > 0.0)[0]
-        self.ls = self.vp_lsid.size
-
+        self.ls: int = self.vp_lsid.size
+        self.masked:NDArray[np.int8] = np.zeros(0, dtype=np.int8)
         # These needs to be passed today from the previous timestep
         # nutrient Uptake costs that is subtracted from NPP
-        self.sp_uptk_costs = np.zeros(self.npls, order='F')
+        self.sp_uptk_costs: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
         # Real NPP. I.e. NPP after nutrient uptake costs and allocation (incl. limitation)
-        self.construction_npp = np.zeros(self.npls, order='F')
+        # NOTE: This is not implemented
+        self.construction_npp = np.zeros(self.npls, order='F') # TODO: implement this in the code
 
         return None
 
@@ -174,22 +177,13 @@ class community:
         return pls_id in self.id
 
 
-    def update_lsid(self, occupation:np.ndarray):
-        """_summary_
+    def update_lsid(self, occupation: NDArray[np.float64]) -> None:
+        """Updates the internal community ids of the living PLSs.
 
         Args:
-            occupation (np.ndarray): _description_
+            occupation (np.ndarray):
         """
         self.vp_lsid = np.where(occupation > 0.0)[0]
-
-
-    def get_free_lsid(self):
-        """_summary_
-
-        Returns:
-            np.ndarray: _description_
-        """
-        return np.where(self.vp_ocp == 0.0)[0]
 
 
     def restore_from_main_table(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
@@ -205,8 +199,22 @@ class community:
         self.__init__(pls_data)
 
 
+    def get_free_lsid(self) -> NDArray[np.intp]:
+        """Get the indices of the free slots in the community.
+
+        Returns:
+            np.ndarray: _description_
+        """
+        # Get the indices of the PLS that are not present in the community
+        return np.where(self.vp_ocp == 0.0)[0]
+
+
     def seed_pls(self, pls_id: int, pls: np.ndarray) -> None:
-        """Seeds a PLS in a free position. Please, ensure no duplicate PLS IDs.
+        """
+        Seeds a PLS in a free position. Uses the method get_free_lsid to find the free slots.
+
+           Warning: to ensure no duplicate PLS IDs in the community,
+           use the class method get_unique_pls.
 
         Args:
             pls_id (int): ID of the PLS.
@@ -215,12 +223,12 @@ class community:
         # Assert that the PLS ID is not in the community
         free_slots = self.get_free_lsid()
         if free_slots.size == 0:
-
             return None
         elif free_slots.size == 1:
             pos = free_slots[0]
         else:
             pos = free_slots[np.random.randint(0, free_slots.size)]
+
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
         self.vp_cleaf[pos] = np.random.uniform(0.3, 0.4)
@@ -261,18 +269,16 @@ class community:
             Tuple[int, np.ndarray]: A unique PLS ID and the PLS array.
         """
         while True:
-            pls_id, pls = pls_selector()
+            pls_id, pls = pls_selector(1)
             if pls_id not in self.id:
                 return pls_id, pls
-
-
 
 
 class metacommunity:
     """Represents a collection of plant communities.
     """
 
-    def __init__(self, n:int, get_from_main_table:Callable) -> None:
+    def __init__(self, community_count:int, get_from_main_table:Callable) -> None:
         """A collection of plant communities.
 
         Args:
@@ -280,19 +286,29 @@ class metacommunity:
             get_from_main_table (Callable): a function that returns a random sample of PLSs from the main table.
             The get_from_main_table function is passed from the region class. It is used to create new communities.
         """
-
+         # Community-level variables
+         # Functional Identity
         self.cwm = np.zeros(gp.ntraits, order='F')
         self.cwv = np.zeros(gp.ntraits, order='F')
+
+        # TODO: IMPLEMENT entropy and diversity
+        # self.entropy = np.zeros(gp.ntraits, order='F') Shannon entropy
+        # self.diversity = np.zeros(gp.ntraits, order='F') Simpson diversity
+
         # Communities
         self.communities:Dict[int, community] = {}
         self.get_table = get_from_main_table # Function defined in the region class [caete.py L ~1400]
         self.comm_npls = copy.deepcopy(gp.npls)
+        self.mask: NDArray[np.int8] = np.zeros(community_count, dtype=np.int8)
 
 
-        for i in range(n):
+        for i in range(community_count):
+            # Create the communities
             self.communities[i] = community(self.get_table(self.comm_npls))
-
+            # Set active at start
+            self.mask[i] = 0  # 0 means the community is active
         return None
+
 
 
     def __getitem__(self, index:Union[int, str]):
@@ -332,42 +348,43 @@ class metacommunity:
         return iter(self.communities.values())
 
 
-if __name__ == "__main__":
-
-    # Example of how to use the metacommunity class
-
+def main():
+    # Toy example to test the classes functionality
     main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
 
-    # these functions mimics the behavior of the get_from_main_table function in the region class
+    # this function mimics the behavior of the get_from_main_table function in the region class
     # Only for testing purposes
-    def get_from_main_table(comm_npls, table = main_table):
+    def __get_from_main_table(comm_npls, table = main_table):
         """Returns a number of IDs (in the main table) and the respective
         functional identities (PLS table) to set or reset a community
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
+        if comm_npls == 1:
+            idx = np.random.randint(0, table.shape[1] - 1)
+            return idx, table[:, idx]
         idx = np.random.randint(0, comm_npls, comm_npls)
         return idx, table[:, idx]
 
-    def get_one_from_main_table(table = main_table):
-        """Returns a single ID (in the main table) and the respective
-        functional identity (PLS table) to set a free position in a community"""
-        idx = np.random.randint(0, table.shape[1] - 1)
-        return idx, table[:, idx]
 
     # Create a metacommunity with 99 communities. the number of PLSs in each community is set in the caete.toml file
-    mt = metacommunity(99, get_from_main_table)
+    mt = metacommunity(99, __get_from_main_table)
     print(f"Number of communities: {len(mt)}")
     print(f"Number of PLSs in each community: {mt.comm_npls}")
 
     # Kill the PLS in the posiion 233 in the first community
-    mt[0].kill_pls(233)
+    # mt[0].kill_pls(233)
 
     # Get a unique PLS from the main table (i.e. a PLS that is not in the community)
-    ident, func_id = mt[0].get_unique_pls(get_one_from_main_table)
+    ident, func_id = mt[0].get_unique_pls(__get_from_main_table)
 
-    # Seed the unique PLS in the free slot
+    # Seed the unique PLS in the  a free slot
     mt[0].seed_pls(ident, func_id)
+    return mt
 
+
+
+if __name__ == "__main__":
+    mt = main()
 
 
