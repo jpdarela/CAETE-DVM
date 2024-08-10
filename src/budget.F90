@@ -31,11 +31,11 @@ contains
 
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
         &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in&
-        &, uptk_costs_in, wmax_in, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg&
+        &, uptk_costs_in, wmax_in, rnpp, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg&
         &,  f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft&
         &, storage_out_bdgt_1, ocpavg, wueavg, cueavg, c_defavg, vcmax_1&
         &, specific_la_1, nupt_1, pupt_1, litter_l_1, cwd_1, litter_fr_1, npp2pay_1, lit_nut_content_1&
-        &, limitation_status_1, uptk_strat_1, cp, c_cost_cwm)
+        &, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, rnpp_out)
 
 
 #ifdef _OPENMP
@@ -58,7 +58,7 @@ contains
       real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
       real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
       real(r_8),intent(in) :: on, sop, op          ! Organic N, isoluble inorganic P, Organic P g m-2
-      real(r_8),intent(in) :: catm, wmax_in                 ! ATM CO2 concentration ppm
+      real(r_8),intent(in) :: catm, wmax_in        ! ATM CO2 concentration ppm
 
 
       real(r_8),dimension(3,npls),intent(in)  :: sto_budg_in ! Rapid Storage Pool (C,N,P)  g m-2
@@ -66,6 +66,7 @@ contains
       real(r_8),dimension(npls),intent(in) :: cf1_in  !                 froot
       real(r_8),dimension(npls),intent(in) :: ca1_in  !                 cawood
       real(r_8),dimension(npls),intent(in) :: uptk_costs_in ! g m-2
+      real(r_8),dimension(npls),intent(in) :: rnpp ! NPP (g m-2 day-1) construction from previous day
 
 
       !     ----------------------------OUTPUTS------------------------------
@@ -96,6 +97,7 @@ contains
       real(r_8),dimension(npls),intent(out) :: cawoodavg_pft  !
       real(r_8),dimension(npls),intent(out) :: cfrootavg_pft  !
       real(r_8),dimension(npls),intent(out) :: ocpavg         ! [0-1] Gridcell occupation
+      real(r_8),dimension(npls),intent(out) :: rnpp_out       ! NPP (g m-2 day-1) construction
 
       real(r_8),dimension(3,npls),intent(out) :: storage_out_bdgt_1
       integer(i_2),dimension(3,npls),intent(out) :: limitation_status_1
@@ -118,7 +120,7 @@ contains
       real(r_4) :: soil_temp ! Soil temperature (oC)
       real(r_4) :: emax ! Maximum evapotranspiration (mm/day)
       real(r_8) :: w ! Soil moisture storage (mm)
-      real(r_8) :: construction ! Allocated NPP
+      real(r_8),dimension(npls) :: construction ! Allocated NPP
 
       real(r_8),dimension(:),allocatable :: ocp_coeffs ! Occupation coefficients Biomass baseed abundance (Biomas-Ratio hypothesis)
 
@@ -158,6 +160,7 @@ contains
       integer(i_2),dimension(:,:),allocatable   :: limitation_status ! D0=3
       integer(i_4), dimension(:, :),allocatable :: uptk_strat        ! D0=2
       INTEGER(i_4), dimension(:), allocatable :: lp ! index of living PLSs/living grasses
+      real(r_8), dimension(:), allocatable :: rnpp_aux ! NPP (g m-2 day-1) construction tracking for each living PLS
 
       real(r_8), dimension(npls) :: awood_aux, uptk_costs, pdia_aux
       real(r_8), dimension(:, :), allocatable :: sto_budg
@@ -222,6 +225,7 @@ contains
          if (pdia_aux(lp(p)) .le. 0.0D0) idx_pdia(p) = 0.0D0
       enddo
 
+      allocate(rnpp_aux(nlen))
       allocate(evap(nlen))
       allocate(nppa(nlen))
       allocate(ph(nlen))
@@ -267,11 +271,11 @@ contains
    call OMP_SET_NUM_THREADS(2)
 #endif
 
-      construction = 0.0D0 !TODO: Implement the construction (Real NPP) of the plant tissues
+      construction = rnpp ! construction (Real NPP) of the plant tissues in the previous day. To calculate growth respiration
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
-      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux, construction)
+      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux)
       do p = 1,nlen
 
          carbon_in_storage = 0.0D0
@@ -284,7 +288,7 @@ contains
          ! TODO: input storage pool to prod function; We need to calculate the respiratory costs  of storage inside
          ! use the dleaf dwwood and droot trio.
          call prod(dt1, ocp_wood(ri),catm, temp, soil_temp, p0, w, ipar, rh, emax&
-               &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), soil_sat, construction&
+               &, cl1_pft(ri), ca1_pft(ri), cf1_pft(ri), soil_sat, construction(ri)&
                &, ph(p), ar(p), nppa(p), laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p)&
                &, wue(p), c_def(p), vcmax(p), specific_la(p), tra(p))
 
@@ -320,7 +324,9 @@ contains
             &, mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
             &, cf1_pft(ri),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
             &, cf2(p),litter_l(p),cwd(p), litter_fr(p),nupt(:,p),pupt(:,p)&
-            &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p), ar_aux, construction)
+            &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p)&
+            &, ar_aux, rnpp_aux(p))
+
 
          ! Estimate growth of storage C pool
          ar_fix_hr(p) = ar_aux
@@ -402,10 +408,14 @@ contains
       limitation_status_1(:,:) = 0
       uptk_strat_1(:,:) = 0
       npp2pay_1(:) = 0.0
+      cp(:) = 0.0D0
+      c_cost_cwm = 0.0D0
+      rnpp_out(:) = 0.0D0
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
-
-      ! FILTER NaN in ocupation (abundance) coefficients
+      ! clean NaN values in occupation coefficients
+      ! TODO: these checks are useful for model start periods
+      ! Will keep it here.
       do p = 1, nlen
          if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
       enddo
@@ -433,7 +443,8 @@ contains
       cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. isnan(ca1_int))
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
       cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ar_fix_hr))
-      ! FILTER BAD VALUES
+
+      ! FILTER BAD VALUES ?? TODO: outcoment this section and see what happens
       do p = 1,2
          do i = 1, nlen
             if (isnan(nupt(p, i))) nupt(p, i) = 0.0D0
@@ -477,9 +488,9 @@ contains
          lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
       enddo
 
+      ! Copy the results from the heap to the output variables
       do p = 1, nlen
          ri = lp(p)
-
          cleafavg_pft(ri)  = cl1_int(p)
          cawoodavg_pft(ri) = ca1_int(p)
          cfrootavg_pft(ri) = cf1_int(p)
@@ -487,9 +498,11 @@ contains
          limitation_status_1(:,ri) = limitation_status(:,p)
          uptk_strat_1(:,ri) = uptk_strat(:,p)
          npp2pay_1(ri) = npp2pay(p)
+         rnpp_out(ri) = rnpp_aux(p)
       enddo
 
-
+      !DEALLOCATE
+      deallocate(rnpp_aux)
       deallocate(lp)
       deallocate(evap)
       deallocate(nppa)
@@ -524,10 +537,10 @@ contains
       deallocate(cf2)
       deallocate(ca2)
       deallocate(day_storage)
-      DEALLOCATE(idx_grasses)
-      DEALLOCATE(idx_pdia)
-      DEALLOCATE(ar_fix_hr)
-
+      deallocate(idx_grasses)
+      deallocate(idx_pdia)
+      deallocate(ar_fix_hr)
+      deallocate(ocp_coeffs)
 
    end subroutine daily_budget
 

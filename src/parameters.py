@@ -1,15 +1,37 @@
-"""DEFINE SOME PARAMETERS FOR CAETÊ EXPERIMENTS"""
+# -*-coding:utf-8-*-
+# "CAETÊ"
+# Author:  João Paulo Darela Filho
+"""
+Copyright 2017- LabTerra
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+"""DEFINE SOME MODEL PARAMETERS FOR CAETÊ EXPERIMENTS"""
+
 from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple
 
 # Running in sombrero:
+# These variables point to the directory where the input data is stored.
 input_in_sombrero: Path = Path("/home/amazonfaceme/shared_data/").resolve()
 local_input: Path = Path("../input").resolve()
 
 #masks
-# Pan-Amazon mask. Only forest dominated gridcells are considered.
+# Pan-Amazon mask. Only forest dominated gridcells are considered. MAPBIOMAS 2000
 mask_am: NDArray = np.load("../input/mask/mask_am_forest.npy")
 
 # Pan-Amazon mask.
@@ -17,8 +39,9 @@ mask_pan_am: NDArray = np.load("../input/mask/mask_raisg-360-720.npy")
 
 
 # Name of the base historical observed run.
+# Used in the old version scripts
 BASE_RUN: str = 'HISTORICAL-RUN' #"HISTORICAL-RUN" <- in sombrero this is the
-                  # STANDARD name for the historical observed run
+                  # STANDARD name for the historical observed run.
 
 ATTR_FILENAME: str = "pls_attrs-2000.csv"
 START_COND_FILENAME: str = f"CAETE_STATE_START_{BASE_RUN}_.pkz"

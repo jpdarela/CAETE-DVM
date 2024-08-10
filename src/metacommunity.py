@@ -1,3 +1,23 @@
+# -*-coding:utf-8-*-
+# "CAETÊ"
+# Author:  João Paulo Darela Filho
+"""
+Copyright 2017- LabTerra
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import copy
 import csv
 import os
@@ -11,7 +31,8 @@ import numpy as np
 from config import fortran_runtime
 
 # Add the fortran compiler DLLs to the PATH
-# This is necessary to load the fortran compiled DLLs in windows systems
+# This is necessary to load the python extension module
+# compiled with f2py (the .pyd file) in windows systems
 if sys.platform == "win32":
     try:
         os.add_dll_directory(fortran_runtime)
@@ -25,9 +46,8 @@ from caete_module import photo as m
 class pls_table:
 
     """ Interface for the main table of plant life strategies (Plant prototypes).
-        Random subsamples without replacement are taken from this table to
-        create communities. The main table should've a large number
-        of PLSs (npls ~ 20000, for example.
+        Random subsamples without replacement are taken from this table to create communities. Each community as a set of communiites.
+        The main table should have a large number of PLSs (npls ~ 20000, for example) representing a global set of virtual plant prototypes.
         Use the plsgen.py script to generate a PLS table).
     """
 
@@ -103,7 +123,7 @@ class community:
             pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): Two arrays, the first stores the
                 ids of the PLSs in the main table, the second stores the functional identity of PLSs.
         """
-        self.vp_ocp: NDArray[np.float32] | Any
+        self.vp_ocp: NDArray[np.float64] | Any
         self.id: NDArray[np.int32] = pls_data[0]
         self.pls_array: NDArray[np.float32] = pls_data[1]
         self.npls: int = self.pls_array.shape[1]
@@ -128,13 +148,13 @@ class community:
         # Get the indices of the plants that are present in the community
         self.vp_lsid: NDArray[np.intp] = np.where(self.vp_ocp > 0.0)[0]
         self.ls: int = self.vp_lsid.size
-        self.masked:NDArray[np.int8] = np.zeros(0, dtype=np.int8)
+        self.masked: np.int8 = np.int8(0)
         # These needs to be passed today from the previous timestep
         # nutrient Uptake costs that is subtracted from NPP
         self.sp_uptk_costs: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
         # Real NPP. I.e. NPP after nutrient uptake costs and allocation (incl. limitation)
         # NOTE: This is not implemented
-        self.construction_npp = np.zeros(self.npls, order='F') # TODO: implement this in the code
+        self.construction_npp: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
 
         return None
 
@@ -305,10 +325,20 @@ class metacommunity:
         for i in range(community_count):
             # Create the communities
             self.communities[i] = community(self.get_table(self.comm_npls))
+            self.communities[i].masked = np.int8(0)
             # Set active at start
-            self.mask[i] = 0  # 0 means the community is active
+            # self.mask[i] = np.int8(0)  # 0 means the community is active
+
+        self.update_mask()
         return None
 
+
+    def update_mask(self)-> None:
+        """Updates the mask of the communities based on community state.
+        """
+        for k, community in self.communities.items():
+            i = int(k)
+            self.mask[i] = community.masked
 
 
     def __getitem__(self, index:Union[int, str]):

@@ -1,0 +1,566 @@
+PS C:\Users\darel\OneDrive\Desktop\CAETE-DVM\src> mprof run .\caete.py
+mprof: Sampling memory every 0.1s
+running new process
+running as a Python program...
+Starting gridcells
+Progress: |██████████████████████████████| 100.00% Complete
+Filename: .\caete.py
+
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+  1024    200.8 MiB    200.8 MiB           1       @profile
+  1025                                             def run_gridcell(self,
+  1026                                                           start_date: str,
+  1027                                                           end_date: str,
+  1028                                                           spinup: int = 0,
+  1029                                                           fixed_co2_atm_conc: Optional[str] = None,
+  1030                                                           save: bool = True,
+  1031                                                           nutri_cycle: bool = True,
+  1032                                                           afex: bool = False,
+  1033                                                           reset_community: bool = False,
+  1034                                                           kill_and_reset: bool = False,
+  1035                                                           env_filter: bool = False,
+  1036                                                           verbose: bool = True):
+  1037                                                 """
+  1038                                                 Run the model for a specific grid cell.
+  1039
+  1040                                                 CAETÊ-DVM execution in the start_date - end_date period, can be used for spinup or transient runs.
+  1041
+  1042                                                 Args:
+  1043                                                     start_date (str): Start date for model execution in "yyyymmdd" format.
+  1044                                                     end_date (str): End date for model execution in "yyyymmdd" format.
+  1045                                                     spinup (int, optional): Number of repetitions in spinup. Set to 0 for a transient run between start_date and end_date. Default is 0.
+  1046                                                     fixed_co2_atm_conc (Optional[float], optional): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels. Default is None.
+  1047                                                     save (bool, optional): Whether to save the results. Default is True.
+  1048                                                     nutri_cycle (bool, optional): Whether to include nutrient cycling in the model. Default is True.
+  1049                                                     afex (bool, optional): Whether to apply additional effects (AFEX) in the model. Default is False.
+  1050                                                     reset_community (bool, optional): Whether to reset the community structure at the start. Default is False.
+  1051                                                     kill_and_reset (bool, optional): Whether to kill and reset the community structure during the run. Default is False.
+  1052                                                     env_filter (bool, optional): Whether to apply environmental filtering. Default is False.
+  1053                                                     verbose (bool, optional): Whether to print detailed logs during execution. Default is True.
+  1054
+  1055                                                 Returns:
+  1056                                                     None
+  1057
+  1058                                                 Notes:
+  1059                                                     - If reset_community is true a new community will be set (reset) when there is no PLSs remaining.
+  1060                                                     - If the kill_and_reset is true, after n spins (integer given by spinup parameter - i.e. in the end
+  1061                                                       of function execution) all the communities in a gridcell are reset. The reset_community and
+  1062                                                       kill_and_reset  arguments are not mutually exclusive. You can use both as true at the same time.
+  1063                                                     - The env_filter argument is used to define if new unique PLSs from the main table will be
+  1064                                                       seed in the communities that have free slots (PLSs that are not producing). At the moment, the
+  1065                                                       interval for the env_filter to add a new PLS to the community is set to  ~30 days.
+  1066                                                       If env filter argument is true, then the reset_community argument will have a very low
+  1067                                                       probability to trigger a reset because the communities will be constantly filled with new PLS.
+  1068                                                       Nonetheless, the reset_community argument will still be able to trigger a reset if the community loses all PLSs.
+  1069                                                       With the probability of a reset_community increasing as the interval between new seeds increases.
+  1070
+  1071                                                       TODO: Implement a more flexible way to define the interval for
+  1072                                                             the env_filter to add a new PLS to the community.
+  1073                                                 """
+  1074
+  1075    200.8 MiB      0.0 MiB           1           assert not fixed_co2_atm_conc or\
+  1076                                                     isinstance(fixed_co2_atm_conc, str) or\
+  1077                                                     fixed_co2_atm_conc > 0,\
+  1078                                                         "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string with the year - e.g., 'yyyy'"
+  1079
+  1080                                                 # Define start and end dates (read parameters)
+  1081    200.8 MiB      0.1 MiB           1           start = parse_date(start_date)
+  1082    200.8 MiB      0.0 MiB           1           end = parse_date(end_date)
+  1083
+  1084                                                 # Check dates sanity
+  1085    200.8 MiB      0.0 MiB           1           assert start < end, "Start date must be before end date"
+  1086    200.8 MiB      0.0 MiB           1           assert start >= self.start_date, "initial date out of bounds for the time array"
+  1087    200.8 MiB      0.0 MiB           1           assert end <= self.end_date, f"Final date out of bounds for the time array"
+  1088
+  1089
+  1090                                                 # Define time index bounds for this run
+  1091                                                 # During a run we are in general using a slice ov the available time span
+  1092                                                 # to run the model. For example, we can run the model for a year or a decade
+  1093                                                 # at the begining of the input data time series to spin up. This slice is defined
+  1094                                                 # by the start and end dates provided in the arguments. HEre we get the indices.
+  1095    200.9 MiB      0.0 MiB           1           start_index = int(cftime.date2num(start, self.time_unit, self.calendar))
+  1096    200.9 MiB      0.0 MiB           1           end_index =   int(cftime.date2num(end, self.time_unit, self.calendar))
+  1097
+  1098                                                 # Find the indices in the time array [used to slice the timeseries with driver data  - tas, pr, etc.]
+  1099    201.0 MiB      0.2 MiB           1           lower_bound, upper_bound = self.find_index(start_index, end_index)
+  1100
+  1101                                                 # Define the time steps range
+  1102                                                 # From zero to the last day of simulation
+  1103    201.0 MiB      0.0 MiB           1           steps = np.arange(lower_bound, upper_bound + 1, dtype=np.int64)
+  1104
+  1105                                                 # Define the number of repetitions for the spinup
+  1106    201.0 MiB      0.0 MiB           1           spin = 1 if spinup == 0 else spinup
+  1107
+  1108                                                 # Define the AFEX mode
+  1109    201.0 MiB      0.0 MiB           1           afex_mode = self.afex_config.afex_mode # type: ignore
+  1110
+  1111                                                 # Slice&Catch climatic input and make conversions
+  1112    201.0 MiB      0.0 MiB           1           cv = self.config.conversion_factors_isimip # type: ignore
+  1113
+  1114    201.0 MiB      0.0 MiB           1           temp = self.tas[lower_bound: upper_bound + 1] - cv.tas   # Air temp: model uses °C
+  1115    201.0 MiB      0.0 MiB           1           prec = self.pr[lower_bound: upper_bound + 1] * cv.pr     # Precipitation: model uses  mm/day
+  1116    201.0 MiB      0.0 MiB           1           p_atm = self.ps[lower_bound: upper_bound + 1] * cv.ps    # Atmospheric pressure: model uses hPa
+  1117    201.0 MiB      0.0 MiB           1           ipar = self.rsds[lower_bound: upper_bound + 1] * cv.rsds # PAR: model uses  mol(photons) m-2 s-1
+  1118    201.0 MiB      0.0 MiB           1           ru = self.rhs[lower_bound: upper_bound + 1] *  cv.rhs    # Relative humidity: model uses 0-1
+  1119
+  1120                                                 # Define the daily values for co2 concentrations
+  1121    201.0 MiB      0.0 MiB           1           co2_daily_values = np.zeros(steps.size, dtype=np.float32)
+  1122
+  1123    201.0 MiB      0.0 MiB           1           if fixed_co2_atm_conc is None:
+  1124                                                     # In this case, the co2 concentration will be updated daily.
+  1125                                                     # We interpolate linearly between the yearly values of the atm co2 data
+  1126    201.0 MiB      0.0 MiB           1               co2 = self.find_co2(start.year)
+  1127    201.0 MiB      0.0 MiB           1               today = datetime(start.year, start.month, start.day, start.hour, start.minute, start.second)
+  1128    201.0 MiB      0.0 MiB           1               time_step = timedelta(days=1) # Define the time step
+  1129    201.0 MiB      0.0 MiB           1               today -= time_step # The first thing we do next is to add a day to the date. So we go back one day
+  1130                                                     # Loop over the days and calculate the co2 concentration for each day
+  1131    201.0 MiB      0.0 MiB       10958               for step in range(steps.size):
+  1132    201.0 MiB      0.0 MiB       10957                   today += time_step
+  1133    201.0 MiB      0.0 MiB       10957                   remaining = (datetime(today.year, 12, 31) - today).days + 1
+  1134    201.0 MiB      0.0 MiB       10957                   daily_fraction = (self.find_co2(today.year + 1) - co2) / (remaining + 1)
+  1135    201.0 MiB      0.0 MiB       10957                   co2 += daily_fraction
+  1136    201.0 MiB      0.0 MiB       10957                   co2_daily_values[step] = co2
+  1137                                                 elif isinstance(fixed_co2_atm_conc, int) or isinstance(fixed_co2_atm_conc, float):
+  1138                                                     # In this case, the co2 concentration will be fixed according to the numeric value provided in the argument
+  1139                                                     co2 = fixed_co2_atm_conc
+  1140                                                     co2_daily_values += co2
+  1141                                                 elif isinstance(fixed_co2_atm_conc, str):
+  1142                                                     # In this case, the co2 concentration will be fixed
+  1143                                                     # According to the year provided in the argument
+  1144                                                     # as a string. Format "yyyy".
+  1145                                                     try:
+  1146                                                         co2_year = int(fixed_co2_atm_conc)
+  1147                                                     except ValueError:
+  1148                                                         raise ValueError(
+  1149                                                             "The string(\"yyyy\") must be a number in the {self.start_date.year} - {self.end_date.year} interval")
+  1150                                                     co2 = self.find_co2(co2_year)
+  1151                                                     co2_daily_values += co2
+  1152                                                 else:
+  1153                                                     raise ValueError("Invalid value for fixed_co2_atm_conc")
+  1154
+  1155                                                 # Start loops
+  1156                                                 # THis outer loop is used to run the model for a number
+  1157                                                 # of times defined by the spinup argument. THe model is
+  1158                                                 # executed repeatedly between the start and end dates
+  1159                                                 # provided in the arguments
+  1160    201.0 MiB      0.0 MiB           1           first_day_of_simulation = datetime(start.year, start.month, start.day, start.hour, start.minute, start.second)
+  1161                                                 # Define the time step
+  1162    201.0 MiB      0.0 MiB           1           time_step = timedelta(days=1)
+  1163    206.9 MiB      0.0 MiB           3           for s in range(spin):
+  1164
+  1165    206.9 MiB      2.2 MiB           2               self._allocate_output(steps.size, self.metacomm.comm_npls, len(self.metacomm), save)
+  1166
+  1167                                                     # Loop over the days
+  1168                                                     # Create a datetime object to track the dates
+  1169    206.9 MiB      0.0 MiB           2               today = first_day_of_simulation
+  1170
+  1171                                                     # Go back one day
+  1172    206.9 MiB      0.0 MiB           2               today -= time_step
+  1173
+  1174                                                     # Arrays to store values for each community in a simulated day
+  1175    206.9 MiB      0.0 MiB           2               sto =        np.zeros(shape=(3, self.metacomm.comm_npls), order='F')
+  1176    206.9 MiB      0.0 MiB           2               cleaf_in =   np.zeros(self.metacomm.comm_npls, order='F')
+  1177    206.9 MiB      0.0 MiB           2               cwood_in =   np.zeros(self.metacomm.comm_npls, order='F')
+  1178    206.9 MiB      0.0 MiB           2               croot_in =   np.zeros(self.metacomm.comm_npls, order='F')
+  1179    206.9 MiB      0.0 MiB           2               uptk_costs = np.zeros(self.metacomm.comm_npls, order='F')
+  1180    206.9 MiB      0.0 MiB           2               rnpp_in =    np.zeros(self.metacomm.comm_npls, order='F')
+  1181
+  1182                                                     # Arrays to store values for each community in a simulated day
+  1183                                                     # There are two modes of operation: save and not save.
+  1184                                                     # In the save mode, the arrays are used to store the values that are
+  1185                                                     # needed for model iteration, i.e., the values that are used in the next
+  1186                                                     # iteration. In the not save mode, the arrays are used to store the values
+  1187                                                     # that are needed for the output, i.e., the values that are used to write the
+  1188                                                     # output data to a file.
+  1189
+  1190    206.9 MiB      0.0 MiB           2               xsize: int = len(self.metacomm)
+  1191    206.9 MiB      0.0 MiB           2               evavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+  1192    206.9 MiB      0.0 MiB           2               epavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+  1193    206.9 MiB      0.0 MiB           2               rnpp_mt: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+  1194
+  1195                                                     # We keep track of these to input in SOM dynamics later. They are used for output also
+  1196    206.9 MiB      0.0 MiB           2               leaf_litter: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+  1197    206.9 MiB      0.0 MiB           2               cwd: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+  1198    206.9 MiB      0.0 MiB           2               root_litter: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
+  1199    206.9 MiB      0.0 MiB           2               lnc: NDArray[np.float32] = np.zeros(shape=(6, xsize), dtype=np.float32)
+  1200                                                     # THis is added to leaf litter pool (that is basicaly a fast SOM pool)
+  1201    206.9 MiB      0.0 MiB           2               c_to_nfixers: NDArray[np.float32]= np.zeros(xsize, dtype=np.float32)
+  1202
+  1203    206.9 MiB      0.0 MiB           2               if save:
+  1204                                                         nupt = np.zeros(shape=(2, xsize), dtype=np.float32)
+  1205                                                         pupt = np.zeros(shape=(3, xsize), dtype=np.float32)
+  1206                                                         cc = np.zeros(xsize, dtype=np.float32)
+  1207                                                         photo = np.zeros(xsize, dtype=np.float32)
+  1208                                                         aresp = np.zeros(xsize, dtype=np.float32)
+  1209                                                         npp = np.zeros(xsize, dtype=np.float32)
+  1210                                                         lai = np.zeros(xsize, dtype=np.float32)
+  1211                                                         rcm = np.zeros(xsize, dtype=np.float32)
+  1212                                                         f5 = np.zeros(xsize, dtype=np.float32)
+  1213                                                         rm = np.zeros(xsize, dtype=np.float32)
+  1214                                                         rg = np.zeros(xsize, dtype=np.float32)
+  1215                                                         cleaf = np.zeros(xsize, dtype=np.float32)
+  1216                                                         cawood = np.zeros(xsize, dtype=np.float32)
+  1217                                                         cfroot = np.zeros(xsize, dtype=np.float32)
+  1218                                                         wue = np.zeros(xsize, dtype=np.float32)
+  1219                                                         cue = np.zeros(xsize, dtype=np.float32)
+  1220                                                         cdef = np.zeros(xsize, dtype=np.float32)
+  1221                                                         vcmax = np.zeros(xsize, dtype=np.float32)
+  1222                                                         specific_la = np.zeros(xsize, dtype=np.float32)
+  1223                                                         storage_pool = np.zeros(shape=(3, xsize))
+  1224                                                         ocp_area = np.ma.masked_all(shape=(self.metacomm.comm_npls, xsize), dtype='int32')
+  1225                                                         lim_status = np.ma.masked_all(shape=(3, self.metacomm.comm_npls, xsize), dtype=np.dtype('int8'))
+  1226                                                         uptake_strategy = np.ma.masked_all(shape=(2, self.metacomm.comm_npls, xsize), dtype=np.dtype('int8'))
+  1227
+  1228                                                     # <- Daily loop
+  1229    206.9 MiB   -443.8 MiB       21916               for step in range(steps.size):
+  1230    206.9 MiB   -443.7 MiB       21914                   today += time_step # Now it is today
+  1231    206.9 MiB   -443.7 MiB       21914                   julian_day = today.timetuple().tm_yday
+  1232
+  1233                                                         # Get the co2 concentration for the day
+  1234    206.9 MiB   -443.7 MiB       21914                   co2 = co2_daily_values[step]
+  1235                                                         # Update soil temperature
+  1236    206.9 MiB   -443.7 MiB       21914                   self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
+  1237
+  1238                                                         # AFEX
+  1239    206.9 MiB   -443.7 MiB       21914                   if afex and julian_day == 364:
+  1240                                                             self.add_soil_nutrients(afex_mode)
+  1241
+  1242                                                         # Loop over communities
+  1243                                                         # Create these arrays outside and just reuse it
+  1244    206.9 MiB   -443.7 MiB       21914                   living_pls = 0 # Sum of living PLS in the communities
+  1245    206.9 MiB  -4881.5 MiB      241054                   for i, community in enumerate(self.metacomm):
+  1246    206.9 MiB  -4437.7 MiB      219140                       if community.masked:
+  1247                                                                 # skip this one
+  1248                                                                 continue
+  1249    206.9 MiB  -4437.5 MiB      219140                       sto[0, :] = inflate_array(community.npls, community.vp_sto[0, :], community.vp_lsid)
+  1250    206.9 MiB  -4437.7 MiB      219140                       sto[1, :] = inflate_array(community.npls, community.vp_sto[1, :], community.vp_lsid)
+  1251    206.9 MiB  -4437.7 MiB      219140                       sto[2, :] = inflate_array(community.npls, community.vp_sto[2, :], community.vp_lsid)
+  1252
+  1253    206.9 MiB  -4437.5 MiB      219140                       cleaf_in[:] = inflate_array(community.npls, community.vp_cleaf, community.vp_lsid)
+  1254    206.9 MiB  -4437.7 MiB      219140                       cwood_in[:] = inflate_array(community.npls, community.vp_cwood, community.vp_lsid)
+  1255    206.9 MiB  -4437.7 MiB      219140                       croot_in[:] = inflate_array(community.npls, community.vp_croot, community.vp_lsid)
+  1256    206.9 MiB  -4437.7 MiB      219140                       uptk_costs[:] = inflate_array(community.npls, community.sp_uptk_costs, community.vp_lsid)
+  1257    206.9 MiB  -4437.7 MiB      219140                       rnpp_in[:] = inflate_array(community.npls, community.construction_npp, community.vp_lsid)
+  1258
+  1259    206.9 MiB  -4437.7 MiB      219140                       ton = self.sp_organic_n #+ self.sp_sorganic_n
+  1260    206.9 MiB  -4437.7 MiB      219140                       top = self.sp_organic_p #+ self.sp_sorganic_p
+  1261
+  1262                                                             # Community daily budget calculation
+  1263    206.9 MiB  -8872.6 MiB      438280                       out = model.daily_budget(community.pls_array, self.wp_water_upper_mm,
+  1264    206.9 MiB  -4437.7 MiB      219140                                               self.wp_water_lower_mm, self.soil_temp, temp[step],
+  1265    206.9 MiB  -4437.7 MiB      219140                                               p_atm[step], ipar[step], ru[step], self.sp_available_n,
+  1266    206.9 MiB  -4437.7 MiB      219140                                               self.sp_available_p, ton, top, self.sp_organic_p,
+  1267    206.9 MiB  -4437.7 MiB      219140                                               co2, sto, cleaf_in, cwood_in, croot_in, uptk_costs,self.wmax_mm,
+  1268    206.9 MiB  -4437.7 MiB      219140                                               rnpp_in)
+  1269
+  1270                                                             # get daily budget results
+  1271    206.9 MiB  -4437.7 MiB      219140                       daily_output = budget_daily_result(out)
+  1272
+  1273                                                             # Update the community status
+  1274    206.9 MiB  -4437.7 MiB      219140                       community.update_lsid(daily_output.ocpavg)
+  1275    206.9 MiB  -4437.7 MiB      219140                       community.vp_ocp = daily_output.ocpavg[community.vp_lsid]
+  1276    206.9 MiB  -4437.7 MiB      219140                       community.ls = community.vp_lsid.size
+  1277    206.9 MiB  -4437.7 MiB      219140                       community.vp_cleaf = daily_output.cleafavg_pft[community.vp_lsid]
+  1278    206.9 MiB  -4437.7 MiB      219140                       community.vp_cwood = daily_output.cawoodavg_pft[community.vp_lsid]
+  1279    206.9 MiB  -4437.7 MiB      219140                       community.vp_croot = daily_output.cfrootavg_pft[community.vp_lsid]
+  1280    206.9 MiB  -4437.6 MiB      219140                       community.vp_sto = daily_output.stodbg[:, community.vp_lsid].astype('float32')
+  1281    206.9 MiB  -4437.7 MiB      219140                       community.sp_uptk_costs = daily_output.npp2pay[community.vp_lsid]
+  1282    206.9 MiB  -4437.7 MiB      219140                       community.construction_npp = daily_output.rnpp_out[community.vp_lsid]
+  1283    206.9 MiB  -4437.7 MiB      219140                       living_pls += community.ls
+  1284
+  1285                                                             # Restore or seed PLS
+  1286    206.9 MiB  -4437.7 MiB      219140                       if community.ls < self.metacomm.comm_npls and env_filter:
+  1287    206.9 MiB  -4437.7 MiB      209299                           if julian_day in self.doy_months:
+  1288    206.9 MiB   -145.6 MiB        6873                               if verbose:
+  1289                                                                         print(f"PLS seed in Community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+  1290    206.9 MiB   -145.5 MiB        6873                               new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
+  1291    206.9 MiB   -145.5 MiB        6873                               community.seed_pls(new_id, new_PLS)
+  1292    206.9 MiB  -4437.6 MiB      219140                       if community.vp_lsid.size < 1:
+  1293                                                                 print(f"Empty community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+  1294                                                                 if reset_community:
+  1295                                                                     assert not save, "Cannot save data when resetting communities"
+  1296                                                                     if verbose:
+  1297                                                                         print(f"Reseting community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+  1298                                                                     # Get the new life strategies. This is a method from the region class
+  1299                                                                     # with lock:
+  1300                                                                     new_life_strategies = self.get_from_main_array(community.npls)
+  1301                                                                     community.restore_from_main_table(new_life_strategies)
+  1302                                                                     del daily_output
+  1303                                                                     continue
+  1304                                                                 else:
+  1305                                                                     # In the transiant run - i.e., when reset_community is false and
+  1306                                                                     # kill_and_reset is false; we mask the community if there is no PLS
+  1307                                                                     self.metacomm.mask[i] = np.int8(1)
+  1308                                                                      # Set mask to true for this community, will not run in the next steps
+  1309                                                                     community.masked = np.int8(1)
+  1310                                                                     # if the reset_community is true
+  1311                                                                     continue # cycle
+  1312
+  1313                                                             # Store values for each community
+  1314    206.9 MiB  -4437.7 MiB      219140                       rnpp_mt[i] = cw_mean(community.vp_ocp, community.construction_npp.astype(np.float32)) #(community.construction_npp * community.vp_ocp).sum() # Community Weighted rNPP
+  1315    206.9 MiB  -4437.7 MiB      219140                       leaf_litter[i] = daily_output.litter_l
+  1316    206.9 MiB  -4437.8 MiB      219140                       root_litter[i] = daily_output.litter_fr
+  1317    206.9 MiB  -4437.8 MiB      219140                       cwd[i] = daily_output.cwd
+  1318    206.9 MiB  -4437.8 MiB      219140                       lnc[:, i] = daily_output.lnc.astype(np.float32)
+  1319    206.9 MiB  -4437.8 MiB      219140                       c_to_nfixers[i] = daily_output.cp[3]
+  1320    206.9 MiB  -4437.8 MiB      219140                       evavg[i] = daily_output.evavg
+  1321    206.9 MiB  -4437.8 MiB      219140                       epavg[i] = daily_output.epavg
+  1322
+  1323    206.9 MiB  -4437.8 MiB      219140                       if save:
+  1324                                                                 nupt[:, i] = daily_output.nupt
+  1325                                                                 pupt[:, i] = daily_output.pupt
+  1326                                                                 cc[i] = daily_output.c_cost_cwm
+  1327                                                                 npp[i] = daily_output.nppavg
+  1328                                                                 photo[i] = daily_output.phavg
+  1329                                                                 aresp[i] = daily_output.aravg
+  1330                                                                 lai[i] = daily_output.laiavg
+  1331                                                                 rcm[i] = daily_output.rcavg
+  1332                                                                 f5[i] = daily_output.f5avg
+  1333                                                                 rm[i] = daily_output.rmavg
+  1334                                                                 rg[i] = daily_output.rgavg
+  1335                                                                 cleaf[i] = daily_output.cp[0]
+  1336                                                                 cawood[i] = daily_output.cp[1]
+  1337                                                                 cfroot[i] = daily_output.cp[2]
+  1338                                                                 wue[i] = daily_output.wueavg
+  1339                                                                 cue[i] = daily_output.cueavg
+  1340                                                                 cdef[i] = daily_output.c_defavg
+  1341                                                                 vcmax[i] = daily_output.vcmax
+  1342                                                                 specific_la[i] = daily_output.specific_la
+  1343                                                                 ocp_area[:, i] = np.array(daily_output.ocpavg * 1e6, dtype='int32') # Quantize it
+  1344                                                                 lim_status[:, :, i] = daily_output.limitation_status
+  1345                                                                 uptake_strategy[:, :, i] = daily_output.uptk_strat
+  1346
+  1347                                                                 for j in range(daily_output.stodbg.shape[0]):
+  1348                                                                     storage_pool[j, i] = cw_mean(community.vp_ocp, community.vp_sto[j, :])
+  1349
+  1350
+  1351                                                             # del daily_output
+  1352                                                         #<- Out of the community loop
+  1353    206.9 MiB   -443.8 MiB       21914                   vpd = m.vapor_p_deficit(temp[step], ru[step])
+  1354    206.9 MiB   -443.8 MiB       21914                   et_pot = masked_mean(self.metacomm.mask, np.array(epavg).astype(np.float32)) #epavg.mean()
+  1355    206.9 MiB   -443.8 MiB       21914                   et = masked_mean(self.metacomm.mask, epavg) #evavg.mean()
+  1356
+  1357                                                         # Update water pools
+  1358                                                         # TODO add a type signature to jit these functions
+  1359    206.9 MiB   -443.8 MiB       21914                   self.evapm[step] = atm_canopy_coupling(et_pot, et, temp[step], vpd)
+  1360    206.9 MiB   -443.8 MiB       21914                   self.runom[step] = self.swp._update_pool(prec[step], self.evapm[step])
+  1361    206.9 MiB   -443.8 MiB       21914                   self.swp.w1 = 0.0 if self.swp.w1 < 0.0 else self.swp.w1
+  1362    206.9 MiB   -443.8 MiB       21914                   self.swp.w2 = 0.0 if self.swp.w2 < 0.0 else self.swp.w2
+  1363    206.9 MiB   -443.8 MiB       21914                   self.wp_water_upper_mm = self.swp.w1
+  1364    206.9 MiB   -443.8 MiB       21914                   self.wp_water_lower_mm = self.swp.w2
+  1365    206.9 MiB   -443.8 MiB       21914                   wtot = self.wp_water_upper_mm + self.wp_water_lower_mm
+  1366
+  1367                                                         # Update cflux to the soil for output, mean values over the communities
+  1368                                                         # Values are also used to update SOM dynamics
+  1369    206.9 MiB   -887.7 MiB       43828                   self.litter_l[step] = masked_mean(self.metacomm.mask, leaf_litter) +\
+  1370    206.9 MiB   -443.8 MiB       21914                                         masked_mean(self.metacomm.mask, c_to_nfixers)
+  1371    206.9 MiB   -443.8 MiB       21914                   self.cwd[step] = masked_mean(self.metacomm.mask, cwd)
+  1372    206.9 MiB   -443.8 MiB       21914                   self.litter_fr[step] = masked_mean(self.metacomm.mask, root_litter)
+  1373    206.9 MiB   -443.8 MiB       21914                   self.lnc[:, step] = masked_mean_2D(self.metacomm.mask, lnc)
+  1374
+  1375                                                         # Soil C:N:P balance and OM decomposition
+  1376    206.9 MiB   -887.7 MiB       43828                   s_out = soil_dec.carbon3(self.soil_temp, wtot / self.wmax_mm, self.litter_l[step],
+  1377    206.9 MiB   -443.8 MiB       21914                                            self.cwd[step], self.litter_fr[step], self.lnc[:, step],
+  1378    206.9 MiB   -443.8 MiB       21914                                            self.sp_csoil, self.sp_snc)
+  1379    206.9 MiB   -443.8 MiB       21914                   soil_out = catch_out_carbon3(s_out)
+  1380
+  1381                                                         # Organic C N & P
+  1382    206.9 MiB   -443.8 MiB       21914                   self.sp_csoil = soil_out['cs']
+  1383    206.9 MiB   -443.8 MiB       21914                   self.sp_snc = soil_out['snc']
+  1384    206.9 MiB   -443.8 MiB       21914                   idx = np.where(self.sp_snc < 0.0)[0]
+  1385    206.9 MiB   -443.8 MiB       21914                   if len(idx) > 0:
+  1386                                                             self.sp_snc[idx] = 0.0
+  1387
+  1388                                                         # <- Out of the community loop
+  1389
+  1390                                                         # IF NUTRICYCLE:
+  1391    206.9 MiB   -443.8 MiB       21914                   if nutri_cycle:
+  1392                                                             # UPDATE ORGANIC POOLS
+  1393    206.9 MiB   -443.8 MiB       21914                       self.sp_organic_n = self.sp_snc[:2].sum()
+  1394    206.9 MiB   -443.8 MiB       21914                       self.sp_sorganic_n = self.sp_snc[2:4].sum()
+  1395    206.9 MiB   -443.8 MiB       21914                       self.sp_organic_p = self.sp_snc[4:6].sum()
+  1396    206.9 MiB   -443.8 MiB       21914                       self.sp_sorganic_p = self.sp_snc[6:].sum()
+  1397    206.9 MiB   -443.8 MiB       21914                       self.sp_available_p += soil_out['pmin']
+  1398    206.9 MiB   -443.8 MiB       21914                       self.sp_available_n += soil_out['nmin']
+  1399                                                             # NUTRIENT DINAMICS
+  1400                                                             # Inorganic N
+  1401    206.9 MiB   -443.8 MiB       21914                       self.sp_in_n += self.sp_available_n + self.sp_so_n
+  1402    206.9 MiB   -443.8 MiB       21914                       self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
+  1403    206.9 MiB   -887.7 MiB       43828                       self.sp_available_n = soil_dec.solution_n_equil(
+  1404    206.9 MiB   -443.8 MiB       21914                           self.sp_in_n)
+  1405    206.9 MiB   -443.8 MiB       21914                       self.sp_in_n -= self.sp_so_n + self.sp_available_n
+  1406                                                             # Inorganic P
+  1407    206.9 MiB   -443.8 MiB       21914                       self.sp_in_p += self.sp_available_p + self.sp_so_p
+  1408    206.9 MiB   -443.8 MiB       21914                       self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
+  1409    206.9 MiB   -887.7 MiB       43828                       self.sp_available_p = soil_dec.solution_p_equil(
+  1410    206.9 MiB   -443.8 MiB       21914                           self.sp_in_p)
+  1411    206.9 MiB   -443.8 MiB       21914                       self.sp_in_p -= self.sp_so_p + self.sp_available_p
+  1412                                                             # Sorbed P
+  1413    206.9 MiB   -443.8 MiB       21914                       if self.pupt[1, step] > 0.75:
+  1414                                                                 rwarn(
+  1415                                                                     f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
+  1416                                                                 self.pupt[1, step] = 0.0
+  1417
+  1418    206.9 MiB   -443.8 MiB       21914                       if self.pupt[1, step] > self.sp_so_p:
+  1419                                                                 rwarn(
+  1420                                                                     f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
+  1421    206.9 MiB   -443.8 MiB       21914                       self.sp_so_p -= self.pupt[1, step]
+  1422    206.9 MiB   -443.8 MiB       21914                       try:
+  1423    206.9 MiB   -443.8 MiB       21914                           t1 = np.all(self.sp_snc > 0.0)
+  1424                                                             except:
+  1425                                                                 if self.sp_snc is None:
+  1426                                                                     self.sp_snc = np.zeros(shape=8,)
+  1427                                                                     t1 = True
+  1428                                                                 elif self.sp_snc is not None:
+  1429                                                                     t1 = True
+  1430                                                                 rwarn(f"Exception while handling sp_snc pool")
+  1431    206.9 MiB   -443.8 MiB       21914                       if not t1:
+  1432                                                                 self.sp_snc[np.where(self.sp_snc < 0)[0]] = 0.0
+  1433                                                             # ORGANIC nutrients uptake
+  1434                                                             # N
+  1435    206.9 MiB   -443.8 MiB       21914                       if self.nupt[1, step] < 0.0:
+  1436                                                                 rwarn(
+  1437                                                                     f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
+  1438                                                                 self.nupt[1, step] = 0.0
+  1439    206.9 MiB   -443.8 MiB       21914                       if self.nupt[1, step] > 2.5:
+  1440                                                                 rwarn(
+  1441                                                                     f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
+  1442                                                                 self.nupt[1, step] = 0.0
+  1443    206.9 MiB   -443.8 MiB       21914                       total_on = self.sp_snc[:4].sum()
+  1444    206.9 MiB   -443.8 MiB       21914                       if total_on > 0.0:
+  1445    206.9 MiB  -3106.8 MiB      153398                           frsn = [i / total_on for i in self.sp_snc[:4]]
+  1446                                                             else:
+  1447                                                                 frsn = [0.0, 0.0, 0.0, 0.0]
+  1448    206.9 MiB  -2219.1 MiB      109570                       for i, fr in enumerate(frsn):
+  1449    206.9 MiB  -1775.3 MiB       87656                           self.sp_snc[i] -= self.nupt[1, step] * fr
+  1450
+  1451    206.9 MiB   -443.8 MiB       21914                       idx = np.where(self.sp_snc < 0.0)[0]
+  1452    206.9 MiB   -443.8 MiB       21914                       if len(idx) > 0:
+  1453                                                                 self.sp_snc[idx] = 0.0
+  1454
+  1455    206.9 MiB   -443.8 MiB       21914                       self.sp_organic_n = self.sp_snc[:2].sum()
+  1456    206.9 MiB   -443.8 MiB       21914                       self.sp_sorganic_n = self.sp_snc[2:4].sum()
+  1457
+  1458                                                             # P
+  1459    206.9 MiB   -443.8 MiB       21914                       if self.pupt[2, step] < 0.0:
+  1460                                                                 rwarn(
+  1461                                                                     f"PuptkO < 0  in spin{s}, step{step} - {self.pupt[2, step]}")
+  1462                                                                 self.pupt[2, step] = 0.0
+  1463    206.9 MiB   -443.8 MiB       21914                       if self.pupt[2, step] > 1.0:
+  1464                                                                 rwarn(
+  1465                                                                     f"PuptkO > max  in spin{s}, step{step} - {self.pupt[2, step]}")
+  1466                                                                 self.pupt[2, step] = 0.0
+  1467    206.9 MiB   -443.8 MiB       21914                       total_op = self.sp_snc[4:].sum()
+  1468    206.9 MiB   -443.8 MiB       21914                       if total_op > 0.0:
+  1469    206.9 MiB  -3106.8 MiB      153398                           frsp = [i / total_op for i in self.sp_snc[4:]]
+  1470                                                             else:
+  1471                                                                 frsp = [0.0, 0.0, 0.0, 0.0]
+  1472    206.9 MiB  -2219.1 MiB      109570                       for i, fr in enumerate(frsp):
+  1473    206.9 MiB  -1775.3 MiB       87656                           self.sp_snc[i + 4] -= self.pupt[2, step] * fr
+  1474
+  1475    206.9 MiB   -443.8 MiB       21914                       idx = np.where(self.sp_snc < 0.0)[0]
+  1476    206.9 MiB   -443.8 MiB       21914                       if len(idx) > 0:
+  1477                                                                 self.sp_snc[idx] = 0.0
+  1478
+  1479    206.9 MiB   -443.8 MiB       21914                       self.sp_organic_p = self.sp_snc[4:6].sum()
+  1480    206.9 MiB   -443.8 MiB       21914                       self.sp_sorganic_p = self.sp_snc[6:].sum()
+  1481
+  1482                                                             # Raise some warnings
+  1483    206.9 MiB   -443.8 MiB       21914                       if self.sp_organic_n < 0.0:
+  1484                                                                 self.sp_organic_n = 0.0
+  1485                                                                 rwarn(f"ON negative in spin{s}, step{step}")
+  1486    206.9 MiB   -443.8 MiB       21914                       if self.sp_sorganic_n < 0.0:
+  1487                                                                 self.sp_sorganic_n = 0.0
+  1488                                                                 rwarn(f"SON negative in spin{s}, step{step}")
+  1489    206.9 MiB   -443.8 MiB       21914                       if self.sp_organic_p < 0.0:
+  1490                                                                 self.sp_organic_p = 0.0
+  1491                                                                 rwarn(f"OP negative in spin{s}, step{step}")
+  1492    206.9 MiB   -443.8 MiB       21914                       if self.sp_sorganic_p < 0.0:
+  1493                                                                 self.sp_sorganic_p = 0.0
+  1494                                                                 rwarn(f"SOP negative in spin{s}, step{step}")
+  1495
+  1496                                                             # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
+  1497                                                             # Soluble and inorganic pools
+  1498    206.9 MiB   -443.8 MiB       21914                       if self.pupt[0, step] > 1e2:
+  1499                                                                 rwarn(
+  1500                                                                     f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
+  1501                                                                 self.pupt[0, step] = 0.0
+  1502    206.9 MiB   -443.8 MiB       21914                       self.sp_available_p -= self.pupt[0, step]
+  1503
+  1504    206.9 MiB   -443.8 MiB       21914                       if self.nupt[0, step] > 1e3:
+  1505                                                                 rwarn(
+  1506                                                                     f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
+  1507                                                                 self.nupt[0, step] = 0.0
+  1508    206.9 MiB   -443.8 MiB       21914                       self.sp_available_n -= self.nupt[0, step]
+  1509                                                         # END SOIL NUTRIENT DYNAMICS
+  1510
+  1511    206.9 MiB   -443.8 MiB       21914                   if save:
+  1512                                                             # Plant uptake and Carbon costs of nutrient uptake
+  1513                                                             self.nupt[:, step] = masked_mean_2D(self.metacomm.mask, nupt)
+  1514                                                             self.pupt[:, step] = masked_mean_2D(self.metacomm.mask, pupt)
+  1515                                                             self.carbon_costs[step] = masked_mean(self.metacomm.mask, cc)
+  1516                                                             self.tsoil.append(self.soil_temp)
+  1517                                                             self.photo[step] = masked_mean(self.metacomm.mask, photo)
+  1518                                                             self.aresp[step] = masked_mean(self.metacomm.mask, aresp)
+  1519                                                             self.npp[step] = masked_mean(self.metacomm.mask, npp)
+  1520                                                             self.rnpp[step] = masked_mean(self.metacomm.mask, rnpp_mt)
+  1521                                                             self.lai[step] = masked_mean(self.metacomm.mask, lai)
+  1522                                                             self.rcm[step] = masked_mean(self.metacomm.mask, rcm)
+  1523                                                             self.f5[step] = masked_mean(self.metacomm.mask, f5)
+  1524                                                             self.rm[step] = masked_mean(self.metacomm.mask, rm)
+  1525                                                             self.rg[step] = masked_mean(self.metacomm.mask, rg)
+  1526                                                             self.wue[step] = masked_mean(self.metacomm.mask, wue)
+  1527                                                             self.cue[step] = masked_mean(self.metacomm.mask, cue)
+  1528                                                             self.cdef[step] = masked_mean(self.metacomm.mask, cdef)
+  1529                                                             self.vcmax[step] = masked_mean(self.metacomm.mask, vcmax)
+  1530                                                             self.specific_la[step] = masked_mean(self.metacomm.mask, specific_la)
+  1531                                                             self.cleaf[step] = masked_mean(self.metacomm.mask, cleaf)
+  1532                                                             self.cawood[step] = masked_mean(self.metacomm.mask, cawood)
+  1533                                                             self.cfroot[step] = masked_mean(self.metacomm.mask, cfroot)
+  1534                                                             self.hresp[step] = soil_out['hr']
+  1535                                                             self.csoil[:, step] = soil_out['cs']
+  1536                                                             self.wsoil[step] = self.wp_water_upper_mm + self.wp_water_lower_mm
+  1537                                                             self.inorg_n[step] = self.sp_in_n
+  1538                                                             self.inorg_p[step] = self.sp_in_p
+  1539                                                             self.sorbed_n[step] = self.sp_so_n
+  1540                                                             self.sorbed_p[step] = self.sp_so_p
+  1541                                                             self.snc[:, step] = soil_out['snc']
+  1542                                                             self.nmin[step] = self.sp_available_n
+  1543                                                             self.pmin[step] = self.sp_available_p
+  1544                                                             self.ocp_area[:,:, step] = ocp_area
+  1545                                                             self.lim_status[:, :, :, step] = lim_status
+  1546                                                             self.uptake_strategy[:, :, :, step] = uptake_strategy
+  1547                                                             self.ls[step] = living_pls
+  1548                                                     # <- Out of the daily loop
+  1549                                                     sv: Thread
+  1550    206.9 MiB     -0.1 MiB           2               if save:
+  1551                                                         if s > 0:
+  1552                                                             while True:
+  1553                                                                 if sv.is_alive(): # type: ignore
+  1554                                                                     sleep(0.05)
+  1555                                                                 else:
+  1556                                                                     self.flush_data = None
+  1557                                                                     break
+  1558                                                         self.flush_data = self._flush_output(
+  1559                                                             'spin', (start_index, end_index))
+  1560                                                         sv = Thread(target=self._save_output, args=(self.flush_data,))
+  1561                                                         sv.start()
+  1562                                                 # Finish the last thread
+  1563                                                 # <- Out of spin loop
+  1564    206.9 MiB      0.0 MiB           1           if save:
+  1565                                                     while True:
+  1566                                                         if sv.is_alive():
+  1567                                                             sleep(0.05)
+  1568                                                         else:
+  1569                                                             self.flush_data = None
+  1570                                                             break
+  1571                                                 # Restablish new communities in the end, if applicable
+  1572    206.9 MiB      0.0 MiB           1           if kill_and_reset:
+  1573                                                     for community in self.metacomm:
+  1574                                                         # with lock:
+  1575                                                         new_life_strategies = self.get_from_main_array(community.npls)
+  1576                                                         community.restore_from_main_table(new_life_strategies)
+  1577                                                     # Here we update the metacomm mask to ensure that all communities are active again
+  1578                                                     self.metacomm.update_mask()
+  1579    206.9 MiB      0.0 MiB           1           return None

@@ -1,3 +1,23 @@
+# -*-coding:utf-8-*-
+# "CAETÊ"
+# Author:  João Paulo Darela Filho
+"""
+Copyright 2017- LabTerra
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 from numpy.typing import NDArray
 import numpy as np
 
@@ -35,6 +55,7 @@ class budget_output:
     uptk_strat: NDArray[np.int32]
     cp: NDArray[np.float64]
     c_cost_cwm: NDArray[np.float64]
+    rnpp_out: NDArray[np.float64]
 
     def __init__(self, *args):
 
@@ -44,16 +65,7 @@ class budget_output:
                   "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg",
                   "vcmax", "specific_la", "nupt", "pupt", "litter_l",
                   "cwd", "litter_fr", "npp2pay", "lnc", "limitation_status",
-                  "uptk_strat", 'cp', 'c_cost_cwm']
+                  "uptk_strat", 'cp', 'c_cost_cwm', 'rnpp_out']
 
         for field, value in zip(fields, args):
             setattr(self, field, value)
-
-class daily_out_manager:
-    "write a class that manages n instances of the above class budget_output"
-    def __init__(self) -> None:
-        pass
-
-
-class netcdf_output:
-    pass

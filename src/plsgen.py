@@ -48,8 +48,7 @@ with open(CONFIG_FILE, 'rb') as f:
 GRASS_FRAC = data["parameters"]["grass_pls_fraction"]
 
 def vec_ranging(values, new_min, new_max):
-    """ Ranges the vector (1D) values(np.array) to min max
-        - Normalize values - preserves the distance
+    """ Ranges the vector (1D) values(np.array) to min max - preserves the proportional distance between values in the vector
     """
 
     output = []
@@ -144,7 +143,7 @@ def nutrient_ratios(n, N_min, N_max, P_min, P_max):
     return sample_NP
 
 def table_gen(NPLS, fpath=None):
-    """AKA main - generate a trait table for CAETÊ - save it to a .csv"""
+    """main function - generate a trait table for CAETÊ - optionally, saves it to a .csv with a header and an ID column"""
 
     assert NPLS > 1, "Number of PLSs must be greater than 1"
 

@@ -921,7 +921,7 @@ module alloc
       endif
       ! END RETRANSLOCATION CALCULATIONS
 
-      ! Finalize
+      ! Finalize convert g kg
       scl2 = scl2 * 1.0D-3
       scf2 = scf2 * 1.0D-3
       if(awood .gt. 0.0D0) then
@@ -930,11 +930,17 @@ module alloc
          sca2 = 0.0D0
       endif
 
+      ! Calculate the construction cost of the new biomass. This is stored to be
+      ! taken out of the potential NPP in the next time step
       c_costs_of_uptake = active_nupt_cost + active_pupt_cost &
       &                   + n_cost_resorpt + p_cost_resorpt + negative_one
+
+      ! Calculate the construction cost of the new biomass. This is stored to be
+      ! passed to python. The costs of nutrient uptake are already included (Calculated in the allocation function above)
+      construction_c = sum(daily_growth) ! g m-2 day-1
       ! END OF CALCULATIONS
 
-      construction_c = sum(daily_growth) ! g m-2
+
 
    contains
 

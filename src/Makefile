@@ -1,4 +1,24 @@
+# ! Copyright 2017- LabTerra
 
+# !     This program is free software: you can redistribute it and/or modify
+# !     it under the terms of the GNU General Public License as published by
+# !     the Free Software Foundation, either version 3 of the License, or
+# !     (at your option) any later version.)
+
+# !     This program is distributed in the hope that it will be useful,
+# !     but WITHOUT ANY WARRANTY; without even the implied warranty of
+# !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# !     GNU General Public License for more details.
+
+# !     You should have received a copy of the GNU General Public License
+# !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ! AUTHOR: JP Darela
+
+# Makefile for UNIX-like systems. To be used with gnu-make + gcc + gfortran + f2py
+# This Makefile is used to build the caete_module.
+# It also can build a fortran executable for debugging purposes.
+# This is not implemented in the windows version.
 
 # Build caete_module & debug programs
 PYEXEC = python
@@ -38,7 +58,6 @@ setup:
 	@echo "Installing dependencies..."
 	$(PIP) install -r requirements.txt
 
-
 # Build the interface and the shared object (caete_module) from .F90 source
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
@@ -46,11 +65,11 @@ interface: $(sources)
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so_parallel: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp --quiet
 	@echo "Parallel version of caete_module created using gfortran"
 
 so: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) "
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) " --quiet
 	@echo "Serial version of caete_module created using gfortran"
 
 

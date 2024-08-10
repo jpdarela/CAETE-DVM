@@ -15,6 +15,8 @@
 
 # ! AUTHOR: JP Darela
 
+# Makefile for Windows to be used with nmake + MSVC + ifx (Intel Fortran Compiler) + f2py
+
 # Variables
 # Python executable, package manager and f2py
 PYEXEC = py -3.11
@@ -32,7 +34,7 @@ MOD_DIR = ./
 
 # Compiler
 # Compiler to be used by f2py, in this case ifx (Intel Fortran Compiler) from the intel_oneapi package
-# To use gnu-gfortran (in Linux and macOS), use the Makefile provided in the repository.
+# To use gnu-gfortran (in Linux and macOS), use the Makefile provided in the src folder.
 FC = ifx
 
 # Flags
@@ -49,10 +51,9 @@ IFX_FLAGS = -fpp -QxHost -I$(MOD_DIR) -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUP
 # Sources
 src_lib = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
 sources = $(src_lib) budget.F90
-src_obj_w = global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
 
 # Targets
-.PHONY: setup interface so so_parallel clean clean_so modules
+.PHONY: setup interface so so_parallel clean_py clean clean_so modules
 
 setup:
 	@echo "Installing dependencies..."
@@ -74,12 +75,14 @@ so_parallel: $(sources) interface
 modules: $(sources)
 	$(FC) -fpp -c $(sources)
 
-clean:
+clean_py:
+	del /s /q __pycache__
+
+clean: clean_py
 	del /s *.mod
 	del /s *.o
 	del /s *.s
 	del pls_ex.txt
-	del /s /q __pycache__
 	del run_debug
 	del logfile.log
 	del /s *.obj
