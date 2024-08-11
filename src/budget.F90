@@ -169,11 +169,11 @@ contains
 
 
       allocate(sto_budg(3, npls))
+
       !     START
       !     --------------
       !     Grid cell area fraction 0-1
       !     ============================
-
       ! create copies of some input variables (arrays) - ( they are passed by reference by standard)
       do i = 1,npls
          awood_aux(i) = dt(7,i)
@@ -376,7 +376,6 @@ contains
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
 
-      deallocate(sto_budg)
       epavg = emax !mm/day
 
       ! FILL OUTPUT DATA
@@ -444,44 +443,11 @@ contains
       cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
       cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ar_fix_hr))
 
-      ! FILTER BAD VALUES ?? TODO: outcoment this section and see what happens
-      do p = 1,2
-         do i = 1, nlen
-            if (isnan(nupt(p, i))) nupt(p, i) = 0.0D0
-            if (nupt(p, i) .gt. 1.5D2) nupt(p, i) = 0.0D0
-            if (nupt(p, i) .lt. 0.0D0) nupt(p, i) = 0.0D0
-         enddo
-      enddo
-
-      do p = 1,3
-         do i = 1, nlen
-            if(isnan(pupt(p, i))) pupt(p, i) = 0.0D0
-            if (pupt(p, i) .gt. 0.7D2) pupt(p, i) = 0.0D0
-            if (pupt(p, i) .lt. 0.0D0) pupt(p, i) = 0.0D0
-         enddo
-      enddo
-
       do p = 1,2
          nupt_1(p) = sum(nupt(p,:) * ocp_coeffs)
       enddo
       do p = 1,3
          pupt_1(p) = sum(pupt(p,:) * ocp_coeffs)
-      enddo
-
-      do p = 1,6
-         do i = 1, nlen
-            if(isnan(lit_nut_content(p, i))) lit_nut_content(p, i) = 0.0D0
-            if (lit_nut_content(p, i) .gt. 1.0D2) lit_nut_content(p, i) = 0.0D0
-            if (lit_nut_content(p, i) .lt. 0.0D0) lit_nut_content(p, i) = 0.0D0
-         enddo
-      enddo
-
-      do p = 1,3
-         do i = 1, nlen
-            if(isnan(storage_out_bdgt(p,i))) storage_out_bdgt(p,i) = 0.0D0
-            if(storage_out_bdgt(p,i) > 0.5D2) storage_out_bdgt(p,i) = 0.0D0
-            if(storage_out_bdgt(p,i) < 0.0D0) storage_out_bdgt(p,i) = 0.0D0
-         enddo
       enddo
 
       do p = 1, 6
@@ -501,7 +467,6 @@ contains
          rnpp_out(ri) = rnpp_aux(p)
       enddo
 
-      !DEALLOCATE
       deallocate(rnpp_aux)
       deallocate(lp)
       deallocate(evap)
@@ -541,6 +506,7 @@ contains
       deallocate(idx_pdia)
       deallocate(ar_fix_hr)
       deallocate(ocp_coeffs)
+      deallocate(sto_budg)
 
    end subroutine daily_budget
 

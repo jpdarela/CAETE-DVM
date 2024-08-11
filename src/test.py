@@ -22,16 +22,27 @@ import multiprocessing as mp
 from pathlib import Path
 
 
-# This is a script that exemplify the usage of the CAETÊ model.
+# This is a script that exemplify the usage of the new implementation of the CAETÊ model.
+# Please, refer to the summary section in caete.py for more information.
+
+# We do everything after the if __name__ == "__main__": statement.
+# This avoids the duplication of data placed before the if __name__ == "__main__":
+# statement when using multiprocessing in Python with the spawn method.
+# Please refer to the Python multiprocessing library documentation for more information.
 
 if __name__ == "__main__":
+
+    import time
+    time_start = time.time()
 
     from metacommunity import pls_table
     from parameters import tsoil, ssoil, hsoil
     from caete import region, worker
 
-
-    mp.set_start_method('spawn', force=True) # Force spawn method to avoid issues with threading in Linux
+    # Force spawn method to avoid issues with multiprocessing use with threading in Linux
+    # This statement is awways necessary when running the model. Specifically, it needs to be
+    # always after the if __name__ == "__main__": statement. This is a Python requirement.
+    mp.set_start_method('spawn', force=True)
     fn: worker = worker()
 
     # Create the region
@@ -91,3 +102,5 @@ if __name__ == "__main__":
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)
+
+    print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")

@@ -21,6 +21,9 @@ Copyright 2017-2018 LabTerra
 import os
 import sys
 from config import fortran_runtime
+import argparse
+
+
 if sys.platform == "win32":
     try:
         os.add_dll_directory(fortran_runtime)
@@ -38,7 +41,25 @@ from caete_module import photo as model
 
 __author__ = 'JP Darela'
 
-# Read the pls_gen.toml file to get the parameters
+description = """ Generate/save a table of plant life strategies for CAETE.
+                  The first argument is the number of PLSs to be created
+                  and the second is the path to a folder used to save the file.
+                  The program will generate a CSV file with the PLSs inside
+                  the folder pointed. If the folder exists, a file named
+                  pls_attrs-<NUMBER>.csv will be saved there. If the folder
+                  does not exists, it will be created (can be nested folders like
+                  foo/bar/zip).The parameter NUMBER is the number of PLS given
+                  by the -n (--number) flag. Optionally you can import the
+                  table_gen function defined in this script and use it in your own code"""
+
+parser = argparse.ArgumentParser(
+    description=description,
+    usage='python plsgen.py [-h] -n NUMBER -f FOLDER'
+)
+parser.add_argument("-n", "--number", type=int, required=True, help="Number of PLSs to generate")
+parser.add_argument("-f", "--folder", type=str, required=True, help="Path to save the output")
+
+args = parser.parse_args()
 
 CONFIG_FILE = 'plsgen.toml'
 
@@ -73,7 +94,7 @@ def check_viability(trait_values, awood=False):
 
     """ Check the viability of allocation & residence time combinations.
         Some PLS combinations of allocation coefficients and residence times
-        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹)
+        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) and
         do not have enough mass of carbon (< 0.001 kg m⁻²) in all CVEG compartments
         input:
         trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
@@ -107,7 +128,7 @@ def assert_data_size(dsize):
     assert diffg + diffw == dsize
     return diffg, diffw
 
-def allocation_combinations() -> Tuple[np.ndarray[float,], np.ndarray[float,]]:
+def allocation_combinations():
     """ Generate allocation combinations for woody and grass plants based on Dirichlet distribution
 
     Returns:
@@ -142,7 +163,7 @@ def nutrient_ratios(n, N_min, N_max, P_min, P_max):
 
     return sample_NP
 
-def table_gen(NPLS, fpath=None):
+def table_gen(NPLS, fpath=None, ret=True):
     """main function - generate a trait table for CAETÊ - optionally, saves it to a .csv with a header and an ID column"""
 
     assert NPLS > 1, "Number of PLSs must be greater than 1"
@@ -312,7 +333,7 @@ def table_gen(NPLS, fpath=None):
 
         # # ___side_effects
         if not fpath.exists():
-            os.makedirs(fpath.resolve(), exist_ok=True,)
+            os.makedirs(fpath.resolve(), exist_ok=True)
             # os.system(f" mkdir -p {fpath.resolve()}")
         fnp = Path(os.path.join(fpath, f'pls_attrs-{NPLS}.csv')).resolve()
         with open(fnp, mode='w', newline="\n") as fh:
@@ -320,15 +341,10 @@ def table_gen(NPLS, fpath=None):
             writer.writerow(head)
             for x in range(pls_table.shape[1]):
                 writer.writerow(list(pls_table[:, x]))
-
-    pls_table = np.vstack(stack[1:])
-    return np.asfortranarray(pls_table, dtype=np.float32)
+    if ret:
+        pls_table = np.vstack(stack[1:])
+        return np.asfortranarray(pls_table, dtype=np.float32)
 
 
 if  __name__ == "__main__":
-    if sys.argv[1] and sys.argv[2]:
-        table = table_gen(int(sys.argv[1]), Path(sys.argv[2]).resolve())
-    elif sys.argv[1]:
-        table = table_gen(int(sys.argv[1]), Path("./PLS_MAIN").resolve())
-    else:
-        table = table_gen(25000, Path("./PLS_MAIN").resolve())
+    table_gen(args.number, Path(args.folder).resolve(), False)

@@ -46,8 +46,10 @@ from caete_module import photo as m
 class pls_table:
 
     """ Interface for the main table of plant life strategies (Plant prototypes).
-        Random subsamples without replacement are taken from this table to create communities. Each community as a set of communiites.
-        The main table should have a large number of PLSs (npls ~ 20000, for example) representing a global set of virtual plant prototypes.
+        Random subsamples without replacement are taken from this table to create communities. Each community as a set of unique PLS.
+        The main table should have a large number of PLSs (npls ~ 20000, for example)
+        representing a global set of virtual plant prototypes.
+
         Use the plsgen.py script to generate a PLS table).
     """
 
@@ -304,14 +306,13 @@ class metacommunity:
         Args:
             n (int): number of communities that will be created in the metacommunity.
             get_from_main_table (Callable): a function that returns a random sample of PLSs from the main table.
-            The get_from_main_table function is passed from the region class. It is used to create new communities.
+            The get_from_main_table function is passed from the region class. It is used to manage PLSs in communities.
         """
-         # Community-level variables
-         # Functional Identity
+        # Community-level variables
+        # Functional Identity
+        # TODO: IMPLEMENT entropy and diversity
         self.cwm = np.zeros(gp.ntraits, order='F')
         self.cwv = np.zeros(gp.ntraits, order='F')
-
-        # TODO: IMPLEMENT entropy and diversity
         # self.entropy = np.zeros(gp.ntraits, order='F') Shannon entropy
         # self.diversity = np.zeros(gp.ntraits, order='F') Simpson diversity
 
@@ -321,20 +322,19 @@ class metacommunity:
         self.comm_npls = copy.deepcopy(gp.npls)
         self.mask: NDArray[np.int8] = np.zeros(community_count, dtype=np.int8)
 
-
         for i in range(community_count):
             # Create the communities
             self.communities[i] = community(self.get_table(self.comm_npls))
-            self.communities[i].masked = np.int8(0)
             # Set active at start
-            # self.mask[i] = np.int8(0)  # 0 means the community is active
-
+            self.communities[i].masked = np.int8(0)
+        # Update the metacommunity mask
         self.update_mask()
         return None
 
 
     def update_mask(self)-> None:
-        """Updates the mask of the communities based on community state.
+        """
+        Updates the metacommunity mask based on its communities states.
         """
         for k, community in self.communities.items():
             i = int(k)
@@ -403,7 +403,7 @@ def main():
     print(f"Number of PLSs in each community: {mt.comm_npls}")
 
     # Kill the PLS in the posiion 233 in the first community
-    # mt[0].kill_pls(233)
+    mt[0].kill_pls(233)
 
     # Get a unique PLS from the main table (i.e. a PLS that is not in the community)
     ident, func_id = mt[0].get_unique_pls(__get_from_main_table)
@@ -411,8 +411,6 @@ def main():
     # Seed the unique PLS in the  a free slot
     mt[0].seed_pls(ident, func_id)
     return mt
-
-
 
 if __name__ == "__main__":
     mt = main()
