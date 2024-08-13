@@ -19,16 +19,20 @@ __descr__ = """ This script works in the following manner: Given a directory (ra
 
 # GLOBAL VARIABLES (paths)
 
-CLIMATIC_DATA = "historical_ISIMIP-v3"
+dataset = "20CRv3-ERA5"
+mode = "spinclim"
+
+CLIMATIC_DATA =  # Points to the folder with the raw data (netCDF4 files)
+
+# OUTPUT FILE WITH METADATA
 ANCILLARY_OUTPUT = "ISIMIP_HISTORICAL_METADATA.pbz2"
 
 
-# FOLDER IN THE SERVER WHERE ALL data IS stored FOR ALL USERS
-shared_data = Path("/home/amazonfaceme/shared_data/")
+# dump folder. CAETE input files are stored here
+shared_data = Path(f"{dataset}/{mode}")
 
-# INPUT NETCDF FILES WITH historical CLIMATIC DATA
-raw_data = Path(os.path.join(
-    shared_data, Path(CLIMATIC_DATA)))
+# NerCDF files with raw data to be processed
+raw_data = Path(f"{dataset}/{mode}_raw")
 
 # INPUT FILES WITH SOIL DATA (NUTRIENTS)
 soil_data = Path(os.path.join(shared_data, "soil"))

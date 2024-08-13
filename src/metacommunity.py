@@ -23,7 +23,7 @@ import csv
 import os
 import sys
 from pathlib import Path
-from typing import Callable, Dict, Tuple, Union, Any
+from typing import Callable, Dict, Tuple, Union, Any, Optional
 from numpy.typing import NDArray
 
 import numpy as np
@@ -300,7 +300,7 @@ class metacommunity:
     """Represents a collection of plant communities.
     """
 
-    def __init__(self, community_count:int, get_from_main_table:Callable) -> None:
+    def __init__(self, community_count:int, get_from_main_table:Optional[Callable]) -> None:
         """A collection of plant communities.
 
         Args:
@@ -311,6 +311,10 @@ class metacommunity:
         # Community-level variables
         # Functional Identity
         # TODO: IMPLEMENT entropy and diversity
+        if get_from_main_table is None:
+            self.dummy = True
+            return None
+        self.dummy = False
         self.cwm = np.zeros(gp.ntraits, order='F')
         self.cwv = np.zeros(gp.ntraits, order='F')
         # self.entropy = np.zeros(gp.ntraits, order='F') Shannon entropy

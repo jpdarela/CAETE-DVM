@@ -4,95 +4,95 @@
 
 DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
-"""
-Copyright 2017- LabTerra
+# """
+# Copyright 2017- LabTerra
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# """
 
-"""_summary_
-This module contains the classes that define the gridcell and the region objects.
-The gridcell object is the basic unit of the simulation. It contains the data and the methods to
-run the simulation for a single gridcell. The region object represents is a collection of gridcells.
-It contains the data for a simulation and also provides  the methods to run the simulation
-for a collection of gridcells in parallel (multiprocessing).
+# """_summary_
+# This module contains the classes that define the gridcell and the region objects.
+# The gridcell object is the basic unit of the simulation. It contains the data and the methods to
+# run the simulation for a single gridcell. The region object represents is a collection of gridcells.
+# It contains the data for a simulation and also provides  the methods to run the simulation
+# for a collection of gridcells in parallel (multiprocessing).
 
-THe architecture of the code is defined by the following classes:
-- state_zero: base class with input/output related data (paths, filenames, etc)
-- climate: class with climate data
-- time: class with time data
-- soil: class with soil data
-- gridcell_output: class to manage gridcell outputs
+# THe architecture of the code is defined by the following classes:
+# - state_zero: base class with input/output related data (paths, filenames, etc)
+# - climate: class with climate data
+# - time: class with time data
+# - soil: class with soil data
+# - gridcell_output: class to manage gridcell outputs
 
- All these classes also have some particular methods to manage the data
- They are isolated in these classes to make the code more readable and maintainable.
- All the above classes are used as base for the class that regresents a gricell
- in the simulation:
+#  All these classes also have some particular methods to manage the data
+#  They are isolated in these classes to make the code more readable and maintainable.
+#  All the above classes are used as base for the class that regresents a gricell
+#  in the simulation:
 
-- grd_mt: class to manage the gridcell simulation
-    It has the methods to set up, run the simulation and save the outputs in a
-    folder. Each gridcell has one plant metacommunity. The plant metacommunity is a collection of
-    plant communities. Each plant community is a collection of plant life strategies (PLS).
-    At creation time, a community receives a sample of PLS from a global table. A community is not
-    allowed to have duplicated PLS but the same PLS can be in more than one community in a
-    metacommunity. Both the number of communities and the number of PLS in each community
-    are defined by the user in the configuration file called caete.toml. The number of
-    communities can be changed freely between different simulations. However, If you want
-    to change the number of PLS in a community, you must not only change the configuration
-    in the caete.toml file but also recompile the shared library using gnu-make or nmake.
-    The shared library here is the fortran code that we use to run the "daily processes".
+# - grd_mt: class to manage the gridcell simulation
+#     It has the methods to set up, run the simulation and save the outputs in a
+#     folder. Each gridcell has one plant metacommunity. The plant metacommunity is a collection of
+#     plant communities. Each plant community is a collection of plant life strategies (PLS).
+#     At creation time, a community receives a sample of PLS from a global table. A community is not
+#     allowed to have duplicated PLS but the same PLS can be in more than one community in a
+#     metacommunity. Both the number of communities and the number of PLS in each community
+#     are defined by the user in the configuration file called caete.toml. The number of
+#     communities can be changed freely between different simulations. However, If you want
+#     to change the number of PLS in a community, you must not only change the configuration
+#     in the caete.toml file but also recompile the shared library using gnu-make or nmake.
+#     The shared library here is the fortran code that we use to run the "daily processes".
 
-    The global PLS table is a collection of PLS that is shared by all gridcells in the region. There is a
-    script called plsgen.py that can create a global PLS table. Run it in the src folder like this:
+#     The global PLS table is a collection of PLS that is shared by all gridcells in the region. There is a
+#     script called plsgen.py that can create a global PLS table. Run it in the src folder like this:
 
-    ```$ python plsgen.py -n 25000 -f ./MyPLSDataFolder```
+#     ```$ python plsgen.py -n 25000 -f ./MyPLSDataFolder```
 
-    This will save a file named pls_attrs<n>.csv (where n = 25000) in the local folder MyPLSDataFolder.
-    The script uses data from literature to generate a quasi-random sample of PLS based on 17 plant
-    functional traits. There is a plsgen.toml file that contains some of the parameters used
-    to generate the PLS table. There are comments in the script. Pls look.
+#     This will save a file named pls_attrs<n>.csv (where n = 25000) in the local folder MyPLSDataFolder.
+#     The script uses data from literature to generate a quasi-random sample of PLS based on 17 plant
+#     functional traits. There is a plsgen.toml file that contains some of the parameters used
+#     to generate the PLS table. There are comments in the script. Pls look.
 
-    During the simulation of a gridcell, it is possible to control the number of PLS in a community.
-    You can reset a community to a new set of PLS. This is useful when the set of PLS initially designated
-    to a community is not able to accumulate biomass in the initial stage of the simulation.
-    It is also possible to reset the entire metacommunity at once. This is useful to reset the
-    distributions of PLS after a initial spinup aiming to reach a stable state in the soil pools.
-    Right after this soil spinup, it is possible to seed new PLS in the communities while runing the
-    model. This is useful to simulate the filtering of the gridcell "environment" along time while adding new
-    PLS to the communities.
-    Given that our sample space is cursed 17 times (17 traits), these strategies are important do start
-    the model (spin it up) and to keep it running while simulating the filtering of the
-    gridcell "environment". The grd_mt.run_gridcell method has several parameters to control
-    the simulation. You can have a look at the method signature and docstring to understand the options.
+#     During the simulation of a gridcell, it is possible to control the number of PLS in a community.
+#     You can reset a community to a new set of PLS. This is useful when the set of PLS initially designated
+#     to a community is not able to accumulate biomass in the initial stage of the simulation.
+#     It is also possible to reset the entire metacommunity at once. This is useful to reset the
+#     distributions of PLS after a initial spinup aiming to reach a stable state in the soil pools.
+#     Right after this soil spinup, it is possible to seed new PLS in the communities while runing the
+#     model. This is useful to simulate the filtering of the gridcell "environment" along time while adding new
+#     PLS to the communities.
+#     Given that our sample space is cursed 17 times (17 traits), these strategies are important do start
+#     the model (spin it up) and to keep it running while simulating the filtering of the
+#     gridcell "environment". The grd_mt.run_gridcell method has several parameters to control
+#     the simulation. You can have a look at the method signature and docstring to understand the options.
 
-Finally, the region class is defined. It represents collection of gridcells. It has the methods to
-run the simulation for a collection of gridcells in parallel (multiprocessing).
+# Finally, the region class is defined. It represents collection of gridcells. It has the methods to
+# run the simulation for a collection of gridcells in parallel (multiprocessing).
 
-- region: class to manage the region simulation, the global PLS table, IO, multiprocessing etc.
+# - region: class to manage the region simulation, the global PLS table, IO, multiprocessing etc.
 
-- worker (only @staticmethods): class grouping worker functions defining different phases of simulation.
-  These functions are called by the region object to run the simulation in parallel. The worker class
-  also have some utility functions to load and save data. You can save a region in a state file and
-  restart the simulation from this point. Note that in this case a entire region is saved. All relatred data
-  for each gridcell is saved and the final file can become huge. This tradeoff with the facitily to restart
-  the simulation from a specific point with a very low amount of code. The state file is compressed with zsdt
+# - worker (only @staticmethods): class grouping worker functions defining different phases of simulation.
+#   These functions are called by the region object to run the simulation in parallel. The worker class
+#   also have some utility functions to load and save data. You can save a region in a state file and
+#   restart the simulation from this point. Note that in this case a entire region is saved. All relatred data
+#   for each gridcell is saved and the final file can become huge. This tradeoff with the facitily to restart
+#   the simulation from a specific point with a very low amount of code. The state file is compressed with zsdt
 
-  I am testing the model with a script called test.py. This script is a good example of how to use the model.
-  In the end of this source file (caete.py) there is some code used to test/profile the python code.
+#   I am testing the model with a script called test.py. This script is a good example of how to use the model.
+#   In the end of this source file (caete.py) there is some code used to test/profile the python code.
 
-  The old implementation of the model is in the classes grd and plot at the end of this source file.
-"""
+#   The old implementation of the model is in the classes grd and plot at the end of this source file.
+# """
 
 import bz2
 from concurrent.futures import ThreadPoolExecutor
@@ -109,7 +109,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Callable, Dict, List, Optional, Tuple, Union, Any
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any, Collection, Set
 
 import cftime
 import numba
@@ -185,9 +185,26 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
     sys.stdout.flush()
 
 def budget_daily_result(out: Tuple[Union[NDArray, str, List, int, float]]) -> budget_output:
+    """_summary_
+
+    Args:
+        out (Tuple[Union[NDArray, str, List, int, float]]): _description_
+
+    Returns:
+        budget_output: _description_
+    """
     return budget_output(*out)
 
+
 def catch_out_budget(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict[str, Union[NDArray, str, List, int, float]]:
+    """_summary_
+
+    Args:
+        out (Tuple[Union[NDArray, str, List, int, float]]): _description_
+
+    Returns:
+        Dict[str, Union[NDArray, str, List, int, float]]: _description_
+    """
     # This is currently used in the old implementation (classes grd and plot)
     # WARNING keep the lists of budget/carbon3 outputs updated with fortran code
 
@@ -200,6 +217,14 @@ def catch_out_budget(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict[
     return dict(zip(lst, out))
 
 def catch_out_carbon3(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict:
+    """_summary_
+
+    Args:
+        out (Tuple[Union[NDArray, str, List, int, float]]): _description_
+
+    Returns:
+        Dict: _description_
+    """
     lst = ['cs', 'snc', 'hr', 'nmin', 'pmin']
 
     return dict(zip(lst, out))
@@ -228,6 +253,14 @@ def str_or_path(fpath: Union[Path, str], check_exists:bool=True,
     return _val_
 
 def get_co2_concentration(filename:Union[Path, str]):
+    """_summary_
+
+    Args:
+        filename (Union[Path, str]): _description_
+
+    Returns:
+        _type_: _description_
+    """
     fname = str_or_path(filename, check_is_file=True)
     with open(fname, 'r') as file:
         # Use the Sniffer class to detect the dialect
@@ -247,6 +280,17 @@ def read_bz2_file(filepath:Union[Path, str]):
     return data
 
 def parse_date(date_string):
+    """_summary_
+
+    Args:
+        date_string (_type_): _description_
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        _type_: _description_
+    """
     formats = ['%Y%m%d', '%Y/%m/%d', '%Y-%m-%d', '%Y.%m.%d']
     for fmt in formats:
         try:
@@ -273,6 +317,16 @@ def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:
 
 @numba.njit(cache=True)
 def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.intp]):
+    """_summary_
+
+    Args:
+        nsize (int): _description_
+        partial (NDArray[np.float32]): _description_
+        id_living (NDArray[np.intp]): _description_
+
+    Returns:
+        _type_: _description_
+    """
     c = 0
     complete = np.zeros(nsize, dtype=np.float32)
     for n in id_living:
@@ -473,38 +527,71 @@ class state_zero:
 
 
 class climate:
+    """class with climate data"""
+
     def __init__(self):
+        """_summary_
+        """
         self.pr: NDArray[np.float64]
         self.ps: NDArray[np.float64]
         self.rsds: NDArray[np.float64]
         self.tas: NDArray[np.float64]
         self.rhs: NDArray[np.float64]
 
+
     def _set_clim(self, data:Dict):
+        """_summary_
+
+        Args:
+            data (Dict): _description_
+        """
         self.pr = data['pr']
         self.ps = data['ps']
         self.rsds = data['rsds']
         self.tas = data['tas']
         self.rhs = data['hurs']
 
+
     def _set_tas(self, data:Dict):
+        """_summary_
+
+        Args:
+            data (Dict): _description_
+        """
         self.tas = data['tas']
+
+
     def _set_pr(self, data:Dict):
+        """_summary_"""
         self.pr = data['pr']
+
+
     def _set_ps(self, data:Dict):
+        """_summary_"""
         self.ps = data['ps']
+
+
     def _set_rsds(self, data:Dict):
+        """_summary_"""
         self.rsds = data['rsds']
+
+
     def _set_rhs(self, data:Dict):
+        """_summary_"""
         self.rhs = data['hurs']
+
+
     def _set_co2(self, fpath:Union[Path, str]):
+        """_summary_"""
         self.co2_path = str_or_path(fpath, check_is_file=True)
         self.co2_data = get_co2_concentration(self.co2_path)
 
 
 class time:
+    """_summary_
+    """
     def __init__(self):
-        # Time attributes
+        """Time attributes"""
         self.time_index:np.ndarray
         self.calendar:str
         self.time_unit:str
@@ -512,7 +599,14 @@ class time:
         self.end_date:str
         self.sind: int
         self.eind: int
+
+
     def _set_time(self, stime_i:Dict):
+        """_summary_
+
+        Args:
+            stime_i (Dict): _description_
+        """
         self.stime = copy.deepcopy(stime_i)
         self.calendar = self.stime['calendar']
         self.time_index = self.stime['time_index']
@@ -527,10 +621,12 @@ class time:
 
 
 class soil:
+    """_summary_
+    """
 
     def __init__(self):
-
-        # C,N & P
+        """_summary_
+        """
         self.sp_csoil = None
         self.sp_snc = None
         self.input_nut = None
@@ -559,6 +655,11 @@ class soil:
 
 
     def _init_soil_cnp(self, data:Dict):
+        """_summary_
+
+        Args:
+            data (Dict): _description_
+        """
         self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
         self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
         self.input_nut = []
@@ -613,6 +714,11 @@ class soil:
 
 
     def add_soil_nutrients(self, afex_mode:str):
+        """_summary_
+
+        Args:
+            afex_mode (str): _description_
+        """
         if afex_mode == 'N':
             self.sp_available_n += self.afex_config.n # type: ignore
         elif afex_mode == 'P':
@@ -623,6 +729,12 @@ class soil:
 
 
     def add_soil_water(self, data:Dict):
+        """_summary_
+
+        Args:
+            data (Dict): _description_
+        """
+
         # will deal with irrigation experiments and possibly water table depth
         pass
 
@@ -631,6 +743,9 @@ class gridcell_output:
     """Class to manage gridcell outputs
     """
     def __init__(self):
+        """_summary_
+        """
+        self.run_counter: int = 0
         self.flush_data:Optional[Dict]
         self.emaxm: List = []
         self.tsoil: List = []
@@ -747,12 +862,18 @@ class gridcell_output:
 
            runs_descr: str a name for the files
            index = tuple or list with the first and last values of the index time variable"""
+        # This code uses some attribute that is not defined in the class
+
         to_pickle = {}
-        self.run_counter += 1 # type: ignore
-        if self.run_counter < 10: # type: ignore
-            spiname = run_descr + "0" + str(self.run_counter) + out_ext  # type: ignore
+        self.run_counter += 1
+        if self.run_counter < 10:
+            spiname = run_descr + "000" + str(self.run_counter) + out_ext
+        elif self.run_counter < 100:
+            spiname = run_descr +  "00" + str(self.run_counter) + out_ext
+        elif self.run_counter < 1000:
+            spiname = run_descr +  "0" + str(self.run_counter) + out_ext
         else:
-            spiname = run_descr + str(self.run_counter) + out_ext # type: ignore
+            spiname = run_descr + str(self.run_counter) + out_ext
 
         self.outputs[spiname] = os.path.join(self.out_dir, spiname) # type: ignore
         to_pickle = {'emaxm': np.array(self.emaxm),
@@ -856,7 +977,11 @@ class gridcell_output:
         """Compress and save output data
         data_object: dict; the dict returned from _flush_output"""
         if self.run_counter < 10: # type: ignore
-            fpath = "spin{}{}{}".format(0, self.run_counter, out_ext) # type: ignore
+            fpath = "spin{}{}{}{}{}".format(0, 0, 0, self.run_counter, out_ext) # type: ignore
+        elif self.run_counter < 100: # type: ignore
+            fpath = "spin{}{}{}{}".format(0, 0, self.run_counter, out_ext) # type: ignore
+        elif self.run_counter < 1000: # type: ignore
+            fpath = "spin{}{}{}".format(0, self.run_counter, out_ext)
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
@@ -958,7 +1083,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         Returns:
             None: Changes the input data for the gridcell
         """
-        #TODO: Add checks to ensure the data is time consistent
         if input_fpath is not None:
             #TODO prevent errors here
             self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
@@ -1008,10 +1132,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
         # Number of communities in the metacommunity. Defined in the config file {caete.toml}
         # Each gridcell has one metacommunity wuth ncomms communities
-        self.ncomms = self.config.metacomm.n  #type: ignore # Number of communities
+        self.ncomms:int = self.config.metacomm.n  #type: ignore # Number of communities
 
         # Metacommunity object
-        self.metacomm = mc.metacommunity(self.ncomms, self.get_from_main_array)
+        self.metacomm:mc.metacommunity = mc.metacommunity(self.ncomms, self.get_from_main_array)
 
 
         # Read climate drivers and soil characteristics, incl. nutrients, for this gridcell
@@ -1196,11 +1320,9 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             # There are two modes of operation: save and not save.
             # In the save mode, the arrays are used to store the values that are
             # needed for model iteration, i.e., the values that are used in the next
-            # iteration. In the not save mode, the arrays are used to store the values
-            # that are needed for the output, i.e., the values that are used to write the
-            # output data to a file.
-
-            xsize: int = len(self.metacomm)
+            # time step. In the save mode, an extra number arrays are created to be used
+            # to store the outputs.
+            xsize: int = len(self.metacomm) # Number of communities
             evavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             epavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             rnpp_mt: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
@@ -1594,97 +1716,164 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return None
 
 
-    def get_spin(self, spin) -> dict:
-        """Get the data from a given spin"""
+    def __fetch_spin_data(self, spin) -> dict:
+        """Get the data from a spin file"""
         if len(self.outputs) == 0:
             raise AssertionError("No output data available. Run the model first")
         if spin < 10:
+            name = f'spin000{spin}.pkz'
+        elif spin < 100:
+            name = f'spin00{spin}.pkz'
+        elif spin < 1000:
             name = f'spin0{spin}.pkz'
         else:
             name = f'spin{spin}.pkz'
+
         with open(self.outputs[name], 'rb') as fh:
             spin_dt = load(fh)
         return spin_dt
 
 
-    def _read_daily_output(self):
+    def _read_daily_output(self, period: Union[int, Tuple[int, int], None] = None) -> Union[Tuple, List[Any]]:
         """Read the daily output for this gridcell.
+
         Warning: This method assumes that the ouptut files are time-ordered
         """
         assert len(self.outputs) > 0, "No output data available. Run the model first"
 
-        files:Tuple[str] = tuple(path_str for path_str in self.outputs.values())
-        spins = range(1, len(files) + 1)
+        if isinstance(period, int):
+            assert period > 0, "Period must be positive"
+            assert period <= self.run_counter, "Period must be less than the number of spins"
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                return [executor.submit(self.__fetch_spin_data, period)]
+            # return data, self.executed_iterations[period]
+        elif isinstance(period, tuple):
+            assert period[1] < self.run_counter, "Period must be less than the number of spins" # type: ignore
+            assert period[0] < period[1], "Period must be a tuple with the start and end spins" # type: ignore
+            spins = range(period[0] + 1, period[1] + 2) # type: ignore
+            files = tuple((f"spin{x}" for x in spins))
+        else:
+            files:Tuple[str, ...] = tuple(path_str for path_str in self.outputs.values())
+            spins = range(1, len(files) + 1)
 
         with ThreadPoolExecutor(max_workers=len(files)) as executor:
-            futures = [executor.submit(self.get_spin, spin) for spin in spins]
+            futures = [executor.submit(self.__fetch_spin_data, spin) for spin in spins]
         return futures
-        # spin_data = [future.result() for future in futures]
-        # return spin_data
 
 
-    def _get_daily_data(self, variable: Union [str, List[str]] = "npp",
+    def _reader_array(self, ndim:int, sample_data:NDArray) -> NDArray:
+        """
+        Return a numpy array with one extra dimension.
+        This array is used to concatenate results comming from different spins
+
+        Args:
+            ndim (int): Number of dimensions in the array
+            sample_data (np.ndarray): Sample data to build the array
+
+        Raises:
+            ValueError: If the number of dimensions is less than 1
+            NotImplementedError: If the number of dimensions is greater than 4
+
+        Returns:
+            np.ndarray: An array with one extra dimension and same dtype as sample_data
+        """
+        if not ndim:
+            raise ValueError("Need the array dimensions to process. Stopping")
+        if ndim > 4:
+            raise NotImplementedError("Arrays with more than 4 axis are not supported")
+        if ndim == 1:
+            output = np.zeros(0, dtype=sample_data.dtype)
+        elif ndim == 2:
+            s = (sample_data.shape[0], 0)
+            output = np.zeros(s, dtype=sample_data.dtype)
+        elif ndim == 3:
+            s = (sample_data.shape[0],
+                self.ncomms,
+                0)
+            output = np.zeros(s, dtype=sample_data.dtype)
+        elif ndim == 4:
+            s = (sample_data.shape[0],
+                sample_data.shape[1],
+                self.ncomms,
+                0)
+            output = np.zeros(s, dtype=sample_data.dtype)
+        return output
+
+
+    def _get_daily_data(self, variable: Union [str, Collection[str]] = "npp",
+                            spin_slice: Union[int, Tuple[int, int], None] = None,
                             pp: bool=False,
                             return_time: bool=False,
                             return_array: bool=False
                             ) -> Union[NDArray, List, Tuple, None]:
-        """Get the contiguous days for a given variable"""
+        """_summary_
+
+        Args:
+            variable (Union[str, Collection[str]], optional): variable name or names. Defaults to "npp".
+            spin_slice (Optional[Tuple[int, int]], optional): Slice of spins. Defaults to None.
+            pp (bool, optional): Print available variable names in the output data and exits. Defaults to False.
+            return_time (bool, optional): Return a collection of time objects with the days of simulation. Defaults to False.
+            return_array (bool, optional): Returns one array or a tuple of arrays. Defaults to False.
+
+
+        Returns:
+            Union[NDArray, List, Tuple, None]: There are four possible returns:
+            - If return_array is True and return_time is False, returns an array with the values of the variable
+            - If return_array is False and return_time is True, returns a tuple with a np.array of the variable
+            and a list of time objects
+            - If return_array is False and return_time is False, returns a list with the values of the variable.
+            - If return_array is False and return_time is False, and a slice is provided, an array or
+              list of arrays is returned
+            - If return_array is True and return_time is True, returns a tuple with the values of the variable
+            and a list of time objects
+        """
 
         if isinstance(variable, str):
             variable = [variable,]
-        assert isinstance(variable, list), "Variable must be a string or a list of strings"
+        assert isinstance(variable, Collection), "Variable must be a string or a collection of strings"
+
 
         result = []
-        for _read_ in self._read_daily_output():
+        f = self._read_daily_output(period=None) if spin_slice is None else self._read_daily_output(period=spin_slice) # type: ignore
+        for _read_ in f:
             result.append(_read_.result())
-            if pp:
-                print("Available_variables")
-                for key in result[0].keys():
-                    print(key, end="\t")
-                return None
 
-        variable_names = []
-        for k in result[0].keys():
-            variable_names.append(k)
+        # GEt start and end dates (by index)
+        if len(result) == 1:
+            eind = result[0]["eind"]
+            sind = result[0]["sind"]
+        elif len(result) > 1:
+            eind = result[-1]["eind"]
+            sind = result[0]["sind"]
 
-        for var in variable:
-            if var not in variable_names:
-                raise ValueError(f"Variable {var} not found in the output data")
+        variable_names: Set[str] = set(result[0].keys()) # Available variable names in the output data
+        variable_set: Set[str] = set(variable)
+
+        if pp:
+            print(f"Available variables: {variable_names}")
+            return None
+
+        not_in = variable_set - variable_names
+        assert len(not_in) == 0, f"No variable(s): {not_in} found in the output data"
 
         output_list = []
         varnames = []
-        for var in variable:
+        for var in variable_set:
             sample_data = result[0][var]
+
             vtype = type(sample_data)
+
             try:
                 ndim = len(sample_data.shape)
             except:
-                ndim = None
-            if ndim is None:
-                try:
-                    ndim = len(sample_data)
-                except:
-                    pass
+                ndim = 0
+
             if vtype == np.ndarray:
                 varnames.append(var)
-                # Concatenate the data
-                if ndim == 1:
-                    output = np.zeros(0, dtype=sample_data.dtype)
-                elif ndim == 2:
-                    s = (sample_data.shape[0], 0)
-                    output = np.zeros(s, dtype=sample_data.dtype)
-                elif ndim == 3:
-                    s = (sample_data.shape[0],
-                        len(self.metacomm),
-                        0)
-                    output = np.zeros(s, dtype=sample_data.dtype)
-                elif ndim == 4:
-                    s = (sample_data.shape[0],
-                        sample_data.shape[1],
-                        len(self.metacomm),
-                        0)
-                    output = np.zeros(s, dtype=sample_data.dtype)
+                output = self._reader_array(ndim, sample_data)
                 for r in result:
+                    if not ndim:
+                        raise ValueError(f"Need the array dimensions to process. Stopping")
                     output = np.concatenate((output, r[var]), axis=ndim - 1)
                 output_list.append(output)
             else:
@@ -1692,30 +1881,37 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 continue
 
         if return_array:
-            assert len(variable) == 1, "Only one variable can be returned as an array"
-            return output_list[0]
+            assert len(variable_set) == 1, "Only one variable can be returned as an array"
+            if return_time:
+                pass
+            else:
+                return output_list[0]
 
         if not return_time:
+            if len(output_list) == 1:
+                return output_list[0]
             return output_list
         else:
-            # Build date index. datelist will have the same length as the arrays
-            # if the files were saved in a transient run. Files saved in a spinup
-            # will result in a datelist that corresponds to the start_date-end_date range.
-            #i.e the lenght of the datelist divides the lenght of the arrays n spinup times
+            # # Build date index. datelist will have the same length as the arrays
+            # # if the files were saved in a transient run. Files saved in a spinup
+            # # will result in a datelist that corresponds to the start_date-end_date range -
+            # i.e., the lenght of the datelist divides the lenght of the arrays n spinup times
 
-            start_date = cftime.date2num(parse_date(self.executed_iterations[0][0]),
-                                         units=self.time_unit,
-                                         calendar=self.calendar)
-            end_date   = cftime.date2num(parse_date(self.executed_iterations[-1][-1]),
-                                         units=self.time_unit,
-                                         calendar=self.calendar)
+            datelist = cftime.num2date(np.arange(sind, eind + 1),
+                                       units=self.time_unit,
+                                       calendar=self.calendar)
 
-            idx_range = np.arange(start_date, end_date + 1)
-            datelist = cftime.num2date(idx_range, units=self.time_unit, calendar=self.calendar)
-            output_dict = dict(zip(varnames, output_list))
             if len(output_list) == 1:
                 return output_list[0], datelist
+
+            output_dict = dict(zip(varnames, output_list))
             return output_dict, datelist
+
+
+    def print_available_periods(self):
+        assert len(self.executed_iterations) > 0, "No output data available. Run the model first"
+        for i, period in enumerate(self.executed_iterations):
+            print(f"Period {i}: {period[0]} - {period[1]}")
 
 
 class region:
@@ -1729,7 +1925,7 @@ class region:
                                 Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
                                 Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]],
                 co2:Union[str, Path],
-                pls_table:np.ndarray)->None:
+                pls_table:NDArray)->None:
         """_summary_
 
         Args:
@@ -1751,7 +1947,18 @@ class region:
         self.input_data = str_or_path(clim_data)
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
-        self.grid = np.ones((360, 720), dtype=bool)
+
+        # calculate_matrix dimesnion size size from grid resolution
+        self.nx = len(np.arange(0, 180, self.config.crs.xres/2)) # type: ignore
+        self.ny = len(np.arange(0,  90, self.config.crs.yres/2)) # type: ignore
+
+        self.epsg = f"EPSG:{self.config.crs.epsg_id}" # type: ignore
+        self.datum = self.config.crs.datum # type: ignore
+
+        # Grid mask of the region
+        self.grid_mask = np.ones((self.ny, self.nx), dtype=bool)
+
+        # Number of PLS in the main table (global table)
         self.npls_main_table = self.pls_table.npls
 
         try:
@@ -1764,20 +1971,27 @@ class region:
         except:
             raise AssertionError("Metadata file path could not be resolved. Cannot proceed without metadata")
 
+        # Read metadata from climate files
         self.metadata = read_bz2_file(mtd)
         self.stime = copy.deepcopy(self.metadata[0])
 
         for file_path in self.input_data.glob("input_data_*-*.pbz2"):
             self.climate_files.append(file_path)
 
+        # This is used to define the gridcells output paths
         self.yx_indices = []
+        self.lats = np.zeros(len(self.climate_files), dtype=np.float32)
+        self.lons = np.zeros(len(self.climate_files), dtype=np.float32)
         for f in self.climate_files:
             y, x = f.stem.split("_")[-1].split("-")
             self.yx_indices.append((int(y), int(x)))
-            self.grid[int(y), int(x)] = False
+            # Update the grid mask
+            self.grid_mask[int(y), int(x)] = False
 
         # create the output folder structure
         # This is the output path for the regions, Create it if it does not exist
+        # output_path is a global defined in parameters.py The region object will
+        # create the internal output folder structure into this directory
         os.makedirs(output_path, exist_ok=True)
 
         # This is the output path for this region
@@ -1785,45 +1999,68 @@ class region:
         os.makedirs(self.output_path, exist_ok=True)
 
         # A list to store this region's gridcells
+        # Some magic methods are defined to deal with this list
         self.gridcells:List[grd_mt] = []
 
 
-    def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
+    def _update_config(self):
+        """Update the configuration file"""
+        self.config = fetch_config("caete.toml")
 
+
+    def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
         """Returns a number of IDs (in the main table) and the respective
         functional identities (PLS table) to set or reset a community
 
         This method is passed as an argument for the gridcell class. It is used to read
-        the main table and the PLS table to set or reset a community. In parallel, this method
+        the main table and the PLS table to set or reset a community. This method
         must be called with a lock.
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
+
+        assert comm_npls > 0, "Number of PLS must be greater than 0"
+
         if comm_npls == 1:
             idx = np.random.randint(0, self.npls_main_table - 1)
             with lock:
                 return idx, self.pls_table.table[:, idx]
+
+        assert comm_npls <= self.npls_main_table, "Number of PLS must be less than the number of PLS in the main table"
+
         idx = np.random.randint(0, self.npls_main_table - 1, comm_npls)
         with lock:
             return idx, self.pls_table.table[:, idx]
 
 
     def set_gridcells(self):
+        """_summary_
+        """
         print("Starting gridcells")
         i = 0
         print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
         for f,pos in zip(self.climate_files, self.yx_indices):
             y, x = pos
-            file_name = self.output_path/Path(f"grd_{y}-{x}")
-            grd_cell = grd_mt(y, x, file_name, self.get_from_main_table)
+            gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}")
+            grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
             grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
                                     tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
             self.gridcells.append(grd_cell)
+            self.lats[i] = grd_cell.lat
+            self.lons[i] = grd_cell.lon
             print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
             i += 1
 
 
     def run_region_map(self, func:Callable):
+        """_summary_
+
+        Args:
+            func (Callable): _description_
+
+        Returns:
+            _type_: _description_
+        """
         with mp.Pool(processes=self.nproc, maxtasksperchild=1) as p:
             self.gridcells = p.map(func, self.gridcells, chunksize=1)
         gc.collect()
@@ -1831,16 +2068,87 @@ class region:
 
 
     def run_region_starmap(self, func:Callable, args):
+        """_summary_
+
+        Args:
+            func (Callable): _description_
+            args (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         with mp.Pool(processes=self.nproc, maxtasksperchild=1) as p:
             self.gridcells = p.starmap(func, [(gc, args) for gc in self.gridcells], chunksize=1)
         gc.collect()
         return None
 
 
+    # Methods to deal with model outputs
+    def clean_model_state(self):
+        """
+        Clean state of the region. Deletes all attributes that are not necessary
+
+        This is useful to access model outputs after a run
+
+        Warning: This method will erase all data related to the state of the region.
+        The region cannot be used directly to run the model after this method is called.
+        However, you can still use it to access the output data generated by the model.
+
+        """
+        attributes_to_keep = {'calendar',
+                              'time_unit',
+                              'cell_area',
+                              'config',
+                              'executed_iterations',
+                              'lat',
+                              'lon',
+                              'ncomms',
+                              'out_dir',
+                              'outputs',
+                              'run_counter',
+                              'x',
+                              'xres',
+                              'xyname',
+                              'y',
+                              'yres'}
+
+        for gridcell in self:
+            all_attributes = set(gridcell.__dict__.keys())
+
+            # # Delete attributes that are not in the subset
+            for attr in all_attributes - attributes_to_keep:
+                delattr(gridcell, attr)
+
+
     def get_mask(self)->np.ndarray:
-        return self.grid
+        """returns region mask
+        True is masked, not masked otherwise
+
+        Returns:
+            np.ndarray: region mask
+        """
+        return self.grid_mask
 
 
+    def get_crs(self) -> Dict[str, Union[str, int, float]]:
+        """Get region CRS information
+
+        Returns:
+            Dict[str, Union[str, int, float]]: Dictionary with the CRS information
+        """
+        return {
+            'proj4': f'{self.config.crs.proj4}', # type: ignore
+            'lats' : self.lats,
+            'lons' : self.lons,
+            'epsg' : self.epsg,
+            'datum': self.datum,
+            'lat_units': self.config.crs.lat_units, # type: ignore
+            'lon_units': self.config.crs.lon_units, # type: ignore
+            'lat_zero' : self.config.crs.lat_zero, # type: ignore
+            'lon_zero' : self.config.crs.lon_zero, # type: ignore
+        }
+
+    # Magic methods
     def __getitem__(self, idx:int):
         try:
             _val_ = self.gridcells[idx]
@@ -1888,11 +2196,12 @@ class worker:
 
         CALL:\n
 
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=9, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
         """
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
-                              save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True,
+                              verbose=False)
         gc.collect()
         return gridcell
 
@@ -1903,12 +2212,13 @@ class worker:
 
         CALL:\n
 
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=12, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=6, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True, reset_community=True)
 
         """
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=12, fixed_co2_atm_conc="1901",
-                              save=False, nutri_cycle=True, reset_community=True)
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True,
+                              verbose=False)
         gc.collect()
         return gridcell
 
@@ -1918,11 +2228,11 @@ class worker:
         """spin to attain equilibrium in the community while adding new PLS if there are free slots
 
         CALL:\n
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=3, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=20, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True,
                               verbose=False)
         """
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=3, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True,
                               verbose=False)
         gc.collect()
@@ -1935,10 +2245,10 @@ class worker:
 
         CALL:\n
 
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=10, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True)
         """
-        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=5, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1901-01-01", "1930-12-31", spinup=3, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True)
         gc.collect()
         return gridcell
@@ -1979,7 +2289,7 @@ class worker:
 
 
     @staticmethod
-    def load_state_std(fname:Union[str, Path]):
+    def load_state_zstd(fname:Union[str, Path]):
         """Load a python object from a zstd compressed file
 
         Args:

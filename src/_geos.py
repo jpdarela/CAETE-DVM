@@ -1,11 +1,17 @@
 from typing import Tuple
+
 import unittest
 import numpy as np
+
 from numba import jit
 import pyproj
 
+from config import fetch_config
 
-def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.5, datum="WGS84")->float:
+config = fetch_config("caete.toml")
+datum = config.crs.datum # type: ignore
+
+def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.5, datum=datum)->float:
     """Calculates the area of a cell on the Earth's surface given the center coordinates and the cell resolution
     using a geographic coordinate system with the datum provided.
     WARNING: This funcion generates an approximated value of the area of the cell. The estimated error is less than 0.1%.
@@ -46,7 +52,7 @@ def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.
 
     return area
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def find_indices_xy(N: float, W: float, res_y: float = 0.5, res_x: float = 0.5, rounding: int = 2) -> Tuple[int, int]:
     """
     It finds the indices for a given latitude and longitude in a planar grid.
@@ -82,8 +88,8 @@ def find_indices_xy(N: float, W: float, res_y: float = 0.5, res_x: float = 0.5, 
 
     # Find indices for Yc and Xc using bisection
     # Yc is negative because our origin (90 degrees north) is in the upper left corner of the matrix.
-    Yind = np.searchsorted(lat, -Yc - half_res_y, side='left')
-    Xind = np.searchsorted(lon, Xc - half_res_x, side='left')
+    Yind:int = np.searchsorted(lat, -Yc - half_res_y, side='left') #type: ignore
+    Xind:int = np.searchsorted(lon, Xc - half_res_x, side='left') #type: ignore
 
     if Yc > 90 or Yc < -90:
         Yind = -1
@@ -93,7 +99,7 @@ def find_indices_xy(N: float, W: float, res_y: float = 0.5, res_x: float = 0.5, 
     return Yind, Xind
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def find_indices(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tuple[int, int]:
     """
     It finds the indices for a given latitude and longitude in a planar grid.
@@ -125,8 +131,8 @@ def find_indices(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tup
 
 
     # Find indices for Yc and Xc using searchsorted
-    Yind = np.searchsorted(lat, -Yc - half_res, side='left')
-    Xind = np.searchsorted(lon, Xc - half_res, side='left')
+    Yind:int = np.searchsorted(lat, -Yc - half_res, side='left') #type: ignore
+    Xind:int = np.searchsorted(lon, Xc - half_res, side='left') #type: ignore
 
     if Yc > 90 or Yc < -90:
         Yind = -1
@@ -136,7 +142,7 @@ def find_indices(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tup
     return Yind, Xind
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def find_coordinates_xy(Yind: int, Xind: int, res_y: float = 0.5, res_x: float = 0.5) -> Tuple[float, float]:
     """
     It finds the latitude and longitude (cell center) for given (Yind, Xind) indices in a planar grid.
@@ -167,12 +173,10 @@ def find_coordinates_xy(Yind: int, Xind: int, res_y: float = 0.5, res_x: float =
     N = lat[Yind]
     W = lon[Xind]
 
-
-
     return N, W
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def find_coordinates(Yind: int, Xind: int, res: float = 0.5) -> Tuple[float, float]:
     """It finds the latitude and longitude (cell center) for given (Yind, Xind) indices in a planar grid
     WARNING: This function do not check if the indices are valid.
@@ -202,6 +206,59 @@ def find_coordinates(Yind: int, Xind: int, res: float = 0.5) -> Tuple[float, flo
     W = lon[Xind]
 
     return N, W
+
+
+def define_region(north:float, south:float,
+                  west:float,  east:float,
+                  res_y:float=0.5,
+                  res_x:float=0.5,
+                  rounding:int=2):
+    """define a bounding box for a given region of interest
+
+    Args:
+        north (float): Northernmost latitude. Units: degrees north.
+        south (float): Southernmost latitude. Units: degrees north.
+        west (float): Westernmost longitude. Units: degrees east.
+        east (float): Easternmost longitude. Units: degrees east.
+        res (float, optional): grid resolution. Defaults to 0.5 decimal degrees.
+        rounding (int, optional): by default, coordinates are rounded.
+        This sets the number of decimal digits. Defaults to 2.
+
+    Returns:
+        dict: bbox dictionary with keys ymin, ymax, xmin, xmax
+    """
+    ymin, xmin = find_indices_xy(north, west, res_y, res_x, rounding)
+    ymax, xmax = find_indices_xy(south, east, res_y, res_x, rounding)
+
+    return {"ymin": ymin, "ymax": ymax, "xmin": xmin, "xmax": xmax}
+
+
+def get_region(region):
+    """
+    Get bounding box for a region of interest
+    """
+    return region["ymin"], region["ymax"], region["xmin"], region["xmax"]
+
+# Bbox
+pan_amazon_bbox = {"north":10.5,
+                   "south":-21.5,
+                   "west":-80.0,
+                   "east":-43.0,
+                   "res_y":config.crs.yres, #type: ignore
+                   "res_x":config.crs.xres, #type: ignore
+                   "rounding":2}
+
+global_bbox = {"north":90.0,
+               "south":-90.0,
+               "west":-180.0,
+               "east":180.0,
+                "res_y":config.crs.yres, #type: ignore
+                "res_x":config.crs.xres, #type: ignore
+                "rounding":2}
+
+# Regions
+global_region = define_region(**global_bbox)
+pan_amazon_region = define_region(**pan_amazon_bbox)
 
 
 class TestFunctions(unittest.TestCase):

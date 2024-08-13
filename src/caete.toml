@@ -12,14 +12,21 @@ rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (m
 
 [metacomm]
 n = 10 # Number of communities to be considered in the metacombinations
-npls_max = 999 # Maximum number of PLS to be considered in the metacombinations
+npls_max = 399 # Maximum number of PLS to be considered in the metacombinations
 
 
 [crs]
 res = 0.5
 xres = 0.5
 yres = 0.5
-
+epsg_id = 4326
+datum = "WGS84"
+proj4 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+epsg_long_name = "World Geodetic System 1984"
+lat_units = "degrees_north"
+lon_units = "degrees_east"
+lat_zero = 90
+lon_zero = -180
 
 [fertilization]
 afex_mode =  "N"  # "P" or "NP"

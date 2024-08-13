@@ -20,6 +20,7 @@ h5/*
 src/.python-version
 src/logfile.log
 input/.python-version
+input/20CRv3-ERA5/spinclim_raw/*/*.nc
 run_debug
 .vscode
 .vs

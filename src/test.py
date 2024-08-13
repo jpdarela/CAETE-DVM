@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # Name for the state file. In general you can save a region with gridcells (including input data)
     # in a state file. This file can be used to restart the model from a specific point. Its useful
     # for store a initial state (after spinup) and restart the model from this point.
-    state_file = Path(f"./region_test.psz")
+    state_file = Path(f"./{region_name}_state.psz")
 
     # Read CO2 atmospheric data. The model expects a formated table in a text file with
     # exactly 2 columns (year, co2 concentration) separetd by a space, a coma, a semicolon etc.
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     print("START soil pools spinup")
     r.run_region_map(fn.soil_pools_spinup)
 
+
     print("\n\nSTART community spinup")
     r.run_region_map(fn.community_spinup)
 
@@ -93,14 +94,21 @@ if __name__ == "__main__":
     print("\n\nFinal community spinup")
     r.run_region_map(fn.final_spinup)
 
-    #Save state
-    print(f"\n\nSaving state file as {state_file}")
-    fn.save_state_zstd(r, state_file)
+    # # Save state after spinup. This state file can be used to restart the model from this point.
+    # print(f"\n\nSaving state file as {state_file}")
+    # fn.save_state_zstd(r, state_file)
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2016, 5)
+    run_breaks = fn.create_run_breaks(1901, 2016, 10)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)
+
+    # final_state:
+    # We clean the state of the gridcells to save the final state of the region
+    # THis final state is not useful to restart the model, but it is useful to
+    # access the model outputs and export it to other formats.
+    r.clean_model_state()
+    fn.save_state_zstd(r, Path(f"./{region_name}_result.psz"))
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
