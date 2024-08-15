@@ -1,51 +1,92 @@
-import os
 from pathlib import Path
-import pickle as pkl
+
+import argparse
 import bz2
-import numpy as np
+import concurrent.futures
+import os
+import pickle as pkl
+# import queue
+# import threading
+
 from netCDF4 import MFDataset
+from numba import njit
+from numpy.typing import NDArray
+from typing import Generator
+
+import numpy as np
+
 
 __what__ = "Pre-processing of input data to feed CAETÊ"
 __author__ = "jpdarela"
 __date__ = "Mon Dec 28 18:08:27 -03 2020"
-__descr__ = """ This script works in the following manner: Given a directory (raw_data) with
-                input climatic data in the form of netCDF files the script opens these files as
-                MFDataset objects. THen the metadata of the climatic data is compiled from the source
-                files and writen to a file in the output folder (clim_data). This folder will store
-                the files with input data for each gridcell for all climatic and soil variables. Each
-                gridcell will have one file with all variables for the entire timespan covered by the
-                netCDF files.
+__descr__ = """ This script reads the raw data from the 20CRv3-ERA5 or any other
+                ISIMIP climate forcing dataset (0.5 degrees resolution) and reorganize the
+                data to feed the CAETÊ model. This script also reads the soil data and save
+                it along with the climate data. The script assumes that the raw data is
+                already downloaded and the soil data is available in the soil folder.
+                It also assumes that the mask file is available in the mask folder.
+                The processed data is stored in the shared_data folder.
+                This program also saves the metadata of the processed data in a compressed file named
+                as ISIMIP_HISTORICAL_METADATA.pbz2 in the shared_data folder.
+
+                The script can be run from the command line or from an ipython environment.
+
+                The dataset is given by the --dataset argument
+
+                The mode (spinclim, transclim, etc.) is given by the --mode argument
+                It sets the name of the folder where the data will be stored. The raw data downloaded
+                from the ISIMIP data repository must be found in the folder named as dataset/<mode>_raw.
+                The soil data must be found in the soil folder.
+
+                The mask file is given by the --mask-file argument
+
+                Both for the mask file and the soil data, the data must be in numpy format.
+                Examples of the mask file and the soil data are available in the mask and soil folders.
+                They are used as default values for the respective arguments. You can check the file formats
+                necessary for the mask and soil data by looking at it.
+
+                The variables from the ISIMIP dataset to be processed are: hurs, tas, pr, ps, rsds, sfcwind
+                The soil data variables are: tn, tp, ap, ip, op (Total Nitrogen, Total Phosphorus, Available Phosphorus,
+                Inorganic Phosphorus, Organic Phosphorus)
+
+                Look at the README.md file for more information.
+
                 """
 
-# GLOBAL VARIABLES (paths)
+parser = argparse.ArgumentParser(
+    description= __descr__,
+    usage="python pre_processing.py [-h] [--dataset DATASET] [--mode MODE] \n from ipython: run pre_processing.py --dataset DATASET --mode MODE"
+)
 
-dataset = "20CRv3-ERA5"
-mode = "spinclim"
+parser.add_argument('--dataset', type=str, default="20CRv3-ERA5", help='Main dataset folder (e.g., 20CRv3-ERA5)')
+parser.add_argument('--mode', type=str, default="spinclim", help='Mode of the dataset, e.g., spinclim, transclim, etc.')
+parser.add_argument('--mask-file', type=str, default="./mask/mask_raisg-360-720.npy",
+                        help="Path to the mask file (default: ./mask/mask_raisg-360-720.npy)")
 
-CLIMATIC_DATA =  # Points to the folder with the raw data (netCDF4 files)
+# Parse the arguments
+args = parser.parse_args()
+
+# Set the global variables
+dataset = args.dataset
+mode = args.mode
 
 # OUTPUT FILE WITH METADATA
 ANCILLARY_OUTPUT = "ISIMIP_HISTORICAL_METADATA.pbz2"
 
-
 # dump folder. CAETE input files are stored here
 shared_data = Path(f"{dataset}/{mode}")
+assert shared_data.exists(), "Shared data folder does not exists"
 
 # NerCDF files with raw data to be processed
 raw_data = Path(f"{dataset}/{mode}_raw")
+assert raw_data.exists(), "Raw data folder does not exists"
 
 # INPUT FILES WITH SOIL DATA (NUTRIENTS)
-soil_data = Path(os.path.join(shared_data, "soil"))
-
-# OUTPUT FOLDER - WILL STORE THE DATA THAT WILL RUN CAETÊ
-clim_data = Path(os.path.join(shared_data, "HISTORICAL-RUN"))
+soil_data = Path("./soil")
+assert soil_data.exists(), "Soil data folder does not exists"
 
 # Load Pan Amazon mask
-mask = np.load(os.path.join(
-    shared_data, Path("mask/mask_raisg-360-720.npy")))
-
-
-# Classes and functions to help data transformation
+mask = np.load(Path(args.mask_file))
 
 
 class ds_metadata:
@@ -108,12 +149,14 @@ class input_data:
         self.dpath = Path(dpath)
         self.fpath = Path(os.path.join(self.dpath, self.filename))
         self.vars = ["hurs", "tas", "ps", "pr",
-                     "rsds", "tn", "tp", "ap", "ip", "op"]
+                     "rsds", "sfcwind", "tn", "tp", "ap", "ip", "op"]
+
         self.data = {"hurs": None,
                      "tas": None,
                      "ps": None,
                      "pr": None,
                      "rsds": None,
+                     "sfcwind": None,
                      "tn": None,
                      "tp": None,
                      "ap": None,
@@ -130,6 +173,7 @@ class input_data:
                      "ps": None,
                      "pr": None,
                      "rsds": None,
+                    "sfcwind": None,
                      "tn": None,
                      "tp": None,
                      "ap": None,
@@ -138,11 +182,11 @@ class input_data:
 
     def _load_dict(self, var, DATA):
         assert var in self.vars, "Variable does not exists"
-        assert self.data[var] is None, "Variable already sat"
+        # assert self.data[var] is None, "Variable already has data"
         self.data[var] = DATA
 
     def load(self):
-        assert self.cache == True, "There is no cache data"
+        # assert self.cache == True, "There is no cache data"
         assert self.dpath.exists()
         with bz2.BZ2File(self.fpath, mode='r') as fh:
             self.data = pkl.load(fh)
@@ -158,45 +202,34 @@ class input_data:
             self._clean_memory()
 
 
-# HElpers to open and load clmatic and soil datasets
-def read_clim_data(var):
+def read_clim_data(var:str) -> MFDataset:
+    try:
+        files = raw_data.glob(f"*{var}*")
+    except:
+        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
 
-    if var == 'hurs':
-        ds_hurs = MFDataset(os.path.join(raw_data, "hurs_*.nc4"))
-        dt = ds_hurs.variables['hurs'][:]
-        no_data = ds_hurs.variables['hurs'].missing_value
-        ds_hurs.close()
-        return dt, no_data
+    try:
+        dataset = MFDataset(list(files))
+    except:
+        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
 
-    elif var == 'tas':
-        ds_tas = MFDataset(os.path.join(raw_data, "tas_*.nc4"))
-        dt = ds_tas.variables['tas'][:]
-        no_data = ds_tas.variables['tas'].missing_value
-        ds_tas.close()
-        return dt, no_data
+    return dataset
 
-    elif var == 'pr':
-        ds_pr = MFDataset(os.path.join(raw_data, "pr_*.nc4"))
-        dt = ds_pr.variables['pr'][:]
-        no_data = ds_pr.variables['pr'].missing_value
-        ds_pr.close()
-        return dt, no_data
 
-    elif var == 'ps':
-        ds_ps = MFDataset(os.path.join(raw_data, "ps_*.nc4"))
-        dt = ds_ps.variables['ps'][:]
-        no_data = ds_ps.variables['ps'].missing_value
-        ds_ps.close()
-        return dt, no_data
+def get_dataset_size(dataset):
+    out = dataset.variables["time"][:].size
+    return out
 
-    elif var == 'rsds':
-        ds_rsds = MFDataset(os.path.join(raw_data, "rsds_*.nc4"))
-        dt = ds_rsds.variables['rsds'][:]
-        no_data = ds_rsds.variables['rsds'].missing_value
-        ds_rsds.close()
-        return dt, no_data
 
-# Open soil Stuff
+def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
+    with read_clim_data(var) as dataset:
+        try:
+            zero_dim = get_dataset_size(dataset)
+        except:
+            raise ValueError("Cannot get dataset size")
+
+        for i in range(zero_dim):
+            yield dataset.variables[var][i, :, :]
 
 
 def read_soil_data(var):
@@ -210,94 +243,106 @@ def read_soil_data(var):
         return np.load(os.path.join(soil_data, Path('inorg_p.npy')))
     elif var == 'op':
         return np.load(os.path.join(soil_data, Path('org_p.npy')))
+    else:
+        raise ValueError("Variable not found")
+
+
+@njit
+def get_values_at(array, mask=mask):
+    size = np.logical_not(mask).sum()
+    out = np.zeros(size, dtype=np.float32)
+    n = 0
+    for Y in range(360):
+        for X in range(720):
+            if not mask[Y][X]:
+                out[n] = array[Y, X]
+                n += 1
+    return out
+
+
+def process_gridcell(grd:input_data , var, data):
+    print(f"Processing {var} for gridcell {grd.y}-{grd.x}      ", end="\r")
+    grd.load()
+    grd._load_dict(var, data)
+    grd.write()
 
 
 def main():
     # SAVE METADATA
-    dss = (MFDataset(os.path.join(raw_data, "hurs_*.nc4")),
-           MFDataset(os.path.join(raw_data, "tas_*.nc4")),
-           MFDataset(os.path.join(raw_data, "pr_*.nc4")),
-           MFDataset(os.path.join(raw_data, "ps_*.nc4")),
-           MFDataset(os.path.join(raw_data, "rsds_*.nc4")))
+    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
 
+    dss = [read_clim_data(var) for var in variables]
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])
-    ancillary_data.write(os.path.join(
-        clim_data, ANCILLARY_OUTPUT))
+    ancillary_data.write(shared_data / ANCILLARY_OUTPUT)
 
     for ds in dss:
         ds.close()
     del dss
 
-    # Create input templates
     input_templates = []
-    # Check outputs dir
-    dir_check = True if clim_data.exists() else os.mkdir(clim_data)
-
+    ngrid = 0
     for Y in range(360):
         for X in range(720):
             if not mask[Y][X]:
-                input_templates.append(input_data(Y, X, clim_data))
+                ngrid += 1
+                input_templates.append(input_data(Y, X, shared_data))
     input_templates = np.array(input_templates, dtype=object)
 
-    # HURS & soil:
-    hurs, no_data = read_clim_data('hurs')
-    tn = read_soil_data('tn')
-    tp = read_soil_data('tp')
-    ap = read_soil_data('ap')
-    ip = read_soil_data('ip')
-    op = read_soil_data('op')
+    # Read Soil data
+    tn = read_soil_data('tn') # Total Nitrogen
+    tp = read_soil_data('tp') # Total Phosphorus
+    ap = read_soil_data('ap') # Available Phosphorus
+    ip = read_soil_data('ip') # Inorganic Phosphorus
+    op = read_soil_data('op') # Organic Phosphorus
 
+    # Load soil data
     for grd in input_templates:
-        grd._load_dict('hurs', hurs[:, grd.y, grd.x].data.copy(order="F"))
+        print(f"Processing soil data for gridcell {grd.y}-{grd.x}       ", end="\r")
         grd._load_dict('tn', tn[grd.y, grd.x].copy(order="F"))
         grd._load_dict('tp', tp[grd.y, grd.x].copy(order="F"))
         grd._load_dict('ap', ap[grd.y, grd.x].copy(order="F"))
         grd._load_dict('ip', ip[grd.y, grd.x].copy(order="F"))
         grd._load_dict('op', op[grd.y, grd.x].copy(order="F"))
-
-        hurs[:, grd.y, grd.x] = no_data
         grd.write()
 
-    del tn
-    del tp
-    del ap
-    del ip
-    del op
-    del hurs
+    # Load clim_data and write to input templates
+    array_data = []
+    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
+    for var in variables:
+        tsize = get_dataset_size(read_clim_data(var))
+        data = np.zeros((ngrid, tsize), dtype=np.float32)
 
-    tas, no_data = read_clim_data('tas')
-    for grd in input_templates:
-        grd.load()
-        grd._load_dict('tas', tas[:, grd.y, grd.x].data.copy(order="F"))
-        tas[:, grd.y, grd.x] = no_data
-        grd.write()
-    del tas
+        j = 0
 
-    pr, no_data = read_clim_data('pr')
-    for grd in input_templates:
-        grd.load()
-        grd._load_dict('pr', pr[:, grd.y, grd.x].data.copy(order="F"))
-        pr[:, grd.y, grd.x] = no_data
-        grd.write()
-    del pr
+        for arr in _read_clim_data_(var):
+            print(f"Processing {var} data for day {j}      ", end="\r")
+            data[:, j] = get_values_at(arr.data)
+            j += 1
+        array_data.append(data)
 
-    ps, no_data = read_clim_data('ps')
-    for grd in input_templates:
-        grd.load()
-        grd._load_dict('ps', ps[:, grd.y, grd.x].data.copy(order="F"))
-        ps[:, grd.y, grd.x] = no_data
-        grd.write()
-    del ps
+    data_dict = dict(zip(variables, array_data))
 
-    rsds, no_data = read_clim_data('rsds')
-    for grd in input_templates:
-        grd.load()
-        grd._load_dict('rsds', rsds[:, grd.y, grd.x].data.copy(order="F"))
-        rsds[:, grd.y, grd.x] = no_data
-        grd.write()
-    del rsds
+    for var, data in data_dict.items():
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(process_gridcell, grd, var, data[i]) for i, grd in enumerate(input_templates)]
+            concurrent.futures.wait(futures)
+
+## TODO: Improve the test function and add an argument to run it
+def test(var, y=160, x=236):
+    # comapre raw data and processed data
+    with bz2.BZ2File(f"./20CRv3-ERA5/spinclim/input_data_{y}-{x}.pbz2", mode='r') as fh:
+        pbz2_data = pkl.load(fh)
+
+    dss = read_clim_data(var)
+    # get a slice of the data
+    arr = dss.variables[var][:500, y, x]
+    saved_arr = pbz2_data[var][:500]
+    print(np.allclose(arr, saved_arr))
 
 
 if __name__ == "__main__":
     main()
+    # # A small test to check if the data was correctly processed
+    # for var in ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']:
+    #     test(var)

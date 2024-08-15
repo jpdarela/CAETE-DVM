@@ -1748,9 +1748,9 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 return [executor.submit(self.__fetch_spin_data, period)]
             # return data, self.executed_iterations[period]
         elif isinstance(period, tuple):
-            assert period[1] < self.run_counter, "Period must be less than the number of spins" # type: ignore
+            assert period[1] <= self.run_counter, "Period must be less than the number of spins" # type: ignore
             assert period[0] < period[1], "Period must be a tuple with the start and end spins" # type: ignore
-            spins = range(period[0] + 1, period[1] + 2) # type: ignore
+            spins = range(period[0], period[1] + 1) # type: ignore
             files = tuple((f"spin{x}" for x in spins))
         else:
             files:Tuple[str, ...] = tuple(path_str for path_str in self.outputs.values())
@@ -1805,7 +1805,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             pp: bool=False,
                             return_time: bool=False,
                             return_array: bool=False
-                            ) -> Union[NDArray, List, Tuple, None]:
+                            ) -> Union[List, NDArray, Tuple[NDArray, NDArray], Tuple[Dict[str, NDArray], NDArray], List[NDArray]]:
         """_summary_
 
         Args:
@@ -1851,12 +1851,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
         if pp:
             print(f"Available variables: {variable_names}")
-            return None
+            return [] # print and exit
 
         not_in = variable_set - variable_names
         assert len(not_in) == 0, f"No variable(s): {not_in} found in the output data"
 
-        output_list = []
+        output_list:List[NDArray] = []
         varnames = []
         for var in variable_set:
             sample_data = result[0][var]
@@ -1885,12 +1885,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             if return_time:
                 pass
             else:
-                return output_list[0]
+                return output_list[0] # return the array
 
         if not return_time:
             if len(output_list) == 1:
-                return output_list[0]
-            return output_list
+                return output_list[0] # return the array
+            return output_list        # return a list of arrays List[NDArray]
         else:
             # # Build date index. datelist will have the same length as the arrays
             # # if the files were saved in a transient run. Files saved in a spinup
@@ -1902,10 +1902,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                                        calendar=self.calendar)
 
             if len(output_list) == 1:
-                return output_list[0], datelist
+                return output_list[0], datelist # return the Tuple[NDArray, NDArray[datetime]]
 
-            output_dict = dict(zip(varnames, output_list))
-            return output_dict, datelist
+            output_dict:Dict[str, NDArray] = dict(zip(varnames, output_list))
+            return output_dict, datelist  # return the Tuple[Dict[str, NDArray], NDArray[datetime]]
 
 
     def print_available_periods(self):
