@@ -1,0 +1,14 @@
+# Define the path to the data files
+mask_files = "./mask"
+soil_nutrients_data = "./soil"
+
+# Define the filenames for the data files in the soil_nutrients_data directory defined above
+# All units are g/m2
+tn_file = "total_n_PA.npy"
+tp_file = "total_p.npy"
+ap_file = "avail_p.npy"
+ip_file = "inorg_p.npy"
+op_file = "org_p.npy"
+
+
+

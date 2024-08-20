@@ -47,7 +47,7 @@ if __name__ == "__main__":
     fn: worker = worker()
 
     # Create the region
-    region_name = "pan_amazon_hist" # Name of the run (the outputs of thi region will be saved in this folder). Look at caete.toml
+    region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
     # Input files. The model will look for the input files in these folders.
     obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
