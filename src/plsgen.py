@@ -41,16 +41,22 @@ from caete_module import photo as model
 
 __author__ = 'JP Darela'
 
-description = """ Generate/save a table of plant life strategies for CAETE.
+description = """ Generate and save a table of plant life strategies for CAETE.
                   The first argument is the number of PLSs to be created
                   and the second is the path to a folder used to save the file.
-                  The program will generate a CSV file with the PLSs inside
-                  the folder pointed. If the folder exists, a file named
-                  pls_attrs-<NUMBER>.csv will be saved there. If the folder
-                  does not exists, it will be created (can be nested folders like
-                  foo/bar/zip).The parameter NUMBER is the number of PLS given
-                  by the -n (--number) flag. Optionally you can import the
-                  table_gen function defined in this script and use it in your own code"""
+                  If the folder exists, a file named pls_attrs-<NUMBER>.csv will
+                  be saved there. If the folder does not exists, it will be created
+                 (can be nested folders like foo/bar/zip).The parameter NUMBER
+                 is the number of PLS given by the -n (--number) flag. Optionally you can import the
+                 table_gen function defined in this script and use it in your own code.
+                 In a python script, you can use the function as follows:
+
+                 from plsgen import table_gen
+
+                 table = table_gen(NUMBER)
+
+                 The created object table is a numpy array with axis (NTRAITS, NPLS).
+                 """
 
 parser = argparse.ArgumentParser(
     description=description,

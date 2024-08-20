@@ -77,6 +77,8 @@ modules: $(sources)
 
 clean_py:
 	del /s /q __pycache__
+	del /s *.psz
+	
 
 clean: clean_py
 	del /s *.mod

@@ -85,9 +85,12 @@ class soil_water:
         self.fc2 = fc2
         self.wp2 = wp2
 
-        # Soil Water POols mm (Kg m-2)
-        self.w1 = 20.0
-        self.w2 = 60.0
+        # Soil Water POols mm (Kg m-2). We subtract the water content at wilt point
+        self.w1 = 20.0  # Initial water content
+        self.w2 = 60.0  # Initial water content
+        self.awc1 = self.w1 - (self.wp1 * self.w1)
+        self.awc2 = self.w2 - (self.wp2 * self.w2)
+
 
         # Set pool sizes
         # Kilograms of water that would fit the  soil layers in the ausence of soil
@@ -107,6 +110,11 @@ class soil_water:
         self.lbd_2 = B_func(self.fc2, self.wp2)
 
         self.ksat_2 = ksat_func(self.ws2, self.fc2, self.lbd_2)
+
+    def calc_awc(self):
+        """Calculates the available water capacity for the grid cell"""
+        self.awc1 = max(0.0, self.w1 - (self.wp1 * self.w1))
+        self.awc2 = max(0.0, self.w2 - (self.wp2 * self.w2))
 
     def _update_pool(self, prain, evapo):
         """Calculates upper and lower soil water pools for the grid cell,
@@ -169,6 +177,9 @@ class soil_water:
         if runoff2 < 1e-17:
             runoff2 = 0.0
 
+        # Update available water capacity
+        self.calc_awc()
+
         return runoff1 + runoff2
 
 # def CPTEC_PVM2_bdget(temp, p0, rh):
@@ -188,9 +199,12 @@ def main():
         roff = wp._update_pool(evapo, evapo)
         wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
         wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
-        # print(wp.w1, ':w1')
-        # print(wp.w2, ':w2')
-        # print(roff, ' :runoff')
+        print(wp.w1, ':w1')
+        print(wp.w2, ':w2')
+        print(wp.awc1, ':awc1')
+        print(wp.awc2, ':awc2')
+        print()
+        print(roff, ' :runoff')
 
 
 if __name__ == "__main__":

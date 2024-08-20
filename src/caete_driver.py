@@ -18,8 +18,9 @@ Copyright 2017- LabTerra
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import multiprocessing as mp
+
 from pathlib import Path
+import multiprocessing as mp
 
 
 # This is a script that exemplify the usage of the new implementation of the CAETÊ model.
@@ -46,10 +47,13 @@ if __name__ == "__main__":
     fn: worker = worker()
 
     # Create the region
-    region_name = "region_test" # Name of the run (the outputs of thi region will be saved in this folder). Look at caete.toml
+    region_name = "pan_amazon_hist" # Name of the run (the outputs of thi region will be saved in this folder). Look at caete.toml
 
-    # Point to the input files. The model will look for the input files in this folder.
-    input_files = "../input/test_input"
+    # Input files. The model will look for the input files in these folders.
+    obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
+    spinclim_files = "../input/20CRv3-ERA5/spinclim_test/"
+    transclim_files = "../input/20CRv3-ERA5/transclim_test/"
+    counterclim_files = "../input/20CRv3-ERA5/counterclim_test/"
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -57,22 +61,23 @@ if __name__ == "__main__":
     # Name for the state file. In general you can save a region with gridcells (including input data)
     # in a state file. This file can be used to restart the model from a specific point. Its useful
     # for store a initial state (after spinup) and restart the model from this point.
-    state_file = Path(f"./{region_name}_state.psz")
+    state_file = Path(f"./{region_name}_state_file.psz")
 
     # Read CO2 atmospheric data. The model expects a formated table in a text file with
     # exactly 2 columns (year, co2 concentration) separetd by a space, a coma, a semicolon etc.
     # A header is optional. The model also expects annual records in ppm (parts per million).
-    co2_path = Path("../input/co2/historical_CO2_annual_1765_2018.txt")
+    co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
 
-    # Read PLS table. The model expects csv file createt with the table_gen defined in
+    # Read PLS table. The model expects csv file created with the table_gen defined in
     # the plsgen.py script. This table contains the global PLS definitions. We also refer to
     # this table as main table. This table represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-60000.csv"))
 
+    # Create the region using the spinup climate files
     r = region(region_name,
-               input_files,
+               spinclim_files,
                soil_tuple,
                co2_path,
                main_table)
@@ -84,22 +89,48 @@ if __name__ == "__main__":
     print("START soil pools spinup")
     r.run_region_map(fn.soil_pools_spinup)
 
-
-    print("\n\nSTART community spinup")
+    print("\nSTART community spinup")
     r.run_region_map(fn.community_spinup)
 
-    print("\n\nSTART community spinup with PLS seed")
+    print("\nSTART community spinup with PLS seed")
     r.run_region_map(fn.env_filter_spinup)
 
-    print("\n\nFinal community spinup")
+    print("\nSTART final_spinup")
     r.run_region_map(fn.final_spinup)
+
+    #Finalize spinclim in 18501231
+    print("\nSTART spinup transer")
+    r.run_region_map(fn.spinup_transer)
+
+    # Change input source to transclim files 1851-1900
+    print("\nSTART transclim run")
+    r.update_input(transclim_files)
+
+    # Run the model
+    r.run_region_map(fn.transclim_run)
+
+    # # Create a copy of the region to run counterclim
+    #
+    # r_copy = copy.deepcopy(r)
+    # r_copy.update_input(counterclim_files)
+    # r_copy.update_dump_directory(output_path/Path(f"./{region_name}"), "counterclim")
+
+    # print("\nSTART transient run - COUNTERCLIM")
+    # run_breaks = fn.create_run_breaks(1901, 2021, 20)
+    # for period in run_breaks:
+    #     print(f"Running period {period[0]} - {period[1]}")
+    #     r_copy.run_region_starmap(fn.transient_run_brk, period)
 
     # # Save state after spinup. This state file can be used to restart the model from this point.
     # print(f"\n\nSaving state file as {state_file}")
     # fn.save_state_zstd(r, state_file)
 
+    # Update the input source to the transient run - obsclim files
+    print("\nUpdate input and run obsclim")
+    r.update_input(obsclim_files)
+
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2016, 10)
+    run_breaks = fn.create_run_breaks(1901, 2021, 5)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)

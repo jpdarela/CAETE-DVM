@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Tuple
 
 import unittest
@@ -5,16 +6,17 @@ import numpy as np
 
 from numba import jit
 import pyproj
-
 from config import fetch_config
 
-config = fetch_config("caete.toml")
+config_file = Path("../src/caete.toml").resolve()
+
+config = fetch_config(config_file)
 datum = config.crs.datum # type: ignore
+
 
 def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.5, datum=datum)->float:
     """Calculates the area of a cell on the Earth's surface given the center coordinates and the cell resolution
     using a geographic coordinate system with the datum provided.
-    WARNING: This funcion generates an approximated value of the area of the cell. The estimated error is less than 0.1%.
 
     Args:
         center_lat (float): Center latitude, degrees North

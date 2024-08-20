@@ -21,12 +21,15 @@ Copyright 2017- LabTerra
 import copy
 import csv
 import os
+import pickle as pkl
 import sys
+
 from pathlib import Path
-from typing import Callable, Dict, Tuple, Union, Any, Optional
+from typing import Callable, Dict, Tuple, Union, Any, Optional, List
 from numpy.typing import NDArray
 
 import numpy as np
+import zstandard as zstd
 
 from config import fortran_runtime
 
@@ -158,6 +161,28 @@ class community:
         # NOTE: This is not implemented
         self.construction_npp: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
 
+        # These variables are used to output data once a year
+        self.cleaf: float = 0.0
+        self.croot: float = 0.0
+        self.cwood: float = 0.0
+        self.csto: float = 0.0
+        self.limitation_status_leaf: Tuple[NDArray]
+        self.limitation_status_root: Tuple[NDArray]
+        self.limitation_status_wood: Tuple[NDArray]
+
+        self.uptk_strat_n: Tuple[NDArray]
+        self.uptk_strat_p: Tuple[NDArray]
+
+        # annual sums
+        self.anpp: float = 0.0
+        self.uptake_costs: float = 0.0
+
+        self.shannon_entropy: float = 0.0
+        self.shannon_diversity: float = 0.0
+        self.shannon_evenness: float = 0.0
+
+
+
         return None
 
 
@@ -206,6 +231,8 @@ class community:
             occupation (np.ndarray):
         """
         self.vp_lsid = np.where(occupation > 0.0)[0]
+        if len(self.vp_lsid) == 0:
+            self.masked = np.int8(1)
 
 
     def restore_from_main_table(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
@@ -253,9 +280,9 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        self.vp_cleaf[pos] = np.random.uniform(0.3, 0.4)
-        self.vp_croot[pos] = np.random.uniform(0.3, 0.4)
-        self.vp_cwood[pos] = np.random.uniform(5.0, 6.0)
+        self.vp_cleaf[pos] = np.random.uniform(0.1, 0.2)
+        self.vp_croot[pos] = np.random.uniform(0.1, 0.2)
+        self.vp_cwood[pos] = np.random.uniform(1.0, 2.0)
         self.vp_sto[0, pos] = np.random.uniform(0.0, 0.1)
         self.vp_sto[1, pos] = np.random.uniform(0.0, 0.01)
         self.vp_sto[2, pos] = np.random.uniform(0.0, 0.001)
@@ -281,7 +308,7 @@ class community:
         self.update_lsid(self.vp_ocp)
 
 
-    def get_unique_pls(self, pls_selector: Callable) -> Tuple[int, np.ndarray]:
+    def get_unique_pls(self, pls_selector: Callable[[int], Tuple[int, np.ndarray]]) -> Tuple[int, np.ndarray]:
         """Gets a unique PLS from the main table using the provided callable.
 
         Args:
@@ -343,6 +370,60 @@ class metacommunity:
         for k, community in self.communities.items():
             i = int(k)
             self.mask[i] = community.masked
+
+
+    def wrapp_state(self, year:int) -> Dict[str, Any]:
+        """Returns a dictionary with the state of the metacommunity."""
+        state = {}
+        state['communities'] = {}
+        counter = 1
+        cveg = 0.0
+        for k, community in self.communities.items():
+            if community.masked == 1:
+                continue
+            state['communities'][k] = {}
+            state['communities'][k]['vp_cleaf'] = community.vp_cleaf
+            state['communities'][k]['vp_croot'] = community.vp_croot
+            state['communities'][k]['vp_cwood'] = community.vp_cwood
+            state['communities'][k]['vp_ocp'] = community.vp_ocp
+            state['communities'][k]['id'] = community.id[community.vp_lsid]
+            state['communities'][k]['vp_lsid'] = community.vp_lsid
+            state['communities'][k]['limitation_status_leaf'] = community.limitation_status_leaf
+            state['communities'][k]['limitation_status_root'] = community.limitation_status_root
+            state['communities'][k]['limitation_status_wood'] = community.limitation_status_wood
+            state['communities'][k]['uptk_strat_n'] = community.uptake_strategy_n
+            state['communities'][k]['uptk_strat_p'] = community.uptake_strategy_p
+            state['communities'][k]['cleaf'] = community.cleaf
+            state['communities'][k]['croot'] = community.croot
+            state['communities'][k]['cwood'] = community.cwood
+            state['communities'][k]['masked'] = community.masked
+            state['communities'][k]['uptake_costs'] = community.uptake_costs
+            state['communities'][k]['anpp'] = community.anpp
+            state['communities'][k]['shannon_entropy'] = community.shannon_entropy
+            state['communities'][k]['shannon_diversity'] = community.shannon_diversity
+            state['communities'][k]['shannon_evenness'] = community.shannon_evenness
+            cveg += community.cleaf + community.croot + community.cwood
+            counter += 1
+        state['cveg'] = cveg/counter
+        state['year'] = year
+        return state
+
+
+    def save_state(self, file_path: Union[str, Path], year:int) -> None:
+        """Save the state of the metacommunity to a binary file using zstd compression.
+
+        Args:
+            file_path (Union[str, Path]): The path to the file where the state will be saved.
+        """
+        state = self.wrapp_state(year)
+
+        with open(file_path, 'ab') as f:
+            # Create a compressor object
+            cctx = zstd.ZstdCompressor(level=10, threads=1)
+            # Compress the pickled data
+            compressed_data = cctx.compress(pkl.dumps(state))
+            # Write the compressed data to the file
+            f.write(compressed_data)
 
 
     def __getitem__(self, index:Union[int, str]):

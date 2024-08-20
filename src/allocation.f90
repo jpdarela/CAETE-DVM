@@ -254,9 +254,6 @@ module alloc
       ccn(:)                 = 0.0D0
       ccp(:)                 = 0.0D0
 
-      ! Catch the functional/demographic traits of pls
-      !  head = ['g1', 'resopfrac', 'tleaf', 'twood', 'troot', 'aleaf', 'awood', 'aroot', 'c4',
-      !  'leaf_n2c', 'awood_n2c', 'froot_n2c', 'leaf_p2c', 'awood_p2c', 'froot_p2c', pdia, amp]
       resorpt_frac = dt(2)
       tleaf = dt(3) ! RESIDENCE TIME (years)
       twood = dt(4)
@@ -277,10 +274,10 @@ module alloc
       ctonfix = 0.0D0
 
 
-      ! Only a very small amount of total nutrients are available in fact
+      ! Only a  small amount of total nutrients are available in fact
       ! This is used to testing purposes only
-      mult_factor_n  = 0.05D0
-      mult_factor_p  = 0.005D0
+      mult_factor_n  = 0.015D0
+      mult_factor_p  = 0.0018D0
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
 

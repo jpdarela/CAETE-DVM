@@ -29,6 +29,7 @@ import tomllib
 
 # path to the fortran compiler dlls, used in windows systems.
 fortran_runtime = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
+config_file = Path("./caete.toml").resolve()
 
 
 class Config:
@@ -68,7 +69,7 @@ def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
     return data
 
 # Can be used in the code to get the parameters any the toml file
-def fetch_config(config: Union[str, Path]) -> Config:
+def fetch_config(config: Union[str, Path] = config_file) -> Config:
     """ Get parameters from the a toml file.
     Returns a Config object"""
     return Config(_fetch_config_parameters(config))

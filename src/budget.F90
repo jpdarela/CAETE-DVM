@@ -272,6 +272,7 @@ contains
 #endif
 
       construction = rnpp ! construction (Real NPP) of the plant tissues in the previous day. To calculate growth respiration
+      !f2py threadsafe
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
