@@ -6,7 +6,7 @@ caete_config = fetch_config('caete.toml')
 
 descrp = "This script creates a global.f90 file with parameters defined in the caete.toml file."
 
-NPLS = caete_config.metacomm.npls_max # Max number of Plant Life Strategies per community
+NPLS = caete_config.metacomm.npls_max # type: ignore # Max number of Plant Life Strategies per community
 
 global_f90 = f"""
 ! Copyright 2017- LabTerra

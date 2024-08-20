@@ -248,7 +248,7 @@ def table_gen(NPLS, fpath=None, ret=True):
     # # C4 type
     c4 = np.zeros((NPLS,), dtype=np.float64)
     if GRASS_FRAC > 0.0 and index0 > 1:
-        n123 = ceil(alloc_g.shape[0] * 0.50)
+        n123 = ceil(alloc_g.shape[0] * 0.50) # type: ignore
         c4[0: n123 - 1] = 1.0
 
     # # Nitrogen and Phosphorus content in carbon pools
@@ -285,7 +285,7 @@ def table_gen(NPLS, fpath=None, ret=True):
     awood_n2c = wood[:, 0]
     awood_p2c = wood[:, 1]
 
-    test = alloc[:, 4] == 0.0
+    test = alloc[:, 4] == 0.0 # type: ignore
 
     np.place(awood_n2c, test, 0.0)
     np.place(awood_p2c, test, 0.0)
@@ -313,7 +313,7 @@ def table_gen(NPLS, fpath=None, ret=True):
     # new traits
     pdia = np.random.uniform(0.01, 0.10, NPLS)
     np.place(pdia, test, 0.0)
-    woods = np.where(alloc[:, 4] > 0.0)[0]
+    woods = np.where(alloc[:, 4] > 0.0)[0] # type: ignore
     # return woods
 
     for i in woods:
@@ -324,8 +324,8 @@ def table_gen(NPLS, fpath=None, ret=True):
 
     pls_id = np.arange(NPLS)
 
-    stack = (pls_id, g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2],
-             alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,
+    stack = (pls_id, g1, resorption, alloc[:, 0], alloc[:, 1], alloc[:, 2], # type: ignore
+             alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,           # type: ignore
              awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c,
              amp, pdia)
 

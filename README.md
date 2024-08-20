@@ -1,6 +1,10 @@
 
 # CAETÊ
 
+-Warning: This readme is outdated. A new version is coming soon.
+
+I made a lot of changes in the source code. The prototype version of the model is stored in the branch CAETE-DVM-v0.1
+
 This is the implementation of the Dynamic Vegetation Model CAETÊ (CArbon and Ecosystem Trait-based Evaluation model) - including Nitrogen and Phosphorus cycling.
 
 ## Development Dependencies

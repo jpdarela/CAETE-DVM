@@ -162,20 +162,20 @@ class community:
         self.construction_npp: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
 
         # These variables are used to output data once a year
-        self.cleaf: float = 0.0
-        self.croot: float = 0.0
-        self.cwood: float = 0.0
-        self.csto: float = 0.0
-        self.limitation_status_leaf: Tuple[NDArray]
-        self.limitation_status_root: Tuple[NDArray]
-        self.limitation_status_wood: Tuple[NDArray]
+        self.cleaf: np.float32 = np.float32(0.0)
+        self.croot: np.float32 = np.float32(0.0)
+        self.cwood: np.float32 = np.float32(0.0)
+        self.csto:  np.float32 = np.float32(0.0)
+        self.limitation_status_leaf: List[NDArray[Any]]
+        self.limitation_status_root: List[NDArray[Any]]
+        self.limitation_status_wood: List[NDArray[Any]]
 
-        self.uptk_strat_n: Tuple[NDArray]
-        self.uptk_strat_p: Tuple[NDArray]
+        self.uptake_strategy_n: List[NDArray[Any]]
+        self.uptake_strategy_p: List[NDArray[Any]]
 
         # annual sums
-        self.anpp: float = 0.0
-        self.uptake_costs: float = 0.0
+        self.anpp: np.float32 = np.float32(0.0)
+        self.uptake_costs: np.float32 = np.float32(0.0)
 
         self.shannon_entropy: float = 0.0
         self.shannon_diversity: float = 0.0
