@@ -51,7 +51,7 @@ DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Mo
 #     communities can be changed freely between different simulations. However, If you want
 #     to change the number of PLS in a community, you must not only change the configuration
 #     in the caete.toml file but also recompile the shared library using gnu-make or nmake.
-#     The shared library here is the fortran code that we use to run the "daily processes".
+#     The shared library here is the fortran code that we use to run the daily processes.
 
 #     The global PLS table is a collection of PLS that is shared by all gridcells in the region. There is a
 #     script called plsgen.py that can create a global PLS table. Run it in the src folder like this:
@@ -61,13 +61,13 @@ DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Mo
 #     This will save a file named pls_attrs<n>.csv (where n = 25000) in the local folder MyPLSDataFolder.
 #     The script uses data from literature to generate a quasi-random sample of PLS based on 17 plant
 #     functional traits. There is a plsgen.toml file that contains some of the parameters used
-#     to generate the PLS table. There are comments in the script. Pls look.
+#     to generate the PLS table. There are comments in the script. Check it for more infos.
 
 #     During the simulation of a gridcell, it is possible to control the number of PLS in a community.
 #     You can reset a community to a new set of PLS. This is useful when the set of PLS initially designated
 #     to a community is not able to accumulate biomass in the initial stage of the simulation.
 #     It is also possible to reset the entire metacommunity at once. This is useful to reset the
-#     distributions of PLS after a initial spinup aiming to reach a stable state in the soil pools.
+#     distributions of PLS after a initial spinup. In this case, te spin  aims to reach a stable state in the soil pools.
 #     Right after this soil spinup, it is possible to seed new PLS in the communities while runing the
 #     model. This is useful to simulate the filtering of the gridcell "environment" along time while adding new
 #     PLS to the communities.
@@ -88,10 +88,12 @@ DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Mo
 #   for each gridcell is saved and the final file can become huge. This tradeoff with the facitily to restart
 #   the simulation from a specific point with a very low amount of code. The state file is compressed with zsdt
 
-#   I am testing the model with a script called test.py. This script is a good example of how to use the model.
+#   I am testing the model with a script called caete_driver.py. This script is a good example of how to use the model.
 #   In the end of this source file (caete.py) there is some code used to test/profile the python code.
 
-#   The old implementation of the model is in the classes grd and plot at the end of this source file.
+#   The old implementation of the model is in a separate branch in this repositopy: CAETE-DVM-v0.1.
+#   I started to code the new implementation in the master branch while keeping the old implementation along
+#   the way (Working). Several parts of the old implementation were used here.
 # """
 
 import bz2
@@ -102,7 +104,6 @@ import gc
 import multiprocessing as mp
 import os
 import pickle as pkl
-import random as rd
 import sys
 import warnings
 
@@ -112,9 +113,6 @@ from threading import Thread
 from time import sleep
 from typing import Callable, Dict, List, Optional, Tuple, Union, Any, Collection, Set
 
-
-
-
 import cftime
 import numba
 import numpy as np
@@ -122,7 +120,7 @@ from joblib import dump, load
 from numpy.typing import NDArray
 import zstandard as zstd
 
-from _geos import calculate_area, find_coordinates_xy, find_indices, find_indices_xy
+from _geos import calculate_area, find_coordinates_xy, find_indices_xy
 from config import Config, fetch_config, fortran_runtime
 from hydro_caete import soil_water
 import metacommunity as mc
@@ -130,6 +128,8 @@ from output import budget_output
 
 # Tuples with hydrological parameters for the soil water calculations
 from parameters import hsoil, ssoil, tsoil
+
+# Output path. (../outputs)
 from parameters import output_path
 
 # This code is only relevant in Windows systems. It adds the fortran compiler dlls to the PATH
@@ -143,21 +143,17 @@ if sys.platform == "win32":
 
 # shared library
 from caete_module import budget as model
-from caete_module import global_par as gp
 from caete_module import photo as m
 from caete_module import soil_dec
 from caete_module import water as st
 
-from memory_profiler import profile
+#from memory_profiler import profile
 
 # Global lock. Used to lock the access to the main table of Plant Life Strategies
 lock = mp.Lock()
 
 # Output file extension
 out_ext = ".pkz"
-
-# Define a type for nested configuration data
-config_type: Union[Config, int, float, str]
 
 warnings.simplefilter("default")
 
@@ -505,7 +501,7 @@ class state_zero:
 
         # Configuration data
         self.config:Config = fetch_config("caete.toml")
-        self.afex_config: config_type = self.config.fertilization # type: ignore
+        self.afex_config = self.config.fertilization # type: ignore
         self.co2_data: Optional[Dict[int, float]] = None
 
         # CRS
@@ -1641,14 +1637,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         self.sp_in_p)
                     self.sp_in_p -= self.sp_so_p + self.sp_available_p
                     # Sorbed P
-                    if self.pupt[1, step] > 0.75:
-                        rwarn(
-                            f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
-                        self.pupt[1, step] = 0.0
+                    # if self.pupt[1, step] > 0.75:
+                    #     rwarn(
+                    #         f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                    #     self.pupt[1, step] = 0.0
 
-                    if self.pupt[1, step] > self.sp_so_p:
-                        rwarn(
-                            f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
+                    # if self.pupt[1, step] > self.sp_so_p:
+                    #     rwarn(
+                    #         f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
                     self.sp_so_p -= self.pupt[1, step]
                     try:
                         t1 = np.all(self.sp_snc > 0.0)
@@ -1663,14 +1659,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         self.sp_snc[np.where(self.sp_snc < 0)[0]] = 0.0
                     # ORGANIC nutrients uptake
                     # N
-                    if self.nupt[1, step] < 0.0:
-                        rwarn(
-                            f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                        self.nupt[1, step] = 0.0
-                    if self.nupt[1, step] > 2.5:
-                        rwarn(
-                            f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                        self.nupt[1, step] = 0.0
+                    # if self.nupt[1, step] < 0.0:
+                    #     rwarn(
+                    #         f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                    #     self.nupt[1, step] = 0.0
+                    # if self.nupt[1, step] > 2.5:
+                    #     rwarn(
+                    #         f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
+                    #     self.nupt[1, step] = 0.0
                     total_on = self.sp_snc[:4].sum()
                     if total_on > 0.0:
                         frsn = [i / total_on for i in self.sp_snc[:4]]
@@ -1687,14 +1683,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.sp_sorganic_n = self.sp_snc[2:4].sum()
 
                     # P
-                    if self.pupt[2, step] < 0.0:
-                        rwarn(
-                            f"PuptkO < 0  in spin{s}, step{step} - {self.pupt[2, step]}")
-                        self.pupt[2, step] = 0.0
-                    if self.pupt[2, step] > 1.0:
-                        rwarn(
-                            f"PuptkO > max  in spin{s}, step{step} - {self.pupt[2, step]}")
-                        self.pupt[2, step] = 0.0
+                    # if self.pupt[2, step] < 0.0:
+                    #     rwarn(
+                    #         f"PuptkO < 0  in spin{s}, step{step} - {self.pupt[2, step]}")
+                    #     self.pupt[2, step] = 0.0
+                    # if self.pupt[2, step] > 1.0:
+                    #     rwarn(
+                    #         f"PuptkO > max  in spin{s}, step{step} - {self.pupt[2, step]}")
+                    #     self.pupt[2, step] = 0.0
                     total_op = self.sp_snc[4:].sum()
                     if total_op > 0.0:
                         frsp = [i / total_op for i in self.sp_snc[4:]]
@@ -1710,32 +1706,32 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.sp_organic_p = self.sp_snc[4:6].sum()
                     self.sp_sorganic_p = self.sp_snc[6:].sum()
 
-                    # Raise some warnings
-                    if self.sp_organic_n < 0.0:
-                        self.sp_organic_n = 0.0
-                        rwarn(f"ON negative in spin{s}, step{step}")
-                    if self.sp_sorganic_n < 0.0:
-                        self.sp_sorganic_n = 0.0
-                        rwarn(f"SON negative in spin{s}, step{step}")
-                    if self.sp_organic_p < 0.0:
-                        self.sp_organic_p = 0.0
-                        rwarn(f"OP negative in spin{s}, step{step}")
-                    if self.sp_sorganic_p < 0.0:
-                        self.sp_sorganic_p = 0.0
-                        rwarn(f"SOP negative in spin{s}, step{step}")
+                    # # Raise some warnings
+                    # if self.sp_organic_n < 0.0:
+                    #     self.sp_organic_n = 0.0
+                    #     rwarn(f"ON negative in spin{s}, step{step}")
+                    # if self.sp_sorganic_n < 0.0:
+                    #     self.sp_sorganic_n = 0.0
+                    #     rwarn(f"SON negative in spin{s}, step{step}")
+                    # if self.sp_organic_p < 0.0:
+                    #     self.sp_organic_p = 0.0
+                    #     rwarn(f"OP negative in spin{s}, step{step}")
+                    # if self.sp_sorganic_p < 0.0:
+                    #     self.sp_sorganic_p = 0.0
+                    #     rwarn(f"SOP negative in spin{s}, step{step}")
 
-                    # CALCULATE THE EQUILIBTIUM IN SOIL POOLS
+                    # Update available nutrients
                     # Soluble and inorganic pools
-                    if self.pupt[0, step] > 1e2:
-                        rwarn(
-                            f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
-                        self.pupt[0, step] = 0.0
+                    # if self.pupt[0, step] > 1e2:
+                    #     rwarn(
+                    #         f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
+                    #     self.pupt[0, step] = 0.0
                     self.sp_available_p -= self.pupt[0, step]
 
-                    if self.nupt[0, step] > 1e3:
-                        rwarn(
-                            f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
-                        self.nupt[0, step] = 0.0
+                    # if self.nupt[0, step] > 1e3:
+                    #     rwarn(
+                    #         f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
+                    #     self.nupt[0, step] = 0.0
                     self.sp_available_n -= self.nupt[0, step]
                 # END SOIL NUTRIENT DYNAMICS
 
@@ -2523,7 +2519,7 @@ if __name__ == '__main__':
 
     # # Read CO2 data
     co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-25000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-60000.csv"))
 
 
     r = region("region_test",

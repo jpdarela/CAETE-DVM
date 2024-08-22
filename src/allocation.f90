@@ -937,8 +937,6 @@ module alloc
       construction_c = sum(daily_growth) ! g m-2 day-1
       ! END OF CALCULATIONS
 
-
-
    contains
 
       function add_pool(a1, a2) result(new_amount)

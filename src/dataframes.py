@@ -268,13 +268,13 @@ class table_data:
 
 
 def main():
-    data = gridded_data.aggregate_region_data(reg, ("snc", "cawood", "rnpp"), 7)
+    data = gridded_data.aggregate_region_data(reg, "snc", 7)
     # data = gridded_data.aggregate_region_data(reg, variables, spin_slice=12)
     return data
 
 
 
 if __name__ == "__main__":
-    # data = main()
-    # a = gridded_data.create_masked_arrays2D(data)
+    data = main()
+    a = gridded_data.create_masked_arrays2D(data)
     table_data.make_df2(reg, variables, spin_slice=(1,7))

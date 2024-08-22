@@ -8,7 +8,7 @@ import sys
 import pickle as pkl
 import tomllib
 
-from netCDF4 import Dataset, MFDataset
+from netCDF4 import Dataset, MFDataset # type: ignore
 from numba import njit
 from numpy.typing import NDArray
 from typing import Generator
