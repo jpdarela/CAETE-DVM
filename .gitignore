@@ -1,4 +1,5 @@
 src/*.o
+src/*.c
 src/PLS_MAIN
 src/*.obj
 src/*.i90
@@ -15,7 +16,9 @@ src/*.pkz
 src/*pbz2
 outputs/*
 src/.python-version
-src/logfile.log
+src/exection.log
+src/build
+src/out_data
 
 input/.python-version
 input/20CRv3-ERA5/*_raw/*

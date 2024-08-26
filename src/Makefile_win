@@ -67,10 +67,14 @@ interface: $(sources)
 so: $(sources) interface
 	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)" --quiet
 	@echo "Serial version of caete_module created using $(FC)"
+	$(PYEXEC) setup.py build_ext --inplace
+
 
 so_parallel: $(sources) interface
 	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) -qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
+	$(PYEXEC) setup.py build_ext --inplace
+
 
 modules: $(sources)
 	$(FC) -fpp -c $(sources)
@@ -78,7 +82,7 @@ modules: $(sources)
 clean_py:
 	del /s /q __pycache__
 	del /s *.psz
-	
+
 
 clean: clean_py
 	del /s *.mod
@@ -92,4 +96,5 @@ clean: clean_py
 clean_so: clean
 	del /s *.pyd
 	del /s *.pyf
+	del /s *.c
 	cls

@@ -113,6 +113,4 @@ if __name__ == "__main__":
     for model in MODS:
         for scen in SCEN:
             print(model, scen)
-            t = main(model, scen)
-            # print(t[0]["time_index"].size)
-    # t = main(MODS[0], scen=SCEN[0])
+            main(model, scen)

@@ -1,0 +1,148 @@
+"""
+Jit compiled functions
+These functions are JIT compiled and cached by numba.
+If you change any of the cached functions, you should delete the cache
+folder in the src folder, generally named __pycache__. This will force numba
+to recompile the functions and cache them again."""
+
+from typing import List, Union
+import numpy as np
+import numba
+from numpy.typing import NDArray
+
+@numba.jit(nopython=True, cache=True)
+def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:
+    neighbours = []
+    rows = len(matrix)
+    cols = len(matrix[0]) if rows else 0
+    for i in range(max(0, pos[0] - 1), min(rows, pos[0] + 2)):
+        for j in range(max(0, pos[1] - 1), min(cols, pos[1] + 2)):
+            if (i, j) != pos:
+                neighbours.append((i, j))
+    return neighbours
+
+@numba.njit(cache=True)
+def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.intp]):
+    """_summary_
+
+    Args:
+        nsize (int): _description_
+        partial (NDArray[np.float32]): _description_
+        id_living (NDArray[np.intp]): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    c = 0
+    complete = np.zeros(nsize, dtype=np.float32)
+    for n in id_living:
+        complete[n] = partial[c]
+        c += 1
+    return complete
+
+@numba.jit(nopython=True, cache=True)
+def linear_func(temp: float,
+                vpd: float,
+                T_max: float = 45.0,
+                VPD_max : float = 3.8) -> float:
+    """Linear function to calculate the coupling between the atmosphere and the canopy"""
+    linear_func = (temp / T_max + vpd / VPD_max) / 2.0
+
+    # Ensure the output is between 0 and 1
+    if linear_func > 1.0:
+        linear_func = 1.0
+    elif linear_func < 0.0:
+        linear_func = 0.0
+
+    linear_func = 0.0 if linear_func < 0.0 else linear_func
+    linear_func = 1.0 if linear_func > 1.0 else linear_func
+
+    return linear_func
+
+@numba.jit(numba.float32(numba.float32, numba.float32, numba.float32, numba.float32), nopython=True, cache=True)
+def atm_canopy_coupling(emaxm: float, evapm: float, air_temp: float, vpd: float) -> float:
+    """Calculate the coupling between the atmosphere and the canopy based on a simple linear function
+    of the air temperature and the vapor pressure deficit.
+    Args:
+        emaxm: float -> maximum evaporation rate mm/day
+        evapm: float -> evaporation rate mm/day
+        air_temp: float -> air temperature in Celsius
+        vpd: float -> vapor pressure deficit in kPa
+    Returns:
+        float: Evapotranspiration rate mm/day
+        """
+
+    omega = linear_func(air_temp, vpd)
+    return emaxm * omega + evapm * (1 - omega)
+
+@numba.jit(numba.float32(numba.int8[:], numba.float32[:]), nopython=True, cache=True)
+def masked_mean(mask: NDArray[np.int8], values: NDArray[np.float32]) -> float:
+    """Calculate the mean of the values array ignoring the masked values"""
+    mean = 0.0
+    count = np.logical_not(mask).sum()
+    if count == 0:
+        return np.nan
+
+    for i in range(mask.size):
+        if mask[i] == 0:
+            mean += values[i] / count
+    return mean
+
+@numba.jit(numba.float32[:](numba.int8[:], numba.float32[:,:]), nopython=True, cache=True)
+def masked_mean_2D(mask: NDArray[np.int8], values: NDArray[np.float32]) -> NDArray[np.float32]:
+    """Calculate the mean of the values array ignoring the masked values"""
+    integrate_dim = values.shape[0]
+    dim_sum = np.zeros(integrate_dim, dtype=np.float32)
+    count = np.zeros(integrate_dim, dtype=np.int32)
+    for i in range(mask.size):
+        if mask[i] == 0:
+            for j in range(integrate_dim):
+                dim_sum[j] += values[j, i]
+                count[j] += 1
+    return dim_sum / count
+
+@numba.jit(numba.float32(numba.float64[:], numba.float32[:]), nopython=True, cache=True)
+def cw_mean(ocp: NDArray[np.float64], values: NDArray[np.float32]) -> np.float32:
+    """
+    Calculate the Community weighted mean for values using an
+    array of area occupation (0 (empty) -1 (Total dominance))"""
+
+    return np.sum(ocp * values, dtype = np.float32)
+
+@numba.jit(numba.float32(numba.float64[:], numba.float32[:], numba.float32), nopython=True, cache=True)
+def cw_variance(ocp: NDArray[np.float64], values: NDArray[np.float32], mean: float) -> float:
+    """Calculate the Community weighted variance for values using an
+    array of area occupation (0 (empty) -1 (Total dominance))"""
+
+    variance = 0.0
+    for i in range(ocp.size):
+        variance += ocp[i] * ((values[i] - mean) ** 2)
+    return variance
+
+# Some functions to calculate diversity and evenness indices coded by copilot
+# TODO: Check the implementation of these functions
+@numba.jit(nopython=True, cache=True)
+def shannon_entropy(ocp: NDArray[np.float64]) -> float:
+    """Calculate the Shannon entropy for a community"""
+    if np.sum(ocp) == 0:
+        return -9999.0
+    entropy = 0.0
+    for i in range(ocp.size):
+        if ocp[i] > 0:
+            entropy -= ocp[i] * np.log(ocp[i])
+    return entropy
+
+@numba.jit(nopython=True, cache=True)
+def shannon_evenness(ocp: NDArray[np.float64]) -> float:
+    """Calculate the Shannon evenness for a community"""
+    max_entropy = np.log(ocp.size)
+    if max_entropy == 0:
+        return -9999.0
+    return shannon_entropy(ocp) / max_entropy
+
+@numba.jit(nopython=True, cache=True)
+def shannon_diversity(ocp: NDArray[np.float64]) -> float:
+    """Calculate the Shannon diversity for a community"""
+    if np.sum(ocp) == 0:
+        return -9999.0
+    return np.exp(shannon_entropy(ocp))

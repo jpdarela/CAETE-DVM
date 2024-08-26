@@ -38,7 +38,8 @@ if __name__ == "__main__":
 
     from metacommunity import pls_table
     from parameters import tsoil, ssoil, hsoil
-    from caete import region, worker
+    from region import region
+    from worker import worker
 
     # Force spawn method to avoid issues with multiprocessing use with threading in Linux
     # This statement is awways necessary when running the model. Specifically, it needs to be
@@ -109,19 +110,8 @@ if __name__ == "__main__":
     # Run the model
     r.run_region_map(fn.transclim_run)
 
-    # # Create a copy of the region to run counterclim
-    #
-    # r_copy = copy.deepcopy(r)
-    # r_copy.update_input(counterclim_files)
-    # r_copy.update_dump_directory(output_path/Path(f"./{region_name}"), "counterclim")
-
-    # print("\nSTART transient run - COUNTERCLIM")
-    # run_breaks = fn.create_run_breaks(1901, 2021, 20)
-    # for period in run_breaks:
-    #     print(f"Running period {period[0]} - {period[1]}")
-    #     r_copy.run_region_starmap(fn.transient_run_brk, period)
-
-    # # Save state after spinup. This state file can be used to restart the model from this point.
+    # # Save state after spinup.
+    # This state file can be used to restart the model from this point.
     # print(f"\n\nSaving state file as {state_file}")
     # fn.save_state_zstd(r, state_file)
 

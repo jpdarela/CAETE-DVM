@@ -11,7 +11,9 @@ from numpy.typing import NDArray
 import numpy as np
 import pandas as pd
 
-from caete import worker, region, grd_mt
+from worker import worker
+from region import region
+from caete import grd_mt
 
 from _geos import pan_amazon_region, get_region
 
@@ -256,7 +258,7 @@ class metacommunity_data:
         #         year_data = grd._fetch_metacommunity_data(y)
         #         gridcell_data.append(year_data)
         #     data[grd.xyname] = gridcell_data
-        # return data, years
+        return data
 
 
 # ======================================

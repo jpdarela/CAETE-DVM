@@ -67,10 +67,14 @@ interface: $(sources)
 so_parallel: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp --quiet
 	@echo "Parallel version of caete_module created using gfortran"
+	@echo "Compiling community module..."
+	$(PYEXEC) setup.py build_ext --inplace
 
 so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) " --quiet
 	@echo "Serial version of caete_module created using gfortran"
+	@echo "Compiling community module..."
+	$(PYEXEC) setup.py build_ext --inplace
 
 
 modules: $(sources)

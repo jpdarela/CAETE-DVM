@@ -20,7 +20,9 @@ Copyright 2017- LabTerra
 
 
 from pathlib import Path
+import copy
 import multiprocessing as mp
+
 
 
 # Adapted from the caete_driver.py script to run the model with CMIP6 data.
@@ -41,7 +43,8 @@ if __name__ == "__main__":
 
     from metacommunity import pls_table
     from parameters import tsoil, ssoil, hsoil
-    from caete import region, worker
+    from region import region
+    from worker import worker
 
     # Force spawn method to avoid issues with multiprocessing use with threading in Linux
     # This statement is awways necessary when running the model. Specifically, it needs to be
@@ -130,8 +133,8 @@ if __name__ == "__main__":
     # End of historical simulation
 
     # Copy region for ssp370 and ssp585 runs
-    r_ssp370 = r.copy_region()
-    r_ssp585 = r.copy_region()
+    r_ssp370 = copy.deepcopy(r)
+    r_ssp585 = copy.deepcopy(r)
 
     # Save state file used to access the historical model outputs and export it to other formats.
     r.clean_model_state()
