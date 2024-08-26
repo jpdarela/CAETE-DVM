@@ -32,7 +32,7 @@ local_input: Path = Path("../input").resolve()
 
 #masks
 # Pan-Amazon mask. Only forest dominated gridcells are considered. MAPBIOMAS 2000
-mask_am: NDArray = np.load("../input/mask/mask_am_forest.npy")
+mask_am: NDArray = np.load("../input/mask/pan_amazon_05d_FORESTS_MAPBIOMASS_2000.npy")
 
 # Pan-Amazon mask.
 mask_pan_am: NDArray = np.load("../input/mask/mask_raisg-360-720.npy")

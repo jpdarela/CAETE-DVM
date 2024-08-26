@@ -558,11 +558,11 @@ class climate:
     def __init__(self):
         """_summary_
         """
-        self.pr: NDArray[np.float64]
-        self.ps: NDArray[np.float64]
-        self.rsds: NDArray[np.float64]
-        self.tas: NDArray[np.float64]
-        self.rhs: NDArray[np.float64]
+        self.pr: NDArray[np.float32]
+        self.ps: NDArray[np.float32]
+        self.rsds: NDArray[np.float32]
+        self.tas: NDArray[np.float32]
+        self.rhs: NDArray[np.float32]
 
 
     def _set_clim(self, data:Dict):
@@ -653,32 +653,31 @@ class soil:
     def __init__(self):
         """_summary_
         """
-        self.sp_csoil = None
-        self.sp_snc = None
-        self.input_nut = None
-        self.sp_available_p = None
-        self.sp_available_n = None
-        self.sp_so_n = None
-        self.sp_in_n = None
-        self.sp_so_p = None
-        self.sp_in_p = None
-        self.sp_csoil = None
-        self.sp_snr = None
-        self.sp_uptk_costs = None
-        self.sp_organic_n = None
-        self.sp_sorganic_n = None
-        self.sp_organic_p = None
-        self.sp_sorganic_p = None
+        self.sp_csoil = None # soil carbon pools g m-2 --> 4 pools, litter 1 and 2, soil 1 and 2
+        self.sp_snc = None # soil nutrient content g m-2 8 pools (N an P pools )
+        self.input_nut = None # Initial values for the soil pools of nutrients (N, P)
+        self.sp_available_p = None # available phosphorus
+        self.sp_available_n = None # available nitrogen
+        self.sp_so_n = None # soil organic nitrogen
+        self.sp_in_n = None # inorganic nitrogen
+        self.sp_so_p = None # soil organic phosphorus
+        self.sp_in_p = None # inorganic phosphorus
+        self.sp_uptk_costs = None # uptake costs g(C)m-2
+        self.sp_organic_n = None # organic nitrogen 1 (Litter)
+        self.sp_sorganic_n = None # organic nitrogen 2 (Soil)
+        self.sp_organic_p = None # organic phosphorus 1 (Litter)
+        self.sp_sorganic_p = None # organic phosphorus 2 (Soil)
 
         # Water
         # Water content for each soil layer. Water content under wilt point must be deducted from the water content under field capacity
-        self.wp_water_upper_mm = None  # mm
-        self.wp_water_lower_mm = None  # mm
+        self.wp_water_upper_mm = None  # mm (water content under field capacity)
+        self.wp_water_lower_mm = None  # mm (water content under field capacity)
 
-        self.wmax_mm = None  # mm
-        self.theta_sat = None
-        self.psi_sat = None
-        self.soil_texture = None
+        self.wmax_mm = None # mm (maximum water content)
+        # Unused:
+        # self.theta_sat = None # saturation point (RWC?)
+        # self.psi_sat = None # water potential at saturation
+        # self.soil_texture = None # soil texture
 
 
     def _init_soil_cnp(self, data:Dict):
@@ -694,6 +693,7 @@ class soil:
         for nut in self.nutlist:
             self.input_nut.append(data[nut])
         self.soil_dict = dict(zip(self.nutlist, self.input_nut))
+
         self.sp_available_p = self.soil_dict['ap']
         self.sp_available_n = 0.2 * self.soil_dict['tn']
         self.sp_in_n = 0.4 * self.soil_dict['tn']
@@ -735,9 +735,9 @@ class soil:
         self.wp_water_lower_mm = self.swp.awc2
         self.wmax_mm = np.float64(self.swp.w1_max + self.swp.w2_max)
 
-        self.theta_sat = hsoil[0][self.y, self.x].copy() # type: ignore
-        self.psi_sat = hsoil[1][self.y, self.x].copy() # type: ignore
-        self.soil_texture = hsoil[2][self.y, self.x].copy() # type: ignore
+        # self.theta_sat = hsoil[0][self.y, self.x].copy() # type: ignore
+        # self.psi_sat = hsoil[1][self.y, self.x].copy() # type: ignore
+        # self.soil_texture = hsoil[2][self.y, self.x].copy() # type: ignore
 
 
     def add_soil_nutrients(self, afex_mode:str):
@@ -969,7 +969,8 @@ class gridcell_output:
 
     def _save_output(self, data_obj: Dict[str, Union[NDArray, str, int]]):
         """Compress and save output data
-        data_object: dict; the dict returned from _flush_output"""
+        data_object: dict; the dict returned from _flush_output
+        Can deal with spin file names up to 9999 files"""
         if self.run_counter < 10: # type: ignore
             fpath = "spin{}{}{}{}{}".format(0, 0, 0, self.run_counter, out_ext) # type: ignore
         elif self.run_counter < 100: # type: ignore
@@ -1498,12 +1499,13 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         if julian_day in self.doy_months:
                             if verbose:
                                 print(f"PLS seed in Community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
-                            new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
-                            community.seed_pls(new_id, new_PLS)
+                            for i in range(2):
+                                new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
+                                community.seed_pls(new_id, new_PLS)
+
 
                     if community.vp_lsid.size < 1:
                         print(f"Empty community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
-
                         if reset_community:
                             assert not save, "Cannot save data when resetting communities"
                             if verbose:
@@ -1567,7 +1569,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 if save:
                     if julian_day == 365:
                         y = today.year
-                        filename = self.out_dir/f"metacommunity_{y}.psz"
+                        filename = self.out_dir/f"metacommunity_{y}.pkz"
                         self.metacomm.save_state(filename, y)
                         self.metacomm_output[y] = filename
 
@@ -1822,6 +1824,21 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return spin_dt
 
 
+    def _fetch_metacommunity_data(self, year) -> dict:
+        """Get the data from a metacommunity output file"""
+        filename = self.metacomm_output.get(year)
+        if filename is None:
+            raise KeyError(f"No data available for year {year}")
+        with open(filename, 'rb') as fh:
+            metacomm_dt = load(fh)
+        return metacomm_dt
+
+
+    def _get_nyears(self) -> List[int]:
+        """Get the number of years in the simulation"""
+        return sorted(list(self.metacomm_output.keys()))
+
+
     def _read_daily_output(self,
                            period: Union[int, Tuple[int, int], None] = None,
                            ) -> Union[Tuple, List[Any], Dict]:
@@ -1912,15 +1929,9 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
 
         Returns:
-            Union[NDArray, List, Tuple, None]: There are four possible returns:
-            - If return_array is True and return_time is False, returns an array with the values of the variable
-            - If return_array is False and return_time is True, returns a tuple with a np.array of the variable
-            and a list of time objects
-            - If return_array is False and return_time is False, returns a list with the values of the variable.
-            - If return_array is False and return_time is False, and a slice is provided, an array or
-              list of arrays is returned
-            - If return_array is True and return_time is True, returns a tuple with the values of the variable
-            and a list of time objects
+            Union[List, NDArray, Tuple[NDArray, NDArray], Tuple[Dict[str, NDArray], NDArray], List[NDArray]
+        TODO: Add all return types
+
         """
 
         if isinstance(variable, str):
@@ -1934,12 +1945,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             result.append(_read_.result())
 
         # GEt start and end dates (by index)
+        sind = result[0]["sind"]
         if len(result) == 1:
             eind = result[0]["eind"]
-            sind = result[0]["sind"]
         elif len(result) > 1:
             eind = result[-1]["eind"]
-            sind = result[0]["sind"]
 
         variable_names: Set[str] = set(result[0].keys()) # Available variable names in the output data
         variable_set: Set[str] = set(variable)
@@ -2006,7 +2016,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
     def print_available_periods(self):
         assert len(self.executed_iterations) > 0, "No output data available. Run the model first"
         for i, period in enumerate(self.executed_iterations):
-            print(f"Period {i}: {period[0]} - {period[1]}")
+            print(f"Period {i + 1}: {period[0]} - {period[1]}")
+        return i + 1
 
 
 class region:
@@ -2098,16 +2109,23 @@ class region:
         self.gridcells:List[grd_mt] = []
 
 
-    def update_dump_directory(self, output_folder:Union[str, Path], new_name:str="copy"):
+    def update_dump_directory(self, new_name:str="copy"):
         """Update the output folder for the region
 
         Args:
             output_folder (Union[str, Path]): _description_
         """
-        self.output_path = output_folder / Path(f"{self.name}_{new_name}")
+        self.output_path = output_path / Path(f"{new_name}")
         os.makedirs(self.output_path, exist_ok=True)
+
+
         for gridcell in self.gridcells:
+            gridcell.run_counter = 0
+            gridcell.outputs = {}
             gridcell.out_dir  = self.output_path
+            gridcell_dump_directory = self.output_path/Path(f"grd_{gridcell.y}-{gridcell.x}")
+            os.makedirs(gridcell_dump_directory, exist_ok=True)
+
 
 
     def update_input(self, input_file=None, co2=None):
@@ -2262,7 +2280,8 @@ class region:
                               'xres',
                               'xyname',
                               'y',
-                              'yres'}
+                              'yres',
+                              'grid_filename'}
 
         for gridcell in self:
             all_attributes = set(gridcell.__dict__.keys())
@@ -2353,7 +2372,7 @@ class worker:
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=False, reset_community=True, kill_and_reset=True)
         """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=6, fixed_co2_atm_conc="1801",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True,
                               verbose=False)
         gc.collect()
@@ -2371,7 +2390,7 @@ class worker:
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True, reset_community=True)
         """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=6, fixed_co2_atm_conc="1801",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True,
                               verbose=False)
         gc.collect()
@@ -2405,12 +2424,13 @@ class worker:
         Check the init and end dates to match input data.
         Spinup time: 200 years
 
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1801",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True)        """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1801",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True)
         gc.collect()
         return gridcell
+
 
     @staticmethod
     def spinup_transer(gridcell: grd_mt):
@@ -2419,7 +2439,7 @@ class worker:
 
         This method uses spinclim data to run the model.
         Check the init and end dates to match input data.
-        run length: 50 years
+        run length: 50  years
 
         gridcell.run_gridcell("1801-01-01", "1850-12-31", fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True)
@@ -2464,7 +2484,7 @@ class worker:
 
     @staticmethod
     def save_state_zstd(region: Any, fname: Union[str, Path]):
-        """Save a python serializable object using zstd compression with 12 threads
+        """Save apython serializable object using zstd compression with 12 threads
 
         Args:
             region (Any): python object to be compressed and saved. Must be serializable
@@ -2481,7 +2501,7 @@ class worker:
 
     @staticmethod
     def load_state_zstd(fname:Union[str, Path]):
-        """Load a python object from a zstd compressed file
+        """Used to load a region object from a zstd compressed file
 
         Args:
             fname (Union[str, Path]): filename of the compressed object
@@ -2492,22 +2512,6 @@ class worker:
                 region = pkl.load(decompressor_reader)
         return region
 
-
-    @staticmethod
-    def load_state_metacomm( file_path: Union[str, Path]) -> None:
-        """Loads the state of the metacommunity from a binary file using zstd decompression.
-
-        Args:
-            file_path (Union[str, Path]): The path to the file where the state is saved.
-        """
-        with open(file_path, 'rb') as f:
-            # Create a decompressor object
-            dctx = zstd.ZstdDecompressor()
-            # Read the compressed data from the file
-            compressed_data = f.read()
-            # Decompress the data
-            data = pkl.loads(dctx.decompress(compressed_data))
-        return data
 
 
 if __name__ == '__main__':

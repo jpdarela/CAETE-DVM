@@ -12,7 +12,7 @@ wood_cmin = 0.001
 wood_low_npp = 0.001
 
 [residence_time]
-woody = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.0833333, wood_max = 200, root_min = 0.083333, root_max = 4}
+woody = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.0833333, wood_max = 400, root_min = 0.083333, root_max = 4}
 grass = {leaf_min = 0.08333, leaf_max = 8.33333, wood_min = 0.0, wood_max = 0.0, root_min = 0.083333, root_max = 4}
 
 [nutrient_carbon_ratios]

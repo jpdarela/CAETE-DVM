@@ -1,15 +1,13 @@
-
-# This script contains functions to read and process gridded and table outputs from the CAETE model.
+# This script contains functions to read binary output
+# and create gridded and table outputs.
 # Author: Joao Paulo Darela Filho
 
-from concurrent.futures import ProcessPoolExecutor as PoolExecutor
-
-import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Union, Collection, Tuple, Dict, List
+import os
 
 from numpy.typing import NDArray
-
 import numpy as np
 import pandas as pd
 
@@ -17,7 +15,7 @@ from caete import worker, region, grd_mt
 
 from _geos import pan_amazon_region, get_region
 
-
+#TODO: implement region configuration
 if pan_amazon_region is None:
     raise ValueError("pan_amazon_region is not defined or imported correctly")
 
@@ -32,9 +30,6 @@ model_results: Path = Path("./pan_amazon_hist_result.psz")
 
 # Load the region file
 reg:region = worker.load_state_zstd(model_results)
-
-# Variables to read
-variables = ("rnpp", "npp", "cawood", "cue", "cfroot", "cleaf", "photo", "rm", "rg", "aresp")
 
 
 def get_args(variable: Union[str, Collection[str]])-> Collection[str]:
@@ -52,9 +47,9 @@ def get_args(variable: Union[str, Collection[str]])-> Collection[str]:
         return variable
 
 
-def print_spins(r:region):
-    """Prints the available spin slices for each gridcell in the region"""
-    r[0].print_available_periods()
+def print_spins(r:region, gridcell=0):
+    """Prints the available spin slices for a gridcell in the region"""
+    return r[gridcell].print_available_periods()
 
 
 def print_variables(r:region):
@@ -65,6 +60,7 @@ def print_variables(r:region):
 # Functions dealing with gridded outputs
 #=========================================
 class gridded_data:
+
 
     @staticmethod
     def read_grd(grd:grd_mt,
@@ -110,7 +106,7 @@ class gridded_data:
         output = []
         nproc = min(len(r), r.nproc//2)
         nproc = max(1, nproc) # Ensure at least one process is used
-        with PoolExecutor(max_workers=nproc) as executor:
+        with ThreadPoolExecutor(max_workers=nproc) as executor:
             futures = [executor.submit(gridded_data.read_grd, grd, variables, spin_slice) for grd in r]
             for future in futures:
                 output.append(future.result())
@@ -121,8 +117,14 @@ class gridded_data:
         time = raw_data[:,0][0] # We assume all slices have the same time, thus we get the first one
         coord = raw_data[:,2:4][:].astype(np.int64) # 2D matrix of coordinates (y(lat), x(lon))}
         data = raw_data[:,1][:]  # array of dicts, each dict has the variables as keys and the time series as values
-        dim_names = ["time", "coord", "data"]
+
+        if isinstance(variables, str):
+            dim_names = ["time", "coord", variables]
+        else:
+            dim_names = ["time", "coord", "data"]
+
         return dict(zip(dim_names, (time, coord, data)))
+
 
     @staticmethod
     def create_masked_arrays(data: dict):
@@ -138,6 +140,7 @@ class gridded_data:
         """
         time = data["time"]
         coords = data["coord"]
+        # If it is only one variable, we put
         variables = list(data["data"][0].keys()) # holds variable names being processed
 
         dim = data["data"][0][variables[0]].shape
@@ -179,6 +182,9 @@ class gridded_data:
         """
         time = data["time"]
         coords = data["coord"]
+
+        assert "data" in data.keys(), "The input dict must contain the 'data' keyword"
+        assert isinstance(data["data"][0], dict), "Data must be a dict"
         variables = list(data["data"][0].keys())  # holds variable names being processed
 
         arrays_dict = data["data"][:]
@@ -188,6 +194,7 @@ class gridded_data:
         for var in variables:
             dtypes.append(arrays_dict[0][var].dtype)
 
+        # Allocate the arrays
         arrays = []
         array_names = []
         for i, var in enumerate(variables):
@@ -200,7 +207,7 @@ class gridded_data:
                 for k in range(ny):
                     arrays.append(np.ma.masked_all(shape=(nx, 360, 720), dtype=dtypes[i]))
                     array_names.append(f"{var}_{k + 1}")
-
+        # Fill the arrays
         array_index = 0
         for i, var in enumerate(variables):
             for j in range(len(coords)):
@@ -218,39 +225,47 @@ class gridded_data:
         return arrays, time, array_names
 
 
+    @staticmethod
+    def save_netcdf(data: dict, output_path: Path, file_name: str):
+        pass
+
+
+# ======================================
+# Functions dealing with metacommunity outputs
+# ======================================
+class metacommunity_data:
+
+    #TODO: implement these methods
+    @staticmethod
+    def read_annual_data(r: region, variables: Union[str, Collection[str]]) -> Dict[str, NDArray]:
+        """Reads annual data from the metacommunities region
+
+        Args:
+            r (region): a region object
+            variables (Union[str, Collection[str]]): variable names to read
+
+        Returns:
+            dict: a dict with the following keys: time, coord, data holding data to be transformed
+            necessary to create masked arrays and subsequent netCDF files.
+        """
+        data = {}
+        # for grd in r:
+        #     years = grd._get_nyears()
+        #     gridcell_data = []
+        #     for i,y in enumerate(years):
+        #         year_data = grd._fetch_metacommunity_data(y)
+        #         gridcell_data.append(year_data)
+        #     data[grd.xyname] = gridcell_data
+        # return data, years
+
+
 # ======================================
 # Functions dealing with table outputs
 # ======================================
 class table_data:
 
     @staticmethod
-    def process_grd(grd, variables, spin_slice):
-        d = grd._get_daily_data(get_args(variables), spin_slice, return_time=True)
-        time = [t.strftime("%Y-%m-%d") for t in d[1]]  # type: ignore
-        data = d[0]  # type: ignore
-        fname = f"grd_{grd.x}_{grd.y}.csv"
-        df = pd.DataFrame(data, index=time)
-        # return df
-        df.to_csv(processed_data / fname, index_label='day')
-
-
-    @staticmethod
-    def make_df(r: region,
-                variables: Union[str, Collection[str]],
-                spin_slice: Union[int, Tuple[int, int], None] = None
-                ):
-        out = []
-        nproc = min(len(r), r.nproc//2)
-        nproc = max(1, nproc) # Ensure at least one process is used
-        with PoolExecutor(max_workers=nproc) as executor:
-            futures = [executor.submit(table_data.process_grd, grd, variables, spin_slice) for grd in r]
-            for future in futures:
-                out.append(future.result())
-        return out
-
-
-    @staticmethod
-    def make_df2(r:region,
+    def make_df(r:region,
                 variables: Union[str, Collection[str]],
                 spin_slice: Union[int, Tuple[int, int], None] = None
                 ):
@@ -260,21 +275,35 @@ class table_data:
 
             time = [t.strftime("%Y-%m-%d") for  t in d[1]] # type: ignore
             data = d[0] # type: ignore
+
+            new_data = {}
+            for k, v in data.items(): # type: ignore
+                if len(v.shape) == 1:
+                    new_data[k] = np.round(v, 10)
+                elif len(v.shape) == 2:
+                    ny, _ = v.shape
+                    _sum = np.sum(v, axis=0)
+                    new_data[f"{k}_sum"] = np.round(_sum, 10)
+                    for i in range(ny):
+                        new_data[f"{k}_{i+1}"] = np.round(v[i,:], 10) # We assume the first axis is the time axis
+
             fname = f"grd_{grd.x}_{grd.y}.csv"
-            df = pd.DataFrame(data, index=time)
+            df = pd.DataFrame(new_data, index=time)
             df.rename_axis('day', axis='index')
             df.to_csv(processed_data/fname, index_label='day')
 
 
 
-def main():
-    data = gridded_data.aggregate_region_data(reg, "snc", 7)
+def main(vrs):
+    data = gridded_data.aggregate_region_data(reg, vrs, (24,25))
     # data = gridded_data.aggregate_region_data(reg, variables, spin_slice=12)
     return data
 
 
 
 if __name__ == "__main__":
-    data = main()
+
+    variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
+    data = main(variables_to_read)
     a = gridded_data.create_masked_arrays2D(data)
-    table_data.make_df2(reg, variables, spin_slice=(1,7))
+    table_data.make_df(reg, variables_to_read, spin_slice=(1,2))

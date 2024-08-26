@@ -108,10 +108,24 @@ mask_file = Path(args.mask_file)
 assert mask_file.exists(), "Mask file does not exists"
 mask = np.load(mask_file)
 
-
 # dump folder. CAETE input files are stored here
 shared_data = Path(f"{dataset}/{mode}")
+os.makedirs(shared_data, exist_ok=True)
 assert shared_data.exists(), "Shared data folder does not exists"
+
+# if there are files in the shared_data folder, remove them
+if args.test:
+    # We dont want to remove the files if we are testing
+    pass
+else:
+    try:
+        for file in shared_data.glob("*"):
+            os.remove(file)
+        print("Removing old files from shared_data folder")
+    except:
+        # Skip if something goes wrong, with some info
+        print("info: Could not remove old files from shared_data folder")
+        pass
 
 # Timer wrapper
 def timer(func):
@@ -351,11 +365,26 @@ def process_gridcell(grd:input_data , var, data):
     grd.write()
 
 
+# def process_data(j, hurs, tas, pr, ps, rsds, sfcwind):
+#     return {
+#         "j": j,
+#         "hurs": get_values_at(hurs),
+#         "tas": get_values_at(tas),
+#         "pr": get_values_at(pr),
+#         "ps": get_values_at(ps),
+#         "rsds": get_values_at(rsds),
+#         "sfcwind": get_values_at(sfcwind)
+#     }
+
+
 @timer
 def main():
     # SAVE METADATA
     variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
 
+    #TODO: add indices and time metadata to each gridcell file
+    # Lets get rid of the metdata file
+    # Add also dataset name and mode to the gridcell file
     dss = [read_clim_data(var) for var in variables]
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])
@@ -384,11 +413,23 @@ def main():
     # Load soil data
     for grd in input_templates:
         print(f"Processing soil data for gridcell {grd.y}-{grd.x}{' ' * 20}", end="\r")
-        grd._load_dict('tn', tn[grd.y, grd.x].copy(order="F"))
-        grd._load_dict('tp', tp[grd.y, grd.x].copy(order="F"))
-        grd._load_dict('ap', ap[grd.y, grd.x].copy(order="F"))
-        grd._load_dict('ip', ip[grd.y, grd.x].copy(order="F"))
-        grd._load_dict('op', op[grd.y, grd.x].copy(order="F"))
+        total_nitrogen = tn[grd.y, grd.x].copy(order="F")
+        total_phosphorus = tp[grd.y, grd.x].copy(order="F")
+        available_phosphorus = ap[grd.y, grd.x].copy(order="F")
+        inorganic_phosphorus = ip[grd.y, grd.x].copy(order="F")
+        organic_phosphorus = op[grd.y, grd.x].copy(order="F")
+
+        assert total_nitrogen >= 0, "Total Nitrogen must be positive"
+        assert total_phosphorus >= 0, "Total Phosphorus must be positive"
+        assert available_phosphorus >= 0, "Available Phosphorus must be positive"
+        assert inorganic_phosphorus >= 0, "Inorganic Phosphorus must be positive"
+        assert organic_phosphorus >= 0, "Organic Phosphorus must be positive"
+
+        grd._load_dict('tn', total_nitrogen)
+        grd._load_dict('tp', total_phosphorus)
+        grd._load_dict('ap', available_phosphorus)
+        grd._load_dict('ip', inorganic_phosphorus)
+        grd._load_dict('op', organic_phosphorus)
         grd.write()
 
     # Load clim_data and write to input templates
@@ -398,12 +439,6 @@ def main():
     tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
 
     _data = dict(zip(variables, [np.zeros((ngrid, tsize), dtype=np.float32) for _ in range(len(variables))]))
-    # hurs_data = np.zeros((ngrid, tsize), dtype=np.float32)
-    # tas_data = np.zeros((ngrid, tsize), dtype=np.float32)
-    # pr_data = np.zeros((ngrid, tsize), dtype=np.float32)
-    # ps_data = np.zeros((ngrid, tsize), dtype=np.float32)
-    # rsds_data = np.zeros((ngrid, tsize), dtype=np.float32)
-    # sfcwind_data = np.zeros((ngrid, tsize), dtype=np.float32)
 
     hurs_gen = _read_clim_data_('hurs')
     tas_gen = _read_clim_data_('tas')
@@ -424,6 +459,26 @@ def main():
         _data["sfcwind"][:, j] = get_values_at(sfcwind)
         print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
         i += 1
+    # i = 0
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     futures = [
+    #         executor.submit(process_data, j, hurs, tas, pr, ps, rsds, sfcwind)
+    #         for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize))
+    #         ]
+
+    #     print(f"Reading data: {variables}{'' * 20}")
+    #     print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
+    #     for future in concurrent.futures.as_completed(futures):
+    #         result = future.result()
+    #         j = result["j"]
+    #         _data["hurs"][:, j] = result["hurs"]
+    #         _data["tas"][:, j] = result["tas"]
+    #         _data["pr"][:, j] = result["pr"]
+    #         _data["ps"][:, j] = result["ps"]
+    #         _data["rsds"][:, j] = result["rsds"]
+    #         _data["sfcwind"][:, j] = result["sfcwind"]
+    #         i += 1
+    #         print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
 
     array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"]
 

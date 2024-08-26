@@ -17,17 +17,16 @@ Copyright 2017- LabTerra
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import copy
 import csv
 import os
-import pickle as pkl
 import sys
 
 from pathlib import Path
 from typing import Callable, Dict, Tuple, Union, Any, Optional, List
 from numpy.typing import NDArray
 
+from joblib import dump
 import numpy as np
 import zstandard as zstd
 
@@ -262,8 +261,6 @@ class community:
         """
         Seeds a PLS in a free position. Uses the method get_free_lsid to find the free slots.
 
-           Warning: to ensure no duplicate PLS IDs in the community,
-           use the class method get_unique_pls.
 
         Args:
             pls_id (int): ID of the PLS.
@@ -272,6 +269,7 @@ class community:
         # Assert that the PLS ID is not in the community
         free_slots = self.get_free_lsid()
         if free_slots.size == 0:
+            
             return None
         elif free_slots.size == 1:
             pos = free_slots[0]
@@ -379,7 +377,7 @@ class metacommunity:
         counter = 1
         cveg = 0.0
         for k, community in self.communities.items():
-            if community.masked == 1:
+            if community.masked:
                 continue
             state['communities'][k] = {}
             state['communities'][k]['vp_cleaf'] = community.vp_cleaf
@@ -410,20 +408,14 @@ class metacommunity:
 
 
     def save_state(self, file_path: Union[str, Path], year:int) -> None:
-        """Save the state of the metacommunity to a binary file using zstd compression.
+        """Save the state of the metacommunity to a binary file using joblib.
 
         Args:
             file_path (Union[str, Path]): The path to the file where the state will be saved.
         """
         state = self.wrapp_state(year)
-
-        with open(file_path, 'ab') as f:
-            # Create a compressor object
-            cctx = zstd.ZstdCompressor(level=10, threads=1)
-            # Compress the pickled data
-            compressed_data = cctx.compress(pkl.dumps(state))
-            # Write the compressed data to the file
-            f.write(compressed_data)
+        with open(file_path, 'wb') as f:
+            dump(value=state, filename=f, compress=('lz4', 6))
 
 
     def __getitem__(self, index:Union[int, str]):

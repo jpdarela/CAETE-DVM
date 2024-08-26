@@ -1,11 +1,43 @@
 # Input data for CAETÊ
 
-The pre_processing.py script is used to prepare files that are employed to feed the CAETÊ model.
-The raw climatic and edaphic data in these files are publicly available from other sources.
+This folder contains the input data used to run the CAETE model. These data are divided into
+folders:
+
+[mask]("./mask/"), [co2]("./co2/"), [hydra]("./hydra/"), and [soil]("./soil/") contains some boolean masks used to preprocess input data and configure model execution. There are also files with soil hydraulic parameters and nutrient content (N & P). The co2 folder has timeseries of annual ATM CO2 concentration. Observed and projected.
+
+[20CRv3-ERA5]("./20CRv3-ERA5/") and [MPI-ESM1-2-HR](./MPI-ESM1-2-HR/) store climatic drivers. Both folders should contain data downloaded from the ISIMIP data repository. The netCDF files with climatic variables (e.g., tas, hurs) must be organized into a subfolder, like in the following way:
+
+```./MPI-ESM1-2-HR/ssp585_raw```
+
+This folder contains all the netCDF files for all needed variables:
+
+```hurs, tas, pr, ps, rsds, sfcwind```
+
+You can find the reference to all datasets used here at the end of this document.
+
+In the example above,
+
+```./MPI-ESM1-2-HR/ssp585_raw```
+
+the netCDF files downloaded from the ISIMIP repository must be placed into a folder that has the identification of the dataset, in this case ```ssp585``` appended with a string ```_raw```, making ```ssp585_raw``` indicating that these are the files that we need to process in order to have files that CAETE can read.
+
+If these assumptions are met then you can use the pre_processing.py script to prepare files that are employed to feed the CAETÊ model. The raw climatic and edaphic data in these files are publicly available from other sources.
+
+For example, to process the netCDF files in the example above you can run:
+
+```$ python pre_processing.py --dataset MPI-ESM1-2-HR --mode ssp585```
+
+* Note that you use only the identification of the dataset: ```ssp585``` for the flag ```--mode```. The first flag, ```--dataset``` indicates the climatic dataset that is used: ```MPI-ESM1-2-HR```.
+
+This program will create a folder called ```ssp585``` like:
+
+```./MPI-ESM1-2-HR/ssp585/```
+
+This folder contains the data in another format. Each file for a different gridcell. Each file contains also data on soil nutrients and hydraulic parameters needed by the model in order to execute the processes for a given gridcell.
 
 Climatic data: ISIMIP3a/b
 
-Soil data: HWSD, IGBP, & own sources
+Soil data: HWSD, IGBP, & Darela-Filho et al., 2024
 
 ## References
 
