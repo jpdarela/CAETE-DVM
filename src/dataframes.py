@@ -13,7 +13,8 @@ import pandas as pd
 
 from worker import worker
 from region import region
-from caete import grd_mt
+from caete import grd_mt, get_args
+from caete_jit import pft_area_frac
 
 from _geos import pan_amazon_region, get_region
 
@@ -25,8 +26,6 @@ if pan_amazon_region is None:
 ymin, ymax, xmin, xmax = get_region(pan_amazon_region)
 
 # IO
-processed_data = Path("out_data")
-os.makedirs(processed_data, exist_ok=True)
 
 model_results: Path = Path("./pan_amazon_hist_result.psz")
 
@@ -34,22 +33,7 @@ model_results: Path = Path("./pan_amazon_hist_result.psz")
 reg:region = worker.load_state_zstd(model_results)
 
 
-def get_args(variable: Union[str, Collection[str]])-> Collection[str]:
-    """helper function to ensure that the variable is a collection.
-
-    Args:
-        variable (Union[str, Collection[str]]): variable name(s) to be read
-
-    Returns:
-        Collection[str]: a collection with the variable name(s)
-    """
-    if isinstance(variable, str):
-        variable = [variable,]
-    if isinstance(variable, Collection):
-        return variable
-
-
-def print_spins(r:region, gridcell=0):
+def get_spins(r:region, gridcell=0):
     """Prints the available spin slices for a gridcell in the region"""
     return r[gridcell].print_available_periods()
 
@@ -62,8 +46,9 @@ def print_variables(r:region):
 # Functions dealing with gridded outputs
 #=========================================
 class gridded_data:
-
-
+    """This class contains methods to read and process gridded data from the model outputs.
+    """
+     # Daily data --------------------------------
     @staticmethod
     def read_grd(grd:grd_mt,
                  variables: Union[str, Collection[str]],
@@ -231,43 +216,15 @@ class gridded_data:
     def save_netcdf(data: dict, output_path: Path, file_name: str):
         pass
 
-
-# ======================================
-# Functions dealing with metacommunity outputs
-# ======================================
-class metacommunity_data:
-
-    #TODO: implement these methods
-    @staticmethod
-    def read_annual_data(r: region, variables: Union[str, Collection[str]]) -> Dict[str, NDArray]:
-        """Reads annual data from the metacommunities region
-
-        Args:
-            r (region): a region object
-            variables (Union[str, Collection[str]]): variable names to read
-
-        Returns:
-            dict: a dict with the following keys: time, coord, data holding data to be transformed
-            necessary to create masked arrays and subsequent netCDF files.
-        """
-        data = {}
-        # for grd in r:
-        #     years = grd._get_nyears()
-        #     gridcell_data = []
-        #     for i,y in enumerate(years):
-        #         year_data = grd._fetch_metacommunity_data(y)
-        #         gridcell_data.append(year_data)
-        #     data[grd.xyname] = gridcell_data
-        return data
-
-
 # ======================================
 # Functions dealing with table outputs
 # ======================================
+
+
 class table_data:
 
     @staticmethod
-    def make_df(r:region,
+    def make_daily_dataframe(r:region,
                 variables: Union[str, Collection[str]],
                 spin_slice: Union[int, Tuple[int, int], None] = None
                 ):
@@ -281,19 +238,36 @@ class table_data:
             new_data = {}
             for k, v in data.items(): # type: ignore
                 if len(v.shape) == 1:
-                    new_data[k] = np.round(v, 10)
+                    new_data[k] = v
                 elif len(v.shape) == 2:
                     ny, _ = v.shape
                     _sum = np.sum(v, axis=0)
-                    new_data[f"{k}_sum"] = np.round(_sum, 10)
+                    new_data[f"{k}_sum"] = _sum
                     for i in range(ny):
-                        new_data[f"{k}_{i+1}"] = np.round(v[i,:], 10) # We assume the first axis is the time axis
+                        new_data[f"{k}_{i+1}"] = v[i,:] # We assume the first axis is the time axis
 
             fname = f"grd_{grd.x}_{grd.y}.csv"
             df = pd.DataFrame(new_data, index=time)
             df.rename_axis('day', axis='index')
-            df.to_csv(processed_data/fname, index_label='day')
+            df.to_csv(grd.out_dir / fname, index_label='day')
 
+
+    @staticmethod
+    def read_grd_metacom_biomass(grd:grd_mt) -> list[Dict]:
+        out = []
+        for year in grd._get_years():
+            biomass = ["vp_cleaf", "vp_croot", "vp_cwood"]
+            data = grd._read_annual_metacomm_biomass(year)
+            df = pd.DataFrame(data).astype(np.float32).groupby("pls_id").sum().reset_index()
+            df.index = df["pls_id"].astype(np.int32)
+            df = df.loc[:, biomass]
+            cleaf, croot, cwood = df["vp_cleaf"].to_numpy(), df["vp_croot"].to_numpy(), df["vp_cwood"].to_numpy()
+            ocp = pft_area_frac(cleaf, croot, cwood)
+            df["cveg"] = cleaf + croot + cwood
+            df["ocp"] = ocp
+            df["year"] = np.zeros(ocp.size, dtype=np.int32) + year
+            out.append(df)
+        pd.concat(out).to_csv(grd.out_dir / "metacomunity_biomass.csv", index_label="pls_id")
 
 
 def main(vrs):
@@ -304,8 +278,9 @@ def main(vrs):
 
 
 if __name__ == "__main__":
-
     variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
     data = main(variables_to_read)
     a = gridded_data.create_masked_arrays2D(data)
-    table_data.make_df(reg, variables_to_read, spin_slice=(1,2))
+    table_data.make_daily_dataframe(reg, variables_to_read, spin_slice=(1,2))
+    for grd in reg:
+        table_data.read_grd_metacom_biomass(grd)

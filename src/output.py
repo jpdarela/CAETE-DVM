@@ -145,7 +145,7 @@ class budget_output2:
         self.c_cost_cwm = np.array([])
         self.rnpp_out = np.array([])
 
-        
+
 def update(self, *args):
     """Update the budget_output object with new values."""
     for field, value in zip(self.__annotations__.keys(), args):

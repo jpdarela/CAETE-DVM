@@ -5,10 +5,48 @@ If you change any of the cached functions, you should delete the cache
 folder in the src folder, generally named __pycache__. This will force numba
 to recompile the functions and cache them again."""
 
-from typing import List, Union
+from typing import List, Union, Tuple
 import numpy as np
 import numba
 from numpy.typing import NDArray
+
+
+@numba.jit(nopython=True, cache=True)
+def process_tuple(t: Tuple[NDArray, NDArray]) -> Tuple[int, float]:
+    """Process a single tuple to find the strategy ID and the percentage of days of the most used strategy."""
+    strategies, days = t
+    total_days = days.sum()
+    max_index = days.argmax()
+    max_days = days[max_index]
+    strategy_id = strategies[max_index]
+    percentage = (max_days / total_days) * 100
+    return strategy_id, percentage
+
+def process_tuples(data: Tuple[Tuple[NDArray, NDArray], ...]) -> Tuple[Tuple[int, float], ...]:
+    """Process a tuple of tuples to find the strategy ID and the percentage of days of the most used strategy for each pair."""
+    results = []
+    for t in data:
+        results.append(process_tuple(t))
+    return tuple(results)
+
+@numba.jit(numba.float32[:](numba.float32[:], numba.float32[:], numba.float32[:]), nopython=True, cache=True)
+def pft_area_frac(cleaf1:NDArray[np.float32],
+                  cfroot1:NDArray[np.float32],
+                  cawood1:NDArray[np.float32]) -> NDArray[np.float32]:
+    """Calculate the area fraction of each PFT based on the leaf, root and wood biomass."""
+    # Initialize variables
+    npft = cleaf1.size
+    ocp_coeffs = np.zeros(npft, dtype=np.float32)
+    total_biomass_pft = np.zeros(npft, dtype=np.float32)
+    # Compute total biomass for each PFT
+    total_biomass_pft = cleaf1 + cfroot1 + cawood1
+    # Compute total biomass for all PFTs
+    total_biomass = np.sum(total_biomass_pft)
+    # Calculate occupation coefficients
+    if total_biomass > 0.0:
+        ocp_coeffs = total_biomass_pft / total_biomass
+        ocp_coeffs[ocp_coeffs < 0.0] = 0.0
+    return ocp_coeffs
 
 @numba.jit(nopython=True, cache=True)
 def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:

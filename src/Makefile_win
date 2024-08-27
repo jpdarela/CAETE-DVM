@@ -22,6 +22,7 @@
 PYEXEC = py -3.11
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
+CYTHON = $(PYEXEC) -m cython
 
 # Python extension module name. This is the name of the module that will be created by f2py
 MODNAME = caete_module
@@ -67,13 +68,21 @@ interface: $(sources)
 so: $(sources) interface
 	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)" --quiet
 	@echo "Serial version of caete_module created using $(FC)"
-	$(PYEXEC) setup.py build_ext --inplace
+	$(CYTHON) -a community.py
+	$(CYTHON) -a metacommunity.py
+	$(CYTHON) -a hydro_caete.py
+	$(CYTHON) -a output.py
+	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 
 so_parallel: $(sources) interface
 	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) -qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
-	$(PYEXEC) setup.py build_ext --inplace
+	$(CYTHON) -a community.py
+	$(CYTHON) -a metacommunity.py
+	$(CYTHON) -a hydro_caete.py
+	$(CYTHON) -a output.py
+	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 
 modules: $(sources)
@@ -97,4 +106,7 @@ clean_so: clean
 	del /s *.pyd
 	del /s *.pyf
 	del /s *.c
+	del /s *.log
 	cls
+
+reinstall: clean_so so modules

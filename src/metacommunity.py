@@ -42,7 +42,8 @@ if sys.platform == "win32":
         raise ImportError("Could not add the DLL directory to the PATH")
 
 from caete_module import global_par as gp
-# from caete_module import photo as m
+
+from caete_jit import process_tuples
 
 
 class pls_table:
@@ -115,6 +116,7 @@ class pls_table:
         # Transpose the array and convert to Fortran-contiguous order
         return np.asfortranarray(array_data.T)
 
+
 class metacommunity:
     """Represents a collection of plant communities.
     """
@@ -170,6 +172,11 @@ class metacommunity:
         state['communities'] = {}
         counter = 1
         cveg = 0.0
+        cleaf = 0.0
+        croot = 0.0
+        cwood = 0.0
+        anpp = 0.0
+        uptake_costs = 0.0
         for k, community in self.communities.items():
             if community.masked:
                 continue
@@ -179,12 +186,12 @@ class metacommunity:
             state['communities'][k]['vp_cwood'] = community.vp_cwood
             state['communities'][k]['vp_ocp'] = community.vp_ocp
             state['communities'][k]['id'] = community.id[community.vp_lsid]
-            state['communities'][k]['vp_lsid'] = community.vp_lsid
-            state['communities'][k]['limitation_status_leaf'] = community.limitation_status_leaf
-            state['communities'][k]['limitation_status_root'] = community.limitation_status_root
-            state['communities'][k]['limitation_status_wood'] = community.limitation_status_wood
-            state['communities'][k]['uptk_strat_n'] = community.uptake_strategy_n
-            state['communities'][k]['uptk_strat_p'] = community.uptake_strategy_p
+            # state['communities'][k]['vp_lsid'] = community.vp_lsid
+            state['communities'][k]['limitation_status_leaf'] = process_tuples(community.limitation_status_leaf) #type: ignore
+            state['communities'][k]['limitation_status_root'] = process_tuples(community.limitation_status_root) #type: ignore
+            state['communities'][k]['limitation_status_wood'] = process_tuples(community.limitation_status_wood) #type: ignore
+            state['communities'][k]['uptk_strat_n'] = process_tuples(community.uptake_strategy_n) #type: ignore
+            state['communities'][k]['uptk_strat_p'] = process_tuples(community.uptake_strategy_p) #type: ignore
             state['communities'][k]['cleaf'] = community.cleaf
             state['communities'][k]['croot'] = community.croot
             state['communities'][k]['cwood'] = community.cwood
@@ -194,9 +201,20 @@ class metacommunity:
             state['communities'][k]['shannon_entropy'] = community.shannon_entropy
             state['communities'][k]['shannon_diversity'] = community.shannon_diversity
             state['communities'][k]['shannon_evenness'] = community.shannon_evenness
+            anpp += community.anpp
+            uptake_costs += community.uptake_costs
+            cleaf += community.cleaf
+            croot += community.croot
+            cwood += community.cwood
             cveg += community.cleaf + community.croot + community.cwood
             counter += 1
-        state['cveg'] = cveg/counter
+        state['cveg'] = cveg / counter
+        state['cleaf'] = cleaf / counter
+        state['croot'] = croot / counter
+        state['cwood'] = cwood / counter
+        state['anpp'] = anpp / counter
+        state['uptake_costs'] = uptake_costs / counter
+        state['mask'] = self.mask
         state['year'] = year
         return state
 

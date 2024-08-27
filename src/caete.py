@@ -113,10 +113,9 @@ from pathlib import Path
 from threading import Thread
 from time import sleep
 
-from typing import Callable, Dict, List, Optional, Tuple, Union, Any, Collection, Set
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any, Collection, Set, TypeVar
 
 import cftime
-import numba
 import numpy as np
 from joblib import dump, load
 from numpy.typing import NDArray
@@ -162,7 +161,18 @@ out_ext = ".pkz"
 
 warnings.simplefilter("default")
 
+T = TypeVar('T')
+
+
 # Define some util functions #
+def get_args(variable: Union[T, Collection[T]]) -> Collection[T]:
+    """Ensure the input is returned as a collection."""
+    if isinstance(variable, Collection) and not isinstance(variable, str):
+        return variable
+    else:
+        return [variable]
+
+
 def rwarn(txt:str='RuntimeWarning'):
     """Raise a RuntimeWarning"""
     warnings.warn(f"{txt}", RuntimeWarning)
@@ -321,161 +331,6 @@ def timer(method):
     return timed
 
 
-# # These functions are JIT compiled and cached by numba.
-# # If you change any of the cached functions, you should delete the cache
-# # folder in the src folder, generally named __pycache__. This will force numba
-# # to recompile the functions and cache them again.
-# @numba.jit(nopython=True, cache=True)
-# def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:
-#     neighbours = []
-#     rows = len(matrix)
-#     cols = len(matrix[0]) if rows else 0
-#     for i in range(max(0, pos[0] - 1), min(rows, pos[0] + 2)):
-#         for j in range(max(0, pos[1] - 1), min(cols, pos[1] + 2)):
-#             if (i, j) != pos:
-#                 neighbours.append((i, j))
-#     return neighbours
-
-# @numba.njit(cache=True)
-# def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.intp]):
-#     """_summary_
-
-#     Args:
-#         nsize (int): _description_
-#         partial (NDArray[np.float32]): _description_
-#         id_living (NDArray[np.intp]): _description_
-
-#     Returns:
-#         _type_: _description_
-#     """
-#     c = 0
-#     complete = np.zeros(nsize, dtype=np.float32)
-#     for n in id_living:
-#         complete[n] = partial[c]
-#         c += 1
-#     return complete
-
-# @numba.jit(nopython=True, cache=True)
-# def linear_func(temp: float,
-#                 vpd: float,
-#                 T_max: float = 45.0,
-#                 VPD_max : float = 3.8) -> float:
-#     """Linear function to calculate the coupling between the atmosphere and the canopy"""
-#     linear_func = (temp / T_max + vpd / VPD_max) / 2.0
-
-#     # Ensure the output is between 0 and 1
-#     if linear_func > 1.0:
-#         linear_func = 1.0
-#     elif linear_func < 0.0:
-#         linear_func = 0.0
-
-#     linear_func = 0.0 if linear_func < 0.0 else linear_func
-#     linear_func = 1.0 if linear_func > 1.0 else linear_func
-
-#     return linear_func
-
-# @numba.jit(numba.float32(numba.float32, numba.float32, numba.float32, numba.float32), nopython=True, cache=True)
-# def atm_canopy_coupling(emaxm: float, evapm: float, air_temp: float, vpd: float) -> float:
-#     """Calculate the coupling between the atmosphere and the canopy based on a simple linear function
-#     of the air temperature and the vapor pressure deficit.
-#     Args:
-#         emaxm: float -> maximum evaporation rate mm/day
-#         evapm: float -> evaporation rate mm/day
-#         air_temp: float -> air temperature in Celsius
-#         vpd: float -> vapor pressure deficit in kPa
-#     Returns:
-#         float: Evapotranspiration rate mm/day
-#         """
-
-#     omega = linear_func(air_temp, vpd)
-#     return emaxm * omega + evapm * (1 - omega)
-
-# @numba.jit(numba.float32(numba.int8[:], numba.float32[:]), nopython=True, cache=True)
-# def masked_mean(mask: NDArray[np.int8], values: NDArray[np.float32]) -> float:
-#     """Calculate the mean of the values array ignoring the masked values"""
-#     mean = 0.0
-#     count = np.logical_not(mask).sum()
-#     if count == 0:
-#         return np.nan
-
-#     for i in range(mask.size):
-#         if mask[i] == 0:
-#             mean += values[i] / count
-#     return mean
-
-# @numba.jit(numba.float32[:](numba.int8[:], numba.float32[:,:]), nopython=True, cache=True)
-# def masked_mean_2D(mask: NDArray[np.int8], values: NDArray[np.float32]) -> NDArray[np.float32]:
-#     """Calculate the mean of the values array ignoring the masked values"""
-#     integrate_dim = values.shape[0]
-#     dim_sum = np.zeros(integrate_dim, dtype=np.float32)
-#     count = np.zeros(integrate_dim, dtype=np.int32)
-#     for i in range(mask.size):
-#         if mask[i] == 0:
-#             for j in range(integrate_dim):
-#                 dim_sum[j] += values[j, i]
-#                 count[j] += 1
-#     return dim_sum / count
-
-# @numba.jit(numba.float32(numba.float64[:], numba.float32[:]), nopython=True, cache=True)
-# def cw_mean(ocp: NDArray[np.float64], values: NDArray[np.float32]) -> np.float32:
-#     """
-#     Calculate the Community weighted mean for values using an
-#     array of area occupation (0 (empty) -1 (Total dominance))"""
-
-#     return np.sum(ocp * values, dtype = np.float32)
-
-# @numba.jit(numba.float32(numba.float64[:], numba.float32[:], numba.float32), nopython=True, cache=True)
-# def cw_variance(ocp: NDArray[np.float64], values: NDArray[np.float32], mean: float) -> float:
-#     """Calculate the Community weighted variance for values using an
-#     array of area occupation (0 (empty) -1 (Total dominance))"""
-
-#     variance = 0.0
-#     for i in range(ocp.size):
-#         variance += ocp[i] * ((values[i] - mean) ** 2)
-#     return variance
-
-# # Some functions to calculate diversity and evenness indices coded by copilot
-# # TODO: Check the implementation of these functions
-# @numba.jit(nopython=True, cache=True)
-# def shannon_entropy(ocp: NDArray[np.float64]) -> float:
-#     """Calculate the Shannon entropy for a community"""
-#     if np.sum(ocp) == 0:
-#         return -9999.0
-#     entropy = 0.0
-#     for i in range(ocp.size):
-#         if ocp[i] > 0:
-#             entropy -= ocp[i] * np.log(ocp[i])
-#     return entropy
-
-# @numba.jit(nopython=True, cache=True)
-# def shannon_evenness(ocp: NDArray[np.float64]) -> float:
-#     """Calculate the Shannon evenness for a community"""
-#     max_entropy = np.log(ocp.size)
-#     if max_entropy == 0:
-#         return -9999.0
-#     return shannon_entropy(ocp) / max_entropy
-
-# @numba.jit(nopython=True, cache=True)
-# def shannon_diversity(ocp: NDArray[np.float64]) -> float:
-#     """Calculate the Shannon diversity for a community"""
-#     if np.sum(ocp) == 0:
-#         return -9999.0
-#     return np.exp(shannon_entropy(ocp))
-
-# @numba.jit(nopython=True, cache=True)
-# def simpson_diversity(ocp: NDArray[np.float64]) -> float:
-#     """Calculate the Simpson diversity for a community"""
-#     simpson = 0.0
-#     for i in range(ocp.size):
-#         simpson += ocp[i] ** 2
-#     return simpson
-
-# @numba.jit(nopython=True, cache=True)
-# def simpson_evenness(ocp: NDArray[np.float64]) -> float:
-#     """Calculate the Simpson evenness for a community"""
-#     return simpson_diversity(ocp) / ocp.size
-
-
 class state_zero:
     """base class with input/output related data (paths, filenames, etc)
     """
@@ -544,9 +399,9 @@ class state_zero:
 
         self.outputs = {}       # dict, store filepaths of output data generated by this
         # Root dir for the region outputs
-        self.out_dir = str_or_path(Path(output_dump_folder), check_exists=False) # Region output folder
-        self.parent_dir = self.out_dir.parent # Parent folder of the region output folder
-        self.main_outdir = self.parent_dir.parent
+        self.out_dir = str_or_path(Path(output_dump_folder), check_exists=False) # gridcell output folder
+        self.parent_dir = self.out_dir.parent # region output folder
+        self.main_outdir = self.parent_dir.parent # main output folder
 
 
         os.makedirs(self.out_dir, exist_ok=True)
@@ -1002,7 +857,6 @@ class gridcell_output:
 
 
 class grd_mt(state_zero, climate, time, soil, gridcell_output):
-
     """A gridcell object to run the model in the meta-community mode
 
     Args:
@@ -1261,11 +1115,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # Slice&Catch climatic input and make conversions
         cv = self.config.conversion_factors_isimip # type: ignore
 
-        temp: NDArray[np.float64] = self.tas[lower_bound: upper_bound + 1] - cv.tas   # Air temp: model uses °C
-        prec: NDArray[np.float64] = self.pr[lower_bound: upper_bound + 1] * cv.pr     # Precipitation: model uses  mm/day
-        p_atm: NDArray[np.float64] = self.ps[lower_bound: upper_bound + 1] * cv.ps    # Atmospheric pressure: model uses hPa
-        ipar: NDArray[np.float64] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds # PAR: model uses  mol(photons) m-2 s-1
-        ru: NDArray[np.float64] = self.rhs[lower_bound: upper_bound + 1] *  cv.rhs    # Relative humidity: model uses 0-1
+        temp: NDArray[np.float32] = self.tas[lower_bound: upper_bound + 1] - cv.tas   # Air temp: model uses °C
+        prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1] * cv.pr     # Precipitation: model uses  mm/day
+        p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1] * cv.ps    # Atmospheric pressure: model uses hPa
+        ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds # PAR: model uses  mol(photons) m-2 s-1
+        ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] *  cv.rhs    # Relative humidity: model uses 0-1
 
         # Define the daily values for co2 concentrations
         co2_daily_values = np.zeros(steps.size, dtype=np.float32)
@@ -1377,7 +1231,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             # <- Daily loop
 
             for step in range(steps.size):
-                today += time_step # Now it is today
+                today += time_step
                 julian_day = today.timetuple().tm_yday
 
                 # Get the co2 concentration for the day
@@ -1600,7 +1454,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 et = masked_mean(self.metacomm.mask, epavg) #evavg.mean()
 
                 # Update water pools
-                # TODO add a type signature to jit these functions
                 self.evapm[step] = atm_canopy_coupling(et_pot, et, temp[step], vpd)
                 self.runom[step] = self.swp._update_pool(prec[step], self.evapm[step])
                 self.swp.w1 = 0.0 if self.swp.w1 < 0.0 else self.swp.w1
@@ -1850,9 +1703,71 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return metacomm_dt
 
 
-    def _get_nyears(self) -> List[int]:
-        """Get the number of years in the simulation"""
+    def _get_years(self) -> List[int]:
+        """Get the sequence of years for which data is available"""
         return sorted(list(self.metacomm_output.keys()))
+
+
+    def _read_annual_output(self, variables: str) -> List[NDArray[np.float32]]:
+        """Read the annual output for the gridcell (only metacommunity aggregated data)"""
+
+        # Variables that are aggregated over the metacommunities
+        aggregated_variables: Set[str] = {"cveg",
+                                          "cleaf",
+                                          "croot",
+                                          "cwood",
+                                          "anpp",
+                                          "uptake_costs"}
+
+        vnames = get_args(variables)
+
+        for v in vnames:
+            assert v in aggregated_variables, f"Variable {v} not available"
+
+
+        years = self._get_years()
+        fetched_data = []
+        for y in years:
+            fetched_data.append(self._fetch_metacommunity_data(y))
+        output = {}
+
+        for variable in vnames:
+            outarr = np.zeros(len(years), dtype=np.float32)
+            for i, year in enumerate(years):
+                outarr[i] = fetched_data[i][variable]
+            output[f"{variable}_{self.xyname}"] = outarr
+        return output
+
+
+
+    def _read_annual_metacomm_biomass(self, year: int) -> List[NDArray[np.float32]]:
+        pls_variables = ("id",
+                         "vp_cleaf",
+                         "vp_croot",
+                         "vp_cwood")
+
+        years = self._get_years()
+        assert year in years, f"Year {year} not available"
+        fetched_data = self._fetch_metacommunity_data(year)
+        communities = fetched_data["communities"]
+
+        pls_id = np.zeros(0, dtype=np.int32)
+        pls_cleaf = np.zeros(0, dtype=np.float32)
+        pls_croot = np.zeros(0, dtype=np.float32)
+        pls_cwood = np.zeros(0, dtype=np.float32)
+
+        for community in communities.values():
+            if not community["masked"]:
+                id_to_count = community["id"]
+                pls_id = np.concatenate((pls_id, id_to_count))
+                pls_cleaf = np.concatenate((pls_cleaf, community["vp_cleaf"]))
+                pls_croot = np.concatenate((pls_croot, community["vp_croot"]))
+                pls_cwood = np.concatenate((pls_cwood, community["vp_cwood"]))
+
+        return {"pls_id": pls_id,
+                "vp_cleaf": pls_cleaf,
+                "vp_croot": pls_croot,
+                "vp_cwood": pls_cwood}
 
 
     def _read_daily_output(self,
