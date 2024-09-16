@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     #Finalize spinclim in 18501231
     print("\nSTART spinup transer")
-    r.run_region_map(fn.spinup_transer)
+    r.run_region_map(fn.run_spinup_transer)
 
     # Change input source to transclim files 1851-1900
     print("\nSTART transclim run")

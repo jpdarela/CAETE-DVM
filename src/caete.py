@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -22,27 +22,30 @@ DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Mo
 # """
 
 # """_summary_
-# This module contains the classes that define the gridcell and the region objects.
+# This module contains the classes that define the gridcell object.
 # The gridcell object is the basic unit of the simulation. It contains the data and the methods to
-# run the simulation for a single gridcell. The region object represents is a collection of gridcells.
-# It contains the data for a simulation and also provides  the methods to run the simulation
-# for a collection of gridcells in parallel (multiprocessing).
+# run the simulation for a single gridcell. It also has methods to save/process model outputs.
 
-# THe architecture of the code is defined by the following classes:
+# The gridcell object is used by the region object (defined in region.py).
+# The region object represents a collection of gridcells.
+# It the methods to run the simulation for a collection of gridcells in parallel (multiprocessing).
+
+# THe architecture of the gridcell is defined by the following classes:
 # - state_zero: base class with input/output related data (paths, filenames, etc)
-# - climate: class with climate data
-# - time: class with time data
-# - soil: class with soil data
+# - climate: class with climate data and related methods
+# - time: class with time data and related methods
+# - soil: class with soil data and related methods
 # - gridcell_output: class to manage gridcell outputs
 
-#  All these classes also have some particular methods to manage the data
+#  All these classes have some particular methods to manage the data
 #  They are isolated in these classes to make the code more readable and maintainable.
 #  All the above classes are used as base for the class that regresents a gricell
 #  in the simulation:
 
 # - grd_mt: class to manage the gridcell simulation
 #     It has the methods to set up, run the simulation and save the outputs in a
-#     folder. Each gridcell has one plant metacommunity. The plant metacommunity is a collection of
+#     folder. It also has some methods to process output data after model execution.
+#     Each gridcell has one plant metacommunity. The plant metacommunity is a collection of
 #     plant communities. Each plant community is a collection of plant life strategies (PLS).
 #     At creation time, a community receives a sample of PLS from a global table. A community is not
 #     allowed to have duplicated PLS but the same PLS can be in more than one community in a
@@ -61,7 +64,7 @@ DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Mo
 #     This will save a file named pls_attrs<n>.csv (where n = 25000) in the local folder MyPLSDataFolder.
 #     The script uses data from literature to generate a quasi-random sample of PLS based on 17 plant
 #     functional traits. There is a plsgen.toml file that contains some of the parameters used
-#     to generate the PLS table. There are comments in the script. Check it for more infos.
+#     to generate the PLS table. There are comments in the script. Check it for more info.
 
 #     During the simulation of a gridcell, it is possible to control the number of PLS in a community.
 #     You can reset a community to a new set of PLS. This is useful when the set of PLS initially designated
@@ -69,16 +72,20 @@ DESCRIPTION = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Mo
 #     It is also possible to reset the entire metacommunity at once. This is useful to reset the
 #     distributions of PLS after a initial spinup. In this case, te spin  aims to reach a stable state in the soil pools.
 #     Right after this soil spinup, it is possible to seed new PLS in the communities while runing the
-#     model. This is useful to simulate the filtering of the gridcell "environment" along time while adding new
-#     PLS to the communities.
+#     model. This is useful to simulate the filtering of the gridcell "environment"
+#     along time while adding new PLS to the communities.
 #     Given that our sample space is cursed 17 times (17 traits), these strategies are important do start
 #     the model (spin it up) and to keep it running while simulating the filtering of the
 #     gridcell "environment". The grd_mt.run_gridcell method has several parameters to control
 #     the simulation. You can have a look at the method signature and docstring to understand the options.
 
-# Finally, the region class is defined. It represents collection of gridcells. It has the methods to
-# run the simulation for a collection of gridcells in parallel (multiprocessing).
 
+# Other important classes and functions are defined in the files region.py, worker.py, output.py,
+# metacommmunity.py, and caete_jit.py.
+
+# The region class is defined in region.py. It represents collection of gridcells.
+# It has the methods to run the simulation for a collection of gridcells
+# in parallel (multiprocessing).
 # - region: class to manage the region simulation, the global PLS table, IO, multiprocessing etc.
 
 # - worker (only @staticmethods): class grouping worker functions defining different phases of simulation.
@@ -165,12 +172,12 @@ T = TypeVar('T')
 
 
 # Define some util functions #
-def get_args(variable: Union[T, Collection[T]]) -> Collection[T]:
+def get_args(variable: Union[T, Collection[T]]) -> Collection[Union[T, str, int, float]]:
     """Ensure the input is returned as a collection."""
     if isinstance(variable, Collection) and not isinstance(variable, str):
         return variable
     else:
-        return [variable]
+        return [variable,]
 
 
 def rwarn(txt:str='RuntimeWarning'):
@@ -792,8 +799,8 @@ class gridcell_output:
                      'ls': self.ls,
                      'c_cost': self.carbon_costs,
                      'storage_pool': self.storage_pool,
-                     'calendar': self.calendar,    # Calendar name # type: ignore
-                     'time_unit': self.time_unit,  # Time unit # type: ignore
+                     'calendar': self.calendar,    # type: ignore # Calendar name
+                     'time_unit': self.time_unit,  # type: ignore # Time unit
                      'sind': index[0],
                      'eind': index[1]}
         # Flush attrs
@@ -1030,7 +1037,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                   start_date: str,
                   end_date: str,
                   spinup: int = 0,
-                  fixed_co2_atm_conc: Optional[str] = None,
+                  fixed_co2_atm_conc: Optional[str] | Optional[int] | Optional[float] = None,
                   save: bool = True,
                   nutri_cycle: bool = True,
                   afex: bool = False,
@@ -1039,7 +1046,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                   env_filter: bool = False,
                   verbose: bool = True):
         """
-        Run the model for a specific grid cell.
+        Run the model for a grid cell.
 
         CAETÊ-DVM execution in the start_date - end_date period, can be used for spinup or transient runs.
 
@@ -1188,7 +1195,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             # There are two modes of operation: save and not save.
             # In the save mode, the arrays are used to store the values that are
             # needed for model iteration, i.e., the values that are used in the next
-            # time step. In the save mode, an extra number arrays are created to be used
+            # time step. In the save mode, an extra number arrays is created to be used
             # to store the outputs.
             xsize: int = len(self.metacomm) # Number of communities
             evavg: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
@@ -1328,28 +1335,28 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         for k in range(community.vp_lsid.size):
                             # Get the unique values and counts for leaf limitation
                             unique, counts = np.unique(_data_leaf[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False]
-                            pls_lim_leaf.append((unique, counts[:unique.size]))
+                            unique = unique.data[unique.mask == False] # type: ignore
+                            pls_lim_leaf.append((unique, counts[:unique.size])) # type: ignore
 
                             # Stem limitation
                             unique, counts = np.unique(_data_stem[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False]
-                            pls_lim_stem.append((unique, counts[:unique.size]))
+                            unique = unique.data[unique.mask == False] # type: ignore
+                            pls_lim_stem.append((unique, counts[:unique.size])) # type: ignore
 
                             # Root limitation
                             unique, counts = np.unique(_data_root[0, k, :], return_counts=True)
                             unique = unique.data[unique.mask == False]
-                            pls_lim_root.append((unique, counts[:unique.size]))
+                            pls_lim_root.append((unique, counts[:unique.size])) # type: ignore
 
                             # Uptake strategy N
                             unique, counts = np.unique(_data_uptake_n[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False]
-                            pls_uptake_n.append((unique, counts[:unique.size]))
+                            unique = unique.data[unique.mask == False] # type: ignore
+                            pls_uptake_n.append((unique, counts[:unique.size])) # type: ignore
 
                             # Uptake strategy P
                             unique, counts = np.unique(_data_uptake_p[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False]
-                            pls_uptake_p.append((unique, counts[:unique.size]))
+                            unique = unique.data[unique.mask == False]  # type: ignore
+                            pls_uptake_p.append((unique, counts[:unique.size])) # type: ignore
 
                         community.limitation_status_leaf = pls_lim_leaf
                         community.limitation_status_wood = pls_lim_stem
@@ -1708,7 +1715,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return sorted(list(self.metacomm_output.keys()))
 
 
-    def _read_annual_output(self, variables: str) -> List[NDArray[np.float32]]:
+    def _read_annual_output(self, variables: str) -> Dict[int, NDArray[np.float32]]:
         """Read the annual output for the gridcell (only metacommunity aggregated data)"""
 
         # Variables that are aggregated over the metacommunities
@@ -1740,11 +1747,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
 
 
-    def _read_annual_metacomm_biomass(self, year: int) -> List[NDArray[np.float32]]:
-        pls_variables = ("id",
-                         "vp_cleaf",
-                         "vp_croot",
-                         "vp_cwood")
+    def _read_annual_metacomm_biomass(self, year: int) -> Dict[str, NDArray[np.float32] | NDArray[np.int32]]:
 
         years = self._get_years()
         assert year in years, f"Year {year} not available"
@@ -1756,7 +1759,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         pls_croot = np.zeros(0, dtype=np.float32)
         pls_cwood = np.zeros(0, dtype=np.float32)
 
-        for community in communities.values():
+        for comm_number, community in communities.items():
             if not community["masked"]:
                 id_to_count = community["id"]
                 pls_id = np.concatenate((pls_id, id_to_count))

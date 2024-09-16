@@ -68,21 +68,21 @@ interface: $(sources)
 so: $(sources) interface
 	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)" --quiet
 	@echo "Serial version of caete_module created using $(FC)"
-	$(CYTHON) -a community.py
-	$(CYTHON) -a metacommunity.py
-	$(CYTHON) -a hydro_caete.py
-	$(CYTHON) -a output.py
-	$(PYEXEC) setup.py build_ext --inplace --verbose
+#	$(CYTHON) -a community.py
+#	$(CYTHON) -a metacommunity.py
+#	$(CYTHON) -a hydro_caete.py
+#	$(CYTHON) -a output.py
+#	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 
 so_parallel: $(sources) interface
 	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) -qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
-	$(CYTHON) -a community.py
-	$(CYTHON) -a metacommunity.py
-	$(CYTHON) -a hydro_caete.py
-	$(CYTHON) -a output.py
-	$(PYEXEC) setup.py build_ext --inplace --verbose
+#	$(CYTHON) -a community.py
+#	$(CYTHON) -a metacommunity.py
+#	$(CYTHON) -a hydro_caete.py
+#	$(CYTHON) -a output.py
+#	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 
 modules: $(sources)
@@ -90,8 +90,7 @@ modules: $(sources)
 
 clean_py:
 	del /s /q __pycache__
-	del /s *.psz
-
+	del /s /q build
 
 clean: clean_py
 	del /s *.mod
@@ -107,6 +106,7 @@ clean_so: clean
 	del /s *.pyf
 	del /s *.c
 	del /s *.log
+	del /s *.psz
 	cls
 
 reinstall: clean_so so modules

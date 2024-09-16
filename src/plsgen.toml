@@ -1,11 +1,10 @@
-# Parameters used to create Plant life strategies. Used in
 title = "Parameters used to create Plant life strategies"
-language = "pt-BR"
 author = "João Paulo Darela Filho"
 
 [parameters]
 grass_pls_fraction = 0.07
 minimum_allocation = 0.05
+
 grass_cmin = 0.001
 grass_low_npp = 0.02
 wood_cmin = 0.001

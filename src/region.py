@@ -1,16 +1,40 @@
+# -*-coding:utf-8-*-
+# "CAETÊ"
+# Author:  João Paulo Darela Filho
+
+_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+
+# """
+# Copyright 2017- LabTerra
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# """
+
+
 import copy
 import multiprocessing as mp
 import os
 
 from pathlib import Path
-from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
+
 from typing import Callable, Dict, List,Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
 
+from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
 from config import Config, fetch_config
-
 import metacommunity as mc
 
 # Tuples with hydrological parameters for the soil water calculations
@@ -56,7 +80,7 @@ class region:
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
 
-        # calculate_matrix dimesnion size size from grid resolution
+        # calculate_matrix dimension size from grid resolution
         self.nx = len(np.arange(0, 180, self.config.crs.xres/2)) # type: ignore
         self.ny = len(np.arange(0,  90, self.config.crs.yres/2)) # type: ignore
 
@@ -83,14 +107,17 @@ class region:
         self.metadata = read_bz2_file(mtd)
         self.stime = copy.deepcopy(self.metadata[0])
 
-        for file_path in self.input_data.glob("input_data_*-*.pbz2"):
+        for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
             self.climate_files.append(file_path)
 
-        # This is used to define the gridcells output paths
+        # Define grid structure
         self.yx_indices = []
         self.lats = np.zeros(len(self.climate_files), dtype=np.float32)
         self.lons = np.zeros(len(self.climate_files), dtype=np.float32)
         for f in self.climate_files:
+            # Warning: This is a very specific way to extract the gridcell indices from the file name
+            # Thus, the file name must be in the format input_data_y-x.pbz2
+            # Look at the ../input/pre_processing.py file to see how the files are created
             y, x = f.stem.split("_")[-1].split("-")
             self.yx_indices.append((int(y), int(x)))
             # Update the grid mask
@@ -98,7 +125,7 @@ class region:
 
         # create the output folder structure
         # This is the output path for the regions, Create it if it does not exist
-        # output_path is a global defined in parameters.py The region object will
+        # output_path is a global defined in parameters.py. The region object will
         # create the internal output folder structure into this directory
         os.makedirs(output_path, exist_ok=True)
 
@@ -126,12 +153,13 @@ class region:
             gridcell.run_counter = 0
             gridcell.outputs = {}
             gridcell.metacomm_output = {}
+            gridcell.executed_iterations = []
 
             gridcell.out_dir  = self.output_path/Path(f"grd_{gridcell.xyname}")
             os.makedirs(gridcell.out_dir, exist_ok=True)
 
 
-    def update_input(self, input_file=None, co2=None):
+    def update_input(self, input_folder=None, co2=None):
         """Update the input data for the region
 
         Args:
@@ -148,9 +176,9 @@ class region:
             self.co2_path = str_or_path(co2)
             self.co2_data = get_co2_concentration(self.co2_path)
 
-        if input_file is not None:
+        if input_folder is not None:
             # Read the climate data
-            self.input_data = str_or_path(input_file)
+            self.input_data = str_or_path(input_folder)
             try:
                 metadata_file = list(self.input_data.glob("*_METADATA.pbz2"))[0]
             except:
@@ -164,8 +192,22 @@ class region:
             # Read metadata from climate files
             self.metadata = read_bz2_file(mtd)
             self.stime = copy.deepcopy(self.metadata[0])
-            for file_path in self.input_data.glob("input_data_*-*.pbz2"):
-                self.climate_files.append(file_path)
+
+            # for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
+            #     self.climate_files.append(file_path)
+            # new_yx_indices = []
+
+            # for i, f in enumerate(self.climate_files):
+            #     # Warning: This is a very specific way to extract the gridcell indices from the file name
+            #     # Thus, the file name must be in the format input_data_y-x.pbz2
+            #     # Look at the ../input/pre_processing.py file to see how the files are created
+            #     y, x = f.stem.split("_")[-1].split("-")
+            #     # Assert that the gridcell indices match with the new input data
+            #     assert (int(y), int(x)) == self.yx_indices[i], "Gridcell indices do not match"
+            #     new_yx_indices.append((int(y), int(x)))
+            #     # self.yx_indices.append((int(y), int(x)))
+            #     # self.grid_mask[int(y), int(x)] = False
+            # self.yx_indices = new_yx_indices
 
         if co2 is not None:
             for gridcell in self.gridcells:

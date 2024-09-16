@@ -24,7 +24,7 @@ SCEN = ["historical", "ssp370", "ssp585"]
 precConvFactor = 8.64e4
 
 coord = pandas.read_csv(
-    "gridlist_with_idx_53f049b0a72548eb86a68a34f2c9d30d.csv",
+    "gridlist_with_idx_7e1f255d9531480cb93f2cc70edbe5b6.csv",
     index_col="name")
 
 MUNICIPIOS = list(coord.index)
@@ -33,8 +33,6 @@ MUNICIPIOS = list(coord.index)
 outputPath = Path("./rclimdex/")
 os.makedirs(outputPath, exist_ok=True)
 
-cwd = os.getcwd
-ROOT = cwd()
 
 def strDate(dtobject: cftime.real_datetime)->str:
     return dtobject.strftime("%Y%m%d")

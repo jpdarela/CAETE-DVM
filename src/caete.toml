@@ -1,7 +1,7 @@
 doy_months = [1,31,62,92,123,153,183,214,244,275,305,336]
 
 [multiprocessing]
-nprocs=16
+nprocs=4
 
 [conversion_factors_isimip] # Conversion factors used to convert units of input data
 tas = 273.15  # ! K to °C (subtract) [input(K) to model(°C)]
@@ -12,7 +12,7 @@ rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (m
 
 [metacomm]
 n = 10 # Number of communities to be considered in the metacombinations
-npls_max = 500 # Maximum number of PLS to be considered in the metacombinations
+npls_max = 999 # Maximum number of PLS to be considered in the metacombinations
 
 [crs]
 res = 0.5

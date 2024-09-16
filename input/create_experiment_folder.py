@@ -1,9 +1,14 @@
 
-# REad the gridlist_cities.csv and use the lat and lon to find the indices of the grid cells
-# Then copy the files from the main directories to the new directories based on the indices
+# REad the gridlist_cities.csv (or something like) and use the lat and lon to find
+# the indices of the grid cells.
+# Then copy(hardlink) the files from the main directories to the new directories
+# based on the indices.
 # A new gridlist_cities_idx.csv file is created with the indices of the grid cells
-# This file can identify the outputs of the model with the location of the cities
-# The input files are copied to the new directories based on the indices
+# This file can be used to identify the outputs of the model with the location of the cities
+# modeled stations, etc.
+
+# Hardlinks to the input files are created in the new directories.
+# If hardlinks are not supported, the files are copied. This is slower and uses more disk space.
 
 from typing import Union, List, Dict
 from pathlib import Path
@@ -16,6 +21,8 @@ import uuid
 sys.path.append('../src')
 
 from _geos import find_indices # type: ignore
+
+# This import causes the creation of a log file in the current directory. Not used in this script
 from caete import str_or_path  # type: ignore
 
 
@@ -51,6 +58,7 @@ def get_location_data(filename: Union[Path, str]) -> List[Dict[str, Union[float,
 
     return data
 
+
 def get_indices(filename: Union[Path, str] = './gridlist_cities.csv') -> None:
     gridlist = str_or_path(filename, check_is_file=True)
     locations = get_location_data(gridlist)
@@ -62,12 +70,35 @@ def get_indices(filename: Union[Path, str] = './gridlist_cities.csv') -> None:
         # mask[indices] = False
     return idx
 
+def delete_directories(directories):
+    proceed = input(f"Deleting directories {directories}\n Delete? (y/n): ")
+    if proceed.lower() == 'y':
+        for directory in directories:
+            dir_path = Path(directory)
+            if dir_path.exists() and dir_path.is_dir():
+                shutil.rmtree(dir_path)
+                print(f"Deleted directory: {dir_path}")
+            else:
+                print(f"Directory does not exist: {dir_path}")
+    else:
+        print("Aborted")
+
+
+def create_hardlink_or_copy(src, dest):
+    try:
+        # Create a symbolic link pointing to src named dest
+        Path(dest).hardlink_to(src)
+    except (OSError, NotImplementedError) as e:
+        # If hardlink creation fails, fall back to copying the file
+        shutil.copy(src, dest)
+
 
 def create_experiment_input2(
     filename: Union[Path, str] = './gridlist_cities.csv',
     src_folders: List[Union[Path, str]] = None,
     dest_folders: List[Union[Path, str]] = None
-) -> None:
+    ) -> None:
+
     if src_folders is None or dest_folders is None:
         raise ValueError("Source and destination folders must be provided")
 
@@ -90,7 +121,7 @@ def create_experiment_input2(
         dest_path = Path(dest)
         dest_path.mkdir(exist_ok=True, parents=True)
 
-    # Based on index, find the required files and copy them
+    # Based on index, find the required files and copy/hardlink them
     for indices in idx:
         y, x = indices
         file_name = Path(f"input_data_{y}-{x}.pbz2")
@@ -101,8 +132,13 @@ def create_experiment_input2(
             src_path_metadata = Path(src) / metadata_file
             dest_path = Path(dest) / file_name
             dest_path_metadata = Path(dest) / metadata_file
-            shutil.copy(src_path, dest_path)
-            shutil.copy(src_path_metadata, dest_path_metadata)
+            print(src_path, dest_path)
+            print (src_path_metadata, dest_path_metadata)
+            create_hardlink_or_copy(src_path, dest_path)
+            try:
+                create_hardlink_or_copy(src_path_metadata, dest_path_metadata)
+            except:
+                pass
 
 
 if __name__ == '__main__':
@@ -114,14 +150,13 @@ if __name__ == '__main__':
     # give a string with the name of the new folders
     # Change these variables to match you needs
 
-    _append = '_cities'
-    _gridlist = 'gridlist_cities.csv'
-    write_gridlist_with_indices = True
+    # _append = '_cities'
+    # _gridlist = 'gridlist_cities.csv'
+    # write_gridlist_with_indices = False
 
-
-    # _append = '_test'
-    # _gridlist = 'gridlist_test.csv'
-    # write_gridlist_with_indices = True
+    _append = '_test'
+    _gridlist = 'gridlist_test.csv'
+    write_gridlist_with_indices = False
 
     # Define source and destination folders
     # order is important here. The source folders must be in the same order as the destination folders
@@ -149,23 +184,30 @@ if __name__ == '__main__':
         f'./MPI-ESM1-2-HR/ssp585{_append}'
     ]
 
-
-    create_experiment_input2(
-        filename=_gridlist,
-        src_folders=src_folders,
-        dest_folders=dest_folders
-    )
-    # Create a new file (gridlist) with the two extra columns with indices of the grid cells
-    if write_gridlist_with_indices:
-        locations = get_location_data(_gridlist)
-        # Use the uuid module to create a unique identifier for each new gridlist
-        # Will be appende to the file name
-        id1 = uuid.uuid4().hex
-        with open(f'gridlist_with_idx_{id1}.csv', 'w', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['lon', 'lat', 'name', 'y', 'x'])
-            writer.writeheader()
-            for loc in locations:
-                indices = find_indices(loc['lat'], loc['lon'])
-                loc['y'] = indices[0]
-                loc['x'] = indices[1]
-                writer.writerow(loc)
+    try:
+        delete_files = sys.argv[1]
+    except:
+        delete_files = 'keep'
+        pass
+    if delete_files == 'delete':
+        delete_directories(dest_folders)
+    else:
+        create_experiment_input2(
+            filename=_gridlist,
+            src_folders=src_folders,
+            dest_folders=dest_folders
+        )
+        # Create a new file (gridlist) with the two extra columns with indices of the grid cells
+        if write_gridlist_with_indices:
+            locations = get_location_data(_gridlist)
+            # Use the uuid module to create a unique identifier for each new gridlist
+            # Will be appende to the file name
+            id1 = uuid.uuid4().hex
+            with open(f'gridlist_with_idx_{id1}.csv', 'w', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=['lon', 'lat', 'name', 'y', 'x'])
+                writer.writeheader()
+                for loc in locations:
+                    indices = find_indices(loc['lat'], loc['lon'])
+                    loc['y'] = indices[0]
+                    loc['x'] = indices[1]
+                    writer.writerow(loc)

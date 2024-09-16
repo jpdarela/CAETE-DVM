@@ -381,19 +381,16 @@ def process_gridcell(grd:input_data , var, data):
 def main():
     # SAVE METADATA
     variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
-
-    #TODO: add indices and time metadata to each gridcell file
-    # Lets get rid of the metdata file
-    # Add also dataset name and mode to the gridcell file
     dss = [read_clim_data(var) for var in variables]
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])
     ancillary_data.write(shared_data / metadata_filename_str)
-
+    # Close the datasets
     for ds in dss:
         ds.close()
     del dss
 
+    # Prepare input templates
     input_templates = []
     ngrid = 0
     for Y in range(360):
