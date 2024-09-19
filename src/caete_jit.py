@@ -167,7 +167,7 @@ def masked_mean_2D(mask: NDArray[np.int8], values: NDArray[np.float32]) -> NDArr
 def cw_mean(ocp: NDArray[np.float64], values: NDArray[np.float32]) -> np.float32:
     """
     Calculate the Community weighted mean for values using an
-    array of area occupation (0 (empty) -1 (Total dominance))"""
+    array of area occupation (0 (empty) 1 (Total dominance))"""
 
     return np.sum(ocp * values, dtype = np.float32)
 

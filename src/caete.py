@@ -107,7 +107,6 @@ import bz2
 import copy
 import csv
 import logging
-import multiprocessing as mp
 import os
 import pickle as pkl
 import sys
@@ -159,9 +158,6 @@ from caete_module import water as st
 
 logging.basicConfig(filename='execution.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-# Global lock. Used to lock the access to the main table of Plant Life Strategies
-lock = mp.Lock()
 
 # Output file extension
 out_ext = ".pkz"
@@ -886,7 +882,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             get_main_table (callable): a region method used to get PLS from the main table
             to create the metacommunity.
         """
-
+        # Init state_zero
         super().__init__(y, x, data_dump_directory, get_main_table)
         # self.spin_data: Optional[Dict] = None #
 
@@ -1054,7 +1050,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             start_date (str): Start date for model execution in "yyyymmdd" format.
             end_date (str): End date for model execution in "yyyymmdd" format.
             spinup (int, optional): Number of repetitions in spinup. Set to 0 for a transient run between start_date and end_date. Default is 0.
-            fixed_co2_atm_conc (Optional[float], optional): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels. Default is None.
+            fixed_co2_atm_conc (Optional[Union[str, int, float]]): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels from a predefined file. Default is None.
             save (bool, optional): Whether to save the results. Default is True.
             nutri_cycle (bool, optional): Whether to include nutrient cycling in the model. Default is True.
             afex (bool, optional): Whether to apply additional effects (AFEX) in the model. Default is False.
@@ -1298,11 +1294,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     # Limiting nutrient organization:
                     # dim1 = leaf wood root, code: 1=N 2=P 4=N,COLIM 5=P,COLIM 6=COLIM 0=NOLIM
                     if save:
-                        lim_status_y_leaf[i, :, julian_day - 1] = daily_output.limitation_status[0,:]
-                        lim_status_y_stem[i, :, julian_day - 1] = daily_output.limitation_status[1,:]
-                        lim_status_y_root[i, :, julian_day - 1] = daily_output.limitation_status[2,:]
-                        uptake_strategy_n[i, :, julian_day - 1] =  daily_output.uptk_strat[0,:]
-                        uptake_strategy_p[i, :, julian_day - 1] =  daily_output.uptk_strat[1,:]
+                        lim_status_y_leaf[i, :, julian_day - 1] = daily_output.limitation_status[0,:]# type: ignore
+                        lim_status_y_stem[i, :, julian_day - 1] = daily_output.limitation_status[1,:]# type: ignore
+                        lim_status_y_root[i, :, julian_day - 1] = daily_output.limitation_status[2,:]# type: ignore
+                        uptake_strategy_n[i, :, julian_day - 1] =  daily_output.uptk_strat[0,:]# type: ignore
+                        uptake_strategy_p[i, :, julian_day - 1] =  daily_output.uptk_strat[1,:]# type: ignore
 
                         community.anpp += cw_mean(community.vp_ocp, community.construction_npp.astype(np.float32))
                         community.uptake_costs += cw_mean(community.vp_ocp, community.sp_uptk_costs.astype(np.float32))
@@ -1318,12 +1314,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                         # process limitation data
                         # Filter non living PLS from the limitation status
-                        _data_leaf = lim_status_y_leaf[i, [community.vp_lsid], :]
-                        _data_stem = lim_status_y_stem[i, [community.vp_lsid], :]
-                        _data_root = lim_status_y_root[i, [community.vp_lsid], :]
+                        _data_leaf = lim_status_y_leaf[i, [community.vp_lsid], :] # type: ignore
+                        _data_stem = lim_status_y_stem[i, [community.vp_lsid], :] # type: ignore
+                        _data_root = lim_status_y_root[i, [community.vp_lsid], :] # type: ignore
 
-                        _data_uptake_n = uptake_strategy_n[i, [community.vp_lsid], :]
-                        _data_uptake_p = uptake_strategy_p[i, [community.vp_lsid], :]
+                        _data_uptake_n = uptake_strategy_n[i, [community.vp_lsid], :]# type: ignore
+                        _data_uptake_p = uptake_strategy_p[i, [community.vp_lsid], :]# type: ignore
 
                         # Loop over the living PLS to get the unique values and counts
                         pls_lim_leaf = []
@@ -1365,11 +1361,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         community.uptake_strategy_p = pls_uptake_p
 
                         # Reset the limitation masked arrays
-                        lim_status_y_leaf.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool)
-                        lim_status_y_stem.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool)
-                        lim_status_y_root.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool)
-                        uptake_strategy_n.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool)
-                        uptake_strategy_p.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool)
+                        lim_status_y_leaf.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                        lim_status_y_stem.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                        lim_status_y_root.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                        uptake_strategy_n.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                        uptake_strategy_p.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
 
                     # Restore or seed PLS
                     if env_filter and community.ls < self.metacomm.comm_npls:
@@ -1421,25 +1417,25 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     epavg[i] = daily_output.epavg
 
                     if save:
-                        nupt[:, i] = daily_output.nupt
-                        pupt[:, i] = daily_output.pupt
-                        cc[i] = daily_output.c_cost_cwm
-                        npp[i] = daily_output.nppavg
-                        photo[i] = daily_output.phavg
-                        aresp[i] = daily_output.aravg
-                        lai[i] = daily_output.laiavg
-                        rcm[i] = daily_output.rcavg
-                        f5[i] = daily_output.f5avg
-                        rm[i] = daily_output.rmavg
-                        rg[i] = daily_output.rgavg
-                        wue[i] = daily_output.wueavg
-                        cue[i] = daily_output.cueavg
-                        carbon_deficit[i] = daily_output.c_defavg
-                        vcmax[i] = daily_output.vcmax
-                        specific_la[i] = daily_output.specific_la
+                        nupt[:, i] = daily_output.nupt #type: ignore
+                        pupt[:, i] = daily_output.pupt #type: ignore
+                        cc[i] = daily_output.c_cost_cwm #type: ignore
+                        npp[i] = daily_output.nppavg #type: ignore
+                        photo[i] = daily_output.phavg #type: ignore
+                        aresp[i] = daily_output.aravg #type: ignore
+                        lai[i] = daily_output.laiavg #type: ignore
+                        rcm[i] = daily_output.rcavg #type: ignore
+                        f5[i] = daily_output.f5avg #type: ignore
+                        rm[i] = daily_output.rmavg #type: ignore
+                        rg[i] = daily_output.rgavg #type: ignore
+                        wue[i] = daily_output.wueavg #type: ignore
+                        cue[i] = daily_output.cueavg #type: ignore
+                        carbon_deficit[i] = daily_output.c_defavg #type: ignore
+                        vcmax[i] = daily_output.vcmax #type: ignore
+                        specific_la[i] = daily_output.specific_la #type: ignore
 
                         for j in range(daily_output.stodbg.shape[0]):
-                            storage_pool[j, i] = cw_mean(community.vp_ocp, community.vp_sto[j, :])
+                            storage_pool[j, i] = cw_mean(community.vp_ocp, community.vp_sto[j, :]) #type: ignore
 
                 #<- Out of the community loop
                 # Save annual state of the metacommunity
@@ -1744,7 +1740,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 outarr[i] = fetched_data[i][variable]
             output[f"{variable}_{self.xyname}"] = outarr
         return output
-
 
 
     def _read_annual_metacomm_biomass(self, year: int) -> Dict[str, NDArray[np.float32] | NDArray[np.int32]]:

@@ -193,22 +193,6 @@ class region:
             self.metadata = read_bz2_file(mtd)
             self.stime = copy.deepcopy(self.metadata[0])
 
-            # for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
-            #     self.climate_files.append(file_path)
-            # new_yx_indices = []
-
-            # for i, f in enumerate(self.climate_files):
-            #     # Warning: This is a very specific way to extract the gridcell indices from the file name
-            #     # Thus, the file name must be in the format input_data_y-x.pbz2
-            #     # Look at the ../input/pre_processing.py file to see how the files are created
-            #     y, x = f.stem.split("_")[-1].split("-")
-            #     # Assert that the gridcell indices match with the new input data
-            #     assert (int(y), int(x)) == self.yx_indices[i], "Gridcell indices do not match"
-            #     new_yx_indices.append((int(y), int(x)))
-            #     # self.yx_indices.append((int(y), int(x)))
-            #     # self.grid_mask[int(y), int(x)] = False
-            # self.yx_indices = new_yx_indices
-
         if co2 is not None:
             for gridcell in self.gridcells:
                 gridcell.change_input(self.input_data, self.stime, self.co2_data)

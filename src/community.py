@@ -49,7 +49,7 @@ class community:
         """An assembly of plants.
         Args:
             pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): Two arrays, the first stores the
-                ids of the PLSs in the main table, the second stores the functional identity of PLSs.
+                ids of the PLSs in the main table, the second stores the functional traits of PLSs.
         """
         self.vp_ocp: NDArray[np.float64] | Any
         self.id: NDArray[np.int32] = pls_data[0]
@@ -175,7 +175,7 @@ class community:
         Returns:
             np.ndarray: _description_
         """
-        # Get the indices of the PLS that are not present in the community
+        # Get the indices of the free slots in the community
         return np.where(self.vp_ocp == 0.0)[0]
 
 
@@ -191,7 +191,6 @@ class community:
         # Assert that the PLS ID is not in the community
         free_slots = self.get_free_lsid()
         if free_slots.size == 0:
-
             return None
         elif free_slots.size == 1:
             pos = free_slots[0]
@@ -200,9 +199,9 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        self.vp_cleaf[pos] = np.random.uniform(0.1, 0.2)
-        self.vp_croot[pos] = np.random.uniform(0.1, 0.2)
-        self.vp_cwood[pos] = np.random.uniform(1.0, 2.0)
+        self.vp_cleaf[pos] = np.random.uniform(0.3,0.4)
+        self.vp_croot[pos] = np.random.uniform(0.3,0.4)
+        self.vp_cwood[pos] = np.random.uniform(5.0,6.0)
         self.vp_sto[0, pos] = np.random.uniform(0.0, 0.1)
         self.vp_sto[1, pos] = np.random.uniform(0.0, 0.01)
         self.vp_sto[2, pos] = np.random.uniform(0.0, 0.001)

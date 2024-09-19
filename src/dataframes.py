@@ -52,7 +52,6 @@ def get_spins(r:region, gridcell=0):
     """Prints the available spin slices for a gridcell in the region"""
     return r[gridcell].print_available_periods()
 
-
 def print_variables(r:region):
     """Prints the available variables for each gridcell in the region"""
     r[0]._get_daily_data("DUMMY", 1, pp=True)
@@ -129,7 +128,6 @@ def get_var_metadata(var):
     for v in var:
         out[v] = vunits.get(v, ['unknown', 'unknown', 'unknown'])
     return out
-
 
 def write_metadata_to_csv(variable_names:Tuple[str,...], output_path:Path):
     metadata = get_var_metadata(("header", ) + variable_names)
@@ -286,6 +284,7 @@ class gridded_data:
         # Allocate the arrays
         arrays = []
         array_names = []
+        nx, ny = -1, -1
         for i, var in enumerate(variables):
             dim = arrays_dict[0][var].shape
             if len(dim) == 1:
@@ -306,7 +305,7 @@ class gridded_data:
                     ny, nx = arrays_dict[j][var].shape
                     for k in range(ny):
                         arrays[array_index + k][:, coords[j][0], coords[j][1]] = arrays_dict[j][var][k, :]
-            array_index += ny if len(arrays_dict[j][var].shape) == 2 else 1
+            array_index += ny if len(arrays_dict[j][var].shape) == 2 else 1 # type ignore
 
         # Crop the arrays to the region of interest
         arrays = [a[:, ymin:ymax, xmin:xmax] for a in arrays]
@@ -348,7 +347,7 @@ class table_data:
                     for i in range(ny):
                         new_data[f"{k}_{i+1}"] = v[i,:] # We assume the first axis is the time axis
 
-            fname = f"grd_{grd.x}_{grd.y}_{time[0]}_{time[-1]}.csv"
+            fname = f"grd_{grd.y}_{grd.x}_{time[0]}_{time[-1]}.csv"
             df = pd.DataFrame(new_data, index=time)
             df.rename_axis('day', axis='index')
             df.to_csv(grd.out_dir / fname, index_label='day')
@@ -417,7 +416,7 @@ class output_manager:
 
 if __name__ == "__main__":
 
-    output_manager.cities_output()
+    # output_manager.cities_output()
     # hist_results: Path = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
     # hist:region = worker.load_state_zstd(hist_results)
     # grd = hist[0]
@@ -425,12 +424,12 @@ if __name__ == "__main__":
 
 
     # # IO
-    # model_results: Path = Path("./pan_amazon_hist_result.psz")
+    model_results: Path = Path("./pan_amazon_hist_result.psz")
     # # Load the region file
-    # reg:region = worker.load_state_zstd(model_results)
+    reg:region = worker.load_state_zstd(model_results)
     # # Gridded outputs
-    # # variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
-    # # data = data = gridded_data.aggregate_region_data(reg, variables_to_read, (24,25))
-    # # a = gridded_data.create_masked_arrays2D(data)
+    variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
+    data = gridded_data.aggregate_region_data(reg, variables_to_read, (24,25))
+    a = gridded_data.create_masked_arrays2D(data)
     # # TODO: Save netcdfs
 

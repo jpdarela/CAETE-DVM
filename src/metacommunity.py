@@ -148,7 +148,7 @@ class metacommunity:
 
         # Communities
         self.communities:Dict[int, community] = {}
-        self.get_table = get_from_main_table # Function defined in the region class [caete.py L ~1400]
+        self.get_table = get_from_main_table # Function defined in the region class [region.py L ~209]
         self.comm_npls = copy.deepcopy(gp.npls)
         self.mask: NDArray[np.int8] = np.zeros(community_count, dtype=np.int8)
 
@@ -302,7 +302,7 @@ def main():
     # Get a unique PLS from the main table (i.e. a PLS that is not in the community)
     ident, func_id = mt[0].get_unique_pls(__get_from_main_table)
 
-    # Seed the unique PLS in the  a free slot
+    # Seed the unique PLS in a free slot
     mt[0].seed_pls(ident, func_id)
     return mt
 

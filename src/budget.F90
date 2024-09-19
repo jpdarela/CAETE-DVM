@@ -354,7 +354,7 @@ contains
          endif
 
          ! Mass Balance
-
+         ! TODO: PLS are dying and the carbon in wood is not being released to the atmosphere
          if(c_def(p) .gt. 0.0) then
             cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
             ca1_int(p) = ca2(p)

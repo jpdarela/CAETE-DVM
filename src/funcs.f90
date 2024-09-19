@@ -568,7 +568,7 @@ contains
 
 
       vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))
-      dark_respiration = 1.0D0 - 0.15D0
+      dark_respiration = 1.0D0 - 0.15D0 ! TODO:there is a problem upstream with the vm calculation
 
 
       nbio2 = nbio * 0.4 !nrubisco(leaf_turnover, nbio)

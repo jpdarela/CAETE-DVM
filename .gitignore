@@ -13,10 +13,11 @@ src/*.cfg
 src/*.csv
 src/pls_data-*
 src/*.pkz
+src/*.psz
 src/*pbz2
 outputs/*
 src/.python-version
-src/exection.log
+src/execution.log
 src/build
 src/out_data
 
