@@ -164,7 +164,7 @@ contains
 
       real(r_8), dimension(npls) :: awood_aux, uptk_costs, pdia_aux
       real(r_8), dimension(:, :), allocatable :: sto_budg
-      real(r_8) :: soil_sat, ar_aux
+      real(r_8) :: soil_sat, ar_aux, total_c, c_def_amount, cl_def, ca_def, cf_def
       real(r_8), dimension(:), allocatable :: idx_grasses, idx_pdia
 
 
@@ -276,7 +276,7 @@ contains
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
-      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux)
+      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux, total_c, c_def_amount, cl_def, ca_def, cf_def)
       do p = 1,nlen
 
          carbon_in_storage = 0.0D0
@@ -346,21 +346,38 @@ contains
          mr_sto = 0.0D0
          sr = 0.0D0
 
-         ! CUE & Delta C
+         ! CUE
          if(ph(p) .eq. 0.0 .or. nppa(p) .eq. 0.0) then
             cue(p) = 0.0
          else
             cue(p) = nppa(p)/ph(p)
          endif
 
-         ! Mass Balance
-         ! TODO: PLS are dying and the carbon in wood is not being released to the atmosphere
-         if(c_def(p) .gt. 0.0) then
-            cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-            ca1_int(p) = ca2(p)
-            cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
+         ! Mass Balance. If ar > A then the population is not able to maintain itself. It loses the C
+         ! c_def in g m-2 and cx2 in kg m-2
+         if (c_def(p) .gt. 0.0) then
+            ! Calculate the total carbon available
+            total_c = cl2(p) + ca2(p) + cf2(p)
+            c_def_amount = c_def(p) * 1e-3
+
+            ! Check if the total carbon is less than c_def
+            if (total_c .lt. c_def_amount) then
+               cl1_int(p) = 0.0D0
+               ca1_int(p) = 0.0D0
+               cf1_int(p) = 0.0D0
+            else
+               ! Calculate the proportional amounts to subtract
+               cl_def = c_def_amount * (cl2(p) / total_c)
+               ca_def = c_def_amount * (ca2(p) / total_c)
+               cf_def = c_def_amount * (cf2(p) / total_c)
+
+               ! Subtract carbon from each pool ensuring no negative values
+               cl1_int(p) = max(0.0D0, cl2(p) - cl_def)
+               ca1_int(p) = max(0.0D0, ca2(p) - ca_def)
+               cf1_int(p) = max(0.0D0, cf2(p) - cf_def)
+            endif
          else
-            if(dt1(7) .gt. 0.0D0) then
+            if (dt1(7) .gt. 0.0D0) then
                cl1_int(p) = cl2(p)
                ca1_int(p) = ca2(p)
                cf1_int(p) = cf2(p)
@@ -370,9 +387,33 @@ contains
                cf1_int(p) = cf2(p)
             endif
          endif
-         if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
-         if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
-         if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
+
+      ! Ensure no negative values
+      if (cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
+      if (ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
+      if (cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
+
+         ! if(c_def(p) .gt. 0.0) then
+         !    cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
+         !    ca1_int(p) = ca2(p)
+         !    cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
+
+         !    ! No cdef
+         ! else
+         !    if(dt1(7) .gt. 0.0D0) then
+         !       cl1_int(p) = cl2(p)
+         !       ca1_int(p) = ca2(p)
+         !       cf1_int(p) = cf2(p)
+         !    else
+         !       cl1_int(p) = cl2(p)
+         !       ca1_int(p) = 0.0D0
+         !       cf1_int(p) = cf2(p)
+         !    endif
+         ! endif
+
+         ! if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
+         ! if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
+         ! if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
@@ -416,9 +457,9 @@ contains
       ! clean NaN values in occupation coefficients
       ! TODO: these checks are useful for model start periods
       ! Will keep it here.
-      do p = 1, nlen
-         if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
-      enddo
+      ! do p = 1, nlen
+      !    if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
+      ! enddo
 
       evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. isnan(evap))
       phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. isnan(ph))

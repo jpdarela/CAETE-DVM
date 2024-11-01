@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -105,17 +105,12 @@ def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.
 @numba.jit(nopython=True, cache=True)
 def linear_func(temp: float,
                 vpd: float,
-                T_max: float = 45.0,
-                VPD_max : float = 3.8) -> float:
-    """Linear function to calculate the coupling between the atmosphere and the canopy"""
+                T_max: float = 30.0,
+                VPD_max : float = 0.8) -> float:
+    """Linear function to calculate the coupling between the atmosphere and the surface"""
     linear_func = (temp / T_max + vpd / VPD_max) / 2.0
 
     # Ensure the output is between 0 and 1
-    if linear_func > 1.0:
-        linear_func = 1.0
-    elif linear_func < 0.0:
-        linear_func = 0.0
-
     linear_func = 0.0 if linear_func < 0.0 else linear_func
     linear_func = 1.0 if linear_func > 1.0 else linear_func
 

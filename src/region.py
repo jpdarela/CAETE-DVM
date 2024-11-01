@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -69,7 +69,7 @@ class region:
             pls_table (np.ndarray): _description_
         """
         self.config: Config = fetch_config("caete.toml")
-        self.nproc = self.config.multiprocessing.nprocs # type: ignore
+        # self.nproc = self.config.multiprocessing.nprocs # type: ignore
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
         self.co2_data = get_co2_concentration(self.co2_path)
@@ -260,7 +260,10 @@ class region:
         Returns:
             _type_: _description_
         """
-        with mp.Pool(processes=self.nproc, maxtasksperchild=1) as p:
+        cpu_count = mp.cpu_count()
+        num_gridcells = len(self.gridcells)
+        num_workers = min(cpu_count, num_gridcells)
+        with mp.Pool(processes=num_workers, maxtasksperchild=1) as p:
             self.gridcells = p.map(func, self.gridcells, chunksize=1)
         return None
 
@@ -275,7 +278,10 @@ class region:
         Returns:
             _type_: _description_
         """
-        with mp.Pool(processes=self.nproc, maxtasksperchild=1) as p:
+        cpu_count = mp.cpu_count()
+        num_gridcells = len(self.gridcells)
+        num_workers = min(cpu_count, num_gridcells)
+        with mp.Pool(processes=num_workers, maxtasksperchild=1) as p:
             self.gridcells = p.starmap(func, [(gc, args) for gc in self.gridcells], chunksize=1)
         return None
 

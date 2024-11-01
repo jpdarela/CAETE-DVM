@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -202,6 +202,7 @@ class community:
         self.vp_cleaf[pos] = np.random.uniform(0.3,0.4)
         self.vp_croot[pos] = np.random.uniform(0.3,0.4)
         self.vp_cwood[pos] = np.random.uniform(5.0,6.0)
+        self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
         self.vp_sto[0, pos] = np.random.uniform(0.0, 0.1)
         self.vp_sto[1, pos] = np.random.uniform(0.0, 0.01)
         self.vp_sto[2, pos] = np.random.uniform(0.0, 0.001)

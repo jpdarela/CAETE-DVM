@@ -97,7 +97,7 @@ if __name__ == "__main__":
     r.run_region_map(fn.env_filter_spinup)
 
     print("\nSTART final_spinup")
-    r.run_region_map(fn.final_spinup)
+    r.run_region_map(fn.quit_spinup)
 
     #Finalize spinclim in 18501231
     print("\nSTART spinup transer")

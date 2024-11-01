@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -264,6 +264,29 @@ def get_region(region):
     Get bounding box for a region of interest
     """
     return region["ymin"], region["ymax"], region["xmin"], region["xmax"]
+
+
+def latitude_axis(north: float | int, south: float | int, yres: float | int) -> np.ndarray:
+    """
+    Generate a latitude axis for a given region
+    """
+    return np.arange(north, south, -yres) + yres / 2
+
+
+def longitude_axis(west: float | int, east: float | int, xres: float | int) -> np.ndarray:
+    """
+    Generate a longitude axis for a given region
+    """
+    return np.arange(west, east, xres) + xres / 2
+
+def get_axis(bbox):
+    """
+    Get latitude and longitude axis for a region of interest
+    """
+    lat = latitude_axis(bbox["north"], bbox["south"], bbox["res_y"])
+    lon = longitude_axis(bbox["west"], bbox["east"], bbox["res_x"])
+    return lat, lon
+
 
 # Bbox
 pan_amazon_bbox = {"north":10.5,

@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -165,7 +165,6 @@ out_ext = ".pkz"
 warnings.simplefilter("default")
 
 T = TypeVar('T')
-
 
 # Define some util functions #
 def get_args(variable: Union[T, Collection[T]]) -> Collection[Union[T, str, int, float]]:
@@ -974,6 +973,43 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return None
 
 
+    def set_station(self,
+                      sdata:Dict[str, NDArray[np.float64]],
+                      stime_i: Dict,
+                      co2: Dict,
+                      tsoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
+                      ssoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
+                      hsoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
+                      )->None:
+        """ PREPARE A GRIDCELL TO RUN in the station mode"""
+        # # Meta-community
+        # We want to run queues of gridcells in parallel. So each gridcell receives a copy of the PLS table object
+
+        # Number of communities in the metacommunity. Defined in the config file {caete.toml}
+        # Each gridcell has one metacommunity wuth ncomms communities
+        self.ncomms:int = self.config.metacomm.n  #type: ignore # Number of communities
+
+        # Metacommunity object
+        self.metacomm:mc.metacommunity = mc.metacommunity(self.ncomms, self.get_from_main_array)
+
+        self.data = sdata
+
+        # Read climate data
+        self._set_clim(self.data)
+
+        # get CO2 data
+        self.co2_data = copy.deepcopy(co2)
+
+        # SOIL: NUTRIENTS and WATER
+        self._init_soil_cnp(self.data)
+        self._init_soil_water(tsoil, ssoil, hsoil)
+
+        # TIME
+        self._set_time(stime_i)
+
+        return None
+
+
     def set_gridcell(self,
                       input_fpath:Union[Path, str],
                       stime_i: Dict,
@@ -1040,7 +1076,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                   reset_community: bool = False,
                   kill_and_reset: bool = False,
                   env_filter: bool = False,
-                  verbose: bool = True):
+                  verbose: bool = False):
         """
         Run the model for a grid cell.
 
@@ -1053,11 +1089,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             fixed_co2_atm_conc (Optional[Union[str, int, float]]): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels from a predefined file. Default is None.
             save (bool, optional): Whether to save the results. Default is True.
             nutri_cycle (bool, optional): Whether to include nutrient cycling in the model. Default is True.
-            afex (bool, optional): Whether to apply additional effects (AFEX) in the model. Default is False.
-            reset_community (bool, optional): Whether to reset the community structure at the start. Default is False.
-            kill_and_reset (bool, optional): Whether to kill and reset the community structure during the run. Default is False.
-            env_filter (bool, optional): Whether to apply environmental filtering. Default is False.
-            verbose (bool, optional): Whether to print detailed logs during execution. Default is True.
+            afex (bool, optional): Whether to apply nutrient addition to soil in the model. Default is False.
+            reset_community (bool, optional): Whether to restart a new community if there are not viable PLS. Default is False.
+            kill_and_reset (bool, optional): Whether to kill and reset the community structure at the end of execution (only CVEG pools and PLS IDs). Default is False.
+            env_filter (bool, optional): Whether to apply environmental filtering (Include new PLS periodically) []. Default is False.
+            verbose (bool, optional): Whether to print detailed logs during execution. Default is False.
 
         Returns:
             None
@@ -1073,7 +1109,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
               If env filter argument is true, then the reset_community argument will have a very low
               probability to trigger a reset because the communities will be constantly filled with new PLS.
               Nonetheless, the reset_community argument will still be able to trigger a reset if the community loses all PLSs.
-              With the probability of a reset_community increasing as the interval between new seeds increases.
+              With the probability of a reset_community increasing as the interval between new seeds increases. The parameter doy_months
+              in the config file (caete.toml) is used to define the interval for the env_filter to add a new PLS to the community.
 
               TODO: Implement a more flexible way to define the interval for
                     the env_filter to add a new PLS to the community.
@@ -1084,11 +1121,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             fixed_co2_atm_conc > 0,\
                 "A fixed value for ATM[CO2] must be a positive number greater than zero or a proper string with the year - e.g., 'yyyy'"
 
+
         # Define start and end dates (read parameters)
         start = parse_date(start_date)
         end = parse_date(end_date)
 
-        # Check dates sanity
+        # Check dates
         assert start < end, "Start date must be before end date"
         assert start >= self.start_date, "initial date out of bounds for the time array"
         assert end <= self.end_date, f"Final date out of bounds for the time array"
@@ -1098,15 +1136,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # During a run we are in general using a slice ov the available time span
         # to run the model. For example, we can run the model for a year or a decade
         # at the begining of the input data time series to spin up. This slice is defined
-        # by the start and end dates provided in the arguments. HEre we get the indices.
+        # by the start and end dates provided in the arguments. Here we get the indices.
         self.start_index = int(cftime.date2num(start, self.time_unit, self.calendar))
         self.end_index =   int(cftime.date2num(end, self.time_unit, self.calendar))
 
         # Find the indices in the time array [used to slice the timeseries with driver data  - tas, pr, etc.]
         lower_bound, upper_bound = self.find_index(self.start_index, self.end_index)
 
-        # Define the time steps range
-        # From zero to the last day of simulation
+        # Define the time steps range (days)
         steps = np.arange(lower_bound, upper_bound + 1, dtype=np.int64)
 
         # Define the number of repetitions for the spinup
@@ -1122,7 +1159,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1] * cv.pr     # Precipitation: model uses  mm/day
         p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1] * cv.ps    # Atmospheric pressure: model uses hPa
         ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds # PAR: model uses  mol(photons) m-2 s-1
-        ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] *  cv.rhs    # Relative humidity: model uses 0-1
+        ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] * cv.rhs    # Relative humidity: model uses 0-1
 
         # Define the daily values for co2 concentrations
         co2_daily_values = np.zeros(steps.size, dtype=np.float32)
@@ -1199,6 +1236,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             rnpp_mt: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
 
             # We keep track of these to input in SOM dynamics later. They are used for output also
+
             leaf_litter: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             cwd: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             root_litter: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
@@ -1250,6 +1288,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 # Create these arrays outside and just reuse it
                 living_pls = 0 # Sum of living PLS in the communities
                 for i, community in enumerate(self.metacomm):
+                    if i >= len(self.metacomm):
+                        break
                     if community.masked:
                         # skip this one
                         continue
@@ -1368,14 +1408,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         uptake_strategy_p.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
 
                     # Restore or seed PLS
-                    if env_filter and community.ls < self.metacomm.comm_npls:
+                    if env_filter and (community.ls < self.metacomm.comm_npls):
                         if julian_day in self.doy_months:
+                            new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
+                            community.seed_pls(new_id, new_PLS)
                             if verbose:
                                 print(f"PLS seed in Community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
-                            for i in range(2):
-                                new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
-                                community.seed_pls(new_id, new_PLS)
-
 
                     if community.vp_lsid.size < 1:
                         print(f"Empty community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
@@ -1390,6 +1428,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             continue
 
                         else:
+                            if len(self.metacomm) == 1:
+                                raise ValueError("All communities are empty. Cannot continue")
                             # In the transiant run - i.e., when reset_community is false and
                             # kill_and_reset is false; we mask the community if there is no PLS
                             self.metacomm.mask[i] = np.int8(1)
@@ -1454,10 +1494,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 # ------------
                 vpd = m.vapor_p_deficit(temp[step], ru[step])
                 et_pot = masked_mean(self.metacomm.mask, np.array(epavg).astype(np.float32)) #epavg.mean()
-                et = masked_mean(self.metacomm.mask, epavg) #evavg.mean()
+                et = masked_mean(self.metacomm.mask, evavg) #evavg.mean()
 
                 # Update water pools
                 self.evapm[step] = atm_canopy_coupling(et_pot, et, temp[step], vpd)
+                # self.evapm[step] = et
                 self.runom[step] = self.swp._update_pool(prec[step], self.evapm[step])
                 self.swp.w1 = 0.0 if self.swp.w1 < 0.0 else self.swp.w1
                 self.swp.w2 = 0.0 if self.swp.w2 < 0.0 else self.swp.w2
@@ -1952,47 +1993,50 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 if __name__ == '__main__':
 
     # Short example of how to run the new version of the model. Also used to do some profiling
-
-    from metacommunity import pls_table
-    from parameters import *
-    from region import region
-
-    # # Read CO2 data
-    co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
-    co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-60000.csv"))
-
-
-    r = region("region_test",
-                   "../input/20CRv3-ERA5/spinclim_test",
-                   (tsoil, ssoil, hsoil),
-                   co2_path,
-                   main_table)
-
-    c = r.set_gridcells()
-
-    gridcell = r[0]
-
-    # Profile with cProfile
-    try:
-        prof = sys.argv[1] == "cprof"
-    except:
-        prof = False
-    if prof:
-        import cProfile
-        command = "gridcell.run_gridcell('1801-01-01', '1850-12-31', spinup=2, fixed_co2_atm_conc=1901, save=False, nutri_cycle=True, reset_community=True)"
-        cProfile.run(command, sort="cumulative", filename="profile.prof")
+    if sys.argv[1] == "pass":
+        # Skip all
+        pass
     else:
-        # test model functionality
-        gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
-                                            save=True, nutri_cycle=True)
+        from metacommunity import pls_table
+        from parameters import *
+        from region import region
 
-        # test directory update
-        r.update_dump_directory("test_new_region")
+        # # Read CO2 data
+        co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
+        co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
+        main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
 
-        # test change input
-        r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370)
+
+        r = region("region_test",
+                    "../input/20CRv3-ERA5/spinclim_test",
+                    (tsoil, ssoil, hsoil),
+                    co2_path,
+                    main_table)
+
+        c = r.set_gridcells()
 
         gridcell = r[0]
-        gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,
-                                            save=True, nutri_cycle=True)
+
+        # Profile with cProfile
+        try:
+            prof = sys.argv[1] == "cprof"
+        except:
+            prof = False
+        if prof:
+            import cProfile
+            command = "gridcell.run_gridcell('1801-01-01', '1850-12-31', spinup=2, fixed_co2_atm_conc=1901, save=False, nutri_cycle=True, reset_community=True)"
+            cProfile.run(command, sort="cumulative", filename="profile.prof")
+        else:
+            # test model functionality
+            gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
+                                                save=True, nutri_cycle=True)
+
+            # test directory update
+            r.update_dump_directory("test_new_region")
+
+            # test change input
+            r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370)
+
+            gridcell = r[0]
+            gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,
+                                                save=True, nutri_cycle=True)

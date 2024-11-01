@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -76,8 +76,8 @@ module global_par
    real(r_4),parameter,public :: h = 1.0                         ! soil layer thickness (meters)
    real(r_4),parameter,public :: diffu = 1.036800e14             ! soil thermal diffusivity (m2/mes)
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)
-   real(r_4),parameter,public :: rcmax = 5000.0                  ! ResistÊncia estomática máxima s/m
-   real(r_4),parameter,public :: rcmin = 100                     ! ResistÊncia estomática mínima s/m
+   real(r_4),parameter,public :: rcmax = 8400.0                  ! ResistÊncia estomática máxima s/m
+   real(r_4),parameter,public :: rcmin = 160.0                     ! ResistÊncia estomática mínima s/m
    real(r_8),parameter,public :: cmin = 1.0D-3                  ! Minimum to survive kg m-2
    ! real(r_4),parameter,public :: wmax = 500.0                    ! Maximum water soil capacity (Kg m-2)
 

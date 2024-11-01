@@ -178,6 +178,7 @@ contains
        ar = rm + rg
     else
        ar = 0.0               !Temperature above/below respiration windown
+       ph = 0.0
     endif
 !     Net primary productivity(kgC/m2/yr)
 !     ====================================

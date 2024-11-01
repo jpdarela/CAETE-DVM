@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -304,7 +304,9 @@ def main():
 
     # Seed the unique PLS in a free slot
     mt[0].seed_pls(ident, func_id)
-    return mt
+
+    mt2 = metacommunity(1, __get_from_main_table)
+    return mt2
 
 if __name__ == "__main__":
     mt = main()

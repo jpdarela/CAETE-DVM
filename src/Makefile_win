@@ -61,7 +61,7 @@ setup:
 	$(PIP) install -r requirements.txt
 
 interface: $(sources)
-	echo "Creating Fortran interfaces for the caete_module using f2py..."
+	@echo "Creating Fortran interfaces for the caete_module using f2py..."
 	@$(PYEXEC) set_npls.py
 	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 

@@ -21,7 +21,7 @@ module alloc
                           & active_costn, active_costp,&
                           & prep_out_n, prep_out_p,&
                           & retran_nutri_cost, select_active_strategy
-    use global_par, only: ntraits, sapwood
+    use global_par, only: ntraits, sapwood, cmin
     use photo, only: f_four, spec_leaf_area, realized_npp
 
     implicit none
@@ -849,9 +849,16 @@ module alloc
       scl2 = (1D3 * scl1) + daily_growth(leaf) - (leaf_litter * 2.73791075D0)
       scf2 = (1D3 * scf1) + daily_growth(root) - (root_litter * 2.73791075D0)
 
-      ! ## if it's a woody strategy:
+      ! if it's a woody strategy:
       if(awood .gt. 0.0D0) then
-         cwd = sca1 / twood !/ tawood! Kg(C) m-2
+         ! Calculate the CWD
+         ! if there is less than minimum amount of carbon in leaves and fine roots
+         if(scl2 .lt. cmin .or. scf2 .lt. cmin) then
+            ! Wood cycle faster (quadruple the rate)
+            cwd = sca1 / (twood * 0.25D0) ! Kg(C) m-2 year-1
+         else
+            cwd = sca1 / twood !/ tawood! Kg(C) m-2
+         endif
          sca2 = (1D3 * sca1) + daily_growth(wood) - (cwd * 2.73791075D0)  ! g(C) m-2
       else
          cwd = 0.0D0

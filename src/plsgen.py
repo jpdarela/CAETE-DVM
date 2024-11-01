@@ -2,7 +2,7 @@
 # "CAETÊ"
 # Author:  João Paulo Darela Filho
 
-_ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
 # """
 # Copyright 2017- LabTerra
@@ -26,24 +26,23 @@ _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 # Residence times and nutrient ratios are randomly generated. Parameters are descibed in the pls_gen.toml file
 import os
 import sys
-from config import fortran_runtime
+# from config import fortran_runtime
 import argparse
 
 
-if sys.platform == "win32":
-    try:
-        os.add_dll_directory(fortran_runtime)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
+# if sys.platform == "win32":
+#     try:
+#         os.add_dll_directory(fortran_runtime)
+#     except:
+#         raise ImportError("Could not add the DLL directory to the PATH")
 
 
 from math import ceil
-from typing import Tuple
 import csv
 import tomllib as tl
 from pathlib import Path
 import numpy as np
-from caete_module import photo as model
+# from caete_module import photo as model
 
 __author__ = 'JP Darela'
 
@@ -68,8 +67,8 @@ parser = argparse.ArgumentParser(
     description=description,
     usage='python plsgen.py [-h] -n NUMBER -f FOLDER'
 )
-parser.add_argument("-n", "--number", type=int, required=True, help="Number of PLSs to generate")
-parser.add_argument("-f", "--folder", type=str, required=True, help="Path to save the output")
+parser.add_argument("-n", "--number", type=int, required=False, help="Number of PLSs to generate")
+parser.add_argument("-f", "--folder", type=str, required=False, help="Path to save the output")
 
 args = parser.parse_args()
 
@@ -102,34 +101,37 @@ def get_parameters(config=CONFIG_FILE):
 
     return data
 
-def check_viability(trait_values, awood=False):
+def check_biomass_accumulation(*args):
+    pass
 
-    """ Check the viability of allocation & residence time combinations.
-        Some PLS combinations of allocation coefficients and residence times
-        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) and
-        do not have enough mass of carbon (< 0.001 kg m⁻²) in all CVEG compartments
-        input:
-        trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
-        wood: bool  Is this a woody PLS?
-        output:bool True if the PLS is viable, False otherwise
-    """
-    data = get_parameters()
-    lim = data["parameters"]["wood_cmin"]
-    npp = data["parameters"]["wood_low_npp"]
+# def check_viability(trait_values, awood=False):
 
-    if awood:
-        rtur = np.array(model.spinup3(npp, trait_values))
-        if rtur[0] < lim or rtur[1] < lim or rtur[2] < lim:
-            return False
-        return True
+#     """ Check the viability of allocation & residence time combinations.
+#         Some PLS combinations of allocation coefficients and residence times
+#         are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) and
+#         do not have enough mass of carbon (< 0.001 kg m⁻²) in all CVEG compartments
+#         input:
+#         trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
+#         wood: bool  Is this a woody PLS?
+#         output:bool True if the PLS is viable, False otherwise
+#     """
+#     data = get_parameters()
+#     lim = data["parameters"]["wood_cmin"]
+#     npp = data["parameters"]["wood_low_npp"]
 
-    # Grasses
-    lim = data["parameters"]["grass_cmin"]
-    npp = data["parameters"]["grass_low_npp"]
-    rtur = np.array(model.spinup3(npp, trait_values))
-    if rtur[0] < lim or rtur[1] < lim:
-        return False
-    return True
+#     if awood:
+#         rtur = np.array(model.spinup3(npp, trait_values))
+#         if rtur[0] < lim or rtur[1] < lim or rtur[2] < lim:
+#             return False
+#         return True
+
+#     # Grasses
+#     lim = data["parameters"]["grass_cmin"]
+#     npp = data["parameters"]["grass_low_npp"]
+#     rtur = np.array(model.spinup3(npp, trait_values))
+#     if rtur[0] < lim or rtur[1] < lim:
+#         return False
+#     return True
 
 def assert_data_size(dsize):
     """ Assertion of datasets sizes """
@@ -149,8 +151,10 @@ def allocation_combinations():
     data = get_parameters()
     ma = data["parameters"]["minimum_allocation"]
     num_samples = 1_000_000
-    alpha_wood = np.array([1.0, 1.0, 1.0])
-    alpha_grass = np.array([1.0, 1.0])
+
+    alpha = 1.3
+    alpha_wood = np.array([alpha, alpha, alpha])
+    alpha_grass = np.array([alpha, alpha])
     woody_comb = np.random.dirichlet(alpha_wood, num_samples)
     grass_tmp = np.random.dirichlet(alpha_grass, num_samples)
 
@@ -191,7 +195,7 @@ def table_gen(NPLS, fpath=None, ret=True):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 10000
+    r_ceil = 1000000
 
     if GRASS_FRAC == 0.0:
         pass
@@ -209,9 +213,9 @@ def table_gen(NPLS, fpath=None, ret=True):
             restime[2] = rtime_froot[np.random.randint(0, r_ceil)]
 
             data_to_test0 = np.concatenate((restime, allocatio), axis=0,)
-            if check_viability(data_to_test0):
-                alloc_g.append(data_to_test0)
-                index0 += 1
+            # if check_viability(data_to_test0):
+            alloc_g.append(data_to_test0)
+            index0 += 1
             sys.stdout.write('\r%s' % (str(index0)))
         sys.stdout.flush()
         print("\n")
@@ -221,9 +225,15 @@ def table_gen(NPLS, fpath=None, ret=True):
         pass
     else:
         index1 = 0
+
+        # rtime_leaf = vec_ranging(np.random.beta(1, 3, r_ceil), rwoody["leaf_min"], rwoody["leaf_max"])
+        # rtime_froot = vec_ranging(np.random.beta(1, 3, r_ceil), rwoody["root_min"], rwoody["root_max"])
+        # rtime_wood = vec_ranging(np.random.beta(1, 3, r_ceil), rwoody["wood_min"], rwoody["wood_max"])
+
         rtime_leaf =  np.random.uniform(rwoody["leaf_min"], rwoody["leaf_max"], r_ceil)
         rtime_froot = np.random.uniform(rwoody["root_min"], rwoody["root_max"], r_ceil)
         rtime_wood = np.random.uniform(rwoody["wood_min"], rwoody["wood_max"], r_ceil)
+
         print("Checking potential npp/alocation and creating woody plants")
         while index1 < diffw:
             restime = np.zeros(shape=(3,), dtype=np.float64)
@@ -232,9 +242,10 @@ def table_gen(NPLS, fpath=None, ret=True):
             restime[1] = rtime_wood[np.random.randint(0, r_ceil)]
             restime[2] = rtime_froot[np.random.randint(0, r_ceil)]
             data_to_test1 = np.concatenate((restime, allocatio), axis=0,)
-            if check_viability(data_to_test1, True):
-                alloc_w.append(data_to_test1)
-                index1 += 1
+
+            # if check_viability(data_to_test1, True):
+            alloc_w.append(data_to_test1)
+            index1 += 1
             sys.stdout.write('\r%s' % (str(index1)))
         sys.stdout.flush()
         print("\n")

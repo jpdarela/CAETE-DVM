@@ -22,6 +22,7 @@ Copyright 2017- LabTerra
 from pathlib import Path
 import multiprocessing as mp
 from typing import Tuple
+from dataframes import output_manager
 
 
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     input_path = Path("../input/").resolve()
 
     # Input files. The model will look for the input files in these folders.
-    piControl_files = input_path/ "MPI-ESM1-2-HR/piControl_cities/"
+    piControl_files = input_path / "MPI-ESM1-2-HR/piControl_cities/"
     hist_files = input_path / "MPI-ESM1-2-HR/historical_cities/"
     ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370_cities/"
     ssp585_files = input_path / "MPI-ESM1-2-HR/ssp585_cities/"
@@ -90,49 +91,20 @@ if __name__ == "__main__":
     # Start gridcells
     r.set_gridcells()
 
-    # Spinup and run
-    # #----------------2000 years spinup--------------------------------
-    # # Alternate between glacial and interglacial co2 concentration each 500 years
-    # # Spinup using 1801-1900 climatology with glacial co2 concentration 190ppm
-    # print("START soil pools spinup - Glacial co2 190 ppm - 500y")
-    # r.run_region_map(fn.soil_pools_spinup_glacial)
-
-    # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
-    print("START soil pools spinup - Interglacial co2 280 ppm - 500y")
-    r.run_region_map(fn.soil_pools_spinup_interglacial)
-
-    # Spinup using 1801-1900 climatology with glacial co2 concentration 190ppm
-    print("START soil pools spinup - Glacial co2 190 ppm - 500y")
-    r.run_region_map(fn.soil_pools_spinup_glacial)
-
-    # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
-    print("START soil pools spinup - Interglacial co2 280 ppm - 500y")
-    r.run_region_map(fn.soil_pools_spinup_interglacial)
-    #-------------------------------------------------------------------
-
-    # piControl spinup ------ 500 years
-    # Pre industrial control input data range 1801-2100
+    # spinup ----------------------------------------------
+    # Pre industrial control input data range 1801-2050
     # Spinup using 1801-1900 climatology with pre-industrial co2 concentration ~278.05ppm
-    print("START soil pools spinup - piControl - 500y co2 of 1765 ~278.05 ppm")
+    # Start soil and water pools
+    print("START soil pools spinup - piControl - 1765 co2 ~278 ppm")
     r.run_region_map(fn.soil_pools_spinup)
 
-    # Community spinup ------ 400 years
-    # Spinup using 1801-1900 climatology with co2 concentration of year 1801  ~280ppm
-    print("\nSTART community spinup")
-    r.run_region_map(fn.community_spinup)
+    # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
+    print("START soil pools spinup - Interglacial co2 280 ppm")
+    r.run_region_map(fn.soil_pools_spinup_interglacial)
 
-    # -----------------Final phase of the spinup-------------------------
-    # Spinup using 1801-1900 climatology with co2 concentration of year 1801  ~280ppm
-    # Last phase where new PLS are seed without community reseting - 400 years
-    print("\nSTART community spinup with PLS seed")
-    r.run_region_map(fn.env_filter_spinup)
-
-    # Spinup using 1801-1900 climatology with co2 concentration of year 1801  ~280ppm
-    # Last phase where no PLS are seed - 400 years
-    print("\nSTART final_spinup")
-    r.run_region_map(fn.final_spinup)
+    print("Finalize spinup")
+    r.run_region_map(fn.quit_spinup)
     # ------------------End of the spinup--------------------------------
-
 
     # Save initial state right after spinup - This will be used to run the piControl simulation
     piControl_state = Path(f"./{region_name}_piControl_1801-1900.psz")
@@ -197,12 +169,17 @@ if __name__ == "__main__":
     # Update region dump directory piControl
     piControl_out = "cities_MPI-ESM1-2-HR-piControl"
     r_piControl.update_dump_directory(piControl_out)
-    run_breaks = fn.create_run_breaks(1901, 2100, 20)
+    run_breaks = fn.create_run_breaks(1901, 2050, 20)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_piControl.run_region_starmap(fn.transient_piControl_brk, period)
     r_piControl.clean_model_state()
     fn.save_state_zstd(r_piControl, Path(f"{piControl_out}_output.psz"))
-    # END of the simulation
 
+    # END of the simulation
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
+    print("Saving outputs...")
+    output_manager.cities_output()
+    print("Outputs saved.")
+    print("Saving time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
+    print("Simulation finished.")
