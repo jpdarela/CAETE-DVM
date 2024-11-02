@@ -1,18 +1,15 @@
 title = "Parameters used to create Plant life strategies"
 author = "João Paulo Darela Filho"
 
+dirichlet_alpha = 5.0
+
 [parameters]
 grass_pls_fraction = 0.01
 minimum_allocation = 0.05
 
-# grass_cmin = 0.001
-# grass_low_npp = 0.02
-# wood_cmin = 0.001
-# wood_low_npp = 0.001
-
 [residence_time]
-woody = {leaf_min = 0.08333, leaf_max = 8.3333, wood_min = 0.16, wood_max = 100, root_min = 0.083333, root_max = 4}
-grass = {leaf_min = 0.08333, leaf_max = 1.5, wood_min = 0.0, wood_max = 0.0, root_min = 0.083333, root_max = 2}
+woody = {leaf_min = 1.0, leaf_max = 10, wood_min = 0.16, wood_max = 100, root_min = 0.083333, root_max = 4}
+grass = {leaf_min = 1.0, leaf_max = 2, wood_min = 0.0, wood_max = 0.0, root_min = 0.083333, root_max = 2}
 
 [nutrient_carbon_ratios]
 leaf_n2c = {min = 0.005, max = 0.05}

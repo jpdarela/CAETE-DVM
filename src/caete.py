@@ -1482,7 +1482,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 if save:
                     if julian_day == 365:
                         y = today.year
+                        # m = today.month
+                        # d = today.day
                         filename = self.out_dir/f"metacommunity_{y}.pkz"
+                        # filename = self.out_dir/f"metacommunity_{d}{m}{y}.pkz"
                         self.metacomm.save_state(filename, y)
                         self.metacomm_output[y] = filename
 

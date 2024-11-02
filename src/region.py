@@ -200,6 +200,10 @@ class region:
             for gridcell in self.gridcells:
                 gridcell.change_input(self.input_data, self.stime)
 
+        if input_folder is not None:
+            self.climate_files = []
+            for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
+                self.climate_files.append(file_path)
 
     def _update_config(self):
         """Update the configuration file"""

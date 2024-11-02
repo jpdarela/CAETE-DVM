@@ -152,7 +152,7 @@ def allocation_combinations():
     ma = data["parameters"]["minimum_allocation"]
     num_samples = 1_000_000
 
-    alpha = 1.3
+    alpha = data["dirichlet_alpha"]
     alpha_wood = np.array([alpha, alpha, alpha])
     alpha_grass = np.array([alpha, alpha])
     woody_comb = np.random.dirichlet(alpha_wood, num_samples)

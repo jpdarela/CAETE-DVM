@@ -53,7 +53,7 @@ def get_spins(r:region, gridcell=0):
     return r[gridcell].print_available_periods()
 
 def print_variables(r:region):
-    """Prints the available variables for each gridcell in the region"""
+    """Prints the available variables for gridcells in the region. Assumes all gridcells have the same variables"""
     r[0]._get_daily_data("DUMMY", 1, pp=True)
 
 def get_var_metadata(var):
@@ -300,7 +300,7 @@ class table_data:
                     _sum = np.sum(v, axis=0)
                     new_data[f"{k}_sum"] = _sum
                     for i in range(ny):
-                        new_data[f"{k}_{i+1}"] = v[i,:] # We assume the first axis is the time axis
+                        new_data[f"{k}_{i+1}"] = v[i,:] # We assume that the first axis is the time axis
 
             fname = f"grd_{grd.y}_{grd.x}_{time[0]}_{time[-1]}.csv"
             df = pd.DataFrame(new_data, index=time)
@@ -317,7 +317,8 @@ class table_data:
 
     @staticmethod
     def write_daily_data(r: region, variables: Union[str, Collection[str]]):
-        periods = r[0].print_available_periods()
+        """Writes the daily data to csv files"""
+        periods = r[0].print_available_periods() # assumes all gridcells have the same periods
         write_metadata_to_csv(variables, r.output_path)  # type: ignore
 
         def worker(i):
@@ -329,6 +330,11 @@ class table_data:
 
     @staticmethod
     def write_metacomm_output(grd:grd_mt) -> None:
+        """Writes the metacommunity biomass output (C in vegetation and abundance) to a csv file
+
+        Args:
+            grd (grd_mt): gridcell object
+        """
         out = []
         for year in grd._get_years():
             biomass = ["vp_cleaf", "vp_croot", "vp_cwood"]
@@ -342,7 +348,7 @@ class table_data:
             df.loc[:, "ocp"] = ocp
             df.loc[:, "year"] = np.zeros(ocp.size, dtype=np.int32) + year
             out.append(df)
-        pd.concat(out).to_csv(grd.out_dir / "metacomunity_biomass.csv", index_label="pls_id")
+        pd.concat(out).to_csv(grd.out_dir / f"metacomunity_biomass_{grd.xyname}.csv", index_label="pls_id")
 
 
 class output_manager:
@@ -404,17 +410,15 @@ if __name__ == "__main__":
     # hist:region = worker.load_state_zstd(hist_results)
     # grd = hist[0]
 
-
-
     # # # IO
     # model_results: Path = Path("./pan_amazon_hist_result.psz")
     # variables_to_read: Tuple[str,...] = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp", "photo", "npp", "evapm", "lai")
     # output_manager.table_output_per_grd(model_results, variables=variables_to_read)    # # Load the region file
 
-    reg:region = worker.load_state_zstd("./state.psz2")
-    # # # Gridded outputs
-    variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
-    data = gridded_data.aggregate_region_data(reg, variables_to_read, (11,12))
-    a = gridded_data.create_masked_arrays(data)
+    # reg:region = worker.load_state_zstd("./state.psz2")
+    # # # # Gridded outputs
+    # variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
+    # data = gridded_data.aggregate_region_data(reg, variables_to_read, (11,12))
+    # a = gridded_data.create_masked_arrays(data)
     # # # TODO: Save netcdfs
 

@@ -90,11 +90,11 @@ if __name__ == "__main__":
     print("START soil pools spinup")
     r.run_region_map(fn.soil_pools_spinup)
 
-    print("\nSTART community spinup")
-    r.run_region_map(fn.community_spinup)
+    # print("\nSTART community spinup")
+    r.run_region_map(fn.soil_pools_spinup_interglacial)
 
-    print("\nSTART community spinup with PLS seed")
-    r.run_region_map(fn.env_filter_spinup)
+    # print("\nSTART community spinup with PLS seed")
+    # r.run_region_map(fn.env_filter_spinup)
 
     print("\nSTART final_spinup")
     r.run_region_map(fn.quit_spinup)
@@ -129,6 +129,7 @@ if __name__ == "__main__":
     # We clean the state of the gridcells to save the final state of the region
     # THis final state is not useful to restart the model, but it is useful to
     # access the model outputs and export it to other formats.
+    fn.save_state_zstd(r, Path(f"./{region_name}_final_state.psz"))
     r.clean_model_state()
     fn.save_state_zstd(r, Path(f"./{region_name}_result.psz"))
 
