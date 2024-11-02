@@ -35,20 +35,14 @@ from joblib import dump
 import numpy as np
 
 from community import community
-from config import fortran_runtime
-
-# Add the fortran compiler DLLs to the PATH
-# This is necessary to load the python extension module
-# compiled with f2py (the .pyd file) in windows systems
-if sys.platform == "win32":
-    try:
-        os.add_dll_directory(fortran_runtime)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
-
-from caete_module import global_par as gp
+from config import fetch_config
 
 from caete_jit import process_tuples
+
+config_data = fetch_config("caete.toml")
+
+ntraits =  config_data.metacomm.ntraits
+npls =  config_data.metacomm.npls_max
 
 
 class pls_table:
@@ -72,8 +66,8 @@ class pls_table:
         self.shape = self.table.shape
         self.id = np.arange(self.npls, dtype=np.int32)
 
-        assert self.npls > gp.npls, "The number of PLSs in the main table should be greater than the number of PLSs in a community."
-        assert self.ntraits == gp.ntraits, "The number of traits in the main table should be equal to the number of traits in a community."
+        assert self.npls > npls, "The number of PLSs in the main table should be greater than the number of PLSs in a community."
+        assert self.ntraits == ntraits, "The number of traits in the main table should be equal to the number of traits in a community."
 
 
     def __len__(self) -> int:
@@ -141,15 +135,15 @@ class metacommunity:
             self.dummy = True
             return None
         self.dummy = False
-        self.cwm = np.zeros(gp.ntraits, order='F')
-        self.cwv = np.zeros(gp.ntraits, order='F')
-        # self.entropy = np.zeros(gp.ntraits, order='F') Shannon entropy
-        # self.diversity = np.zeros(gp.ntraits, order='F') Simpson diversity
+        self.cwm = np.zeros(ntraits, order='F')
+        self.cwv = np.zeros(ntraits, order='F')
+        # self.entropy = np.zeros(ntraits, order='F') Shannon entropy
+        # self.diversity = np.zeros(ntraits, order='F') Simpson diversity
 
         # Communities
         self.communities:Dict[int, community] = {}
         self.get_table = get_from_main_table # Function defined in the region class [region.py L ~209]
-        self.comm_npls = copy.deepcopy(gp.npls)
+        self.comm_npls = copy.deepcopy(npls)
         self.mask: NDArray[np.int8] = np.zeros(community_count, dtype=np.int8)
 
         for i in range(community_count):

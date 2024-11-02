@@ -1,12 +1,10 @@
-numpy == 1.23.5
+numpy == 2.0.2
 joblib == 1.4.0
 netCDF4 == 1.6.5
 charset-normalizer == 3.3.2
 lz4 == 4.3.3
-numba == 0.58.0
-memory-profiler == 0.61.0
+numba == 0.60.0
 zstandard == 0.23.0
-pyproj == 3.4.1
-cython == 3.0.1
-pandas == 1.4.1
+pyproj == 3.7.0
+pandas == 2.2.3
 

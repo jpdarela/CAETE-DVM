@@ -14,6 +14,7 @@ rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (m
 [metacomm]
 n = 5 # Number of communities to be considered in the metacombinations
 npls_max = 200 # Maximum number of PLS to be considered in the metacombinations
+ntraits = 17 # number of traits in a PLS
 
 [crs]
 res = 0.5

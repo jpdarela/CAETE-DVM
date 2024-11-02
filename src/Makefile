@@ -42,12 +42,12 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
 # Sources for compilation in run mode (F2PY)
-src_lib = global.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
+src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
 sources = $(src_lib) budget.F90
 
 
 # Objects for compilation in debug mode
-src_obj = global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
+src_obj = types.o photo_par.o global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
 objects = $(src_obj) budget.o debug_caete.o
 
 # Targets
@@ -58,7 +58,21 @@ setup:
 	@echo "Installing dependencies..."
 	$(PIP) install -r requirements.txt
 
+modules: $(sources)
+	$(FC) -c $(sources)
+
 # Build the interface and the shared object (caete_module) from .F90 source
+ext_mod_meson: $(sources) modules
+	@$(PYEXEC) set_npls.py
+	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --backend meson --f90flags="-Wall $(EXT_FLAGS)"
+
+ext_mod_legacy: $(sources) modules
+	@$(PYEXEC) set_npls.py
+	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS)"
+
+
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
 	@$(PYEXEC) set_npls.py ## Set the number of PLS in the global module
@@ -67,14 +81,14 @@ interface: $(sources)
 so_parallel: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp --quiet
 	@echo "Parallel version of caete_module created using gfortran"
-	@echo "Compiling community module..."
-	$(PYEXEC) setup.py build_ext --inplace
+#	@echo "Compiling community module..."
+#	$(PYEXEC) setup.py build_ext --inplace
 
 so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) " --quiet
 	@echo "Serial version of caete_module created using gfortran"
-	@echo "Compiling community module..."
-	$(PYEXEC) setup.py build_ext --inplace
+#	@echo "Compiling community module..."
+#	$(PYEXEC) setup.py build_ext --inplace
 
 
 modules: $(sources)
@@ -85,17 +99,20 @@ debug: $(objects) so
 	$(PYEXEC) create_plsbin.py
 	$(FC) -o $(DEBUG_PROGRAM) $(FCFLAGS) $(objects)
 
+
+
+
 global.o: global.f90
 	$(FC) $(FLFLAGS) global.f90
 
-types.mod: global.o global.f90
-	$(FC) $(FLFLAGS) global.f90
+types.mod: types.o types.f90
+	$(FC) $(FLFLAGS) types.f90
 
 global_par.mod: global.o global.f90
 	$(FC) $(FLFLAGS) global.f90
 
-photo_par.mod: global.o global.f90
-	$(FC) $(FLFLAGS) global.f90
+photo_par.mod: photo_par.o photo_par.f90
+	$(FC) $(FLFLAGS) photo_par.f90
 
 funcs.o: funcs.f90
 	$(FC) $(FLFLAGS) funcs.f90
@@ -149,3 +166,5 @@ clean:
 clean_so: clean
 	rm -rf *.so *.pyf *.mod
 	clear
+
+reinstall: clean_so so

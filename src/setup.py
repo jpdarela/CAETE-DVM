@@ -24,18 +24,18 @@
 # Build cython extensions. Not used yet. Need to find processings that can be improved by cython.
 # For now, no improvement gains in speed.
 
-from setuptools import setup
-from Cython.Build import cythonize
-import numpy
+# from setuptools import setup
+# from Cython.Build import cythonize
+# import numpy
 
-# No improvement gains is speed for now.
-# Need to check if its worth to convert the bottleneck code to C or not.
+# # No improvement gains is speed for now.
+# # Need to check if its worth to convert the bottleneck code to C or not.
 
-setup(
-    ext_modules=cythonize(["metacommunity.py",
-                           "community.py",
-                           "hydro_caete.py",
-                           "output.py",],
-        compiler_directives={'language_level': "3"}),
-    include_dirs=[numpy.get_include()]
-)
+# setup(
+#     ext_modules=cythonize(["metacommunity.py",
+#                            "community.py",
+#                            "hydro_caete.py",
+#                            "output.py",],
+#         compiler_directives={'language_level': "3"}),
+#     include_dirs=[numpy.get_include()]
+# )
