@@ -3,7 +3,7 @@
     how the netCDF file should be structured.
 """
 import argparse
-from netCDF4 import Dataset
+from netCDF4 import Dataset # type: ignore
 import numpy as np
 
 parser = argparse.ArgumentParser(
