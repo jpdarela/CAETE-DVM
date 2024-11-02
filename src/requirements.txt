@@ -1,10 +1,9 @@
 numpy == 2.0.2
-joblib == 1.4.0
-netCDF4 == 1.6.5
+joblib == 1.4.2
+netCDF4 == 1.7.2
 charset-normalizer == 3.3.2
 lz4 == 4.3.3
 numba == 0.60.0
 zstandard == 0.23.0
 pyproj == 3.7.0
 pandas == 2.2.3
-
