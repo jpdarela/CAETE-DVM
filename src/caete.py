@@ -293,6 +293,7 @@ def get_co2_concentration(filename:Union[Path, str]):
     return dict(map(lambda x: (int(x[0]), float(x[1])), data))
 
 def read_bz2_file(filepath:Union[Path, str]):
+    """Read a bz2 compressed file"""
     fpath = str_or_path(filepath)
     with bz2.BZ2File(fpath, mode='r') as fh:
         data = pkl.load(fh)
@@ -321,6 +322,14 @@ def parse_date(date_string):
 
 # Timer wrapper
 def timer(method):
+    """_summary_
+
+    Args:
+        method (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     @wraps(method)
     def timed(*args, **kwargs):
         from time import time
