@@ -1,20 +1,14 @@
-import os
-import datetime
+from typing import Tuple
 from pathlib import Path
-import pickle
+
 import bz2
+import datetime
+import os
+import pickle
 
 import cftime
 import numpy as np
 import pandas
-
-
-
-# historical_simulation_start = datetime.datetime(1850, 1, 1, 0, 0)
-# historical_simulation_end = datetime.datetime(2014, 12, 31, 0, 0)
-
-# future_simulation_start = datetime.datetime(2015, 1, 1, 0, 0)
-# future_simulation_end = datetime.datetime(2100, 12, 31, 0, 0)
 
 
 MODS = ["MPI-ESM1-2-HR",]
@@ -43,10 +37,10 @@ def openBZ2(filepath:Path)-> dict:
         return pickle.load(fh)
 
 
-def openFile(filepath:Path) -> tuple:
+def openFile(filepath:Path) -> Tuple:
     dt = openBZ2(filepath)
-    tasmax = dt['tas'] + 2.0
-    tasmin = dt['tas'] - 2.0
+    tasmax = dt['tasmax']
+    tasmin = dt['tasmin']
     pr = dt['pr']
 
     return (pr, tasmax, tasmin)

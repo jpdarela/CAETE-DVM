@@ -134,7 +134,7 @@ def timer(func):
         start = time.time()
         func(*args, **kwargs)
         end = time.time()
-        hours = (end - start) // 3600
+        hours = int((end - start) // 3600)
         minutes = round(((end - start) % 3600) // 60)
         seconds = round((end - start) % 60)
         if hours == 0:
@@ -248,7 +248,7 @@ class input_data:
         self.dpath = Path(dpath)
         self.fpath = Path(os.path.join(self.dpath, self.filename))
         self.vars = ["hurs", "tas", "ps", "pr",
-                     "rsds", "sfcwind", "tn", "tp", "ap", "ip", "op"]
+                     "rsds", "sfcwind", "tasmax", "tasmin", "tn", "tp", "ap", "ip", "op"]
 
         self.data = {"hurs": None,
                      "tas": None,
@@ -256,6 +256,8 @@ class input_data:
                      "pr": None,
                      "rsds": None,
                      "sfcwind": None,
+                     "tasmax": None,
+                     "tasmin": None,
                      "tn": None,
                      "tp": None,
                      "ap": None,
@@ -272,7 +274,9 @@ class input_data:
                      "ps": None,
                      "pr": None,
                      "rsds": None,
-                    "sfcwind": None,
+                     "sfcwind": None,
+                     "tasmax": None,
+                     "tasmin": None,
                      "tn": None,
                      "tp": None,
                      "ap": None,
@@ -380,7 +384,7 @@ def process_gridcell(grd:input_data , var, data):
 @timer
 def main():
     # SAVE METADATA
-    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
+    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind',"tasmax", "tasmin"]
     dss = [read_clim_data(var) for var in variables]
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])
@@ -431,7 +435,6 @@ def main():
 
     # Load clim_data and write to input templates
     array_data = []
-    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
 
     tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
 
@@ -443,17 +446,21 @@ def main():
     ps_gen = _read_clim_data_('ps')
     rsds_gen = _read_clim_data_('rsds')
     sfcwind_gen = _read_clim_data_('sfcwind')
+    tasmax_gen = _read_clim_data_('tasmax')
+    tasmin_gen = _read_clim_data_('tasmin')
 
     i = 0
     print(f"Reading data: {variables}{'' * 20}")
     print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
+    for hurs, tas, pr, ps, rsds, sfcwind, tasmax, tasmin, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, tasmax_gen, tasmin_gen, range(tsize)):
         _data["hurs"][:, j] = get_values_at(hurs)
         _data["tas"][:, j] = get_values_at(tas)
         _data["pr"][:, j] = get_values_at(pr)
         _data["ps"][:, j] = get_values_at(ps)
         _data["rsds"][:, j] = get_values_at(rsds)
         _data["sfcwind"][:, j] = get_values_at(sfcwind)
+        _data["tasmax"][:, j] = get_values_at(tasmax)
+        _data["tasmin"][:, j] = get_values_at(tasmin)
         print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
         i += 1
     # i = 0
@@ -477,7 +484,7 @@ def main():
     #         i += 1
     #         print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
 
-    array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"]
+    array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"], _data["tasmax"], _data["tasmin"]
 
     print("\033[94m Writing data to files \033[0m")
     # Write data to files in parallel
@@ -488,6 +495,7 @@ def main():
             tasks.append((grd, var, data[i]))
 
     # Write data to files
+    print(f"Writing \033[94m{var}\033[0m{' ' * 20}", end="\r")
     with concurrent.futures.ThreadPoolExecutor(max_workers=256) as executor:
         futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
         concurrent.futures.wait(futures)
@@ -500,13 +508,13 @@ def main():
 
 
 def test(var, y=160, x=236, sample=500):
-    GREEN = "\033[92m"
+    # GREEN = "\033[92m"
     RED = "\033[91m"
     RESET = "\033[0m"
     CYAN = "\033[96m"
 
     # comapre raw data and processed data
-    assert var in {'hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind'}, "Variable not found"
+    assert var in {'hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind', 'tasmax', 'tasmin'}, "Variable not found"
     assert shared_data.exists(), "Shared data folder does not exists"
     file_name = shared_data/Path(f"input_data_{y}-{x}.pbz2")
     assert file_name.exists(), "File not found"
@@ -548,7 +556,7 @@ if __name__ == "__main__":
         indices = [indices[i] for i in idx]
         tested = [files[i] for i in idx]
         print(f"Testing the following indices: {indices}")
-        for var in ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']:
+        for var in ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind', 'tasmax', 'tasmin']:
             for y, x in indices:
                 print(f"Testing {var} for gridcell {y}-{x}")
                 test(var, y=y, x=x)

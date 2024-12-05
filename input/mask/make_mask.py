@@ -1,5 +1,5 @@
 """This script read as netCDF file and extracts the boolean mask from the variable mask.
-    There is an example netCDF4 file in the mask folder called pan_amazon_05d.nc that exemplifies
+    There is an example netCDF4 file in the mask folder called pan_amazon_05d.nc which exemplifies
     how the netCDF file should be structured.
 """
 import argparse
