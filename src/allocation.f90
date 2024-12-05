@@ -180,7 +180,7 @@ module alloc
       real(r_8), dimension(6) :: ccn ! Carbon Costs of  N uptake by strategy :
       real(r_8), dimension(8) :: ccp ! CC of P uptake by strategy
       real(r_8) :: active_nupt_cost, active_pupt_cost
-      integer(i_4) :: naquis_strat, paquis_strat
+      integer(i_4) :: nacquis_strat, pacquis_strat
       real(r_8) :: p_cost_resorpt, n_cost_resorpt
       real(r_8) :: negative_one
       real(r_8) :: aux_on, aux_sop, aux_op
@@ -233,8 +233,8 @@ module alloc
       real_npp               = 0.0D0
 
       ! 0 for passive uptake
-      naquis_strat           = 0
-      paquis_strat           = 0
+      nacquis_strat           = 0
+      pacquis_strat           = 0
 
       pdia                   = 0.0D0
       amp                    = 0.0D0
@@ -456,8 +456,8 @@ module alloc
       endif
 
       ! START NURTIENT STORAGE FOR OUTPUT  storage of NUTRIENTS
-      storage_out_alloc(2) = 0.0D0 ! N
-      storage_out_alloc(3) = 0.0D0 ! P
+      storage_out_alloc(nitrog) = 0.0D0 ! N
+      storage_out_alloc(phosph) = 0.0D0 ! P
 
       !----------END OF POTENTIAL VALUES CALCULATION (in MASS)
 
@@ -602,7 +602,7 @@ module alloc
          else
          ! IDENTIFY LIMITING
             if(is_limited(leaf, nitrog) .and. is_limited(leaf, phosph)) then
-               kappa = abs(real_npp(leaf, nitrog) - real_npp(leaf, phosph)) .lt. 1D-6
+               kappa = abs(real_npp(leaf, nitrog) - real_npp(leaf, phosph)) .lt. 1D-2
 
                if (kappa) then
                   limiting_nutrient(leaf) = colimi + colimi
@@ -776,20 +776,20 @@ module alloc
       ! N
       ccn(:) = 0.0D0
       active_nupt_cost = 0.0D0
-      naquis_strat = 0   ! Passive uptake
+      nacquis_strat = 0   ! Passive uptake
       nitrogen_uptake(:) = 0.0D0
       if (to_pay(1) .gt. 0.0D0) then
          call active_costn(amp, avail_n - plant_passive_uptake(1), aux_on, scf1 * 1D3, ccn)
-         call select_active_strategy(ccn, active_nupt_cost, naquis_strat)
-         call prep_out_n(naquis_strat, nuptk, to_pay(1), nitrogen_uptake)
-         uptk_strategy(1) = naquis_strat
+         call select_active_strategy(ccn, active_nupt_cost, nacquis_strat)
+         call prep_out_n(nacquis_strat, nuptk, to_pay(1), nitrogen_uptake)
+         uptk_strategy(1) = nacquis_strat
       else
          nitrogen_uptake(1) = nuptk
          nitrogen_uptake(2) = 0.0D0
          uptk_strategy(1) = 0
       endif
       test34 = nitrogen_uptake(2) .gt. on
-      uptk_strategy(1) = naquis_strat
+      uptk_strategy(1) = nacquis_strat
       if(isnan(to_sto(1))) to_sto(1) = 0.0D0
       ! if(to_sto(1) .gt. 1.0D1) to_sto(1) = 0.0D0
       if(to_sto(1) .lt. 0.0D0) to_sto(1) = 0.0D0
@@ -798,13 +798,13 @@ module alloc
       !  P
       ccp(:) = 0.0D0
       active_pupt_cost = 0.0D0
-      paquis_strat = 0
+      pacquis_strat = 0
       phosphorus_uptake(:) = 0.0D0
       if(to_pay(2) .gt. 0.0D0) then
          call active_costp(amp, avail_p - plant_passive_uptake(2), aux_sop, aux_op, scf1 * 1D3, ccp)
-         call select_active_strategy(ccp, active_pupt_cost, paquis_strat)
-         call prep_out_p(paquis_strat, puptk, to_pay(2), phosphorus_uptake)
-         uptk_strategy(2) = paquis_strat
+         call select_active_strategy(ccp, active_pupt_cost, pacquis_strat)
+         call prep_out_p(pacquis_strat, puptk, to_pay(2), phosphorus_uptake)
+         uptk_strategy(2) = pacquis_strat
       else
          phosphorus_uptake(1) = puptk
          phosphorus_uptake(2) = 0.0D0

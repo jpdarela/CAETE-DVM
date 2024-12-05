@@ -29,7 +29,7 @@ import tomllib
 
 # path to the fortran compiler dlls, used in windows systems.
 fortran_runtime = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
-config_file = Path("./caete.toml").resolve()
+config_file = Path("../src/caete.toml").resolve()
 
 
 class Config:

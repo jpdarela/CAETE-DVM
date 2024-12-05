@@ -68,7 +68,7 @@ class region:
             co2 (Union[str, Path]): _description_
             pls_table (np.ndarray): _description_
         """
-        self.config: Config = fetch_config("caete.toml")
+        self.config: Config = fetch_config("../src/caete.toml")
         # self.nproc = self.config.multiprocessing.nprocs # type: ignore
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
@@ -207,7 +207,7 @@ class region:
 
     def _update_config(self):
         """Update the configuration file"""
-        self.config = fetch_config("caete.toml")
+        self.config = fetch_config("../src/caete.toml")
 
 
     def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:

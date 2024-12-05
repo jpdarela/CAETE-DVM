@@ -1,6 +1,5 @@
 # -*-coding:utf-8-*-
 # "CAETÊ"
-# Author:  João Paulo Darela Filho
 
 # _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
 
@@ -360,47 +359,56 @@ class output_manager:
         for grd in reg:
             table_data.write_metacomm_output(grd)
 
+    # @staticmethod
+    # def generic_text_output_grd(region_output_from_state:region, variables:Union[str, Collection[str]]):
+    #     table_data.write_daily_data(r=region_output_from_state, variables=variables)
+    #     for grd in region_output_from_state:
+    #         table_data.write_metacomm_output(grd)
+    #     return None
+
     @staticmethod
     def cities_output():
+
+        results = (Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
+                   Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"),
+                   Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),
+                   Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"))
+
+        for r in results:
+            output_manager.table_output_per_grd(r, ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
+                                                     "photo", "npp", "evapm", "lai", "vcmax", "ls",
+                                                     "specific_la"))
+
             # # IO
-        hist_results: Path = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
-        piControl_results: Path = Path("./cities_MPI-ESM1-2-HR-piControl_output.psz")
-        ssp370_results: Path = Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz")
-        ssp585_results: Path = Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz")
+        # hist_results: Path = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+        # piControl_results: Path = Path("./cities_MPI-ESM1-2-HR-piControl_output.psz")
+        # ssp370_results: Path = Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz")
+        # ssp585_results: Path = Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz")
 
-        # # Load the region file
-        hist:region = worker.load_state_zstd(hist_results)
-        piControl:region = worker.load_state_zstd(piControl_results)
-        ssp370:region = worker.load_state_zstd(ssp370_results)
-        ssp585:region = worker.load_state_zstd(ssp585_results)
+        # # # Load the region file
+        # hist:region = worker.load_state_zstd(hist_results)
+        # piControl:region = worker.load_state_zstd(piControl_results)
+        # ssp370:region = worker.load_state_zstd(ssp370_results)
+        # ssp585:region = worker.load_state_zstd(ssp585_results)
 
-        variables_to_read: Tuple[str,...] = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
-                                             "photo", "npp", "evapm", "lai", "vcmax", "ls",
-                                             "specific_la")
+        # variables_to_read: Tuple[str,...] = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
+        #                                      "photo", "npp", "evapm", "lai", "vcmax", "ls",
+        #                                      "specific_la")
 
-        table_data.write_daily_data(r=hist, variables=variables_to_read)
-        table_data.write_daily_data(r=piControl, variables=variables_to_read)
-        table_data.write_daily_data(r=ssp370, variables=variables_to_read)
-        table_data.write_daily_data(r=ssp585, variables=variables_to_read)
+        # table_data.write_daily_data(r=hist, variables=variables_to_read)
+        # table_data.write_daily_data(r=piControl, variables=variables_to_read)
+        # table_data.write_daily_data(r=ssp370, variables=variables_to_read)
+        # table_data.write_daily_data(r=ssp585, variables=variables_to_read)
 
-        for grd in hist:
-            table_data.write_metacomm_output(grd)
-        for grd in ssp370:
-            table_data.write_metacomm_output(grd)
-        for grd in ssp585:
-            table_data.write_metacomm_output(grd)
-        for grd in piControl:
-            table_data.write_metacomm_output(grd)
+        # for grd in hist:
+        #     table_data.write_metacomm_output(grd)
+        # for grd in ssp370:
+        #     table_data.write_metacomm_output(grd)
+        # for grd in ssp585:
+        #     table_data.write_metacomm_output(grd)
+        # for grd in piControl:
+        #     table_data.write_metacomm_output(grd)
         return None
-
-
-    @staticmethod
-    def generic_text_output_grd(region_output_from_state:region, variables:Union[str, Collection[str]]):
-        table_data.write_daily_data(r=region_output_from_state, variables=variables)
-        for grd in region_output_from_state:
-            table_data.write_metacomm_output(grd)
-        return None
-
 
 if __name__ == "__main__":
     pass

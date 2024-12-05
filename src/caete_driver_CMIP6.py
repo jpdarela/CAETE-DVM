@@ -65,9 +65,10 @@ if __name__ == "__main__":
     # Read CO2 atmospheric data. The model expects a formated table in a text file with
     # exactly 2 columns (year, co2 concentration) separetd by a space, a coma, a semicolon etc.
     # A header is optional. The model also expects annual records in ppm (parts per million).
-    co2_path_hist = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
-    co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
-    co2_path_ssp585 = Path("../input/co2/ssp585_CO2_annual_2015-2100.csv")
+    co2_path_hist = input_path / "co2/historical_CO2_annual_1765-2024.csv"
+    co2_path_ssp370 = input_path / "co2/ssp370_CO2_annual_2015-2100.csv"
+    co2_path_ssp585 = input_path / "co2/ssp585_CO2_annual_2015-2100.csv"
+
 
     # Soil hydraulic parameters e.g., wilting point(RWC), field capacity(RWC), water saturation(RWC), etc.
     soil_tuple = tsoil, ssoil, hsoil

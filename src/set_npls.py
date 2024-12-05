@@ -26,7 +26,7 @@ import os
 from pathlib import Path
 from config import fetch_config
 
-caete_config = fetch_config('caete.toml')
+caete_config = fetch_config('../src/caete.toml')
 
 descrp = "This script creates a global.f90 file with parameters defined in the caete.toml file."
 

@@ -370,7 +370,7 @@ class state_zero:
 
 
         # Configuration data
-        self.config:Config = fetch_config("caete.toml")
+        self.config:Config = fetch_config("../src/caete.toml")
         self.afex_config = self.config.fertilization # type: ignore
         self.co2_data: Optional[Dict[int, float]] = None
 

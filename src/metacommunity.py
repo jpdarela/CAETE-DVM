@@ -39,7 +39,7 @@ from config import fetch_config
 
 from caete_jit import process_tuples
 
-config_data = fetch_config("caete.toml")
+config_data = fetch_config("../src/caete.toml")
 
 ntraits =  config_data.metacomm.ntraits
 npls =  config_data.metacomm.npls_max
