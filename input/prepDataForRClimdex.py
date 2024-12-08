@@ -14,6 +14,9 @@ import pandas
 MODS = ["MPI-ESM1-2-HR",]
 SCEN = ["historical", "ssp370", "ssp585"]
 
+# # december 31st 1960
+# first_line = "1960 12 31 -99.9 -99.9 -99.9"
+
 # Convert prec to kg m-2 day-1
 precConvFactor = 8.64e4
 
@@ -99,7 +102,11 @@ def main(model, scen):
 
         final_filename = Path(os.path.join(outputPath.resolve(), f"RClimDex-DATA_{muni}_{model}-{scen}.csv"))
         to_write.to_csv(final_filename, header=False, index=False)
-
+        final_filename = Path(os.path.join(outputPath.resolve(), f"RClimDex-DATA_{muni}_{model}-{scen}.txt"))
+        np.savetxt(final_filename, to_write.__array__(),
+                   fmt=["%d","%d","%d","%.4f","%.4f","%.4f"],
+                   delimiter=" ",
+                   newline="\n")
 
 if __name__ == "__main__":
     for model in MODS:
