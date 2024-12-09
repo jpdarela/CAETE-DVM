@@ -1,33 +1,101 @@
 
 # CAETÊ
 
--Warning: This readme is outdated. A new version is coming soon.
-
-I made a lot of changes in the source code. The prototype version of the model is stored in the branch CAETE-DVM-v0.1
+The prototype version of the model is stored in the branch CAETE-DVM-v0.1
 
 This is the implementation of the Dynamic Vegetation Model CAETÊ (CArbon and Ecosystem Trait-based Evaluation model) - including Nitrogen and Phosphorus cycling.
 
 ## Development Dependencies
 
-CAETÊ depends on a few packages that must be installed beforehand.
-You can install them using your favorite package manager: `apt`, `brew`, `pip`, `poetry`, etc.
 
-General Dependencies
+### Windows (>7) setup
 
-- make (for building automation)
+cl.exe, link.exe, nmake.exe -
+Microsoft visual studio build tools https://visualstudio.microsoft.com/downloads/
+
+ifx.exe -
+Intel fortran compiler https://www.intel.com/content/www/us/en/developer/tools/oneapi/fortran-compiler.html#gs.ihbm92
+
+
+[Python 3.11.6](https://www.python.org/ftp/python/3.11.6/python-3.11.6-amd64.exe) and [windows requirements](./src/requirements_311.txt) (only tested this way).
+
+See the [windows Makefile](./src/Makefile_win) for instructions on how to build the python extension module.
+
+In the windows Makefile the ifx.exe compiler is called. Check the Makefile must be executed in a shell with the proper environment:
+https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2023-0/oneapi-development-environment-setup.html
+
+
+### Linux setup
+
+- gnu-make
+
+- gcc
+
 - gfortran
-- gdb (optional for debug)
-- python-is-python3 (make sure that you can call your python3 as python or change the Makefile - line 20)
-Python Dependencies
 
-- pyenv (optional)
-- numpy/f2py
-- cftime
+- python 3.11 and [legacy requirements](./src/requirements_311.txt)
+or
+- python 3.12 and [linux requirements](./src/requirements_312.txt)
+
+### General Dependencies for linux
+
+In linux it is possible to run the model in python 3.11 and 3.12. However, the building system used to compile the fortran/python extension module differs between python versions. In python 3.12 the numpy distutils was removed from numpy. See: [Numpy distutils status](https://numpy.org/doc/stable/reference/distutils_status_migration.html#distutils-status-migration). The new (candidate) build method is based on meson. So, if you are using python 3.12 you will need also:
+
+- meson
+- ninja
+
+Note: The new building (meson) system was only tested in linux
+
+Python Dependencies (see the [requirements for python 3.11](./src/requirements_311.txt) and [requirements for python 3.12](./src/requirements_312.txt))
+
+- numpy
 - joblib
 - netCDF4
-- tables
+- charset-normalizer
+- lz4
+- numba
+- zstandard
+- pyproj
+- pandas
 
-Make sure you have them properly installed before running the code.
+Edit the PYEXEC variable in the [linux Makefile](./src/Makefile) to match the python that you will use to run the model.
+
+Use the make target setup_311 or setup_312 to install python libraries.
+
+To build the extension module with python 3.12 and meson in linux:
+
+```
+$ make setup_3.12
+$ make ext_mod_meson
+```
+
+To build the extension module with python 3.11 in linux:
+
+```
+$ make setup_3.12
+$ make ext_mod_legacy
+```
+
+To build in windows:
+
+Assuming that the Intel OneAPI setvars.bat script is in C:\Program Files (x86)\Intel\oneAPI\setvars.bat.
+
+```
+cmd.exe "/K" '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && powershell'
+
+PS> nmake -f Makefile_win so
+
+```
+
+
+
+
+
+
+
+
+
+## Outdated content ->
 
 ## Running and Developing CAETÊ
 

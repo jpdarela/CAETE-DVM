@@ -59,7 +59,7 @@ class worker:
 
         This method uses spinclim data to run the model.
         Check the init and end dates to match input data.
-        Spinup time: 500 years
+        Spinup time: 1000 years
 
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc="1765",
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True,
@@ -77,7 +77,7 @@ class worker:
 
         This method uses spinclim data to run the model.
         Check the init and end dates to match input data.
-        Spinup time: 500 years
+        Spinup time: 2000 years
 
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True,
@@ -93,9 +93,9 @@ class worker:
     def quit_spinup(gridcell:grd_mt):
         """spin to attain equilibrium in the community without adding new PLS
 
-        Spinup time: 400 years
+        Spinup time: 500 years
 
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc="1801",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True)
 
         """
@@ -110,8 +110,6 @@ class worker:
         """Run the model in the first half of spinclim.
         THe result from here will be tranfered to translcim run
 
-        This method uses spinclim data to run the model.
-        Check the init and end dates to match input data.
         run length: 50  years
 
         gridcell.run_gridcell("1801-01-01", "1850-12-31", fixed_co2_atm_conc="1801",

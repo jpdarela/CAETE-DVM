@@ -20,8 +20,13 @@
 # It also can build a fortran executable for debugging purposes.
 # This is not implemented in the windows version.
 
-# Build caete_module & debug programs
-PYEXEC = python
+# Doesn't work with python 3.13
+
+# Requires python 3.12 or lower (because of numba)
+# If using python 3.12, use the ext_mod_meson target
+# If using python 3.11 or lower, use the ext_mod_legacy target
+
+PYEXEC = python # Edit this line to point to the python executable
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
@@ -35,18 +40,20 @@ HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
 FC = gfortran
+
+# gfrotran FLAGS for debugging
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
-# Sources for compilation in run mode (F2PY)
+# Sources for extension module creation (F2PY)
 src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
 sources = $(src_lib) budget.F90
 
 
-# Objects for compilation in debug mode
+# Objects for compilation of the debug executable (LINUX)
 src_obj = types.o photo_par.o global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
 objects = $(src_obj) budget.o debug_caete.o
 
@@ -54,53 +61,65 @@ objects = $(src_obj) budget.o debug_caete.o
 .PHONY: setup interface so so_parallel clean clean_so modules
 
 # Python setup
-setup:
+setup_311:
 	@echo "Installing dependencies..."
-	$(PIP) install -r requirements.txt
+	$(PIP) install -r requirements_311.txt
+
+setup_312:
+	@echo "Installing dependencies..."
+	$(PIP) install -r requirements_312.txt
 
 modules: $(sources)
 	$(FC) -c $(sources)
 
-# Build the interface and the shared object (caete_module) from .F90 source
+# Build the extension module (caete_module) from .F90 source
+# To be used when python == 3.12
 ext_mod_meson: $(sources) modules
 	@$(PYEXEC) set_npls.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
-	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --backend meson --f90flags="-Wall $(EXT_FLAGS)"
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --build-dir build --backend meson --f90flags="-Wall $(EXT_FLAGS)"
 
+# Build the extension module (caete_module) from .F90 source
+# To be used when python == 3.11
 ext_mod_legacy: $(sources) modules
 	@$(PYEXEC) set_npls.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
 	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS)"
 
-
+### OLD build targets ==============================================================================
+# TO BE REMOVED
+# pyf interface
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
 	@$(PYEXEC) set_npls.py ## Set the number of PLS in the global module
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
+# Build the shared object (caete_module) from .F90 source
+# Enable OpenMP
 so_parallel: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp --quiet
 	@echo "Parallel version of caete_module created using gfortran"
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace
 
+# Build the shared object (caete_module) from .F90 source
+# Serial version
 so: $(sources) interface
 	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) " --quiet
 	@echo "Serial version of caete_module created using gfortran"
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace
+# =================================================================================================
 
 
+# Build objects for DEBUG mode and for intelisense
 modules: $(sources)
 	$(FC) -c $(sources)
 
-# Build objects for DEBUG mode
+# Build objects for the DEBUG program
 debug: $(objects) so
 	$(PYEXEC) create_plsbin.py
 	$(FC) -o $(DEBUG_PROGRAM) $(FCFLAGS) $(objects)
-
-
-
 
 global.o: global.f90
 	$(FC) $(FLFLAGS) global.f90
@@ -159,12 +178,14 @@ budget.mod: budget.o budget.F90
 debug_caete.o: debug_caete.f90
 	$(FC) $(FLFLAGS) debug_caete.f90
 
-# CLEAN
+
+# CLEAN targets
 clean:
-	rm -rf *.s *.o pls_ex.txt __pycache__ run_debug logfile.log
+	rm -rf *.s *.o pls_ex.txt __pycache__ run_debug execution.log
 
 clean_so: clean
 	rm -rf *.so *.pyf *.mod
+	rm -rf build
 	clear
 
-reinstall: clean_so so
+reinstall: clean_so ext_mod_meson
