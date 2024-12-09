@@ -65,14 +65,14 @@ Use the make target setup_311 or setup_312 to install python libraries.
 To build the extension module with python 3.12 and meson in linux:
 
 ```
-$ make setup_3.12
+$ make setup_312
 $ make ext_mod_meson
 ```
 
 To build the extension module with python 3.11 in linux:
 
 ```
-$ make setup_3.12
+$ make setup_311
 $ make ext_mod_legacy
 ```
 
@@ -86,14 +86,6 @@ cmd.exe "/K" '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && powershell'
 PS> nmake -f Makefile_win so
 
 ```
-
-
-
-
-
-
-
-
 
 ## Outdated content ->
 
