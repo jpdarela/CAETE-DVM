@@ -24,7 +24,7 @@
 
 # Requires python 3.12 or lower (because of numba)
 # If using python 3.12, use the ext_mod_meson target
-# If using python 3.11 or lower, use the ext_mod_legacy target
+# If using python 3.11, use the ext_mod_legacy target
 
 PYEXEC = python # Edit this line to point to the python executable
 PIP = $(PYEXEC) -m pip

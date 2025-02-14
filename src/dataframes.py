@@ -370,7 +370,7 @@ class output_manager:
         for r in results:
             output_manager.table_output_per_grd(r, ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
                                                      "photo", "npp", "evapm", "lai", "vcmax", "ls",
-                                                     "specific_la"))
+                                                     "specific_la", "storage_pool"))
         return None
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ This is the implementation of the Dynamic Vegetation Model CAETÊ (CArbon and Ec
 
 ## Development Dependencies
 
-
 ### Windows (>7) setup
 
 cl.exe, link.exe, nmake.exe -
@@ -16,14 +15,23 @@ Microsoft visual studio build tools https://visualstudio.microsoft.com/downloads
 ifx.exe -
 Intel fortran compiler https://www.intel.com/content/www/us/en/developer/tools/oneapi/fortran-compiler.html#gs.ihbm92
 
-
 [Python 3.11.6](https://www.python.org/ftp/python/3.11.6/python-3.11.6-amd64.exe) and [windows requirements](./src/requirements_311.txt) (only tested this way).
 
 See the [windows Makefile](./src/Makefile_win) for instructions on how to build the python extension module.
 
-In the windows Makefile the ifx.exe compiler is called. Check the Makefile must be executed in a shell with the proper environment:
+In the windows Makefile the ifx.exe compiler is called. The Makefile must be executed in a shell with the proper environment:
 https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2023-0/oneapi-development-environment-setup.html
 
+To build in windows:
+
+Assuming that the Intel OneAPI setvars.bat script is in C:\Program Files (x86)\Intel\oneAPI\setvars.bat.
+
+```powershell
+cmd.exe "/K" '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && powershell'
+
+PS> nmake -f Makefile_win so
+
+```
 
 ### Linux setup
 
@@ -64,26 +72,19 @@ Use the make target setup_311 or setup_312 to install python libraries.
 
 To build the extension module with python 3.12 and meson in linux:
 
-```
+```bash
 $ make setup_312
+
 $ make ext_mod_meson
+
 ```
 
 To build the extension module with python 3.11 in linux:
 
-```
+```bash
 $ make setup_311
+
 $ make ext_mod_legacy
-```
-
-To build in windows:
-
-Assuming that the Intel OneAPI setvars.bat script is in C:\Program Files (x86)\Intel\oneAPI\setvars.bat.
-
-```
-cmd.exe "/K" '"C:\Program Files (x86)\Intel\oneAPI\setvars.bat" && powershell'
-
-PS> nmake -f Makefile_win so
 
 ```
 

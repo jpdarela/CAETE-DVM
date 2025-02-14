@@ -299,7 +299,7 @@ def main():
     # Seed the unique PLS in a free slot
     mt[0].seed_pls(ident, func_id)
 
-    mt2 = metacommunity(1, __get_from_main_table)
+    mt2 = metacommunity(1, None)
     return mt2
 
 if __name__ == "__main__":

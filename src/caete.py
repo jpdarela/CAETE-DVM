@@ -2003,9 +2003,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
 
 if __name__ == '__main__':
-
     # Short example of how to run the new version of the model. Also used to do some profiling
-    if sys.argv[1] == "pass":
+    skip = False
+    try:
+        skip = sys.argv[1] == "pass"
+    except:
+        skip = False
+
+    if skip:
         # Skip all
         pass
     else:
