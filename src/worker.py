@@ -65,11 +65,27 @@ class worker:
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True,
                               verbose=False)
         """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc="1765",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1765",
                               save=False, nutri_cycle=False, reset_community=True)
 
         return gridcell
 
+    @staticmethod
+    def soil_pools_spinup_glacial(gridcell:grd_mt):
+        """Spin to attain equilibrium in soil pools, In this phase the communities are reset if there are no PLS
+
+        This method uses spinclim data to run the model.
+        Check the init and end dates to match input data.
+        Spinup time: 2000 years
+
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc=280.0,
+                              save=False, nutri_cycle=False, reset_community=True, env_filter=True,
+                              verbose=False)
+        """
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=20, fixed_co2_atm_conc=190.0,
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
+
+        return gridcell
 
     @staticmethod
     def soil_pools_spinup_interglacial(gridcell:grd_mt):
@@ -84,7 +100,7 @@ class worker:
                               verbose=False)
         """
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=20, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=True, reset_community=True)
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
 
         return gridcell
 

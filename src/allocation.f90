@@ -106,7 +106,7 @@ module alloc
       real(r_8), intent(out) :: c_costs_of_uptake
       integer(i_4), dimension(2), intent(out) :: uptk_strategy
       real(r_8),intent(out) :: ctonfix
-      real(r_8) :: construction_c
+      real(r_8),intent(out) :: construction_c
 
       ! Auxiliary variables
       real(r_8) :: nuptk ! N plant uptake g(N) m-2

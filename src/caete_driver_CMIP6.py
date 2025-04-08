@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # this table as main table. This table represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-20000.csv"))
 
     # Create the region using the piControl climate files and historical CO2 data
     region_name = "cities_MPI-ESM1-2-HR_hist" # Name of the run (the outputs of this region will be saved in this folder).
@@ -99,6 +99,10 @@ if __name__ == "__main__":
     print("START soil pools spinup - piControl - 1765 co2 ~278 ppm")
     r.run_region_map(fn.soil_pools_spinup)
 
+    # Spinup using 1801-1900 climatology with glacial co2 concentration 180ppm
+    print("START soil pools spinup - Glacial co2 180 ppm")
+    r.run_region_map(fn.soil_pools_spinup_glacial)
+
     # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
     print("START soil pools spinup - Interglacial co2 280 ppm")
     r.run_region_map(fn.soil_pools_spinup_interglacial)
@@ -117,7 +121,7 @@ if __name__ == "__main__":
     r.update_input(hist_files)
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2014, 5)
+    run_breaks = fn.create_run_breaks(1901, 2014, 10)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)

@@ -47,7 +47,7 @@ if __name__ == "__main__":
     mp.set_start_method('spawn', force=True)
     fn: worker = worker()
 
-    # Create the region
+    # Name of the region. This name will be used to create the output folder.
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
     # Input files. The model will look for the input files in these folders.
@@ -90,7 +90,8 @@ if __name__ == "__main__":
     print("START soil pools spinup")
     r.run_region_map(fn.soil_pools_spinup)
 
-    # print("\nSTART community spinup")
+    print("\nSTART community spinup with PLS seed glacial-interglacial cycle")
+    r.run_region_map(fn.soil_pools_spinup_glacial)
     r.run_region_map(fn.soil_pools_spinup_interglacial)
 
     # print("\nSTART community spinup with PLS seed")
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     r.update_input(obsclim_files)
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2021, 5)
+    run_breaks = fn.create_run_breaks(1901, 2021, 10)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)

@@ -373,23 +373,24 @@ class output_manager:
                                                      "specific_la", "storage_pool"))
         return None
 
+
 if __name__ == "__main__":
     pass
 
-    output_manager.cities_output()
+    # output_manager.cities_output()
     # hist_results: Path = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
     # hist:region = worker.load_state_zstd(hist_results)
     # grd = hist[0]
 
-    # # # IO
+    # # # IO apn_amazon test
     # model_results: Path = Path("./pan_amazon_hist_result.psz")
     # variables_to_read: Tuple[str,...] = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp", "photo", "npp", "evapm", "lai")
     # output_manager.table_output_per_grd(model_results, variables=variables_to_read)    # # Load the region file
 
-    # reg:region = worker.load_state_zstd("./state.psz2")
+    reg:region = worker.load_state_zstd("./pan_amazon_hist_result.psz")
     # # # # Gridded outputs
-    # variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
-    # data = gridded_data.aggregate_region_data(reg, variables_to_read, (11,12))
-    # a = gridded_data.create_masked_arrays(data)
+    variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
+    data = gridded_data.aggregate_region_data(reg, variables_to_read, 1)
+    a = gridded_data.create_masked_arrays(data)
     # # # TODO: Save netcdfs
 
