@@ -1,8 +1,8 @@
-# doy_months = [1,31]
-doy_months = [1,31,62,92,123,153,183,214,244,275,305,336]
+doy_months = [1,31]
+# doy_months = [1,31,62,92,123,153,183,214,244,275,305,336]
 
 [multiprocessing]
-nprocs=16 # Threads used to post process the output
+nprocs= 256 # Threads used to post process the output
 
 [conversion_factors_isimip] # Conversion factors used to convert units of input data
 tas = 273.15  # ! K to °C (subtract) [input(K) to model(°C)]
@@ -12,8 +12,8 @@ rhs = 0.01  # ! % to kg kg-1  (multiply) [input(%) to model(kg kg-1)]
 rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (multiply) [input(W m-2) to model(mol(photons) m-2 day-1)]
 
 [metacomm]
-n = 3 # Number of communities to be considered in the metacommunity
-npls_max = 999 # Maximum number of PLS to be considered in the metacommunity
+n = 1 # Number of communities to be considered in the metacommunity
+npls_max = 5000 # Maximum number of PLS to be considered in the metacommunity
 ntraits = 17 # number of traits in a PLS
 
 [crs]

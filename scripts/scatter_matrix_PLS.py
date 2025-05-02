@@ -7,7 +7,7 @@ import pandas as pd
 # table_woody = pd.read_csv("./PLS_MAIN/pls_attrs-20000.csv").loc[1600:, ["aleaf","awood","aroot","tleaf", 'twood', "troot"]]
 # table_grass = pd.read_csv("./PLS_MAIN/pls_attrs-20000.csv").loc[:16, ["aleaf","aroot","tleaf","troot"]]
 
-table_all = pd.read_csv("../src/PLS_MAIN/pls_attrs-99999.csv").loc[:, ["aleaf","awood","aroot","tleaf", 'twood', "troot"]]
+table_all = pd.read_csv("../src/PLS_MAIN/pls_attrs-3000.csv").loc[:, ["aleaf","awood","aroot","tleaf", 'twood', "troot"]]
 
 pd.plotting.scatter_matrix(pd.DataFrame(table_all), figsize=(10, 10))
 plt.tight_layout()

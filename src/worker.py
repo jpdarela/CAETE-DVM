@@ -82,7 +82,7 @@ class worker:
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True,
                               verbose=False)
         """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=20, fixed_co2_atm_conc=190.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True)
 
         return gridcell
@@ -99,7 +99,7 @@ class worker:
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True,
                               verbose=False)
         """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=20, fixed_co2_atm_conc=280.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True)
 
         return gridcell

@@ -133,7 +133,7 @@ from hydro_caete import soil_water
 from output import budget_output
 from caete_jit import inflate_array, masked_mean, masked_mean_2D, cw_mean
 from caete_jit import shannon_entropy, shannon_evenness, shannon_diversity
-from caete_jit import atm_canopy_coupling
+from caete_jit import atm_canopy_coupling, pft_area_frac64
 
 # Tuples with hydrological parameters for the soil water calculations
 from parameters import hsoil, ssoil, tsoil
@@ -336,7 +336,7 @@ def timer(method):
         start_time = time()
         result = method(*args, **kwargs)
         end_time = time()
-        logger.info(f"{method.__name__} took {end_time - start_time:.4f} seconds")
+        # logger.info(f"{method.__name__} took {end_time - start_time:.4f} seconds")
         # print(f"{method.__name__} took {end_time - start_time:.4f} seconds")
         return result
     return timed
@@ -1073,7 +1073,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return None
 
     # @profile
-    @timer
+    # @timer
     def run_gridcell(self,
                   start_date: str,
                   end_date: str,
@@ -1164,11 +1164,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # Slice&Catch climatic input and make conversions
         cv = self.config.conversion_factors_isimip # type: ignore
 
-        temp: NDArray[np.float32] = self.tas[lower_bound: upper_bound + 1] - cv.tas   # Air temp: model uses °C
-        prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1] * cv.pr     # Precipitation: model uses  mm/day
-        p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1] * cv.ps    # Atmospheric pressure: model uses hPa
-        ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds # PAR: model uses  mol(photons) m-2 s-1
-        ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] * cv.rhs    # Relative humidity: model uses 0-1
+        temp: NDArray[np.float32] = self.tas[lower_bound: upper_bound + 1] - cv.tas    # Air temp: model uses °C
+        prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1] * cv.pr      # Precipitation: model uses  mm/day
+        p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1] * cv.ps     # Atmospheric pressure: model uses hPa
+        ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds  # PAR: model uses  mol(photons) m-2 s-1
+        ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] * cv.rhs      # Relative humidity: model uses 0-1
 
         # Define the daily values for co2 concentrations
         co2_daily_values = np.zeros(steps.size, dtype=np.float32)
@@ -1297,11 +1297,11 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 # Create these arrays outside and just reuse it
                 living_pls = 0 # Sum of living PLS in the communities
                 for i, community in enumerate(self.metacomm):
-                    if i >= len(self.metacomm):
-                        break
-                    if community.masked:
-                        # skip this one
-                        continue
+                    # if i >= len(self.metacomm):
+                    #     break
+                    # if community.masked:
+                    #     # skip this one
+                    #     continue
                     sto[0, :] = inflate_array(community.npls, community.vp_sto[0, :], community.vp_lsid)
                     sto[1, :] = inflate_array(community.npls, community.vp_sto[1, :], community.vp_lsid)
                     sto[2, :] = inflate_array(community.npls, community.vp_sto[2, :], community.vp_lsid)
@@ -1328,10 +1328,28 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                     # Update the community status
                     community.update_lsid(daily_output.ocpavg)
-                    if community.masked:
+
+                    if community.masked and save:
                         continue
-                    community.vp_ocp = daily_output.ocpavg[community.vp_lsid]
+
                     community.ls = community.vp_lsid.size
+                    # # Restore or seed PLS TODO: Error here need to be fixed ()
+                    if env_filter and (community.ls < self.metacomm.comm_npls) and not save:
+                        if julian_day in self.doy_months:
+                            new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
+                            community.seed_pls(new_id, new_PLS, daily_output.cleafavg_pft,
+                                               daily_output.cfrootavg_pft, daily_output.cawoodavg_pft)
+                            if verbose: print(f"PLS seed in Community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+
+                            daily_output.ocpavg = pft_area_frac64(daily_output.cleafavg_pft,
+                                                            daily_output.cfrootavg_pft,
+                                                            daily_output.cawoodavg_pft)
+                            community.update_lsid(daily_output.ocpavg)
+                            community.ls = community.vp_lsid.size
+                        # endif
+
+
+                    community.vp_ocp = daily_output.ocpavg[community.vp_lsid]
                     community.vp_cleaf = daily_output.cleafavg_pft[community.vp_lsid]
                     community.vp_cwood = daily_output.cawoodavg_pft[community.vp_lsid]
                     community.vp_croot = daily_output.cfrootavg_pft[community.vp_lsid]
@@ -1339,6 +1357,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     community.sp_uptk_costs = daily_output.npp2pay[community.vp_lsid]
                     community.construction_npp = daily_output.rnpp_out[community.vp_lsid]
                     living_pls += community.ls
+                    # print(f"Community storage: {community.vp_sto[0, :]}")
+                    # print(f"Sto_budget_out {daily_output.stodbg[0, :]}")
 
                     # Limiting nutrient organization:
                     # dim1 = leaf wood root, code: 1=N 2=P 4=N,COLIM 5=P,COLIM 6=COLIM 0=NOLIM
@@ -1416,22 +1436,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         uptake_strategy_n.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
                         uptake_strategy_p.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
 
-                    # Restore or seed PLS
-                    if env_filter and (community.ls < self.metacomm.comm_npls):
-                        if julian_day in self.doy_months:
-                            new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
-                            community.seed_pls(new_id, new_PLS)
-                            if verbose:
-                                print(f"PLS seed in Community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
-
                     if community.vp_lsid.size < 1:
-                        print(f"Empty community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+                        if verbose: print(f"Empty community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
                         if reset_community:
                             assert not save, "Cannot save data when resetting communities"
-                            if verbose:
-                                print(f"Reseting community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
-                            # Get the new life strategies. This is a method from the region class
-                            # with lock:
+                            if verbose: print(f"Reseting community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
+
                             new_life_strategies = self.get_from_main_array(community.npls)
                             community.restore_from_main_table(new_life_strategies)
                             continue
@@ -1900,7 +1910,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             return_time: bool=False,
                             return_array: bool=False
                             ) -> Union[List, NDArray, Tuple[NDArray, NDArray], Tuple[Dict[str, NDArray], NDArray], List[NDArray]]:
-        """_summary_
+        """ Get the daily data for the gridcell.
 
         Args:
             variable (Union[str, Collection[str]], optional): variable name or names. Defaults to "npp".
@@ -2021,7 +2031,7 @@ if __name__ == '__main__':
         # # Read CO2 data
         co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
         co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
-        main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
+        main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-250000.csv"))
 
 
         r = region("region_test",
@@ -2046,7 +2056,11 @@ if __name__ == '__main__':
         else:
             # test model functionality
             gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
-                                                save=True, nutri_cycle=True)
+                                                save=False, nutri_cycle=True, reset_community=True,
+                                                env_filter=True)
+
+            gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
+                                    save=True, nutri_cycle=True)
 
             # test directory update
             r.update_dump_directory("test_new_region")

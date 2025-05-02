@@ -151,6 +151,7 @@ class metacommunity:
             self.communities[i] = community(self.get_table(self.comm_npls))
             # Set active at start
             self.communities[i].masked = np.int8(0)
+            # print(f"Community {i} created with {self.communities[i].npls} PLSs.")
         # Update the metacommunity mask
         self.update_mask()
         return None
@@ -268,7 +269,7 @@ class metacommunity:
 
 def main():
     # Toy example to test the classes functionality
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-100000.csv"))
 
     # this function mimics the behavior of the get_from_main_table function in the region class
     # Only for testing purposes

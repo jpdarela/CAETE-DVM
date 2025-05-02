@@ -36,6 +36,7 @@ from worker import worker
 from region import region
 from caete import grd_mt, get_args, str_or_path
 from caete_jit import pft_area_frac
+from config import fetch_config
 
 from _geos import pan_amazon_region, get_region
 
@@ -46,6 +47,7 @@ if pan_amazon_region is None:
 # Get the region of interest
 ymin, ymax, xmin, xmax = get_region(pan_amazon_region)
 
+config = fetch_config()
 
 def get_spins(r:region, gridcell=0):
     """Prints the available spin slices for a gridcell in the region"""
@@ -188,7 +190,8 @@ class gridded_data:
         """
 
         output = []
-        nproc = min(len(r), 56)
+        # nproc = min(len(r), 56)
+        nproc = config.multiprocessing.nprocs # type_ignore
         nproc = max(1, nproc) # Ensure at least one thread is used
         with ThreadPoolExecutor(max_workers=nproc) as executor:
             futures = [executor.submit(gridded_data.read_grd, grd, variables, spin_slice) for grd in r]
@@ -369,8 +372,7 @@ class output_manager:
 
         for r in results:
             output_manager.table_output_per_grd(r, ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
-                                                     "photo", "npp", "evapm", "lai", "vcmax", "ls",
-                                                     "specific_la", "storage_pool"))
+                                                     "photo", "npp", "evapm", "lai"))
         return None
 
 

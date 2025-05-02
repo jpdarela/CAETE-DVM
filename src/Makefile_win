@@ -23,6 +23,7 @@ PYEXEC = py -3.11
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 CYTHON = $(PYEXEC) -m cython
+DEBUG_PROGRAM = run_debug
 
 # Python extension module name. This is the name of the module that will be created by f2py
 MODNAME = caete_module
@@ -45,16 +46,22 @@ HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
 
+# Intel Fortran Compiler (ifx) FLAGS for debugging
+FCFLAGS = -fpp -Od -debug:full -warn:all -nologo
+FLFLAGS = -fpp -c -Od -debug:full -nologo
 
-# ifx flags
-IFX_FLAGS = -fpp -QxHost -I$(MOD_DIR) -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN -DUNDERSCORE_G77
+# Intel Fortran Compiler (ifx) FLAGS for release (caete_module)
+IFX_FLAGS = /fpp /QxHost /I$(MOD_DIR) /DPREPEND_FORTRAN /DNO_APPEND_FORTRAN /DUPPERCASE_FORTRAN /DUNDERSCORE_G77
 
 # Sources
 src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
 sources = $(src_lib) budget.F90
 
-# Targets
-.PHONY: setup interface so so_parallel clean_py clean clean_so modules
+# Fortran objects
+
+src_obj = types.obj photo_par.obj global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
+objects = $(src_obj) budget.obj
+
 
 setup:
 	@echo "Installing dependencies..."
@@ -76,7 +83,7 @@ so: $(sources) interface
 
 
 so_parallel: $(sources) interface
-	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) -qopenmp"
+	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /qopenmp" --quiet
 	@echo "Parallel version of caete_module created using $(FC)"
 #	$(CYTHON) -a community.py
 #	$(CYTHON) -a metacommunity.py
@@ -84,15 +91,92 @@ so_parallel: $(sources) interface
 #	$(CYTHON) -a output.py
 #	$(PYEXEC) setup.py build_ext --inplace --verbose
 
-
 modules: $(sources)
-	$(FC) -fpp -c $(sources)
+	$(FC) -fpp -c -O3 $(sources)
+
+caete_lib: clean modules so
+
+reinstall: clean_so so modules
+
+debug: $(objects)
+	$(PYEXEC) create_plsbin.py
+	$(FC) -o $(DEBUG_PROGRAM) $(FCFLAGS) $(objects) debug_caete.f90
+
+
+global.obj: global.f90
+	$(FC) $(FLFLAGS) global.f90
+
+types.obj: types.f90
+	$(FC) $(FLFLAGS) types.f90
+
+types.mod: types.obj types.f90
+	$(FC) $(FLFLAGS) types.f90
+
+photo_par.obj: photo_par.f90
+	$(FC) $(FLFLAGS) photo_par.f90
+
+global_par.mod: global.obj global.f90
+	$(FC) $(FLFLAGS) global.f90
+
+photo_par.mod: photo_par.obj photo_par.f90
+	$(FC) $(FLFLAGS) photo_par.f90
+
+funcs.obj: funcs.f90
+	$(FC) $(FLFLAGS) funcs.f90
+
+photo.mod: funcs.obj funcs.f90
+	$(FC) $(FLFLAGS) funcs.f90
+
+evap.obj: evap.f90
+	$(FC) $(FLFLAGS) evap.f90
+
+water.mod: evap.obj evap.f90
+	$(FC) $(FLFLAGS) evap.f90
+
+soil_dec.obj: soil_dec.f90
+	$(FC) $(FLFLAGS) soil_dec.f90
+
+soil_dec.mod: soil_dec.obj soil_dec.f90
+	$(FC) $(FLFLAGS) soil_dec.f90
+
+cc.obj: cc.f90
+	$(FC) $(FLFLAGS) cc.f90
+
+carbon_costs.mod: cc.obj cc.f90
+	$(FC) $(FLFLAGS) cc.f90
+
+allocation.obj: allocation.f90
+	$(FC) $(FLFLAGS) allocation.f90
+
+alloc.mod: allocation.obj allocation.f90
+	$(FC) $(FLFLAGS) allocation.f90
+
+productivity.obj: productivity.f90
+	$(FC) $(FLFLAGS) productivity.f90
+
+productivity.mod: productivity.obj productivity.f90
+	$(FC) $(FLFLAGS) productivity.f90
+
+budget.obj: budget.F90
+	$(FC) $(FLFLAGS) budget.F90
+
+budget.mod: budget.obj budget.F90
+	$(FC) $(FLFLAGS) budget.F90
 
 clean_py:
 	del /s /q __pycache__
 	del /s /q build
 
-clean: clean_py
+
+clean_so:
+	del /s *.pyd
+	del /s *.pyf
+	del /s *.c
+	del /s *.log
+	del /s *.psz
+
+
+clean: clean_py clean_so
 	del /s *.mod
 	del /s *.o
 	del /s *.s
@@ -100,13 +184,18 @@ clean: clean_py
 	del run_debug
 	del logfile.log
 	del /s *.obj
-
-clean_so: clean
-	del /s *.pyd
-	del /s *.pyf
-	del /s *.c
-	del /s *.log
-	del /s *.psz
+	del /s *.exe
+	del /s *.dll
+	del /s *.pdb
+	del /s *.ilk
+	del /s *.lib
+	del /s *.exp
 	cls
 
-reinstall: clean_so so modules
+clean_outputs:
+	del /s /q ..\outputs
+	cls
+
+
+
+# .PHONY: setup interface so so_parallel clean_py clean clean_so modules reinstall debug

@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # this table as main table. This table represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-20000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-30000.csv"))
 
     # Create the region using the piControl climate files and historical CO2 data
     region_name = "cities_MPI-ESM1-2-HR_hist" # Name of the run (the outputs of this region will be saved in this folder).
@@ -97,18 +97,26 @@ if __name__ == "__main__":
     # Spinup using 1801-1900 climatology with pre-industrial co2 concentration ~278.05ppm
     # Start soil and water pools
     print("START soil pools spinup - piControl - 1765 co2 ~278 ppm")
-    r.run_region_map(fn.soil_pools_spinup)
+    r.run_region_map(fn.soil_pools_spinup)  # type: ignore
 
     # Spinup using 1801-1900 climatology with glacial co2 concentration 180ppm
     print("START soil pools spinup - Glacial co2 180 ppm")
-    r.run_region_map(fn.soil_pools_spinup_glacial)
+    r.run_region_map(fn.soil_pools_spinup_glacial)  # type: ignore
 
     # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
     print("START soil pools spinup - Interglacial co2 280 ppm")
-    r.run_region_map(fn.soil_pools_spinup_interglacial)
+    r.run_region_map(fn.soil_pools_spinup_interglacial)  # type: ignore
+
+    print("START soil pools spinup - Glacial co2 180 ppm")
+    r.run_region_map(fn.soil_pools_spinup_glacial)  # type: ignore
+
+    # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
+    print("START soil pools spinup - Interglacial co2 280 ppm")
+    r.run_region_map(fn.soil_pools_spinup_interglacial)  # type: ignore
+
 
     print("Finalize spinup")
-    r.run_region_map(fn.quit_spinup)
+    r.run_region_map(fn.quit_spinup)  # type: ignore
     # ------------------End of the spinup--------------------------------
 
     # Save initial state right after spinup - This will be used to run the piControl simulation
@@ -118,13 +126,13 @@ if __name__ == "__main__":
     # Transient run with historical data
     # # Update the input source for the transient run - historical files
     print("\nUpdate input and run historical")
-    r.update_input(hist_files)
+    r.update_input(hist_files)  # type: ignore
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2014, 10)
-    for period in run_breaks:
-        print(f"Running period {period[0]} - {period[1]}")
-        r.run_region_starmap(fn.transient_run_brk, period)
+    run_breaks = fn.create_run_breaks(1901, 2014, 10)  # type: ignore
+    for period in run_breaks:  # type: ignore
+        print(f"Running period {period[0]} - {period[1]}")  # type: ignore
+        r.run_region_starmap(fn.transient_run_brk, period)  # type: ignore
     # End of historical simulation
 
     # Save region state file. This will be used to run the ssp370 and ssp585 simulations.
@@ -140,13 +148,13 @@ if __name__ == "__main__":
     # Run ssp370
     r_ssp370:region = fn.load_state_zstd(state_file)
     print("\nUpdate input to ssp370")
-    r_ssp370.update_input(ssp370_files, co2_path_ssp370)
+    r_ssp370.update_input(ssp370_files, co2_path_ssp370)  # type: ignore
     # Update region dump directory ssp370
     ssp370_out = "cities_MPI-ESM1-2-HR-ssp370"
     r_ssp370.update_dump_directory(ssp370_out)
 
-    run_breaks = fn.create_run_breaks(2015, 2100, 20)
-    period:Tuple
+    run_breaks = fn.create_run_breaks(2015, 2100, 20)  # type: ignore
+    period: Tuple[int, int]
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_ssp370.run_region_starmap(fn.transient_run_brk, period)

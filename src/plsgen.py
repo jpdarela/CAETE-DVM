@@ -72,7 +72,7 @@ parser.add_argument("-f", "--folder", type=str, required=False, help="Path to sa
 
 args = parser.parse_args()
 
-CONFIG_FILE = 'plsgen.toml'
+CONFIG_FILE = (Path(__file__).parent / "plsgen.toml").resolve()
 
 with open(CONFIG_FILE, 'rb') as f:
     data = tl.load(f)

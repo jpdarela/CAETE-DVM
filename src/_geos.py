@@ -21,24 +21,22 @@
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # """
 
-
-from pathlib import Path
 from typing import Tuple
 
 import unittest
 import numpy as np
 
-from numba import jit
+from numba import jit # type: ignore
 import pyproj
 from config import fetch_config
 
-config_file = Path("../src/caete.toml").resolve()
+# config_file = Path("../src/caete.toml").resolve()
 
-config = fetch_config(config_file)
+config = fetch_config()
 datum = config.crs.datum # type: ignore
 
 
-def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.5, datum=datum)->float:
+def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.5, datum: str = datum)->float: # type: ignore
     """Calculates the area of a cell on the Earth's surface given the center coordinates and the cell resolution
     using a geographic coordinate system with the datum provided.
 
@@ -78,7 +76,7 @@ def calculate_area(center_lat:float, center_lon:float, dx:float=0.5, dy:float=0.
 
     return area
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True) # type: ignore
 def find_indices_xy(N: float, W: float, res_y: float = 0.5, res_x: float = 0.5, rounding: int = 2) -> Tuple[int, int]:
     """
     It finds the indices for a given latitude and longitude in a planar grid.
@@ -109,8 +107,8 @@ def find_indices_xy(N: float, W: float, res_y: float = 0.5, res_x: float = 0.5, 
     Xmin:float = -180 + half_res_x
 
     # Generate longitude and latitude arrays (cell center coordinates)
-    lon = np.arange(Xmin, 180, res_x)
-    lat = np.arange(Ymin, 90, res_y)
+    lon = np.arange(Xmin, 180, res_x) # type: ignore
+    lat = np.arange(Ymin, 90, res_y) # type: ignore
 
     # Find indices for Yc and Xc using bisection
     # Yc is negative because our origin (90 degrees north) is in the upper left corner of the matrix.
@@ -125,7 +123,7 @@ def find_indices_xy(N: float, W: float, res_y: float = 0.5, res_x: float = 0.5, 
     return Yind, Xind
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True) # type: ignore
 def find_indices(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tuple[int, int]:
     """
     It finds the indices for a given latitude and longitude in a planar grid.
@@ -152,8 +150,8 @@ def find_indices(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tup
     Xmin:float = -180 + half_res
 
     # Generate longitude and latitude arrays (cell center coordinates)
-    lon = np.arange(Xmin, 180, res)
-    lat = np.arange(Ymin, 90, res)
+    lon = np.arange(Xmin, 180, res) # type: ignore
+    lat = np.arange(Ymin, 90, res) # type: ignore
 
 
     # Find indices for Yc and Xc using searchsorted
@@ -168,7 +166,7 @@ def find_indices(N: float, W: float, res: float = 0.5, rounding: int = 2) -> Tup
     return Yind, Xind
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True) # type: ignore
 def find_coordinates_xy(Yind: int, Xind: int, res_y: float = 0.5, res_x: float = 0.5) -> Tuple[float, float]:
     """
     It finds the latitude and longitude (cell center) for given (Yind, Xind) indices in a planar grid.
@@ -192,8 +190,8 @@ def find_coordinates_xy(Yind: int, Xind: int, res_y: float = 0.5, res_x: float =
     Xmin:float = -180 + half_res_x
 
     # Generate longitude and latitude arrays (cell center coordinates)
-    lon = np.arange(Xmin, 180, res_x)
-    lat = np.arange(Ymin, 90, res_y)[::-1]
+    lon = np.arange(Xmin, 180, res_x) # type: ignore
+    lat = np.arange(Ymin, 90, res_y)[::-1] # type: ignore
 
     # Find latitude and longitude for Yind and Xind
     N = lat[Yind]
@@ -202,7 +200,7 @@ def find_coordinates_xy(Yind: int, Xind: int, res_y: float = 0.5, res_x: float =
     return N, W
 
 
-@jit(nopython=True, cache=True)
+@jit(nopython=True, cache=True) # type: ignore
 def find_coordinates(Yind: int, Xind: int, res: float = 0.5) -> Tuple[float, float]:
     """It finds the latitude and longitude (cell center) for given (Yind, Xind) indices in a planar grid
     WARNING: This function do not check if the indices are valid.
@@ -223,8 +221,8 @@ def find_coordinates(Yind: int, Xind: int, res: float = 0.5) -> Tuple[float, flo
     Xmin:float = -180 + half_res
 
     # Generate longitude and latitude arrays (cell center coordinates)
-    lon = np.arange(Xmin, 180, res)
-    lat = np.arange(Ymin, 90, res)[::-1]
+    lon = np.arange(Xmin, 180, res) # type: ignore
+    lat = np.arange(Ymin, 90, res)[::-1] # type: ignore
 
     # Find latitude and longitude for Yind and Xind
 
@@ -259,45 +257,45 @@ def define_region(north:float, south:float,
     return {"ymin": ymin, "ymax": ymax, "xmin": xmin, "xmax": xmax}
 
 
-def get_region(region):
+def get_region(region): # type: ignore
     """
     Get bounding box for a region of interest
     """
-    return region["ymin"], region["ymax"], region["xmin"], region["xmax"]
+    return region["ymin"], region["ymax"], region["xmin"], region["xmax"] # type: ignore
 
 
-def latitude_axis(north: float | int, south: float | int, yres: float | int) -> np.ndarray:
+def latitude_axis(north: float | int, south: float | int, yres: float | int) -> np.ndarray: # type: ignore
     """
     Generate a latitude axis for a given region
     """
-    return np.arange(north, south, -yres) + yres / 2
+    return np.arange(north, south, -yres) + yres / 2 # type: ignore
 
 
-def longitude_axis(west: float | int, east: float | int, xres: float | int) -> np.ndarray:
+def longitude_axis(west: float | int, east: float | int, xres: float | int) -> np.ndarray: # type: ignore
     """
     Generate a longitude axis for a given region
     """
-    return np.arange(west, east, xres) + xres / 2
+    return np.arange(west, east, xres) + xres / 2 # type: ignore
 
-def get_axis(bbox):
+def get_axis(bbox): # type: ignore
     """
     Get latitude and longitude axis for a region of interest
     """
-    lat = latitude_axis(bbox["north"], bbox["south"], bbox["res_y"])
-    lon = longitude_axis(bbox["west"], bbox["east"], bbox["res_x"])
-    return lat, lon
+    lat = latitude_axis(bbox["north"], bbox["south"], bbox["res_y"]) # type: ignore
+    lon = longitude_axis(bbox["west"], bbox["east"], bbox["res_x"]) # type: ignore
+    return lat, lon # type: ignore
 
 
 # Bbox
-pan_amazon_bbox = {"north":10.5,
+pan_amazon_bbox = {"north":10.5, # type: ignore
                    "south":-21.5,
                    "west":-80.0,
                    "east":-43.0,
                    "res_y":config.crs.yres, #type: ignore
                    "res_x":config.crs.xres, #type: ignore
-                   "rounding":2}
+                   "rounding":2}  # type: ignore
 
-global_bbox = {"north":90.0,
+global_bbox = {"north":90.0,  # type: ignore
                "south":-90.0,
                "west":-180.0,
                "east":180.0,
@@ -306,108 +304,108 @@ global_bbox = {"north":90.0,
                 "rounding":2}
 
 # Regions
-global_region = define_region(**global_bbox)
-pan_amazon_region = define_region(**pan_amazon_bbox)
-
-
-class TestFunctions(unittest.TestCase):
-    def test_calculate_area(self):
-        # Test with known values
-        # Compare with some external data source:
-        # https://gis.stackexchange.com/questions/127165/more-accurate-way-to-calculate-area-of-rasters
-        # Look at the first answer
-
-        self.assertAlmostEqual(calculate_area(0, 0, 0.5, 0.5) * 1e-6, 3077.2300079, delta=0.1)
-        self.assertAlmostEqual(calculate_area(0.75, 0, 0.5, 0.5) * 1e-6, 3077.0019391, delta=0.1)
-        self.assertAlmostEqual(calculate_area(-0.75, 0, 0.5, 0.5) * 1e-6, 3077.0019391, delta=0.1)
-        self.assertAlmostEqual(calculate_area(-89.75, 0.0, 0.5, 0.5) * 1e-6, 13.608615243, delta=0.1)
-        self.assertAlmostEqual(calculate_area(0, 0, 0.25, 0.25) * 1e-6, 3077.2300079/4, delta=0.1)
-        self.assertAlmostEqual(calculate_area(0.75, 0, 0.25, 0.25) * 1e-6, 3077.0019391/4, delta=0.1)
-        self.assertAlmostEqual(calculate_area(-0.75, 0, 0.25, 0.25) * 1e-6, 3077.0019391/4, delta=0.1)
-        self.assertAlmostEqual(calculate_area(-89.75, 0.0, 0.25, 0.25) * 1e-6, 13.608615243/4, delta=0.1)
-
-        # Test with invalid inputs
-        with self.assertRaises(AssertionError):
-            calculate_area(-91, 0, 1, 1)
-            calculate_area(91, 0, 1, 1)
-            calculate_area(0, -181, 1, 1)
-            calculate_area(0, 181, 1, 1)
-            calculate_area(0, 0, -1, 1)
-            calculate_area(0, 0, 1, -1)
-
-
-    def test_find_indices(self):
-
-        self.assertEqual(find_indices_xy(0, 0, 0.5, 0.5), find_indices(0, 0, 0.5))
-        self.assertEqual(find_indices_xy(45, 45, 1, 1), find_indices(45, 45, 1))
-
-        # Test with invalid inputs
-        # Resolution must be positive and lat/lon must be within the boundaries
-        self.assertEqual(find_indices_xy(91, 0, 1, 1), (-1, 179))
-        self.assertEqual(find_indices_xy(-91, 0, 1, 1), (-1, 179))
-        self.assertEqual(find_indices_xy(0, 181, 1, 1), (89, -1))
-        self.assertEqual(find_indices_xy(0, -181, 1, 1), (89, -1))
-        self.assertEqual(find_indices_xy(0, 0, -1, 1), (-1, -1))
-        self.assertEqual(find_indices_xy(0, 0, 1, -1), (-1, -1))
-        self.assertEqual(find_indices_xy(0, 0, 0, 0), (-1, -1))
-
-        # find_indices and find_indices_xy should return the same values
-        self.assertEqual(find_indices_xy(0, 0, 0.5, 0.5), find_indices(0, 0, 0.5))
-        self.assertEqual(find_indices_xy(45, 45, 1, 1), find_indices(45, 45, 1))
-        self.assertEqual(find_indices_xy(0, 0, 0.25, 0.25), find_indices(0, 0, 0.25))
-        self.assertEqual(find_indices_xy(45, 45, 0.25, 0.25), find_indices(45, 45, 0.25))
-
-        # outputs of find_coordinates feeded with the outputs of find_indices should be the same as the inputs of find_indices
-        def check_crossed_results(lat=90, lon=180, res=0.5):
-            y, x = find_indices(lat, lon, res)
-            lat1, lon1 = find_coordinates(y, x, res)
-            self.assertAlmostEqual(lat1, lat, delta=res/2)
-            self.assertAlmostEqual(lon1, lon, delta=res/2)
-
-        check_crossed_results()
-        check_crossed_results(0, 0, 0.5)
-        check_crossed_results(45, 45, 1)
-        check_crossed_results(0, 0, 0.25)
-        check_crossed_results(45, 45, 0.25)
-        check_crossed_results(90, 180, 0.5)
-        check_crossed_results(-90, -180, 0.5)
-        check_crossed_results(-90, 180, 0.5)
-        check_crossed_results(90, -180, 0.01)
-
-
-    def test_find_coordinates(self):
-        # Test with known values
-        res = 0.5
-        lat = 90 - 0.5/2
-        lon = -180 + 0.5/2
-        y, x = find_indices_xy(lat, lon, res, res)
-        self.assertEqual(find_coordinates_xy(y, x, res, res), (lat, lon))
-
-        xres = 0.25
-        yres = 0.5
-        lat = 90 - yres/2
-        lon = 180 - xres/2
-        y, x = find_indices_xy(lat, lon, yres, xres)
-        self.assertEqual(find_coordinates_xy(y, x, yres, xres), (lat, lon))
-
-        res =  0.5
-        lat = 90 - 0.5/2
-        lon = 180 - 0.5/2
-        y, x = find_indices(lat, lon, res)
-        self.assertEqual(find_coordinates(y, x, res), (lat, lon))
-
-        res = 0.25
-        lat = 90 - 0.25/2
-        lon = -180 + 0.25/2
-        y, x = find_indices(lat, lon, res)
-        self.assertEqual(find_coordinates(y, x, res), (lat, lon))
-
-        res = 0.25
-        lat = 90 - 0.25/2
-        lon = 180 - 0.25/2
-        y, x = find_indices(lat, lon, res)
-        self.assertEqual(find_coordinates(y, x, res), (lat, lon))
+global_region = define_region(**global_bbox)  # type: ignore
+pan_amazon_region = define_region(**pan_amazon_bbox) # type: ignore
 
 
 if __name__ == "__main__":
+
+    class TestFunctions(unittest.TestCase):
+        def test_calculate_area(self):
+            # Test with known values
+            # Compare with some external data source:
+            # https://gis.stackexchange.com/questions/127165/more-accurate-way-to-calculate-area-of-rasters
+            # Look at the first answer
+
+            self.assertAlmostEqual(calculate_area(0, 0, 0.5, 0.5) * 1e-6, 3077.2300079, delta=0.1)
+            self.assertAlmostEqual(calculate_area(0.75, 0, 0.5, 0.5) * 1e-6, 3077.0019391, delta=0.1)
+            self.assertAlmostEqual(calculate_area(-0.75, 0, 0.5, 0.5) * 1e-6, 3077.0019391, delta=0.1)
+            self.assertAlmostEqual(calculate_area(-89.75, 0.0, 0.5, 0.5) * 1e-6, 13.608615243, delta=0.1)
+            self.assertAlmostEqual(calculate_area(0, 0, 0.25, 0.25) * 1e-6, 3077.2300079/4, delta=0.1)
+            self.assertAlmostEqual(calculate_area(0.75, 0, 0.25, 0.25) * 1e-6, 3077.0019391/4, delta=0.1)
+            self.assertAlmostEqual(calculate_area(-0.75, 0, 0.25, 0.25) * 1e-6, 3077.0019391/4, delta=0.1)
+            self.assertAlmostEqual(calculate_area(-89.75, 0.0, 0.25, 0.25) * 1e-6, 13.608615243/4, delta=0.1)
+
+            # Test with invalid inputs
+            with self.assertRaises(AssertionError):
+                calculate_area(-91, 0, 1, 1)
+                calculate_area(91, 0, 1, 1)
+                calculate_area(0, -181, 1, 1)
+                calculate_area(0, 181, 1, 1)
+                calculate_area(0, 0, -1, 1)
+                calculate_area(0, 0, 1, -1)
+
+
+        def test_find_indices(self):
+
+            self.assertEqual(find_indices_xy(0, 0, 0.5, 0.5), find_indices(0, 0, 0.5))
+            self.assertEqual(find_indices_xy(45, 45, 1, 1), find_indices(45, 45, 1))
+
+            # Test with invalid inputs
+            # Resolution must be positive and lat/lon must be within the boundaries
+            self.assertEqual(find_indices_xy(91, 0, 1, 1), (-1, 179))
+            self.assertEqual(find_indices_xy(-91, 0, 1, 1), (-1, 179))
+            self.assertEqual(find_indices_xy(0, 181, 1, 1), (89, -1))
+            self.assertEqual(find_indices_xy(0, -181, 1, 1), (89, -1))
+            self.assertEqual(find_indices_xy(0, 0, -1, 1), (-1, -1))
+            self.assertEqual(find_indices_xy(0, 0, 1, -1), (-1, -1))
+            self.assertEqual(find_indices_xy(0, 0, 0, 0), (-1, -1))
+
+            # find_indices and find_indices_xy should return the same values
+            self.assertEqual(find_indices_xy(0, 0, 0.5, 0.5), find_indices(0, 0, 0.5))
+            self.assertEqual(find_indices_xy(45, 45, 1, 1), find_indices(45, 45, 1))
+            self.assertEqual(find_indices_xy(0, 0, 0.25, 0.25), find_indices(0, 0, 0.25))
+            self.assertEqual(find_indices_xy(45, 45, 0.25, 0.25), find_indices(45, 45, 0.25))
+
+            # outputs of find_coordinates feeded with the outputs of find_indices should be the same as the inputs of find_indices
+            def check_crossed_results(lat=90, lon=180, res=0.5):  # type: ignore
+                y, x = find_indices(lat, lon, res)
+                lat1, lon1 = find_coordinates(y, x, res)
+                self.assertAlmostEqual(lat1, lat, delta=res/2)
+                self.assertAlmostEqual(lon1, lon, delta=res/2)
+
+            check_crossed_results()
+            check_crossed_results(0, 0, 0.5)
+            check_crossed_results(45, 45, 1)
+            check_crossed_results(0, 0, 0.25)
+            check_crossed_results(45, 45, 0.25)
+            check_crossed_results(90, 180, 0.5)
+            check_crossed_results(-90, -180, 0.5)
+            check_crossed_results(-90, 180, 0.5)
+            check_crossed_results(90, -180, 0.01)
+
+
+        def test_find_coordinates(self):
+            # Test with known values
+            res = 0.5
+            lat = 90 - 0.5/2
+            lon = -180 + 0.5/2
+            y, x = find_indices_xy(lat, lon, res, res)
+            self.assertEqual(find_coordinates_xy(y, x, res, res), (lat, lon))
+
+            xres = 0.25
+            yres = 0.5
+            lat = 90 - yres/2
+            lon = 180 - xres/2
+            y, x = find_indices_xy(lat, lon, yres, xres)
+            self.assertEqual(find_coordinates_xy(y, x, yres, xres), (lat, lon))
+
+            res =  0.5
+            lat = 90 - 0.5/2
+            lon = 180 - 0.5/2
+            y, x = find_indices(lat, lon, res)
+            self.assertEqual(find_coordinates(y, x, res), (lat, lon))
+
+            res = 0.25
+            lat = 90 - 0.25/2
+            lon = -180 + 0.25/2
+            y, x = find_indices(lat, lon, res)
+            self.assertEqual(find_coordinates(y, x, res), (lat, lon))
+
+            res = 0.25
+            lat = 90 - 0.25/2
+            lon = 180 - 0.25/2
+            y, x = find_indices(lat, lon, res)
+            self.assertEqual(find_coordinates(y, x, res), (lat, lon))
+
     unittest.main()

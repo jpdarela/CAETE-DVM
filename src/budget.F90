@@ -38,10 +38,12 @@ contains
         &, limitation_status_1, uptk_strat_1, cp, c_cost_cwm, rnpp_out)
 
 
+
+
 #ifdef _OPENMP
    use omp_lib
 #endif
-
+      !f2py threadsafe
       use photo, only: pft_area_frac, sto_resp
       use water, only: evpot2, penman, available_energy, runoff
 
@@ -260,6 +262,42 @@ contains
       allocate(ca2(nlen))
       allocate(day_storage(3,nlen))
 
+      ! Initialize all allocated arrays to zero
+      rnpp_aux(:) = 0.0D0
+      evap(:) = 0.0D0
+      nppa(:) = 0.0D0
+      ph(:) = 0.0D0
+      ar(:) = 0.0D0
+      laia(:) = 0.0D0
+      f5(:) = 0.0D0
+      vpd(:) = 0.0D0
+      rc2(:) = 0.0D0
+      rm(:) = 0.0D0
+      rg(:) = 0.0D0
+      wue(:) = 0.0D0
+      cue(:) = 0.0D0
+      c_def(:) = 0.0D0
+      vcmax(:) = 0.0D0
+      specific_la(:) = 0.0D0
+      storage_out_bdgt(:,:) = 0.0D0
+      tra(:) = 0.0D0
+      nupt(:,:) = 0.0D0
+      pupt(:,:) = 0.0D0
+      litter_l(:) = 0.0D0
+      cwd(:) = 0.0D0
+      litter_fr(:) = 0.0D0
+      lit_nut_content(:,:) = 0.0D0
+      npp2pay(:) = 0.0D0
+      limitation_status(:,:) = 0.0D0
+      uptk_strat(:,:) = 0.0D0
+      cl1_int(:) = 0.0D0
+      cf1_int(:) = 0.0D0
+      ca1_int(:) = 0.0D0
+      cl2(:) = 0.0D0
+      cf2(:) = 0.0D0
+      ca2(:) = 0.0D0
+      day_storage(:,:) = 0.0D0
+
       !     Maximum evapotranspiration   (emax)
       !     =================================
       emax = evpot2(p0,temp,rh,available_energy(temp))
@@ -268,17 +306,22 @@ contains
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================make it parallel=========================
 #ifdef _OPENMP
-   call OMP_SET_NUM_THREADS(2)
+   if (nlen .gt. 500) then
+      call OMP_SET_NUM_THREADS(2)
+   elseif (nlen .gt. 1000) then
+      call OMP_SET_NUM_THREADS(4)
+   else
+      call OMP_SET_NUM_THREADS(1)
+   endif
 #endif
 
       construction = rnpp ! construction (Real NPP) of the plant tissues in the previous day. To calculate growth respiration
-      !f2py threadsafe
+
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
       !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux, total_c, c_def_amount, cl_def, ca_def, cf_def)
       do p = 1,nlen
-
          carbon_in_storage = 0.0D0
          testcdef = 0.0D0
          sr = 0.0D0
@@ -298,9 +341,14 @@ contains
          evap(p) = penman(p0,temp,rh,available_energy(temp),rc2(p)) !Actual evapotranspiration (evap, mm/day)
 
          ! Check if the carbon deficit can be compensated by stored carbon
+
          carbon_in_storage = sto_budg(1, ri)
+         ! print *, "Carbon in storage: ", carbon_in_storage
          storage_out_bdgt(1, p) = carbon_in_storage
          if (c_def(p) .gt. 0.0) then
+            ! print *, "Carbon deficit: ", c_def(p)
+            ! print *, "====----===="
+            ! print *, ""
             testcdef = c_def(p) - carbon_in_storage
             if(testcdef .lt. 0.0) then
                storage_out_bdgt(1, p) = carbon_in_storage - c_def(p)
@@ -315,12 +363,19 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
-         ! if (isnan(mr_sto)) mr_sto = 0.0D0
-         ! if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
+         if (isnan(mr_sto)) mr_sto = 0.0D0
+         if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
+         ! print *, "Allocation, PLS:", p, " ri: ", ri
+         ! print *, "STO in before allocation: ", storage_out_bdgt(:,p)
+         ! print *, "STO out: ", day_storage(:,p)  ! Added print statement for storage out
+         ! print *, "mr_sto: ", mr_sto
+         ! print *, "c_def: ", c_def(p)
+
+
          call allocation (dt1,nppa(p),uptk_costs(ri), soil_temp, w, tra(p)&
             &, mineral_n,labile_p, on, sop, op, cl1_pft(ri),ca1_pft(ri)&
             &, cf1_pft(ri),storage_out_bdgt(:,p),day_storage(:,p),cl2(p),ca2(p)&
@@ -328,7 +383,9 @@ contains
             &, lit_nut_content(:,p), limitation_status(:,p), npp2pay(p), uptk_strat(:, p)&
             &, ar_aux, rnpp_aux(p))
 
-
+            ! print *, "STO_OUT: out from allocation ", day_storage(:,p)
+            ! print *, "END Allocation, PLS:", p, " ri: ", ri
+            ! print *, "------------------------------------"
          ! Estimate growth of storage C pool
          ar_fix_hr(p) = ar_aux
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
@@ -341,6 +398,9 @@ contains
          if(sr .gt. 1.0D2) sr = 0.0D0
          ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
+         ! print *, "STO in: ", storage_out_bdgt(:,p)
+         ! print *, "STO out: ", day_storage(:,p)
+
 
          growth_stoc = 0.0D0
          mr_sto = 0.0D0
@@ -388,32 +448,32 @@ contains
             endif
          endif
 
-      ! Ensure no negative values
-      if (cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
-      if (ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
-      if (cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
+         ! Ensure no negative values
+         if (cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
+         if (ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
+         if (cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
-         ! if(c_def(p) .gt. 0.0) then
-         !    cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-         !    ca1_int(p) = ca2(p)
-         !    cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
+         if(c_def(p) .gt. 0.0) then
+            cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
+            ca1_int(p) = ca2(p)
+            cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
 
-         !    ! No cdef
-         ! else
-         !    if(dt1(7) .gt. 0.0D0) then
-         !       cl1_int(p) = cl2(p)
-         !       ca1_int(p) = ca2(p)
-         !       cf1_int(p) = cf2(p)
-         !    else
-         !       cl1_int(p) = cl2(p)
-         !       ca1_int(p) = 0.0D0
-         !       cf1_int(p) = cf2(p)
-         !    endif
-         ! endif
+            ! No cdef
+         else
+            if(dt1(7) .gt. 0.0D0) then
+               cl1_int(p) = cl2(p)
+               ca1_int(p) = ca2(p)
+               cf1_int(p) = cf2(p)
+            else
+               cl1_int(p) = cl2(p)
+               ca1_int(p) = 0.0D0
+               cf1_int(p) = cf2(p)
+            endif
+         endif
 
-         ! if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
-         ! if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
-         ! if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
+         if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
+         if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
+         if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO

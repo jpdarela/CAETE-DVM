@@ -1,7 +1,6 @@
 library(ggtern)
 
-setwd("./src/PLS_MAIN")
-data <- read.csv("pls_attrs-99999.csv", header = TRUE)
+data <- read.csv("../src/PLS_MAIN/pls_attrs-3000.csv", header = TRUE)
 
 # Create the plot
 ggtern(data, aes(x = aleaf, y = awood, z = aroot)) +

@@ -23,9 +23,21 @@
 
 
 # create_plsbin.py
-import caete_module
+import os
+import sys
+
 import plsgen as pls
 import numpy as np
 
+
+
+if sys.platform == "win32":
+    from config import fortran_runtime
+    try:
+        os.add_dll_directory(fortran_runtime)
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
+import caete_module
 a = pls.table_gen(caete_module.global_par.npls)
 np.savetxt("pls_ex.txt", a.T) # type: ignore

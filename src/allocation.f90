@@ -23,6 +23,7 @@ module alloc
                           & retran_nutri_cost, select_active_strategy
     use global_par, only: ntraits, sapwood, cmin
     use photo, only: f_four, spec_leaf_area, realized_npp
+    use ieee_arithmetic, only: ieee_is_normal, ieee_is_negative
 
     implicit none
     private
@@ -277,7 +278,7 @@ module alloc
       ! Only a  small amount of total nutrients are available in fact
       ! This is used to testing purposes only
       mult_factor_n = 0.01D0
-      mult_factor_p = 0.0010D0
+      mult_factor_p = 0.001D0
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
 
@@ -353,7 +354,7 @@ module alloc
       ! You have: kg m-2 year-1
       ! You want: g m-2 day-1
       npp_pot = (real(npp,kind=r_8) * (1000.0D0 / 365.242D0)) ! Transform Kg m-2 Year-1 to g m-2 day
-      daily_growth = 0.0D0
+      daily_growth(:) = 0.0D0
       npp_to_fixer = npp_pot * pdia
       ctonfix =  npp_to_fixer ! Sum Up in HR
       npp_pot = npp_pot - npp_to_fixer - npp_costs
@@ -393,6 +394,16 @@ module alloc
          endif
       endif
 29 continue
+      ! print *, "npp_pot", npp_pot
+      ! print *, "storage_out_alloc(1)", storage_out_alloc(1)
+      ! print *, "storage_out_alloc(2)", storage_out_alloc(2)
+      ! print *, "storage_out_alloc(3)", storage_out_alloc(3)
+
+      ! print *, "storage(1)", storage(1)
+      ! print *, "storage(2)", storage(2)
+      ! print *, "storage(3)", storage(3)
+
+
 
       ! Potential NPP for each compartment
       ! Partitioning NPP for CVEG pools
@@ -950,11 +961,37 @@ module alloc
 
          real(r_8), intent(in) :: a1, a2
          real(r_8) :: new_amount
+         logical(l_1) :: is_number_a1 = .true.
+         logical(l_1) :: is_number_a2 = .true.
 
-         if(a2 .ge. 0.0D0) then
-            new_amount = a1 + a2
+         if (.not. ieee_is_normal(a1)) then
+            write(*,*) "Warning: a1 NaN or Inf in add_pool", a1
+            new_amount = 0.0D0
+            is_number_a1 = .false.
+         endif
+
+         if (.not. ieee_is_normal(a2)) then
+            write(*,*) "Warning: a2 NaN or Inf in add_pool", a2
+            new_amount = 0.0D0
+            is_number_a2 = .false.
+         endif
+
+         if (is_number_a1) then
+            if (is_number_a2) then
+               if(ieee_is_negative(a2)) then
+                  new_amount = a1
+                  return
+               else
+                  new_amount = a1 + a2
+                  return
+               endif
+            endif
+         else if (is_number_a2) then
+            write(*,*) "Setting pool as a2", a2
+            new_amount = a2
+            return
          else
-            new_amount = a1
+            new_amount = 0.0D0
          endif
       end function add_pool
 

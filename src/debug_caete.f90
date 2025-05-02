@@ -35,7 +35,6 @@ program test_caete
 
       do index = 1,200000
 
-
          call carbon3(soilt, water_s, ll, lw, lf, lnc, cs, snc_in, cs_out, snc, hr, nmin, pmin)
 
          cs = cs_out
@@ -46,8 +45,6 @@ program test_caete
          print *, nmin, pmin, "<- N & P"
          print *, cs,"<- cs"
       end do
-
-
    end subroutine test_c3
 
 end program test_caete

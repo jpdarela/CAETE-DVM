@@ -72,8 +72,33 @@ def pft_area_frac(cleaf1:NDArray[np.float32],
         ocp_coeffs[ocp_coeffs < 0.0] = 0.0
     return ocp_coeffs
 
+@numba.jit(numba.float64[:](numba.float64[:], numba.float64[:], numba.float64[:]), nopython=True, cache=True)
+def pft_area_frac64(cleaf1:NDArray[np.float64],
+                  cfroot1:NDArray[np.float64],
+                  cawood1:NDArray[np.float64]) -> NDArray[np.float64]:
+    """Calculate the area fraction of each PFT based on the leaf, root and wood biomass."""
+    # Initialize variables
+    npft = cleaf1.size
+    ocp_coeffs = np.zeros(npft, dtype=np.float64)
+    total_biomass_pft = np.zeros(npft, dtype=np.float64)
+    # Compute total biomass for each PFT
+    total_biomass_pft = cleaf1 + cfroot1 + cawood1
+    # Compute total biomass for all PFTs
+    total_biomass = np.sum(total_biomass_pft)
+    # Calculate occupation coefficients
+    if total_biomass > 0.0:
+        ocp_coeffs = total_biomass_pft / total_biomass
+        ocp_coeffs[ocp_coeffs < 0.0] = 0.0
+    return ocp_coeffs
+
+
 @numba.jit(nopython=True, cache=True)
 def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:
+    """Get the indices of the neighbours of a given position in a 2D matrix.
+    Args:
+        pos (Union[List, NDArray]): The position of the cell in the matrix.
+        matrix (NDArray): The matrix to get the neighbours from.
+    Returns: List of tuples containing the indices of the neighbours."""
     neighbours = []
     rows = len(matrix)
     cols = len(matrix[0]) if rows else 0

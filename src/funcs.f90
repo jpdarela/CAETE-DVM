@@ -564,7 +564,7 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: nbio2, pbio2, vpd_effect, dark_respiration  ! , cbio_aux
-      real(r_8), parameter :: light_penalization = 0.3D0, alpha_a = 0.7D0
+      real(r_8), parameter :: light_penalization = 0.1D0, alpha_a = 0.7D0
 
 
       vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))

@@ -18,8 +18,13 @@ Copyright 2017- LabTerra
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+
 from pathlib import Path
+from pprint import pformat
 from typing import Union, Dict , Any, Optional
+
+import os
+import sys
 import tomllib
 
 
@@ -28,8 +33,28 @@ import tomllib
    The configurations can be accessed using the fetch_config function."""
 
 # path to the fortran compiler dlls, used in windows systems.
-fortran_runtime = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
-config_file = Path("../src/caete.toml").resolve()
+fortran_runtime_fallback = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
+fortran_runtime = Path(os.environ.get("FC_RUNTIME", fortran_runtime_fallback)).resolve()
+
+if sys.platform == "win32":
+    # Check if the fortran runtime path exists
+    if not fortran_runtime.exists():
+        print(f"Path to fortran runtime dll does not exist. Please set the environment variable FC_RUNTIME to the path of the fortran compiler dlls.")
+        print(f"\n HINT: the fortran runtime path is set to {fortran_runtime}. Please check if this is correct.")
+        sys.exit(1)
+
+config_file = Path(__file__).parent / "caete.toml"
+
+def get_fortran_runtime() -> Path:
+    """Get the path to the fortran compiler dlls."""
+    return Path(fortran_runtime).resolve()
+
+def update_sys_pathlib(lib) -> None:
+    if sys.platform == "win32":
+        try:
+            os.add_dll_directory(lib)
+        except:
+            raise ImportError("Could not add the DLL directory to the PATH")
 
 
 class Config:
@@ -52,7 +77,7 @@ class Config:
 
 
     def __repr__(self) -> str:
-        return f"Config({self.__dict__})"
+        return f"Config(\n{pformat(self.__dict__)})\n"
 
 
 def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:

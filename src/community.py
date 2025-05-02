@@ -38,7 +38,7 @@ if sys.platform == "win32":
         raise ImportError("Could not add the DLL directory to the PATH")
 
 from caete_module import photo as m
-
+from caete_jit import pft_area_frac64 as carea_frac
 
 class community:
     """Represents a community of plants. Instances of this class are used to
@@ -58,9 +58,9 @@ class community:
         self.shape: Tuple[int, ...] = self.pls_array.shape
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
-        self.vp_cleaf: NDArray[np.float32] = np.random.uniform(0.3,0.4,self.npls).astype(np.float32)
-        self.vp_croot: NDArray[np.float32] = np.random.uniform(0.3,0.4,self.npls).astype(np.float32)
-        self.vp_cwood: NDArray[np.float32] = np.random.uniform(5.0,6.0,self.npls).astype(np.float32)
+        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(0.3,0.4,self.npls).astype(np.float64)
+        self.vp_croot: NDArray[np.float64] = np.random.uniform(0.3,0.4,self.npls).astype(np.float64)
+        self.vp_cwood: NDArray[np.float64] = np.random.uniform(5.0,6.0,self.npls).astype(np.float64)
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
         self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
         self.vp_sto[1,:] = np.random.uniform(0.0, 0.01, self.npls)
@@ -70,8 +70,7 @@ class community:
         self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
 
         # PFT_AREA_FRAC based on the mass-ratio hypothesis (Grime 1998)
-        self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
-                                               self.vp_cwood, self.pls_array[6, :])
+        self.vp_ocp = carea_frac(self.vp_cleaf, self.vp_croot, self.vp_cwood)
 
         # Get the indices of the plants that are present in the community
         self.vp_lsid: NDArray[np.intp] = np.where(self.vp_ocp > 0.0)[0]
@@ -176,17 +175,29 @@ class community:
             np.ndarray: _description_
         """
         # Get the indices of the free slots in the community
-        return np.where(self.vp_ocp == 0.0)[0]
+        ids = set(range(self.npls))
+        free_slots = ids - set(self.vp_lsid)
+        living = np.array(list(free_slots), dtype=np.intp)
+
+        return living
 
 
-    def seed_pls(self, pls_id: int, pls: np.ndarray) -> None:
+    def seed_pls(self,
+                 pls_id: int,
+                 pls: np.ndarray,
+                 cleaf: NDArray[np.float64],
+                 croot: NDArray[np.float64],
+                 cwood: NDArray[np.float64],
+                 ) -> None:
         """
         Seeds a PLS in a free position. Uses the method get_free_lsid to find the free slots.
-
 
         Args:
             pls_id (int): ID of the PLS.
             pls (np.ndarray): Array representing the PLS.
+            cleaf (NDArray[np.float64]): Leaf carbon allocation.
+            croot (NDArray[np.float64]): Root carbon allocation.
+            cwood (NDArray[np.float64]): Wood carbon allocation.
         """
         # Assert that the PLS ID is not in the community
         free_slots = self.get_free_lsid()
@@ -199,33 +210,34 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        self.vp_cleaf[pos] = np.random.uniform(0.3,0.4)
-        self.vp_croot[pos] = np.random.uniform(0.3,0.4)
-        self.vp_cwood[pos] = np.random.uniform(5.0,6.0)
-        self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
-        self.vp_sto[0, pos] = np.random.uniform(0.0, 0.1)
-        self.vp_sto[1, pos] = np.random.uniform(0.0, 0.01)
-        self.vp_sto[2, pos] = np.random.uniform(0.0, 0.001)
-        self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
-                                                self.vp_cwood, self.pls_array[6, :])
-        self.update_lsid(self.vp_ocp)
+        cleaf[pos] = np.random.uniform(0.3,0.4, None)
+        croot[pos] = np.random.uniform(0.3,0.4, None)
+        cwood[pos] = np.random.uniform(5.0,6.0, None)
+        if pls[3] == 0.0:
+            cwood[pos] = 0.0
+        # # self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
+        # self.vp_sto[0, pos] = np.random.uniform(0.0, 0.1)
+        # self.vp_sto[1, pos] = np.random.uniform(0.0, 0.01)
+        # self.vp_sto[2, pos] = np.random.uniform(0.0, 0.001)
+        # self.vp_ocp = carea_frac(self.vp_cleaf, self.vp_croot, self.vp_cwood)
+        # self.update_lsid(self.vp_ocp)
 
 
-    def kill_pls(self, pos: int) -> None:
-        """Kills a PLS in the community. This should not be used in the code. It is only for testing purposes.
+    # def kill_pls(self, pos: int) -> None:
+    #     """Kills a PLS in the community. This should not be used in the code. It is only for testing purposes.
 
-        Args:
-            pls_id (int): ID of the PLS to kill
-        """
-        self.vp_cleaf[pos] = 0.0
-        self.vp_croot[pos] = 0.0
-        self.vp_cwood[pos] = 0.0
-        self.vp_sto[0, pos] = 0.0
-        self.vp_sto[1, pos] = 0.0
-        self.vp_sto[2, pos] = 0.0
-        self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
-                                                self.vp_cwood, self.pls_array[6, :])
-        self.update_lsid(self.vp_ocp)
+    #     Args:
+    #         pls_id (int): ID of the PLS to kill
+    #     """
+    #     self.vp_cleaf[pos] = 0.0
+    #     self.vp_croot[pos] = 0.0
+    #     self.vp_cwood[pos] = 0.0
+    #     self.vp_sto[0, pos] = 0.0
+    #     self.vp_sto[1, pos] = 0.0
+    #     self.vp_sto[2, pos] = 0.0
+    #     self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
+    #                                             self.vp_cwood, self.pls_array[6, :])
+    #     self.update_lsid(self.vp_ocp)
 
 
     def get_unique_pls(self, pls_selector: Callable[[int], Tuple[int, np.ndarray]]) -> Tuple[int, np.ndarray]:
