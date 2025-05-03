@@ -1447,7 +1447,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             continue
 
                         else:
-                            if len(self.metacomm) == 1:
+                            if len(self.metacomm) == 0:
                                 raise ValueError("All communities are empty. Cannot continue")
                             # In the transiant run - i.e., when reset_community is false and
                             # kill_and_reset is false; we mask the community if there is no PLS

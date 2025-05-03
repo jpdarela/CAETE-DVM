@@ -27,6 +27,10 @@ from pathlib import Path
 from typing import Tuple, Union, Any
 import zstandard as zstd
 from caete import grd_mt
+from config import fetch_config
+
+config = fetch_config()
+
 
 class worker:
 
@@ -34,6 +38,14 @@ class worker:
 
     @staticmethod
     def create_run_breaks(start_year:int, end_year:int, interval:int):
+        """Create run breaks for the model
+        Args:
+            start_year (int): Start year of the run
+            end_year (int): End year of the run
+            interval (int): Interval in years for the run breaks
+        Returns:
+            run_breaks_hist (list): List of tuples with the start and end date of the intervals
+        """
         run_breaks_hist = []
         current_year = start_year
 
@@ -59,11 +71,10 @@ class worker:
 
         This method uses spinclim data to run the model.
         Check the init and end dates to match input data.
-        Spinup time: 1000 years
+        Spinup time: 200 years
 
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc="1765",
-                              save=False, nutri_cycle=False, reset_community=True, env_filter=True,
-                              verbose=False)
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1765",
+                              save=False, nutri_cycle=False, reset_community=True)
         """
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1765",
                               save=False, nutri_cycle=False, reset_community=True)
@@ -76,11 +87,10 @@ class worker:
 
         This method uses spinclim data to run the model.
         Check the init and end dates to match input data.
-        Spinup time: 2000 years
+        Spinup time: 500 years
 
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=False, reset_community=True, env_filter=True,
-                              verbose=False)
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
         """
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True)
@@ -93,11 +103,10 @@ class worker:
 
         This method uses spinclim data to run the model.
         Check the init and end dates to match input data.
-        Spinup time: 2000 years
+        Spinup time: 500 years
 
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=10, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=False, reset_community=True, env_filter=True,
-                              verbose=False)
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
+                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
         """
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True)

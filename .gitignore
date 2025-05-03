@@ -22,16 +22,8 @@ src/build
 src/out_data
 
 input/.python-version
-input/20CRv3-ERA5/*_raw/*
-input/20CRv3-ERA5/*clim/*
-input/20CRv3-ERA5/*clim_test/*
-
-input/MPI-ESM1-2-HR/*_raw/*
-input/MPI-ESM1-2-HR/historical/*
-input/MPI-ESM1-2-HR/piControl/*
-
-input/MPI-ESM1-2-HR/ssp585/*
-input/MPI-ESM1-2-HR/ssp370/*
+input/20CRv3-ERA5
+input/MPI-ESM1-2-HR
 
 run_debug
 .vscode

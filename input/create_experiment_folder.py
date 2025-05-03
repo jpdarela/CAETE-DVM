@@ -150,13 +150,17 @@ if __name__ == '__main__':
     # give a string with the name of the new folders
     # Change these variables to match you needs
 
-    _append = '_cities'
-    _gridlist = 'gridlist_cities.csv'
-    write_gridlist_with_indices = False
+    # _append = '_cities'
+    # _gridlist = 'gridlist_cities.csv'
+    # write_gridlist_with_indices = False
 
     # _append = '_test'
     # _gridlist = 'gridlist_test.csv'
     # write_gridlist_with_indices = False
+
+    _append = '_pan_amazon_forest'
+    _gridlist = "gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv"
+    write_gridlist_with_indices = True
 
     # Define source and destination folders
     # order is important here. The source folders must be in the same order as the destination folders

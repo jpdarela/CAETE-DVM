@@ -58,7 +58,17 @@ def print_variables(r:region):
     r[0]._get_daily_data("DUMMY", 1, pp=True)
 
 def get_var_metadata(var):
+    """
+    Retrieve metadata for a given variable or list of variables.
 
+    Args:
+        var (str or list): Variable name or list of variable names to retrieve metadata for.
+
+    Returns:
+        dict: A dictionary where keys are variable names and values are lists containing metadata
+              (e.g., long name, units, and standard name). If a variable is not found, its metadata
+              defaults to ['unknown', 'unknown', 'unknown'].
+    """
     vunits = {'header': ['long_name', 'units', 'standart_name'],
             'rsds': ['Short_wav_rad_down', 'W m-2', 'rsds'],
             'wind': ['Wind_velocity', 'm s-1', 'wind'],
@@ -153,17 +163,21 @@ class gridded_data:
                  variables: Union[str, Collection[str]],
                  spin_slice: Union[int, Tuple[int, int], None]
                  ) -> Tuple[NDArray, Union[Dict, NDArray, List, Tuple], Union[int, float], Union[int, float]]:
-        """helper function to read gridcell output data.
+        """ Reads the data from a gridcell and returns a tuple with the following keys:
+        time, coord, data holding data to be transformed.
 
         Args:
-            grd (_type_): grd_mt
+            grd (grd_mt): A gridcell object
             variables (Collection[str]): which variables to read from the gridcell
             spin_slice (Union[int, Tuple[int, int], None]): which spin slice to read
 
         Returns:
-            _type_: _description_
+            Tuple[NDArray, Union[Dict, NDArray, List, Tuple], Union[int, float], Union[int, float]]:
+              a tuple with the following keys: time, coord, data holding data to be transformed
+
         """
-        data = grd._get_daily_data(get_args(variables), spin_slice, return_time=True) # type: ignore returns a tuple with data and time Tuple[NDArray, NDArray]
+        # returns a tuple with data and time Tuple[NDArray, NDArray]
+        data = grd._get_daily_data(get_args(variables), spin_slice, return_time=True) # type: ignore
         time = data[-1]
         data = data[0]
         return time, data, grd.y, grd.x
@@ -284,9 +298,18 @@ class table_data:
     @staticmethod
     def make_daily_dataframe(r:region,
                 variables: Union[str, Collection[str]],
-                spin_slice: Union[int, Tuple[int, int], None] = None
-                ):
+                spin_slice: Union[int, Tuple[int, int], None] = None):
+        """
+        Create daily dataframes for each grid cell in a region and save them as CSV files.
 
+        Args:
+            r (region): The region object containing grid cells.
+            variables (Union[str, Collection[str]]): Variable names to retrieve data for.
+            spin_slice (Union[int, Tuple[int, int], None], optional): The spin slice to read. Defaults to None.
+
+        Returns:
+            None
+        """
         for grd in r:
             d = grd._get_daily_data(get_args(variables), spin_slice, return_time=True) #type: ignore
 
@@ -357,6 +380,16 @@ class output_manager:
 
     @staticmethod
     def table_output_per_grd(result:Union[Path, str], variables:Union[str, Collection[str]]):
+        """
+        Process table outputs for a grid and save them as CSV files.
+
+        Args:
+            result (Union[Path, str]): Path to the serialized state file containing the region data.
+            variables (Union[str, Collection[str]]): Variable names to process and save.
+
+        Returns:
+            None
+        """
         reg:region = worker.load_state_zstd(str_or_path(result))
         table_data.write_daily_data(r=reg, variables=variables)
         for grd in reg:
@@ -364,7 +397,15 @@ class output_manager:
 
     @staticmethod
     def cities_output():
+        """
+        Process and save outputs for predefined city scenarios.
 
+        This method processes outputs for historical, piControl, ssp370, and ssp585 scenarios
+        and saves the results as CSV files.
+
+        Returns:
+            None
+        """
         results = (Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),

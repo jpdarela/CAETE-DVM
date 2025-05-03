@@ -19,7 +19,7 @@
 
 # Variables
 # Python executable, package manager and f2py
-PYEXEC = py -3.11
+PYEXEC = python
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 CYTHON = $(PYEXEC) -m cython
@@ -66,6 +66,10 @@ objects = $(src_obj) budget.obj
 setup:
 	@echo "Installing dependencies..."
 	$(PIP) install -r requirements_311.txt
+
+setup_312:
+	@echo "Installing dependencies..."
+	$(PIP) install -r requirements_312.txt
 
 interface: $(sources)
 	@echo "Creating Fortran interfaces for the caete_module using f2py..."
