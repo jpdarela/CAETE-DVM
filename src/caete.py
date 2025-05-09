@@ -2031,7 +2031,7 @@ if __name__ == '__main__':
         # # Read CO2 data
         co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
         co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
-        main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-250000.csv"))
+        main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
 
         r = region("region_test",

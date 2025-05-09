@@ -21,6 +21,8 @@
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # """
 
+# This script generates a table of plant life strategies and saves it to a file.
+# No functions or classes are defined, so no docstrings are added.
 
 # create_plsbin.py
 import os

@@ -40,7 +40,7 @@ if sys.platform == "win32":
     # Check if the fortran runtime path exists
     if not fortran_runtime.exists():
         print(f"Path to fortran runtime dll does not exist. Please set the environment variable FC_RUNTIME to the path of the fortran compiler dlls.")
-        print(f"\n HINT: the fortran runtime path is set to {fortran_runtime}. Please check if this is correct.")
+        print(f"\n HINT: the fortran runtime path is set to a path like:\n {fortran_runtime}.\n Please check if this is correct.")
         sys.exit(1)
 
 config_file = Path(__file__).parent / "caete.toml"

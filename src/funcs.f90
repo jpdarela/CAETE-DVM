@@ -220,6 +220,8 @@ contains
       real(r_8) :: d
       real(r_8) :: f5_64
 
+      ! print*, 'water: ', w
+
       wa = w/wmax
       rc_aux = real(rc, kind=r_8)
       rcmin_aux = real(rcmin, kind=r_8)
@@ -564,15 +566,15 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: nbio2, pbio2, vpd_effect, dark_respiration  ! , cbio_aux
-      real(r_8), parameter :: light_penalization = 0.1D0, alpha_a = 0.7D0
+      real(r_8), parameter :: light_penalization = 0.03D0, alpha_a = 0.7D0
 
 
       vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))
       dark_respiration = 1.0D0 - 0.15D0 ! TODO:there is a problem upstream with the vm calculation
 
 
-      nbio2 = nbio * 0.4 !nrubisco(leaf_turnover, nbio)
-      pbio2 = pbio * 0.4 !nrubisco(leaf_turnover, pbio)
+      nbio2 = nbio * 0.5 !nrubisco(leaf_turnover, nbio)
+      pbio2 = pbio * 0.5 !nrubisco(leaf_turnover, pbio)
 
       vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) * vpd_effect  ! 10**vm_nutri * 1D-6
       if(vm .gt. p25) vm = p25
@@ -1193,7 +1195,7 @@ end function g_resp
       enddo
 
       do p = 1,npft
-         if(cleaf(p) .lt. cmin .and. cfroot(p) .lt. cmin) then
+         if(cleaf(p) .lt. cmin .or. cfroot(p) .lt. cmin) then
             is_living(p) = .false.
             c_to_soil(p) = cleaf(p) + cawood(p) + cfroot(p)
             cleaf(p) = 0.0D0
@@ -1207,10 +1209,12 @@ end function g_resp
 
       do p = 1,npft
          ! total_biomass_pft(p) = cleaf(p) + cfroot(p) + (sapwood * cawood(p)) ! only sapwood?
-         total_biomass_pft(p) = cleaf(p) + cfroot(p) + cawood(p)
-         total_biomass = total_biomass + total_biomass_pft(p)
-         total_wood = total_wood + cawood(p)
-         total_w_pft(p) = cawood(p)
+         if (is_living(p)) then
+            total_biomass_pft(p) = cleaf(p) + cfroot(p) + cawood(p)
+            total_biomass = total_biomass + total_biomass_pft(p)
+            total_wood = total_wood + cawood(p)
+            total_w_pft(p) = cawood(p)
+         endif
       enddo
 
       !     grid cell occupation coefficients

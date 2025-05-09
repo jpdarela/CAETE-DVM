@@ -68,7 +68,8 @@ class region:
             co2 (Union[str, Path]): _description_
             pls_table (np.ndarray): _description_
         """
-        self.config: Config = fetch_config("../src/caete.toml")
+        self.config: Config = fetch_config(os.path.join(os.path.dirname(__file__), 'caete.toml'))
+
         # self.nproc = self.config.multiprocessing.nprocs # type: ignore
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
@@ -253,42 +254,44 @@ class region:
             self.lons[i] = grd_cell.lon
             print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
             i += 1
+            # Print data about the model execution: number of metacommunities, number of gridcells, etc.
+        print(f"Number of gridcells: {len(self.gridcells)}")
+        print(f"Number of metacommunities: {self.config.metacomm.n}") # type: ignore
+        print(f"Maximum number of PLS per community: {self.config.metacomm.npls_max}") # type: ignore
 
-
-    def run_region_map(self, func:Callable):
-        """_summary_
-
-        Args:
-            func (Callable): _description_
-
-        Returns:
-            _type_: _description_
-        """
+    def run_region_map(self, func: Callable):
+        """Run a function across all gridcells using multiprocessing.Pool"""
         cpu_count = mp.cpu_count()
         num_gridcells = len(self.gridcells)
         num_workers = min(cpu_count, num_gridcells)
-        with mp.Pool(processes=num_workers, maxtasksperchild=1) as p:
-            self.gridcells = p.map(func, self.gridcells, chunksize=1)
-        return None
 
+        with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
+            try:
+                self.gridcells = pool.map(func, self.gridcells, chunksize=1)
+            except Exception as e:
+                print(f"Error during multiprocessing: {e}")
+                pool.terminate()
+                raise
+            finally:
+                pool.close()
+                pool.join()
 
-    def run_region_starmap(self, func:Callable, args):
-        """_summary_
-
-        Args:
-            func (Callable): _description_
-            args (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
+    def run_region_starmap(self, func: Callable, args):
+        """Run a function with arguments across all gridcells using multiprocessing.Pool"""
         cpu_count = mp.cpu_count()
         num_gridcells = len(self.gridcells)
         num_workers = min(cpu_count, num_gridcells)
-        with mp.Pool(processes=num_workers, maxtasksperchild=1) as p:
-            self.gridcells = p.starmap(func, [(gc, args) for gc in self.gridcells], chunksize=1)
-        return None
 
+        with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
+            try:
+                self.gridcells = pool.starmap(func, [(gc, args) for gc in self.gridcells], chunksize=1)
+            except Exception as e:
+                print(f"Error during multiprocessing: {e}")
+                pool.terminate()
+                raise
+            finally:
+                pool.close()
+                pool.join()
 
     # Methods to deal with model outputs
     def clean_model_state(self):
@@ -372,3 +375,20 @@ class region:
 
     def __iter__(self):
         yield from self.gridcells
+
+    def __del__(self):
+        """Ensure proper cleanup of multiprocessing resources."""
+        try:
+            if hasattr(self, 'gridcells') and self.gridcells:
+                for gridcell in self.gridcells:
+                    if hasattr(gridcell, 'outputs'):
+                        gridcell.outputs.clear()
+                    if hasattr(gridcell, 'metacomm_output'):
+                        gridcell.metacomm_output.clear()
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+        finally:
+            # Explicitly release the global lock if necessary
+            global lock
+            if lock:
+                lock = None

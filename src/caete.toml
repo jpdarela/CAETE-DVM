@@ -12,8 +12,8 @@ rhs = 0.01  # ! % to kg kg-1  (multiply) [input(%) to model(kg kg-1)]
 rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (multiply) [input(W m-2) to model(mol(photons) m-2 day-1)]
 
 [metacomm]
-n = 1 # Number of communities to be considered in the metacommunity: One for the standard CAETE
-npls_max = 500 # Maximum number of PLS to be considered in each community
+n = 10 # Number of communities to be considered in the metacommunity: One for the standard CAETE
+npls_max = 100 # Maximum number of PLS to be considered in each community
 ntraits = 17 # number of traits in a PLS
 
 [crs]

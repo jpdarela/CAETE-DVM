@@ -1,3 +1,6 @@
+# This script orchestrates the execution of a region simulation.
+# No functions or classes are defined, so no docstrings are added.
+
 from typing import Tuple
 from worker import worker
 from dataframes import output_manager

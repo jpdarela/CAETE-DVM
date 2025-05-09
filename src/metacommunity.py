@@ -24,8 +24,6 @@
 
 import copy
 import csv
-import os
-import sys
 
 from pathlib import Path
 from typing import Callable, Dict, Union, Any, Optional
@@ -269,7 +267,7 @@ class metacommunity:
 
 def main():
     # Toy example to test the classes functionality
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-100000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # this function mimics the behavior of the get_from_main_table function in the region class
     # Only for testing purposes
@@ -291,14 +289,14 @@ def main():
     print(f"Number of communities: {len(mt)}")
     print(f"Number of PLSs in each community: {mt.comm_npls}")
 
-    # Kill the PLS in the posiion 233 in the first community
-    mt[0].kill_pls(233)
+    # # Kill the PLS in the posiion 233 in the first community
+    # mt[0].kill_pls(233)
 
-    # Get a unique PLS from the main table (i.e. a PLS that is not in the community)
-    ident, func_id = mt[0].get_unique_pls(__get_from_main_table)
+    # # Get a unique PLS from the main table (i.e. a PLS that is not in the community)
+    # ident, func_id = mt[0].get_unique_pls(__get_from_main_table)
 
-    # Seed the unique PLS in a free slot
-    mt[0].seed_pls(ident, func_id)
+    # # Seed the unique PLS in a free slot
+    # mt[0].seed_pls(ident, func_id)
 
     mt2 = metacommunity(1, None)
     return mt2

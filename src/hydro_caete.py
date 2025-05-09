@@ -22,6 +22,11 @@ from math import log as ln
 
 
 def rwarn(txt='RuntimeWarning'):
+    """Raise a runtime warning with the given text.
+
+    Args:
+        txt (str): The warning message to display. Defaults to 'RuntimeWarning'.
+    """
     warnings.warn(f"{txt}", RuntimeWarning)
 
 

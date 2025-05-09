@@ -61,13 +61,9 @@ objects = $(src_obj) budget.o debug_caete.o
 .PHONY: setup interface so so_parallel clean clean_so modules
 
 # Python setup
-setup_311:
+setup:
 	@echo "Installing dependencies..."
-	$(PIP) install -r requirements_311.txt
-
-setup_312:
-	@echo "Installing dependencies..."
-	$(PIP) install -r requirements_312.txt
+	$(PIP) install -r requirements_3xx_last.txt
 
 modules: $(sources)
 	$(FC) -c $(sources)
@@ -110,11 +106,6 @@ so: $(sources) interface
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace
 # =================================================================================================
-
-
-# Build objects for DEBUG mode and for intelisense
-modules: $(sources)
-	$(FC) -c $(sources)
 
 # Build objects for the DEBUG program
 debug: $(objects) so

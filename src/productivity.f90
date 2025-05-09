@@ -122,6 +122,7 @@ contains
     !Water stress response modifier (dimensionless)
     !----------------------------------------------
     f5 =  water_stress_modifier(w, cf1_prod, rc_pot, emax, wmax)
+    ! write(*,*) 'f5:', f5
 
 
 !     Photosysthesis minimum and maximum temperature

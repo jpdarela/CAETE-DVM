@@ -51,7 +51,7 @@ FCFLAGS = -fpp -Od -debug:full -warn:all -nologo
 FLFLAGS = -fpp -c -Od -debug:full -nologo
 
 # Intel Fortran Compiler (ifx) FLAGS for release (caete_module)
-IFX_FLAGS = /fpp /QxHost /I$(MOD_DIR) /DPREPEND_FORTRAN /DNO_APPEND_FORTRAN /DUPPERCASE_FORTRAN /DUNDERSCORE_G77
+IFX_FLAGS = /fpp /QxHost -warn:all -nologo /I$(MOD_DIR) /DPREPEND_FORTRAN /DNO_APPEND_FORTRAN /DUPPERCASE_FORTRAN /DUNDERSCORE_G77
 
 # Sources
 src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
@@ -67,9 +67,9 @@ setup:
 	@echo "Installing dependencies..."
 	$(PIP) install -r requirements_311.txt
 
-setup_312:
+setup_311:
 	@echo "Installing dependencies..."
-	$(PIP) install -r requirements_312.txt
+	$(PIP) install -r requirements_3xx_last.txt
 
 interface: $(sources)
 	@echo "Creating Fortran interfaces for the caete_module using f2py..."
@@ -77,7 +77,7 @@ interface: $(sources)
 	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so: $(sources) interface
-	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)" --quiet
+	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)"
 	@echo "Serial version of caete_module created using $(FC)"
 #	$(CYTHON) -a community.py
 #	$(CYTHON) -a metacommunity.py
@@ -87,7 +87,7 @@ so: $(sources) interface
 
 
 so_parallel: $(sources) interface
-	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /qopenmp" --quiet
+	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
 #	$(CYTHON) -a community.py
 #	$(CYTHON) -a metacommunity.py

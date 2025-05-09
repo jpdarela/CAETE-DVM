@@ -215,14 +215,8 @@ class community:
         cwood[pos] = np.random.uniform(5.0,6.0, None)
         if pls[3] == 0.0:
             cwood[pos] = 0.0
-        # # self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
-        # self.vp_sto[0, pos] = np.random.uniform(0.0, 0.1)
-        # self.vp_sto[1, pos] = np.random.uniform(0.0, 0.01)
-        # self.vp_sto[2, pos] = np.random.uniform(0.0, 0.001)
-        # self.vp_ocp = carea_frac(self.vp_cleaf, self.vp_croot, self.vp_cwood)
-        # self.update_lsid(self.vp_ocp)
 
-
+    #TODO: This method should be removed. It is only for testing purposes.
     # def kill_pls(self, pos: int) -> None:
     #     """Kills a PLS in the community. This should not be used in the code. It is only for testing purposes.
 
@@ -241,7 +235,7 @@ class community:
 
 
     def get_unique_pls(self, pls_selector: Callable[[int], Tuple[int, np.ndarray]]) -> Tuple[int, np.ndarray]:
-        """Gets a unique PLS from the main table using the provided callable.
+        """Gets a PLS that is not present in the community from the main table using the provided callable.
 
         Args:
             pls_selector (callable): A function that returns a tuple (pls_id, pls).

@@ -35,7 +35,7 @@ import pandas as pd
 from worker import worker
 from region import region
 from caete import grd_mt, get_args, str_or_path
-from caete_jit import pft_area_frac
+from caete_jit import pft_area_frac64
 from config import fetch_config
 
 from _geos import pan_amazon_region, get_region
@@ -362,13 +362,24 @@ class table_data:
         """
         out = []
         for year in grd._get_years():
-            biomass = ["vp_cleaf", "vp_croot", "vp_cwood"]
+
             data = grd._read_annual_metacomm_biomass(year)
-            df = pd.DataFrame(data).astype(np.float32).groupby("pls_id").sum().reset_index()
+            data = pd.DataFrame(data)
+            # count ench occurtences of each pls_id # type: ignore
+            count = data["pls_id"].value_counts()
+            df = data.groupby("pls_id").mean().reset_index()
             df.index = df["pls_id"].astype(np.int32) # type: ignore
-            df = df.loc[:, biomass]
+
+            # iterate over the liner and match the index with the count
+            for i in range(len(df)):
+                pls_id = df["pls_id"].iloc[i]
+                if pls_id in count.index:
+                    df.loc[pls_id, "count"] = count[pls_id]
+                # print(pls_id, count[pls_id])
+            selected_columns = ["vp_cleaf", "vp_croot", "vp_cwood", "count"]
+            df = df.loc[:, selected_columns]
             cleaf, croot, cwood = df["vp_cleaf"].to_numpy(), df["vp_croot"].to_numpy(), df["vp_cwood"].to_numpy()
-            ocp = pft_area_frac(cleaf, croot, cwood)
+            ocp = pft_area_frac64(cleaf, croot, cwood)
             df.loc[:, "cveg"] = cleaf + croot + cwood
             df.loc[:, "ocp"] = ocp
             df.loc[:, "year"] = np.zeros(ocp.size, dtype=np.int32) + year

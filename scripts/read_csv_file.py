@@ -40,17 +40,23 @@ def read_co2_data():
 def plot_weighted_means_and_co2(weighted_means, co2_data):
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
+    # Restrict the time span to the range of weighted_means index
+    start_year = weighted_means.index.min()
+    end_year = weighted_means.index.max()
+
     # Plot weighted means on the first y-axis
     ax1.plot(weighted_means.index, weighted_means.values, marker='o', linestyle='-', color='b', label='Weighted Mean of cveg')
     ax1.set_xlabel('Year', fontsize=14)
     ax1.set_ylabel('Weighted Mean of cveg', fontsize=14, color='b')
     ax1.tick_params(axis='y', labelcolor='b')
     ax1.grid(True, linestyle='--', alpha=0.6)
+    ax1.set_xlim(start_year, end_year)  # Set x-axis limits to the time span of weighted_means
 
     # Create a second y-axis for CO2 data
     if co2_data is not None:
+        co2_data_filtered = co2_data[(co2_data['year'] >= start_year) & (co2_data['year'] <= end_year)]
         ax2 = ax1.twinx()
-        ax2.plot(co2_data['year'], co2_data['atm_co2'], linestyle='--', color='r', label='Atmospheric CO2')
+        ax2.plot(co2_data_filtered['year'], co2_data_filtered['atm_co2'], linestyle='--', color='r', label='Atmospheric CO2')
         ax2.set_ylabel('Atmospheric CO2', fontsize=14, color='r')
         ax2.tick_params(axis='y', labelcolor='r')
 
@@ -82,6 +88,18 @@ def plot_all_cveg_timeseries(data):
     else:
         print("Required columns 'year', 'pls_id', or 'cveg' are missing in the dataset.")
 
+def calculate_root_shoot_ratio(data):
+    if 'year' in data.columns and 'pls_id' in data.columns and 'vp_croot' in data.columns and 'vp_cleaf' in data.columns and 'vp_cwood' in data.columns:
+        # Calculate root:shoot ratio for each pls_id and year
+        data['root_shoot_ratio'] = data['vp_croot'] / (data['vp_cleaf'] + data['vp_cwood'])
+        root_shoot_ratios = data.groupby(['year', 'pls_id'])['root_shoot_ratio'].mean()
+        print("Root:Shoot Ratio by Year and PLS ID:")
+        print(root_shoot_ratios)
+        return root_shoot_ratios
+    else:
+        print("Required columns 'year', 'pls_id', 'vp_croot', 'vp_cleaf', or 'vp_cwood' are missing in the dataset.")
+        return None
+
 if __name__ == "__main__":
     weighted_means = read_and_compute_weighted_mean()
     co2_data = read_co2_data()
@@ -95,5 +113,6 @@ if __name__ == "__main__":
         data = pd.read_csv(file_path)
         print_unique_ids_per_year(data)
         plot_all_cveg_timeseries(data)
+        r_s = calculate_root_shoot_ratio(data)
     except FileNotFoundError:
         print(f"File not found: {file_path}")

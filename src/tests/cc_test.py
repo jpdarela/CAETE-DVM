@@ -28,7 +28,6 @@ print(cc.active_cost.__doc__)
 
 # # Simulation of cc to nutrients uptake for CAETÊ-DVM
 # TRAITS
-# pls_table = pd.read_csv('./pls_attrs.csv')
 pls_table = plsgen.table_gen(1000)
 
 
