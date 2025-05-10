@@ -141,7 +141,7 @@ soil_texture = np.load("../input/hydra/soil_text.npy")
 
 hsoil = (theta_sat, psi_sat, soil_texture)
 
-pls_table = read_pls_table()
+pls_table = read_pls_table("pls_attrs-999.csv")
 
 if not sombrero:
     print("Set the folder to store outputs:")
@@ -273,7 +273,7 @@ else:
     stime = copy.deepcopy(clim_metadata[0])
     del clim_metadata
     # # open co2 data
-    with open(os.path.join(s_data, "co2/historical_CO2_annual_1765_2018.txt")) as fh:
+    with open(os.path.join(s_data, "co2/historical_CO2_annual_1765-2024.txt")) as fh:
         co2_data = fh.readlines()
     run_breaks = rbrk[0]
     rbrk_index = 0

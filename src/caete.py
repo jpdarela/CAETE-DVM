@@ -3251,11 +3251,12 @@ class grd:
                 top = self.sp_organic_p #+ self.sp_sorganic_p
                 # TODO need to adapt no assimilation with water content lower than thw wilting point
                 # self.swp.w1_max ...
+                rnpp = np.zeros(shape=(999,))
                 out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                          self.soil_temp, temp[step], p_atm[step],
                                          ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                          ton, top, self.sp_organic_p, co2, sto, cleaf, cwood, croot,
-                                         uptk_costs, self.wmax_mm)
+                                         uptk_costs, self.wmax_mm, rnpp)
 
                 # del sto, cleaf, cwood, croot, dcl, dca, dcf, uptk_costs
                 # Create a dict with the function output
@@ -3634,13 +3635,13 @@ class grd:
 
             co2 += next_year
             self.soil_temp = st.soil_temp(self.soil_temp, temp[step])
-
+            rnpp = np.zeros(shape=(999,))
             out = model.daily_budget(self.pls_table, self.wp_water_upper_mm, self.wp_water_lower_mm,
                                      self.soil_temp, temp[step], p_atm[step],
                                      ipar[step], ru[step], self.sp_available_n, self.sp_available_p,
                                      self.sp_snc[:4].sum(
                                      ), self.sp_so_p, self.sp_snc[4:].sum(),
-                                     co2, sto, cleaf, cwood, croot, uptk_costs, self.wmax_mm)
+                                     co2, sto, cleaf, cwood, croot, uptk_costs, self.wmax_mm, rnpp)
 
             # Create a dict with the function output
             daily_output = catch_out_budget(out)

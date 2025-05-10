@@ -65,7 +65,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-n", "--number", type=int, required=True, help="Number of PLSs to generate")
 parser.add_argument("-f", "--folder", type=str, required=True, help="Path to save the output")
 
-args = parser.parse_args()
+
 
 CONFIG_FILE = 'plsgen.toml'
 
@@ -353,4 +353,5 @@ def table_gen(NPLS, fpath=None, ret=True):
 
 
 if  __name__ == "__main__":
+    args = parser.parse_args()
     table_gen(args.number, Path(args.folder).resolve(), False)

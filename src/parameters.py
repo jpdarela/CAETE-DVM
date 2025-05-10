@@ -43,7 +43,7 @@ mask_pan_am: NDArray = np.load("../input/mask/mask_raisg-360-720.npy")
 BASE_RUN: str = 'HISTORICAL-RUN' #"HISTORICAL-RUN" <- in sombrero this is the
                   # STANDARD name for the historical observed run.
 
-ATTR_FILENAME: str = "pls_attrs-2000.csv"
+ATTR_FILENAME: Path = Path("pls_attrs-999.csv")
 START_COND_FILENAME: str = f"CAETE_STATE_START_{BASE_RUN}_.pkz"
 
 output_path: Path = Path(f"../outputs").resolve()

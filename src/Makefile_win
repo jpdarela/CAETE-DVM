@@ -19,7 +19,7 @@
 
 # Variables
 # Python executable, package manager and f2py
-PYEXEC = py -3.11
+PYEXEC = python
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 
@@ -78,7 +78,7 @@ modules: $(sources)
 clean_py:
 	del /s /q __pycache__
 	del /s *.psz
-	
+
 
 clean: clean_py
 	del /s *.mod

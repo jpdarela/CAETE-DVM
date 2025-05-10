@@ -10,7 +10,7 @@ from pandas import read_csv, DataFrame, concat
 from parameters import *
 from caete import grd
 from aux_plot import get_var
-import plsgen as pls
+from  plsgen import table_gen
 
 regions = ["central", "east", "north_west", "south", "cax", "k34"]
 pls_output = Path("./pls_testing").resolve()
@@ -67,7 +67,7 @@ def make_grd(nx, ny, reg, NPLS):
 
     grid_cell_in = grd(pos[0], pos[1], f"{reg}_{pos[0]}_{pos[1]}")
 
-    pls_table = pls.table_gen(NPLS)
+    pls_table = table_gen(NPLS)
     grid_cell_in.init_caete_dyn(input_fpath=input_path, stime_i=stime, co2=co2_data,
                         pls_table=pls_table, tsoil=tsoil,
                         ssoil=ssoil, hsoil=hsoil)
