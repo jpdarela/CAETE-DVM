@@ -441,7 +441,7 @@ if __name__ == "__main__":
     # variables_to_read: Tuple[str,...] = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp", "photo", "npp", "evapm", "lai")
     # output_manager.table_output_per_grd(model_results, variables=variables_to_read)    # # Load the region file
 
-    reg:region = worker.load_state_zstd("./pan_amazon_hist_result.psz")
+    reg:region = worker.load_state_zstd("./cities_MPI-ESM1-2-HR_hist_output.psz")
     # # # # Gridded outputs
     variables_to_read = ("cue", "rnpp", "aresp", "photo", "csoil")
     data = gridded_data.aggregate_region_data(reg, variables_to_read, 1)

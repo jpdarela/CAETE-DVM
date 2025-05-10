@@ -370,7 +370,7 @@ class state_zero:
 
 
         # Configuration data
-        self.config:Config = fetch_config("../src/caete.toml")
+        self.config:Config = fetch_config()
         self.afex_config = self.config.fertilization # type: ignore
         self.co2_data: Optional[Dict[int, float]] = None
 
@@ -1711,7 +1711,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 if s > 0:
                     while True:
                         if sv.is_alive(): # type: ignore
-                            sleep(0.5)
+                            sleep(0.1)
                         else:
                             self.flush_data = None
                             break
@@ -1725,7 +1725,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         if save:
             while True:
                 if sv.is_alive():
-                    sleep(0.5)
+                    sleep(0.1)
                 else:
                     self.flush_data = None
                     break
