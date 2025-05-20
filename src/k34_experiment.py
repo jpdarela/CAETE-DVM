@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle as pkl
 import bz2
 from pathlib import Path
@@ -7,16 +8,26 @@ from numpy import asfortranarray
 from pandas import read_csv
 import joblib
 
-import cfunits
+# import cfunits
 import numpy as np
 import pandas as pd
 import cftime as cf
-import caete as mod
 #
 # from aux_plot import get_var
 from parameters import tsoil, ssoil, hsoil
+from metacommunity import pls_table
+from config import get_fortran_runtime
+# from sklearn.cluster import KMeans
 
-from sklearn.cluster import KMeans
+if sys.platform == "win32":
+    try:
+        os.add_dll_directory(get_fortran_runtime())
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
+
+import caete as mod
+
 
 idxT = pd.date_range("2000-01-01", "2015-12-31", freq='D')
 dt = pd.read_csv("../k34/MetData_AmzFACE2000_2015_CAETE.csv")
@@ -59,11 +70,27 @@ stime_i = {'standard_name': 'time',
 AMB = "../k34/CO2_AMB_AmzFACE2000_2100.csv"
 ELE = "../k34/CO2_ELE_AmzFACE2000_2100.csv"
 
+main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
-# def run_experiment(pls_table, fname):
+# this function mimics the behavior of the get_from_main_table function in the region class
+# Only for testing purposes
+def __get_from_main_table(comm_npls, table = main_table):
+    """Returns a number of IDs (in the main table) and the respective
+    functional identities (PLS table) to set or reset a community
 
-#     # Create the plot object
-#     k34_plot = mod.plot(-2.61, -60.20, fname)
+    Args:
+    comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
+    if comm_npls == 1:
+        idx = np.random.randint(0, table.shape[1] - 1)
+        return idx, table[:, idx]
+    idx = np.random.randint(0, comm_npls, comm_npls)
+    return idx, table[:, idx]
+
+
+def run_experiment(fname="../outputs/sdb"):
+
+    # Create the plot object
+    k34_plot = mod.grd_mt(-2.61, -60.20, fname, __get_from_main_table)
 
 
 #     # Fill the plot object with input data
@@ -89,7 +116,7 @@ ELE = "../k34/CO2_ELE_AmzFACE2000_2100.csv"
 #     # #
 #     # k34_plot.run_caete('20000101', '20151231', spinup=10,
 #     #                    fix_co2="2020", save=True)
-#     return k34_plot
+    return k34_plot
 
 
 # def get_spin(grd: mod.plot, spin) -> dict:

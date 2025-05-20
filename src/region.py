@@ -225,13 +225,13 @@ class region:
         assert comm_npls > 0, "Number of PLS must be greater than 0"
 
         if comm_npls == 1:
-            idx = np.random.randint(0, self.npls_main_table - 1)
+            idx = np.random.choice(self.npls_main_table, 1, replace=False)[0]
             with lock:
                 return idx, self.pls_table.table[:, idx]
 
         assert comm_npls <= self.npls_main_table, "Number of PLS must be less than the number of PLS in the main table"
 
-        idx = np.random.randint(0, self.npls_main_table - 1, comm_npls)
+        idx = np.random.choice(self.npls_main_table, comm_npls, replace=False)
         with lock:
             return idx, self.pls_table.table[:, idx]
 

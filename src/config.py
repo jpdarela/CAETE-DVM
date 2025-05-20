@@ -34,7 +34,7 @@ import tomllib
 
 # path to the fortran compiler dlls, used in windows systems.
 fortran_runtime_fallback = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
-fortran_runtime = Path(os.environ.get("FC_RUNTIME", fortran_runtime_fallback)).resolve()
+fortran_runtime: Path = Path(os.environ.get("FC_RUNTIME", fortran_runtime_fallback)).resolve()
 
 if sys.platform == "win32":
     # Check if the fortran runtime path exists

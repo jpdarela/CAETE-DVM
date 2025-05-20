@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # this table as main table. This table represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-30000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # Create the region using the spinup climate files
     r = region(region_name,
