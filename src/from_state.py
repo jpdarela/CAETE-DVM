@@ -7,7 +7,7 @@ from dataframes import output_manager
 
 if __name__ == "__main__":
 
-    region = worker.load_state_zstd("./state.psz1")
+    region = worker.load_state_zstd("./pan_amazon_hist_after_spinup_state_file.psz")
 
     region.update_dump_directory("doing_something")
 

@@ -59,11 +59,6 @@ if __name__ == "__main__":
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
 
-    # Name for the state file. In general you can save a region with gridcells (including input data)
-    # in a state file. This file can be used to restart the model from a specific point. Its useful
-    # for store a initial state (after spinup) and restart the model from this point.
-    state_file = Path(f"./{region_name}_state_file.psz")
-
     # Read CO2 atmospheric data. The model expects a formated table in a text file with
     # exactly 2 columns (year, co2 concentration) separetd by a space, a coma, a semicolon etc.
     # A header is optional. The model also expects annual records in ppm (parts per million).
@@ -84,7 +79,7 @@ if __name__ == "__main__":
                main_table)
 
     # Start gridcells
-    r.set_gridcells()
+    # r.set_gridcells()
 
     # # Spinup and run
     print("START soil pools spinup")
@@ -113,8 +108,9 @@ if __name__ == "__main__":
 
     # # Save state after spinup.
     # This state file can be used to restart the model from this point.
-    # print(f"\n\nSaving state file as {state_file}")
-    # fn.save_state_zstd(r, state_file)
+    state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
+    print(f"\n\nSaving state file as {state_file}")
+    fn.save_state_zstd(r, state_file)
 
     # Update the input source to the transient run - obsclim files
     print("\nUpdate input and run obsclim")
@@ -130,7 +126,7 @@ if __name__ == "__main__":
     # We clean the state of the gridcells to save the final state of the region
     # THis final state is not useful to restart the model, but it is useful to
     # access the model outputs and export it to other formats.
-    fn.save_state_zstd(r, Path(f"./{region_name}_final_state.psz"))
+    fn.save_state_zstd(r, Path(f"./{region_name}_{period[1]}_final_state.psz"))
     r.clean_model_state()
     fn.save_state_zstd(r, Path(f"./{region_name}_result.psz"))
 

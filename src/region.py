@@ -27,18 +27,19 @@ import multiprocessing as mp
 import os
 
 from pathlib import Path
-
 from typing import Callable, Dict, List,Tuple, Union
+from uuid import uuid4
 
 import numpy as np
 from numpy.typing import NDArray
+from joblib import dump, load
 
 from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
 from config import Config, fetch_config
+from parameters import hsoil, ssoil, tsoil
 import metacommunity as mc
 
 # Tuples with hydrological parameters for the soil water calculations
-from parameters import hsoil, ssoil, tsoil
 
 # Global lock. Used to lock the access to the main table of Plant Life Strategies
 lock = mp.Lock()
@@ -80,6 +81,7 @@ class region:
         self.input_data = str_or_path(clim_data)
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
+        self.file_objects = []
 
         # calculate_matrix dimension size from grid resolution
         self.nx = len(np.arange(0, 180, self.config.crs.xres/2)) # type: ignore
@@ -139,25 +141,56 @@ class region:
         self.gridcells:List[grd_mt] = []
 
 
+    def load_gridcells(self):
+        """Load the gridcells from the intermediate files"""
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot read intermediate files")
+        if self.file_objects:
+            for f in self.file_objects:
+                gridcells = load(f)
+                for gridcell in gridcells:
+                    self.gridcells.append(gridcell)
+
+
+    def unload_gridcells(self):
+        """Unload the gridcells to the intermediate files"""
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot read intermediate files")
+        if not self.gridcells:
+            raise ValueError("No gridcells found. Cannot save intermediate files")
+        # Divide the gridcelss in self.gridcells into chunks and save them to the intermediate files
+        chunks = [ self.gridcells[i:i + self.config.multiprocessing.max_processes] \
+                  for i in range(0, len(self.gridcells), self.config.multiprocessing.max_processes)]
+        for f, chunk in zip(self.file_objects, chunks):
+            # Save the gridcells to the intermediate files
+            dump(chunk, f)
+
+
     def update_dump_directory(self, new_name:str="copy"):
         """Update the output folder for the region
 
         Args:
-            output_folder (Union[str, Path]): _description_
+            new_name (Union[str, Path]): name of the new folder where outputs of the region should be saved. Defaults to "copy"
         """
         self.name = Path(f"{new_name}")
         self.output_path = output_path / self.name # Update region output folder path
         os.makedirs(self.output_path, exist_ok=True)
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot read intermediate files")
 
-        for gridcell in self.gridcells:
-            # Update the output folder for each gridcell
-            gridcell.run_counter = 0
-            gridcell.outputs = {}
-            gridcell.metacomm_output = {}
-            gridcell.executed_iterations = []
+        for f in self.file_objects:
+            gridcells = load(f)
 
-            gridcell.out_dir  = self.output_path/Path(f"grd_{gridcell.xyname}")
-            os.makedirs(gridcell.out_dir, exist_ok=True)
+            for gridcell in gridcells:
+                # Update the output folder for each gridcell
+                gridcell.run_counter = 0
+                gridcell.outputs = {}
+                gridcell.metacomm_output = {}
+                gridcell.executed_iterations = []
+
+                gridcell.out_dir  = self.output_path/Path(f"grd_{gridcell.xyname}")
+                os.makedirs(gridcell.out_dir, exist_ok=True)
+            dump(gridcells, f)
 
 
     def update_input(self, input_folder=None, co2=None):
@@ -194,21 +227,18 @@ class region:
             self.metadata = read_bz2_file(mtd)
             self.stime = copy.deepcopy(self.metadata[0])
 
-        if co2 is not None:
-            for gridcell in self.gridcells:
-                gridcell.change_input(self.input_data, self.stime, self.co2_data)
-        else:
-            for gridcell in self.gridcells:
-                gridcell.change_input(self.input_data, self.stime)
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot read intermediate files")
 
-        if input_folder is not None:
-            self.climate_files = []
-            for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
-                self.climate_files.append(file_path)
-
-    def _update_config(self):
-        """Update the configuration file"""
-        self.config = fetch_config("../src/caete.toml")
+        for f in self.file_objects:
+            gridcells = load(f)
+            if co2 is not None:
+                for gridcell in gridcells:
+                    gridcell.change_input(self.input_data, self.stime, self.co2_data)
+            else:
+                for gridcell in gridcells:
+                    gridcell.change_input(self.input_data, self.stime)
+            dump(gridcells, f)
 
 
     def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
@@ -221,7 +251,7 @@ class region:
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
-
+        
         assert comm_npls > 0, "Number of PLS must be greater than 0"
 
         if comm_npls == 1:
@@ -236,62 +266,120 @@ class region:
             return idx, self.pls_table.table[:, idx]
 
 
-    def set_gridcells(self):
-        """_summary_
-        """
-        print("Starting gridcells")
-        i = 0
-        print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
-        for f,pos in zip(self.climate_files, self.yx_indices):
-            y, x = pos
-            gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}") # The gridcell folder
-            grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
-            # grd_cell = grd_mt(y, x, grd_cell.grid_filename, self.get_from_main_table)
-            grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
-                                    tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
-            self.gridcells.append(grd_cell)
-            self.lats[i] = grd_cell.lat
-            self.lons[i] = grd_cell.lon
-            print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
-            i += 1
-            # Print data about the model execution: number of metacommunities, number of gridcells, etc.
-        print(f"Number of gridcells: {len(self.gridcells)}")
-        print(f"Number of metacommunities: {self.config.metacomm.n}") # type: ignore
-        print(f"Maximum number of PLS per community: {self.config.metacomm.npls_max}") # type: ignore
+    # def set_gridcells(self):
+    #     """_summary_
+    #     """
+    #     print("Starting gridcells")
+    #     i = 0
+    #     print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
+    #     for f,pos in zip(self.climate_files, self.yx_indices):
+    #         y, x = pos
+    #         gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}") # The gridcell folder
+    #         grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
+    #         # grd_cell = grd_mt(y, x, grd_cell.grid_filename, self.get_from_main_table)
+    #         grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
+    #                                 tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+    #         self.gridcells.append(grd_cell)
+    #         self.lats[i] = grd_cell.lat
+    #         self.lons[i] = grd_cell.lon
+    #         print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
+    #         i += 1
+    #         # Print data about the model execution: number of metacommunities, number of gridcells, etc.
+    #     print(f"Number of gridcells: {len(self.gridcells)}")
+    #     print(f"Number of metacommunities: {self.config.metacomm.n}") # type: ignore
+    #     print(f"Maximum number of PLS per community: {self.config.metacomm.npls_max}") # type: ignore
+
 
     def run_region_map(self, func: Callable):
         """Run a function across all gridcells using multiprocessing.Pool"""
-        cpu_count = mp.cpu_count()
-        num_gridcells = len(self.gridcells)
-        num_workers = min(cpu_count, num_gridcells)
 
-        with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
-            try:
-                self.gridcells = pool.map(func, self.gridcells, chunksize=1)
-            except Exception as e:
-                print(f"Error during multiprocessing: {e}")
-                pool.terminate()
-                raise
-            finally:
-                pool.close()
-                pool.join()
+        result = []
+
+        if self.file_objects:
+            j = 0
+            print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
+            # Read file objects and do the provessing
+            for f in self.file_objects:
+                new_chunk = load(f)
+                num_workers = min(self.config.multiprocessing.max_processes, len(new_chunk))
+                with mp.Pool(processes=num_workers) as pool:
+                    try:
+                        result = pool.map(func, new_chunk)
+                    except Exception as e:
+                        print(f"Error during multiprocessing: {e}")
+                        pool.terminate()
+                        raise
+                    finally:
+                        pool.close()
+                        pool.join()
+                result = []
+                dump(new_chunk, f)
+                print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
+                j += 1
+
+        else:
+            # First run -> no file objects
+            jobs = list(zip(self.climate_files, self.yx_indices))
+            cpu_count = self.config.multiprocessing.max_processes # type: ignore
+            chunks = [jobs[i:i + cpu_count] for i in range(0, len(jobs), cpu_count)]
+            i = 0
+            j = 0
+            print_progress(j, len(chunks), prefix='Progress:', suffix='Complete')
+            for chunk in chunks:
+            # prepare jobs for processing
+                for f, pos in chunk:
+                    y, x = pos
+                    gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}")
+                    grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
+                    grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
+                                            tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+                    result.append(grd_cell)
+                    self.lats[i] = grd_cell.lat
+                    self.lons[i] = grd_cell.lon
+                    i += 1
+                # Save the intermediate file
+                fname = self.output_path/Path(f"intermediate_file{uuid4()}")
+                self.file_objects.append(fname)
+                num_workers = min(self.config.multiprocessing.max_processes, len(result))
+                with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
+                    try:
+                        result = pool.map(func, result, chunksize=1)
+                    except Exception as e:
+                        print(f"Error during multiprocessing: {e}")
+                        pool.terminate()
+                        raise
+                    finally:
+                        pool.close()
+                        pool.join()
+                        dump(result,fname)
+                result = []
+                print_progress(j+1, len(chunks), prefix='Progress:', suffix='Complete')
+                j += 1
+
 
     def run_region_starmap(self, func: Callable, args):
         """Run a function with arguments across all gridcells using multiprocessing.Pool"""
-        cpu_count = mp.cpu_count()
-        num_gridcells = len(self.gridcells)
-        num_workers = min(cpu_count, num_gridcells)
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot run starmap without file objects")
+        j = 0
+        print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
+        for f in self.file_objects:
+            new_chunk = load(f)
+            num_workers = min(self.config.multiprocessing.max_processes, len(new_chunk))
+            with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
+                try:
+                    result = pool.starmap(func, [(gc, args) for gc in new_chunk], chunksize=1)
+                except Exception as e:
+                    print(f"Error during multiprocessing: {e}")
+                    pool.terminate()
+                    raise
+                finally:
+                    pool.close()
+                    pool.join()
+            dump(result, f)
+            print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
+            j += 1
 
-        with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
-            try:
-                self.gridcells = pool.starmap(func, [(gc, args) for gc in self.gridcells], chunksize=1)
-            except Exception as e:
-                print(f"Error during multiprocessing: {e}")
-                pool.terminate()
-                raise
-            finally:
-                pool.close()
-                pool.join()
 
     # Methods to deal with model outputs
     def clean_model_state(self):
@@ -322,7 +410,10 @@ class region:
                               'xyname',
                               'y',
                               'yres',
-                              'grid_filename'}
+                              'grid_filename',
+                              'file_objects'}
+
+
 
         for gridcell in self:
             all_attributes = set(gridcell.__dict__.keys())
@@ -330,6 +421,7 @@ class region:
             # # Delete attributes that are not in the subset
             for attr in all_attributes - attributes_to_keep:
                 delattr(gridcell, attr)
+        self.unload_gridcells()
 
 
     def get_mask(self)->np.ndarray:
@@ -374,7 +466,9 @@ class region:
 
 
     def __iter__(self):
+        self.load_gridcells()
         yield from self.gridcells
+
 
     def __del__(self):
         """Ensure proper cleanup of multiprocessing resources."""
