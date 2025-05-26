@@ -27,8 +27,7 @@ import multiprocessing as mp
 # Please, refer to the summary section in caete.py for more information.
 
 # We do everything after the if __name__ == "__main__": statement.
-# This avoids the duplication of data placed before the if __name__ == "__main__":
-# statement when using multiprocessing in Python with the spawn method.
+# This avoids the duplication of data placed before it when using multiprocessing in Python with the spawn method.
 # Please refer to the Python multiprocessing library documentation for more information.
 
 if __name__ == "__main__":
@@ -50,11 +49,11 @@ if __name__ == "__main__":
     # Name of the region. This name will be used to create the output folder.
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
-    # Input files. The model will look for the input files in these folders.
-    obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
-    spinclim_files = "../input/20CRv3-ERA5/spinclim_test/"
-    transclim_files = "../input/20CRv3-ERA5/transclim_test/"
-    counterclim_files = "../input/20CRv3-ERA5/counterclim_test/"
+    # # Input files. The model will look for the input files in these folders.
+    obsclim_files = "../input/20CRv3-ERA5/obsclim/"
+    spinclim_files = "../input/20CRv3-ERA5/spinclim/"
+    transclim_files = "../input/20CRv3-ERA5/transclim/"
+    counterclim_files = "../input/20CRv3-ERA5/counterclim/"
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -66,7 +65,7 @@ if __name__ == "__main__":
 
     # Read PLS table. The model expects csv file created with the table_gen defined in
     # the plsgen.py script. This table contains the global PLS definitions. We also refer to
-    # this table as main table. This table represents all possible plant functional types
+    # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
     main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
@@ -78,46 +77,29 @@ if __name__ == "__main__":
                co2_path,
                main_table)
 
-    # Start gridcells
-    # r.set_gridcells()
-
     # # Spinup and run
     print("START soil pools spinup")
-    r.run_region_map(fn.soil_pools_spinup)
+    r.run_region_map(fn.spinup)
 
-    print("\nSTART community spinup with PLS seed glacial-interglacial cycle")
-    r.run_region_map(fn.soil_pools_spinup_glacial)
-    r.run_region_map(fn.soil_pools_spinup_interglacial)
-
-    # print("\nSTART community spinup with PLS seed")
-    # r.run_region_map(fn.env_filter_spinup)
-
-    print("\nSTART final_spinup")
-    r.run_region_map(fn.quit_spinup)
-
-    #Finalize spinclim in 18501231
-    print("\nSTART spinup transer")
-    r.run_region_map(fn.run_spinup_transer)
-
-    # Change input source to transclim files 1851-1900
+    # # Change input source to transclim files 1851-1900
     print("\nSTART transclim run")
     r.update_input(transclim_files)
 
-    # Run the model
+    # # Run the model
     r.run_region_map(fn.transclim_run)
 
-    # # Save state after spinup.
-    # This state file can be used to restart the model from this point.
+    # # # Save state after spinup.
+    # # This state file can be used to restart the model from this point.
     state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
     print(f"\n\nSaving state file as {state_file}")
     fn.save_state_zstd(r, state_file)
 
-    # Update the input source to the transient run - obsclim files
-    print("\nUpdate input and run obsclim")
+    # # Update the input source to the transient run - obsclim files
+    # print("\nUpdate input and run obsclim")
     r.update_input(obsclim_files)
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2021, 10)
+    run_breaks = fn.create_run_breaks(1901, 2021, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)

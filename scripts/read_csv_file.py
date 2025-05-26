@@ -7,7 +7,7 @@ file_path = os.path.join(os.path.dirname(__file__), '../outputs/cities_MPI-ESM1-
 
 # Read the CSV file and compute weighted mean
 
-def read_and_compute_weighted_mean():
+def read_and_compute_weighted_mean():# -> Series | None:
     try:
         data = pd.read_csv(file_path)
         if 'cveg' in data.columns and 'ocp' in data.columns and 'year' in data.columns:

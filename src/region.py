@@ -21,12 +21,14 @@
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # """
 
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 import copy
 import multiprocessing as mp
 import os
 
 from pathlib import Path
+from threading import Thread
 from typing import Callable, Dict, List,Tuple, Union
 from uuid import uuid4
 
@@ -147,7 +149,8 @@ class region:
             raise ValueError("No file objects found. Cannot read intermediate files")
         if self.file_objects:
             for f in self.file_objects:
-                gridcells = load(f)
+                with open(f, 'rb') as fh:
+                    gridcells = load(fh)
                 for gridcell in gridcells:
                     self.gridcells.append(gridcell)
 
@@ -163,7 +166,8 @@ class region:
                   for i in range(0, len(self.gridcells), self.config.multiprocessing.max_processes)]
         for f, chunk in zip(self.file_objects, chunks):
             # Save the gridcells to the intermediate files
-            dump(chunk, f)
+            with open(f, 'wb') as fh:
+                dump(chunk, f, compress=("lz4", 1))
 
 
     def update_dump_directory(self, new_name:str="copy"):
@@ -178,19 +182,36 @@ class region:
         if not self.file_objects:
             raise ValueError("No file objects found. Cannot read intermediate files")
 
-        for f in self.file_objects:
+        def process_file(f):
             gridcells = load(f)
-
             for gridcell in gridcells:
                 # Update the output folder for each gridcell
                 gridcell.run_counter = 0
                 gridcell.outputs = {}
                 gridcell.metacomm_output = {}
                 gridcell.executed_iterations = []
-
-                gridcell.out_dir  = self.output_path/Path(f"grd_{gridcell.xyname}")
+                gridcell.out_dir = self.output_path / Path(f"grd_{gridcell.xyname}")
                 os.makedirs(gridcell.out_dir, exist_ok=True)
-            dump(gridcells, f)
+
+            with open(f, 'wb') as fh:
+                dump(gridcells, fh, compress=("lz4", 1))
+
+        with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
+            executor.map(process_file, self.file_objects)
+
+        # for f in self.file_objects:
+        #     gridcells = load(f)
+
+        #     for gridcell in gridcells:
+        #         # Update the output folder for each gridcell
+        #         gridcell.run_counter = 0
+        #         gridcell.outputs = {}
+        #         gridcell.metacomm_output = {}
+        #         gridcell.executed_iterations = []
+
+        #         gridcell.out_dir  = self.output_path/Path(f"grd_{gridcell.xyname}")
+        #         os.makedirs(gridcell.out_dir, exist_ok=True)
+        #     dump(gridcells, f, compress=("lz4", 1))
 
 
     def update_input(self, input_folder=None, co2=None):
@@ -227,18 +248,40 @@ class region:
             self.metadata = read_bz2_file(mtd)
             self.stime = copy.deepcopy(self.metadata[0])
 
+        # if not self.file_objects:
+        #     raise ValueError("No file objects found. Cannot read intermediate files")
+
+        # for f in self.file_objects:
+        #     gridcells = load(f)
+        #     if co2 is not None:
+        #         for gridcell in gridcells:
+        #             gridcell.change_input(self.input_data, self.stime, self.co2_data)
+        #     else:
+        #         for gridcell in gridcells:
+        #             gridcell.change_input(self.input_data, self.stime)
+        #     dump(gridcells, f, compress=("lz4", 1))
+
         if not self.file_objects:
             raise ValueError("No file objects found. Cannot read intermediate files")
 
-        for f in self.file_objects:
-            gridcells = load(f)
-            if co2 is not None:
-                for gridcell in gridcells:
-                    gridcell.change_input(self.input_data, self.stime, self.co2_data)
-            else:
-                for gridcell in gridcells:
-                    gridcell.change_input(self.input_data, self.stime)
-            dump(gridcells, f)
+        def process_file(f):
+            try:
+                with open(f, 'rb') as file:
+                    gridcells:grd_mt = load(file)
+                if co2 is not None:
+                    for gridcell in gridcells:
+                        gridcell.change_input(self.input_data, self.stime, self.co2_data)
+                else:
+                    for gridcell in gridcells:
+                        gridcell.change_input(self.input_data, self.stime)
+                with open(f, 'wb') as file:
+                    dump(gridcells, file, compress=("lz4", 1))
+            except Exception as e:
+                print(f"Error processing file {f}: {e}")
+                raise e
+
+        with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
+            executor.map(process_file, self.file_objects)
 
 
     def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
@@ -251,7 +294,7 @@ class region:
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
-        
+
         assert comm_npls > 0, "Number of PLS must be greater than 0"
 
         if comm_npls == 1:
@@ -300,7 +343,8 @@ class region:
             print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
             # Read file objects and do the provessing
             for f in self.file_objects:
-                new_chunk = load(f)
+                with open(f, 'rb') as fh:
+                    new_chunk = load(fh)
                 num_workers = min(self.config.multiprocessing.max_processes, len(new_chunk))
                 with mp.Pool(processes=num_workers) as pool:
                     try:
@@ -313,7 +357,8 @@ class region:
                         pool.close()
                         pool.join()
                 result = []
-                dump(new_chunk, f)
+                with open(f, 'wb') as fh:
+                    dump(new_chunk, fh, compress=("lz4", 1))
                 print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
                 j += 1
 
@@ -338,7 +383,7 @@ class region:
                     self.lons[i] = grd_cell.lon
                     i += 1
                 # Save the intermediate file
-                fname = self.output_path/Path(f"intermediate_file{uuid4()}")
+                fname = self.output_path/Path(f"region_file{uuid4()}.lz4")
                 self.file_objects.append(fname)
                 num_workers = min(self.config.multiprocessing.max_processes, len(result))
                 with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
@@ -351,7 +396,8 @@ class region:
                     finally:
                         pool.close()
                         pool.join()
-                        dump(result,fname)
+                with open(fname, 'wb') as f:
+                    dump(result, f, compress=("lz4", 1))
                 result = []
                 print_progress(j+1, len(chunks), prefix='Progress:', suffix='Complete')
                 j += 1
@@ -364,7 +410,8 @@ class region:
         j = 0
         print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
         for f in self.file_objects:
-            new_chunk = load(f)
+            with open(f, 'rb') as fh:
+                new_chunk = load(fh)
             num_workers = min(self.config.multiprocessing.max_processes, len(new_chunk))
             with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
                 try:
@@ -376,7 +423,8 @@ class region:
                 finally:
                     pool.close()
                     pool.join()
-            dump(result, f)
+            with open(f, 'wb') as fh:
+                dump(result, fh, compress=("lz4", 1))
             print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
             j += 1
 
@@ -421,7 +469,7 @@ class region:
             # # Delete attributes that are not in the subset
             for attr in all_attributes - attributes_to_keep:
                 delattr(gridcell, attr)
-        self.unload_gridcells()
+        # self.unload_gridcells()
 
 
     def get_mask(self)->np.ndarray:

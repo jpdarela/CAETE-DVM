@@ -3,7 +3,7 @@ doy_months = [1, 31]
 
 [multiprocessing]
 nprocs= 256 # Threads used to post process the output
-max_processes = 16 # Limit the number of used to run the model
+max_processes = 128 # Limit the number of used to run the model
 
 [conversion_factors_isimip] # Conversion factors used to convert units of input data
 tas = 273.15  # ! K to °C (subtract) [input(K) to model(°C)]
@@ -14,7 +14,7 @@ rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (m
 
 [metacomm]
 n = 10 # Number of communities to be considered in the metacommunity: One for the standard CAETE
-npls_max = 50 # Maximum number of PLS to be considered in each community
+npls_max = 100 # Maximum number of PLS to be considered in each community
 ntraits = 17 # number of traits in a PLS
 
 [crs]
