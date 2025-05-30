@@ -27,11 +27,13 @@ from pathlib import Path
 from config import fetch_config
 
 caete_config = fetch_config('../src/caete.toml')
+# Set the environment variable in the current PowerShell session
 
 descrp = "This script creates a global.f90 file with parameters defined in the caete.toml file."
 
 NTRAITS = caete_config.metacomm.ntraits # type: ignore
 NPLS = caete_config.metacomm.npls_max # type: ignore # Max number of Plant Life Strategies per community
+OMP_NUM_THREADS = caete_config.multiprocessing.omp_num_threads # type: ignore
 
 global_f90 = f"""
 ! Copyright 2017- LabTerra
@@ -75,6 +77,7 @@ module global_par
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
    integer(i_4),parameter,public :: npls = {NPLS}                ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = {NTRAITS}          ! Number of traits for each PLS
+   integer(i_4),parameter,public :: omp_nthreads = {OMP_NUM_THREADS} ! Number of OpenMP threads
 
 end module global_par
 

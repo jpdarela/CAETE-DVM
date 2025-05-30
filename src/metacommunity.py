@@ -225,7 +225,7 @@ class metacommunity:
         """
         state = self.wrapp_state(year)
         with open(file_path, 'wb') as f:
-            dump(value=state, filename=f, compress=('lz4', 6)) # type: ignore
+            dump(value=state, filename=f, compress=('lz4', 2), protocol=5) # type: ignore
 
 
     def __getitem__(self, index:Union[int, str]):

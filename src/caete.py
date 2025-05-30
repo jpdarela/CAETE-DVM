@@ -91,7 +91,7 @@
 # - worker (only @staticmethods): class grouping worker functions defining different phases of simulation.
 #   These functions are called by the region object to run the simulation in parallel. The worker class
 #   also have some utility functions to load and save data. You can save a region in a state file and
-#   restart the simulation from this point. Note that in this case a entire region is saved. All relatred data
+#   restart the simulation from this point. Note that in this case a entire region is saved. All relatled data
 #   for each gridcell is saved and the final file can become huge. This tradeoff with the facitily to restart
 #   the simulation from a specific point with a very low amount of code. The state file is compressed with zsdt
 
@@ -106,11 +106,11 @@
 import bz2
 import copy
 import csv
-import logging
 import os
 import pickle as pkl
 import sys
 import warnings
+import time as tm
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -135,9 +135,6 @@ from caete_jit import inflate_array, masked_mean, masked_mean_2D, cw_mean
 from caete_jit import shannon_entropy, shannon_evenness, shannon_diversity
 from caete_jit import atm_canopy_coupling, pft_area_frac64
 
-# Tuples with hydrological parameters for the soil water calculations
-from parameters import hsoil, ssoil, tsoil
-
 
 # This code is only relevant in Windows systems. It adds the fortran compiler dlls to the PATH
 # so the shared library can find the fortran runtime libraries of the intel one API compiler (ifx)
@@ -156,8 +153,8 @@ from caete_module import water as st
 
 #from memory_profiler import profile
 
-logging.basicConfig(filename='execution.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(filename='execution.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+# logger = logging.getLogger(__name__)
 
 # Output file extension
 out_ext = ".pkz"
@@ -863,7 +860,7 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
-            dump(data_obj, fh, compress=('lz4', 6), protocol=4) # type: ignore
+            dump(data_obj, fh, compress=('lz4', 2), protocol=5) # type: ignore
         self.flush_data = None
 
 
@@ -1812,23 +1809,31 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         fetched_data = self._fetch_metacommunity_data(year)
         communities = fetched_data["communities"]
 
-        pls_id = np.zeros(0, dtype=np.int32)
-        pls_cleaf = np.zeros(0, dtype=np.float32)
-        pls_croot = np.zeros(0, dtype=np.float32)
-        pls_cwood = np.zeros(0, dtype=np.float32)
+        # Collect arrays in lists
+        id_list = []
+        cleaf_list = []
+        croot_list = []
+        cwood_list = []
 
-        for comm_number, community in communities.items():
+        for community in communities.values():
             if not community["masked"]:
-                id_to_count = community["id"]
-                pls_id = np.concatenate((pls_id, id_to_count))
-                pls_cleaf = np.concatenate((pls_cleaf, community["vp_cleaf"]))
-                pls_croot = np.concatenate((pls_croot, community["vp_croot"]))
-                pls_cwood = np.concatenate((pls_cwood, community["vp_cwood"]))
+                id_list.append(community["id"])
+                cleaf_list.append(community["vp_cleaf"])
+                croot_list.append(community["vp_croot"])
+                cwood_list.append(community["vp_cwood"])
 
-        return {"pls_id": pls_id,
-                "vp_cleaf": pls_cleaf,
-                "vp_croot": pls_croot,
-                "vp_cwood": pls_cwood}
+        # Concatenate once
+        pls_id = np.concatenate(id_list) if id_list else np.zeros(0, dtype=np.int32)
+        pls_cleaf = np.concatenate(cleaf_list) if cleaf_list else np.zeros(0, dtype=np.float32)
+        pls_croot = np.concatenate(croot_list) if croot_list else np.zeros(0, dtype=np.float32)
+        pls_cwood = np.concatenate(cwood_list) if cwood_list else np.zeros(0, dtype=np.float32)
+
+        return {
+            "pls_id": pls_id,
+            "vp_cleaf": pls_cleaf,
+            "vp_croot": pls_croot,
+            "vp_cwood": pls_cwood
+        }
 
 
     def _read_daily_output(self,
@@ -2054,6 +2059,7 @@ if __name__ == '__main__':
             command = "gridcell.run_gridcell('1801-01-01', '1850-12-31', spinup=2, fixed_co2_atm_conc=1901, save=False, nutri_cycle=True, reset_community=True)"
             cProfile.run(command, sort="cumulative", filename="profile.prof")
         else:
+            start = tm.time()
             # test model functionality
             gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
                                                 save=False, nutri_cycle=True, reset_community=True,
@@ -2063,11 +2069,13 @@ if __name__ == '__main__':
                                     save=True, nutri_cycle=True)
 
             # test directory update
-            r.update_dump_directory("test_new_region")
+            r.update_dump_directory("test_new_region", in_memory=True)
 
             # test change input
-            r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370)
+            r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370, in_memory=True)
 
             gridcell = r[0]
             gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,
                                                 save=True, nutri_cycle=True)
+            end = tm.time()
+            print(f"Run time: {end - start:.2f} seconds")

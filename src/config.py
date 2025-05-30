@@ -33,7 +33,7 @@ import tomllib
    The configurations can be accessed using the fetch_config function."""
 
 # path to the fortran compiler dlls, used in windows systems.
-fortran_runtime_fallback = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2024.1\bin"
+fortran_runtime_fallback = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2025.1\bin"
 fortran_runtime: Path = Path(os.environ.get("FC_RUNTIME", fortran_runtime_fallback)).resolve()
 
 if sys.platform == "win32":

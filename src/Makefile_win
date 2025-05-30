@@ -50,17 +50,19 @@ OVRTFLAG = --overwrite-signature
 FCFLAGS = -fpp -Od -debug:full -warn:all -nologo
 FLFLAGS = -fpp -c -Od -debug:full -nologo
 
+MAIN_SUB = budget_fixed.F90
+
 # Intel Fortran Compiler (ifx) FLAGS for release (caete_module)
-IFX_FLAGS = /fpp /QxHost -warn:all -nologo /I$(MOD_DIR) /DPREPEND_FORTRAN /DNO_APPEND_FORTRAN /DUPPERCASE_FORTRAN /DUNDERSCORE_G77
+IFX_FLAGS = /fpp /QxHost /warn:all /nologo /I$(MOD_DIR) /DPREPEND_FORTRAN /DNO_APPEND_FORTRAN /DUPPERCASE_FORTRAN /DUNDERSCORE_G77
 
 # Sources
 src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
-sources = $(src_lib) budget.F90
+sources = $(src_lib) $(MAIN_SUB)
 
 # Fortran objects
 
 src_obj = types.obj photo_par.obj global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
-objects = $(src_obj) budget.obj
+objects = $(src_obj) $(basename $(MAIN_SUB)).obj
 
 
 setup:
@@ -73,7 +75,7 @@ setup_311:
 
 interface: $(sources)
 	@echo "Creating Fortran interfaces for the caete_module using f2py..."
-	@$(PYEXEC) set_npls.py
+	@$(PYEXEC) precompilation_data.py
 	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so: $(sources) interface
@@ -85,9 +87,8 @@ so: $(sources) interface
 #	$(CYTHON) -a output.py
 #	$(PYEXEC) setup.py build_ext --inplace --verbose
 
-
 so_parallel: $(sources) interface
-	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /qopenmp"
+	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp" --quiet
 	@echo "Parallel version of caete_module created using $(FC)"
 #	$(CYTHON) -a community.py
 #	$(CYTHON) -a metacommunity.py
@@ -98,7 +99,7 @@ so_parallel: $(sources) interface
 modules: $(sources)
 	$(FC) -fpp -c -O3 $(sources)
 
-caete_lib: clean modules so
+caete_lib: clean modules so_parallel
 
 reinstall: clean_so so modules
 
@@ -200,6 +201,8 @@ clean_outputs:
 	del /s /q ..\outputs
 	cls
 
+clean_all: clean clean_py clean_so clean_outputs
+	@echo "All files cleaned."
 
 
 # .PHONY: setup interface so so_parallel clean_py clean clean_so modules reinstall debug

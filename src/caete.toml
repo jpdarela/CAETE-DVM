@@ -1,21 +1,44 @@
-doy_months = [1, 31]
-# doy_months = [1,31,62,92,123,153,183,214,244,275,305,336]
+# Configuration file for CAETE model
 
+# Fisrt day of each month
+doy_months = [1,31,62,92,123,153,183,214,244,275,305,336]
+
+# Configs for parallelization
 [multiprocessing]
-nprocs= 256 # Threads used to post process the output
-max_processes = 128 # Limit the number of used to run the model
+nprocs= 256 # Threads used to post process the output.
+# max_processes limit the number of python processes used to run the model.
+# Should not be larger than the number of gridcells and not larger that the number of CPUs.
+max_processes = 4
+# Number of threads used by OpenMP which each python process can use.
+# Currently setting more than 1 degrades performance (overhead of creating new threads).
+omp_num_threads = 1
 
-[conversion_factors_isimip] # Conversion factors used to convert units of input data
-tas = 273.15  # ! K to °C (subtract) [input(K) to model(°C)]
-pr = 86400.0  # ! kg m-2 s-1 to mm day-1 (multiply) [input(kg m-2 s-1) to model(mm day-1)]
-ps = 0.01  # ! Pa to hPa (multiply) [input(Pa) to model(hPa)]
-rhs = 0.01  # ! % to kg kg-1  (multiply) [input(%) to model(kg kg-1)]
-rsds = 2.293577981651376e-06 # 0.5 / 2.18e5 ! W m-2 to mol(photons) m-2 day-1 (multiply) [input(W m-2) to model(mol(photons) m-2 day-1)]
+# COnversion factors used to convert units of input data
+[conversion_factors_isimip]
+tas = 273.15  # K to °C (sub) [input(K) to model(°C)]
+pr = 86400.0  # kg m-2 s-1 to mm day-1 (mult) [input(kg m-2 s-1) to model(mm day-1)]
+ps = 0.01  # Pa to hPa (mult) [input(Pa) to model(hPa)]
+rhs = 0.01  # % to kg kg-1  (mult) [input(%) to model(kg kg-1)]
+rsds = 2.2936e-06 # 0.5 / 2.18e5 (mult) [input(W m-2) to model(mol(photons) m-2 day-1)]
+
+# Metacommunity configuration. Used at compile- and run-time.
 
 [metacomm]
-n = 10 # Number of communities to be considered in the metacommunity: One for the standard CAETE
-npls_max = 100 # Maximum number of PLS to be considered in each community
-ntraits = 17 # number of traits in a PLS
+
+# Number of communities to be considered in the metacommunity;
+# Set to 1 to run the model in single community mode.
+# You shouldn't set this to a value larger than 30 as it will
+# increase the memory usage and the time to run the model.
+n = 1 # Effects only in runtime, not in compile time.
+
+# Maximum number of PLS to be considered in each community.
+# Very large values will cause stack overflow errors.
+# The final number of slots for PLSs in the model is equal to n * npls_max.
+# Changes here and in ntraits will not be applied to the model (fortran extension module)
+# unless you recompile it.
+npls_max = 1000
+ # number of traits in a PLS
+ntraits = 17
 
 [crs]
 res = 0.5

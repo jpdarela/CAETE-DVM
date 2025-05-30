@@ -90,37 +90,16 @@ if __name__ == "__main__":
                main_table)
 
     # Start gridcells
-    r.set_gridcells()
+    # r.set_gridcells()
 
     # spinup ----------------------------------------------
     # Pre industrial control input data range 1801-2050
     # Spinup using 1801-1900 climatology with pre-industrial co2 concentration ~278.05ppm
-    # Start soil and water pools
-    print("START soil pools spinup - piControl - 1765 co2 ~278 ppm")
-    r.run_region_map(fn.soil_pools_spinup)  # type: ignore
-
-    # Spinup using 1801-1900 climatology with glacial co2 concentration 180ppm
-    print("START soil pools spinup - Glacial co2 180 ppm")
-    r.run_region_map(fn.soil_pools_spinup_glacial)  # type: ignore
-
-    # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
-    print("START soil pools spinup - Interglacial co2 280 ppm")
-    r.run_region_map(fn.soil_pools_spinup_interglacial)  # type: ignore
-
-    print("START soil pools spinup - Glacial co2 180 ppm")
-    r.run_region_map(fn.soil_pools_spinup_glacial)  # type: ignore
-
-    # Spinup using 1801-1900 climatology with interglacial co2 concentration 280ppm
-    print("START soil pools spinup - Interglacial co2 280 ppm")
-    r.run_region_map(fn.soil_pools_spinup_interglacial)  # type: ignore
-
-
-    print("Finalize spinup")
-    r.run_region_map(fn.quit_spinup)  # type: ignore
+    r.run_region_map(fn.spinup_cmip6)  # type: ignore
     # ------------------End of the spinup--------------------------------
 
     # Save initial state right after spinup - This will be used to run the piControl simulation
-    piControl_state = Path(f"./{region_name}_piControl_1801-1900.psz")
+    piControl_state = Path(f"./{region_name}_piControl_1900.psz")
     fn.save_state_zstd(r, piControl_state)
 
     # Transient run with historical data
@@ -129,7 +108,7 @@ if __name__ == "__main__":
     r.update_input(hist_files)  # type: ignore
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2014, 10)  # type: ignore
+    run_breaks = fn.create_run_breaks(1901, 2014, 30)  # type: ignore
     for period in run_breaks:  # type: ignore
         print(f"Running period {period[0]} - {period[1]}")  # type: ignore
         r.run_region_starmap(fn.transient_run_brk, period)  # type: ignore
@@ -153,7 +132,7 @@ if __name__ == "__main__":
     ssp370_out = "cities_MPI-ESM1-2-HR-ssp370"
     r_ssp370.update_dump_directory(ssp370_out)
 
-    run_breaks = fn.create_run_breaks(2015, 2100, 20)  # type: ignore
+    run_breaks = fn.create_run_breaks(2015, 2100, 30)  # type: ignore
     period: Tuple[int, int]
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
@@ -168,7 +147,7 @@ if __name__ == "__main__":
     # Update region dump directory ssp585
     ssp585_out = "cities_MPI-ESM1-2-HR-ssp585"
     r_ssp585.update_dump_directory(ssp585_out)
-    run_breaks = fn.create_run_breaks(2015, 2100, 20)
+    run_breaks = fn.create_run_breaks(2015, 2100, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_ssp585.run_region_starmap(fn.transient_run_brk, period)
@@ -182,7 +161,7 @@ if __name__ == "__main__":
     # Update region dump directory piControl
     piControl_out = "cities_MPI-ESM1-2-HR-piControl"
     r_piControl.update_dump_directory(piControl_out)
-    run_breaks = fn.create_run_breaks(1901, 2050, 20)
+    run_breaks = fn.create_run_breaks(1901, 2050, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_piControl.run_region_starmap(fn.transient_piControl_brk, period)

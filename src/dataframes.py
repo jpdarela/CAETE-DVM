@@ -31,6 +31,7 @@ from numpy.typing import NDArray
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
 from worker import worker
 from region import region
@@ -442,17 +443,17 @@ if __name__ == "__main__":
     # output_manager.table_output_per_grd(model_results, variables=variables_to_read)    # # Load the region file
 
     # reg:region = worker.load_state_zstd("./cities_MPI-ESM1-2-HR_hist_output.psz")
-    output_file = Path("./pan_amazon_hist_result.psz")
-    reg:region = worker.load_state_zstd(output_file)
-    reg.load_gridcells()
-    variables_to_read = ("npp","photo")
+    # output_file = Path("./pan_amazon_hist_result.psz")
+    # reg:region = worker.load_state_zstd(output_file)
+    # reg.load_gridcells()
+    # variables_to_read = ("npp","photo")
 
-    # import cProfile
+    import cProfile
     # # # # # Gridded outputs
-    # command = 'output_manager.table_output_per_grd("./pan_amazon_hist_result.psz", variables_to_read)'
-    # cProfile.run(command, sort="cumulative", filename="text_output_profile.prof")
+    command = 'output_manager.cities_output()'
+    cProfile.run(command, sort="cumulative", filename="text_output_profile.prof")
 
-
-    a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
-    # # # TODO: Save netcdfs
+    ## Gridded outputs
+    # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
+    # # # # TODO: Save netcdfs
 

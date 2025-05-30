@@ -12,3 +12,11 @@ ggtern(data, aes(x = aleaf, y = awood, z = aroot)) +
     z = "aroot"
   ) +
   theme_bw()
+
+# Save the plot
+ggsave(
+  filename = "../src/PLS_MAIN/ternary_plot_allocation3000.png",
+  width = 8,
+  height = 6,
+  dpi = 300
+)
