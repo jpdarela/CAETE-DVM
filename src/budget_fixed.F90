@@ -22,6 +22,7 @@ module budget
    use global_par, only: ntraits, npls, omp_nthreads
    use alloc
    use productivity
+   use ieee_arithmetic
    implicit none
    private
 
@@ -185,8 +186,6 @@ contains
          enddo
       enddo
 
-      ! find the number of grasses
-
       w = w1 + w2      ! soil water mm
       soil_temp = ts   ! soil temp °C
       soil_sat = wmax_in
@@ -310,8 +309,8 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
-         if (isnan(mr_sto)) mr_sto = 0.0D0
-         if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
+         if (ieee_is_nan(mr_sto)) mr_sto = 0.0D0
+         ! if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
@@ -336,7 +335,7 @@ contains
          ! Estimate growth of storage C pool
          ar_fix_hr(p) = ar_aux
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
-         if (isnan(growth_stoc)) growth_stoc = 0.0D0
+         if (ieee_is_nan(growth_stoc)) growth_stoc = 0.0D0
          if (growth_stoc .gt. 0.1D3) growth_stoc = 0.0D0
          storage_out_bdgt(:,p) = day_storage(:,p)
 
@@ -366,6 +365,9 @@ contains
             ! Calculate the total carbon available
             total_c = cl2(p) + ca2(p) + cf2(p)
             c_def_amount = c_def(p) * 1e-3
+            ca_def = 0.0D0
+            cf_def = 0.0D0
+            cl_def = 0.0D0
 
             ! Check if the total carbon is less than c_def
             if (total_c .lt. c_def_amount) then
@@ -375,7 +377,7 @@ contains
             else
                ! Calculate the proportional amounts to subtract
                cl_def = c_def_amount * (cl2(p) / total_c)
-               ca_def = c_def_amount * (ca2(p) / total_c)
+               if (dt1(7) .gt. 0.0D0) ca_def = c_def_amount * (ca2(p) / total_c)
                cf_def = c_def_amount * (cf2(p) / total_c)
 
                ! Subtract carbon from each pool ensuring no negative values
@@ -399,28 +401,6 @@ contains
          if (cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
          if (ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
          if (cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
-
-         if(c_def(p) .gt. 0.0) then
-            cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-            ca1_int(p) = ca2(p)
-            cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
-
-            ! No cdef
-         else
-            if(dt1(7) .gt. 0.0D0) then
-               cl1_int(p) = cl2(p)
-               ca1_int(p) = ca2(p)
-               cf1_int(p) = cf2(p)
-            else
-               cl1_int(p) = cl2(p)
-               ca1_int(p) = 0.0D0
-               cf1_int(p) = cf2(p)
-            endif
-         endif
-
-         if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
-         if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
-         if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
@@ -460,37 +440,34 @@ contains
       c_cost_cwm = 0.0D0
       rnpp_out(:) = 0.0D0
 
-      ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
-      ! clean NaN values in occupation coefficients
-      ! TODO: these checks are useful for model start periods
-      ! Will keep it here.
-      ! do p = 1, nlen
-      !    if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
-      ! enddo
+      ! CALCULATE CWM FOR ECOSYSTEM PROCESSES.
+      do p = 1, nlen
+         if(ieee_is_nan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
+      enddo
 
-      evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. isnan(evap))
-      phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. isnan(ph))
-      aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. isnan(ar))
-      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs, mask= .not. isnan(nppa))
-      laiavg = sum(laia * ocp_coeffs, mask= .not. isnan(laia))
-      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs, mask= .not. isnan(rc2))
-      f5avg = sum(f5 * ocp_coeffs, mask= .not. isnan(f5))
-      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs, mask= .not. isnan(rm))
-      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs, mask= .not. isnan(rg))
-      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs, mask= .not. isnan(wue))
-      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs, mask= .not. isnan(cue))
-      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs, mask= .not. isnan(c_def)) / 2.73791
-      vcmax_1 = sum(vcmax * ocp_coeffs, mask= .not. isnan(vcmax))
-      specific_la_1 = sum(specific_la * ocp_coeffs, mask= .not. isnan(specific_la))
-      litter_l_1 = sum(litter_l * ocp_coeffs, mask= .not. isnan(litter_l))
-      cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
-      litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
-      c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. isnan(npp2pay))
+      evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask = .not. ieee_is_nan(evap))
+      phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(ph))
+      aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(ar))
+      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(nppa))
+      laiavg = sum(laia * ocp_coeffs, mask= .not. ieee_is_nan(laia))
+      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(rc2))
+      f5avg = sum(f5 * ocp_coeffs, mask= .not. ieee_is_nan(f5))
+      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(rm))
+      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(rg))
+      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(wue))
+      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(cue))
+      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(c_def)) / 2.73791
+      vcmax_1 = sum(vcmax * ocp_coeffs, mask= .not. ieee_is_nan(vcmax))
+      specific_la_1 = sum(specific_la * ocp_coeffs, mask= .not. ieee_is_nan(specific_la))
+      litter_l_1 = sum(litter_l * ocp_coeffs, mask= .not. ieee_is_nan(litter_l))
+      cwd_1 = sum(cwd * ocp_coeffs, mask= .not. ieee_is_nan(cwd))
+      litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. ieee_is_nan(litter_fr))
+      c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. ieee_is_nan(npp2pay))
 
-      cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
-      cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. isnan(ca1_int))
-      cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
-      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ar_fix_hr))
+      cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. ieee_is_nan(cl1_int))
+      cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. ieee_is_nan(ca1_int))
+      cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. ieee_is_nan(cf1_int))
+      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. ieee_is_nan(ar_fix_hr))
 
       do p = 1,2
          nupt_1(p) = sum(nupt(p,:) * ocp_coeffs)
@@ -503,7 +480,7 @@ contains
          lit_nut_content_1(p) = sum(lit_nut_content(p, :) * ocp_coeffs)
       enddo
 
-      ! Copy the results from the heap to the output variables
+      ! Copy the results to the output variables
       do p = 1, nlen
          cleafavg_pft(lp(p))  = cl1_int(p)
          cawoodavg_pft(lp(p)) = ca1_int(p)
