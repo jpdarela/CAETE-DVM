@@ -15,11 +15,15 @@ src/pls_data-*
 src/*.pkz
 src/*.psz
 src/*pbz2
+src/debug_aux/*.txt
 outputs/*
 src/.python-version
 src/execution.log
 src/build
 src/out_data
+src/tests/__pycache__
+src/tests/*.csv
+src/tests/*.txt
 
 input/.python-version
 input/20CRv3-ERA5
