@@ -23,7 +23,7 @@ module alloc
                           & retran_nutri_cost, select_active_strategy
     use global_par, only: ntraits, sapwood, cmin
     use photo, only: f_four, spec_leaf_area, realized_npp
-    use ieee_arithmetic, only: ieee_is_normal, ieee_is_negative
+    use ieee_arithmetic, only: ieee_is_normal, ieee_is_negative, ieee_is_nan
 
     implicit none
     private
@@ -277,7 +277,7 @@ module alloc
 
       ! Only a  small amount of total nutrients are available in fact
       ! This is used to testing purposes only
-      mult_factor_n = 0.035D0
+      mult_factor_n = 0.03D0
       mult_factor_p = 0.002D0
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
@@ -801,7 +801,7 @@ module alloc
       endif
       test34 = nitrogen_uptake(2) .gt. on
       uptk_strategy(1) = nacquis_strat
-      if(isnan(to_sto(1))) to_sto(1) = 0.0D0
+      if(ieee_is_nan(to_sto(1))) to_sto(1) = 0.0D0
       ! if(to_sto(1) .gt. 1.0D1) to_sto(1) = 0.0D0
       if(to_sto(1) .lt. 0.0D0) to_sto(1) = 0.0D0
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
@@ -822,7 +822,7 @@ module alloc
          phosphorus_uptake(3) = 0.0D0
          uptk_strategy(2) = 0
       endif
-      if(isnan(to_sto(2))) to_sto(2) = 0.0D0
+      if(ieee_is_nan(to_sto(2))) to_sto(2) = 0.0D0
       ! if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
       if(to_sto(2) .lt. 0.0D0) to_sto(2) = 0.0D0
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
