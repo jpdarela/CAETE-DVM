@@ -169,49 +169,47 @@ print('N / P strat: ', nstrat, pstrat)
 # # print("Nout", n_invest_p)
 
 
-# def print1(amp):
-#     out = np.zeros(shape=(2, 4, 1000))
-#     phosp = np.linspace(0.005, 120, 1000)
-#     for i, p in enumerate(phosp):
-#         # print(i, p)
-#         out[:, :, i] = cc.active_costn(amp, p, 3.4, 950.0)
+def print1(amp):
+    out = np.zeros(shape=(6, 1000))
+    phosp = np.linspace(0.005, 120, 1000)
+    for i, p in enumerate(phosp):
+        # print(i, p)
+        out[:, i] = cc.active_costn(amp, p, 3.4, 950.0)
 
-#     legend = ['CaquN NAM', 'CaquN NEM', 'CaquN_AM', 'CaquN_EM']
-#     legend += ['CaquP NAM', 'CaquP NEM', 'CaquP_AM', 'CaquP_EM']
-#     colors = ['r', 'm', 'b', 'g', 'r', 'c', 'y', 'orange']
-
-#     count = 0
-#     for mode in range(4):
-#         for nut in range(1):
-#             # print(out[nut, mode, :])
-#             plt.plot(phosp, out[nut, mode, :], colors[count])
-#             count += 1
-#     plt.xlabel('Nutrient gm⁻²')
-#     plt.ylabel('g(C) g(Nutrient)⁻¹')
-#     plt.legend(legend[:4])
-#     plt.show()
+    legend = ['CaquN NAM', 'CaquN NEM', 'CaquN_AM', 'CaquN_EM']
+    legend += ['CaquP NAM', 'CaquP NEM', 'CaquP_AM', 'CaquP_EM']
+    colors = ['r', 'm', 'b', 'g', 'r', 'c', 'y', 'orange']
+    out[4:,:] = np.nan
+    count = 0
+    for mode in range(6):
+            plt.plot(phosp, out[mode, :], colors[count])
+            count += 1
+    plt.xlabel('Nutrient gm⁻²')
+    plt.ylabel('g(C) g(Nutrient)⁻¹')
+    plt.legend(legend[:4])
+    plt.show()
 
 
-# def print2(amp):
-#     out = np.zeros(shape=(8, 1000))
-#     phosp = np.linspace(1, 4.0, 1000)
-#     for i, p in enumerate(phosp):
-#         #print(i, p)
-#         out[:, i] = cc.active_costp(amp, p, 10, 20, 650.0)
+def print2(amp):
+    out = np.zeros(shape=(8, 1000))
+    phosp = np.linspace(1, 4.0, 1000)
+    for i, p in enumerate(phosp):
+        #print(i, p)
+        out[:, i] = cc.active_costp(amp, p, 10, 20, 650.0)
 
-#     legend = ['CaquN NAM', 'CaquN NEM', 'CaquN_AM', 'CaquN_EM']
-#     legend += ['CaquP NAM', 'CaquP NEM', 'CaquP_AM', 'CaquP_EM']
-#     colors = ['r', 'm', 'b', 'g', 'r', 'c', 'y', 'orange']
+    legend = ['CaquN NAM', 'CaquN NEM', 'CaquN_AM', 'CaquN_EM']
+    legend += ['CaquP NAM', 'CaquP NEM', 'CaquP_AM', 'CaquP_EM']
+    colors = ['r', 'm', 'b', 'g', 'r', 'c', 'y', 'orange']
 
-#     count = 0
-#     for mode in range(8):
-#             # print(out[nut, mode, :])
-#         plt.plot(phosp, out[mode, :], colors[count])
-#         count += 1
-#     plt.xlabel('Nutrient gm⁻²')
-#     plt.ylabel('g(C) g(Nutrient)⁻¹')
-#     plt.legend(legend[4:])
-#     plt.show()
+    count = 0
+    for mode in range(8):
+            # print(out[nut, mode, :])
+        plt.plot(phosp, out[mode, :], colors[count])
+        count += 1
+    plt.xlabel('Nutrient gm⁻²')
+    plt.ylabel('g(C) g(Nutrient)⁻¹')
+    plt.legend(legend[4:])
+    plt.show()
 
 # # count = 0
 # # for mode in range(4):

@@ -1,0 +1,7 @@
+Check mypy and mypyc options for the python modules (community.py, metacommunity.py, outputs.py hydro_caete.py)
+Add unit tests to all python modules
+Add unit tests to all fortran modules
+
+// CODE
+
+Use spinup3 to test the allocation/residence time combinations of the created plss in the plsgen.py program
