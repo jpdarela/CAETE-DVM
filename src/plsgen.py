@@ -26,23 +26,25 @@
 # Residence times and nutrient ratios are randomly generated. Parameters are descibed in the pls_gen.toml file
 import os
 import sys
-# from config import fortran_runtime
+from config import fortran_runtime
 import argparse
-
-
-# if sys.platform == "win32":
-#     try:
-#         os.add_dll_directory(fortran_runtime)
-#     except:
-#         raise ImportError("Could not add the DLL directory to the PATH")
-
-
-from math import ceil
+from math import ceil, floor
 import csv
 import tomllib as tl
 from pathlib import Path
 import numpy as np
-# from caete_module import photo as model
+
+sys.path.append("../")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+if sys.platform == "win32":
+    try:
+        os.add_dll_directory(fortran_runtime)
+    except:
+        raise ImportError("Could not add the DLL directory to the PATH")
+
+from caete_module import photo as model
+from caete_module import global_par as gp
 
 __author__ = 'JP Darela'
 
@@ -62,7 +64,7 @@ description = """ Generate and save a table of plant life strategies for CAETE.
 
                  The created object table is a numpy array with axis (NTRAITS, NPLS).
                  """
-
+print(gp.cmin)
 parser = argparse.ArgumentParser(
     description=description,
     usage='python plsgen.py [-h] -n NUMBER -f FOLDER'
@@ -79,19 +81,6 @@ with open(CONFIG_FILE, 'rb') as f:
 
 GRASS_FRAC = data["parameters"]["grass_pls_fraction"]
 
-def vec_ranging(values, new_min, new_max):
-    """ Ranges the vector (1D) values(np.array) to min max - preserves the proportional distance between values in the vector
-    """
-
-    output = []
-    old_min, old_max = min(values), max(values)
-
-    for v in values:
-        new_v = (new_max - new_min) / (old_max -
-                                       old_min) * (v - old_min) + new_min
-        output.append(new_v)
-
-    return np.array(output, dtype=np.float32)
 
 def get_parameters(config=CONFIG_FILE):
     """ Get parameters from the pls_gen.toml file """
@@ -101,37 +90,32 @@ def get_parameters(config=CONFIG_FILE):
 
     return data
 
-def check_biomass_accumulation(*args):
-    pass
+def check_viability(trait_values, awood=False):
 
-# def check_viability(trait_values, awood=False):
+    """ Check the viability of allocation & residence time combinations.
+        Some PLS combinations of allocation coefficients and residence times
+        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) and
+        do not have enough mass of carbon (< 0.001 kg m⁻²) in all CVEG compartments
+        input:
+        trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
+        wood: bool  Is this a woody PLS?
+        output:bool True if the PLS is viable, False otherwise
+    """
+    data = get_parameters()
+    lim = gp.cmin  # Minimum carbon (kg m⁻²)
+    npp = data["parameters"]["base_npp"]
 
-#     """ Check the viability of allocation & residence time combinations.
-#         Some PLS combinations of allocation coefficients and residence times
-#         are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) and
-#         do not have enough mass of carbon (< 0.001 kg m⁻²) in all CVEG compartments
-#         input:
-#         trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
-#         wood: bool  Is this a woody PLS?
-#         output:bool True if the PLS is viable, False otherwise
-#     """
-#     data = get_parameters()
-#     lim = data["parameters"]["wood_cmin"]
-#     npp = data["parameters"]["wood_low_npp"]
+    if awood:
+        rtur = np.array(model.spinup3(npp, trait_values))
+        if rtur[0] < lim or rtur[1] < lim or rtur[2] < lim:
+            return False
+        return True
 
-#     if awood:
-#         rtur = np.array(model.spinup3(npp, trait_values))
-#         if rtur[0] < lim or rtur[1] < lim or rtur[2] < lim:
-#             return False
-#         return True
-
-#     # Grasses
-#     lim = data["parameters"]["grass_cmin"]
-#     npp = data["parameters"]["grass_low_npp"]
-#     rtur = np.array(model.spinup3(npp, trait_values))
-#     if rtur[0] < lim or rtur[1] < lim:
-#         return False
-#     return True
+    # Grasses
+    rtur = np.array(model.spinup3(npp, trait_values))
+    if rtur[0] < lim or rtur[1] < lim:
+        return False
+    return True
 
 def assert_data_size(dsize):
     """ Assertion of datasets sizes """
@@ -179,9 +163,7 @@ def nutrient_ratios(n, N_min, N_max, P_min, P_max):
 
     return sample_NP
 
-def table_gen(NPLS, fpath=None, ret=True):
-    """main function - generate a trait table for CAETÊ - optionally, saves it to a .csv with a header and an ID column"""
-
+def carbon_coefficients(NPLS):
     assert NPLS > 1, "Number of PLSs must be greater than 1"
 
     # Read the pls_gen.toml file to get the parameters
@@ -213,10 +195,10 @@ def table_gen(NPLS, fpath=None, ret=True):
             restime[2] = rtime_froot[np.random.randint(0, r_ceil)]
 
             data_to_test0 = np.concatenate((restime, allocatio), axis=0,)
-            # if check_viability(data_to_test0):
-            alloc_g.append(data_to_test0)
-            index0 += 1
-            sys.stdout.write('\r%s' % (str(index0)))
+            if check_viability(data_to_test0):
+                alloc_g.append(data_to_test0)
+                index0 += 1
+                sys.stdout.write('\r%s' % (str(index0)))
         sys.stdout.flush()
         print("\n")
         alloc_g = np.array(alloc_g)
@@ -225,10 +207,6 @@ def table_gen(NPLS, fpath=None, ret=True):
         pass
     else:
         index1 = 0
-
-        # rtime_leaf = vec_ranging(np.random.beta(1, 3, r_ceil), rwoody["leaf_min"], rwoody["leaf_max"])
-        # rtime_froot = vec_ranging(np.random.beta(1, 3, r_ceil), rwoody["root_min"], rwoody["root_max"])
-        # rtime_wood = vec_ranging(np.random.beta(1, 3, r_ceil), rwoody["wood_min"], rwoody["wood_max"])
 
         rtime_leaf =  np.random.uniform(rwoody["leaf_min"], rwoody["leaf_max"], r_ceil)
         rtime_froot = np.random.uniform(rwoody["root_min"], rwoody["root_max"], r_ceil)
@@ -242,11 +220,10 @@ def table_gen(NPLS, fpath=None, ret=True):
             restime[1] = rtime_wood[np.random.randint(0, r_ceil)]
             restime[2] = rtime_froot[np.random.randint(0, r_ceil)]
             data_to_test1 = np.concatenate((restime, allocatio), axis=0,)
-
-            # if check_viability(data_to_test1, True):
-            alloc_w.append(data_to_test1)
-            index1 += 1
-            sys.stdout.write('\r%s' % (str(index1)))
+            if check_viability(data_to_test1, True):
+                alloc_w.append(data_to_test1)
+                index1 += 1
+                sys.stdout.write('\r%s' % (str(index1)))
         sys.stdout.flush()
         print("\n")
         alloc_w = np.array(alloc_w)
@@ -257,17 +234,40 @@ def table_gen(NPLS, fpath=None, ret=True):
         alloc = alloc_g
     else:
         alloc = np.concatenate((alloc_g, alloc_w), axis=0,)
+    return alloc, index0, alloc_g
 
-    # # # COMBINATIONS
-    g1 = np.random.uniform(0.5, 20.0, NPLS)
-    resorption = np.random.uniform(0.1, 0.8, NPLS)
+def nutrient_ratios_combinations_reich(NPLS, alloc):
+    data = get_parameters()
+    nr = data["nutrient_carbon_ratios"]
 
-    # # C4 type
-    c4 = np.zeros((NPLS,), dtype=np.float64)
-    if GRASS_FRAC > 0.0 and index0 > 1:
-        n123 = ceil(alloc_g.shape[0] * 0.50) # type: ignore
-        c4[0: n123 - 1] = 1.0
+    # 1. Leaf N from Reich et al. (1997)
+    leaf_longevity_months = alloc[:, 0] * 12.0  # tleaf (years) to months
+    N_leaf_mg_g = 42.7 * (leaf_longevity_months ** -0.32)
+    N_leaf_g_g = N_leaf_mg_g / 1000.0
+    # N_leaf_g_g = np.clip(N_leaf_g_g, nr["leaf_n2c"]["min"], nr["leaf_n2c"]["max"])
 
+    # 2. Leaf P from fixed N:P ratio (Reich & Oleksyn 2004)
+    ntop = np.random.uniform(4,20, NPLS)  # N:P ratio
+    P_leaf_g_g = N_leaf_g_g / ntop  # P:N ratio
+    # P_leaf_g_g = np.clip(P_leaf_g_g, nr["leaf_p2c"]["min"], nr["leaf_p2c"]["max"])
+
+    # 3. Wood and root pools (unchanged from original)
+    # Wood nutrients (zero for grasses)
+    wood = nutrient_ratios(NPLS, nr["wood_n2c"]["min"], nr["wood_n2c"]["max"],
+                          nr["wood_p2c"]["min"], nr["wood_p2c"]["max"])
+    awood_n2c, awood_p2c = wood[:, 0], wood[:, 1]
+    test = alloc[:, 4] == 0.0  # Grasses have awood=0
+    np.place(awood_n2c, test, 0.0)
+    np.place(awood_p2c, test, 0.0)
+
+    # Root nutrients
+    root = nutrient_ratios(NPLS, nr["root_n2c"]["min"], nr["root_n2c"]["max"],
+                          nr["root_p2c"]["min"], nr["root_p2c"]["max"])
+    froot_n2c, froot_p2c = root[:, 0], root[:, 1]
+
+    return N_leaf_g_g, awood_n2c, froot_n2c, P_leaf_g_g, awood_p2c, froot_p2c
+
+def nutrient_ratios_combinations(NPLS, alloc):
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
 
@@ -326,8 +326,31 @@ def table_gen(NPLS, fpath=None, ret=True):
     root = nutrient_ratios(NPLS, N0, NM, P0, PM)
     froot_n2c = root[:, 0]
     froot_p2c = root[:, 1]
+    return leaf_n2c, awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c
 
-    # new traits
+def table_gen(NPLS, fpath=None, ret=True):
+    """main function - generate a trait table for CAETÊ - optionally, saves it to a .csv with a header and an ID column"""
+
+    # Allocatiin and residence time combinations
+    alloc, index0, alloc_g = carbon_coefficients(NPLS)
+
+    # Remaining traits
+    # g1: stomatal conductance parameter
+    # resorption: fraction of nutrients resorbed from leaves before leaf fall
+    g1 = np.random.uniform(0.5, 20.0, NPLS)
+    resorption = np.random.uniform(0.1, 0.8, NPLS)
+
+    # Photosynthesis pathway for grasses
+    c4 = np.zeros((NPLS,), dtype=np.float64) # Set all C3 (zero)
+    if GRASS_FRAC > 0.0 and index0 > 1:
+        n123 = ceil(alloc_g.shape[0] * 0.50) # type: ignore
+        c4[0: n123] = 1.0 # Set half of the grasses to C4
+
+    # Nutrients
+    leaf_n2c, awood_n2c, froot_n2c, leaf_p2c, awood_p2c, froot_p2c = nutrient_ratios_combinations_reich(NPLS, alloc)
+
+    # Remaining traits
+    test = alloc[:, 4] == 0.0 # type: ignore
     pdia = np.random.uniform(0.01, 0.10, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)[0] # type: ignore
@@ -367,7 +390,6 @@ def table_gen(NPLS, fpath=None, ret=True):
     if ret:
         pls_table = np.vstack(stack[1:])
         return np.asfortranarray(pls_table, dtype=np.float32)
-
 
 if  __name__ == "__main__":
     table_gen(args.number, Path(args.folder).resolve(), False)
