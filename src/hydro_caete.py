@@ -91,8 +91,8 @@ class soil_water:
         self.wp2 = wp2
 
         # Soil Water POols mm (Kg m-2). We subtract the water content at wilt point
-        self.w1 = 20.0  # Initial water content
-        self.w2 = 60.0  # Initial water content
+        self.w1 = 100.0  # Initial water content
+        self.w2 = 140.0  # Initial water content
         self.awc1 = self.w1 - (self.wp1 * self.w1)
         self.awc2 = self.w2 - (self.wp2 * self.w2)
 
@@ -118,8 +118,20 @@ class soil_water:
 
     def calc_awc(self):
         """Calculates the available water capacity for the grid cell"""
-        self.awc1 = max(0.0, self.w1 - (self.wp1 * self.w1))
-        self.awc2 = max(0.0, self.w2 - (self.wp2 * self.w2))
+        # self.awc1 = max(0.0, self.w1 - (self.wp1 * self.w1))
+        # self.awc2 = max(0.0, self.w2 - (self.wp2 * self.w2))
+        # Layer 1
+        fc1_amt = self.fc1 * self.p1_vol
+        wp1_amt = self.wp1 * self.p1_vol
+        self.awc1 = max(0.0, min(self.w1, fc1_amt) - wp1_amt)
+        # Layer 2
+        fc2_amt = self.fc2 * self.p2_vol
+        wp2_amt = self.wp2 * self.p2_vol
+        self.awc2 = max(0.0, min(self.w2, fc2_amt) - wp2_amt)
+
+    def calc_total_water(self):
+        """Returns the total water content in the soil (kg m-2)."""
+        return self.w1 + self.w2
 
     def _update_pool(self, prain, evapo):
         """Calculates upper and lower soil water pools for the grid cell,
@@ -187,10 +199,8 @@ class soil_water:
 
         return runoff1 + runoff2
 
-# def CPTEC_PVM2_bdget(temp, p0, rh):
-#    return  caete_mod.water.evpot2(p0, temp, rh, caete_mod.water.available_energy(temp))
 
-def main():
+def test_water_balance():
     import numpy as np
 
     ws1, ws2 = 0.45, 0.48
@@ -199,18 +209,178 @@ def main():
 
     wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
 
-    for x in range(10000):
-        evapo = 5 if np.random.normal() > 0 else 0
-        roff = wp._update_pool(evapo, evapo)
+    nsteps = 100000
+    total_rain = 0.0
+    total_evap = 0.0
+    total_runoff = 0.0
+
+    initial_storage = wp.calc_total_water()
+
+    for x in range(nsteps):
+        evapo = abs(np.random.normal()) if np.random.normal() > 0 else 0
+        rain = evapo + abs(np.random.normal())
+        runoff = wp._update_pool(rain, evapo)
         wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
         wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
-        print(wp.w1, ':w1')
-        print(wp.w2, ':w2')
-        print(wp.awc1, ':awc1')
-        print(wp.awc2, ':awc2')
-        print()
-        print(roff, ' :runoff')
+
+        total_rain += rain
+        total_evap += evapo
+        total_runoff += runoff
+
+    final_storage = wp.calc_total_water()
+    storage_change = final_storage - initial_storage
+    balance_error = total_rain - (total_evap + total_runoff + storage_change)
+
+    print(f"Initial storage: {initial_storage:.4f} kg/m2")
+    print(f"Final storage:   {final_storage:.4f} kg/m2")
+    print(f"Total rain:      {total_rain:.4f} kg/m2")
+    print(f"Total evap:      {total_evap:.4f} kg/m2")
+    print(f"Total runoff:    {total_runoff:.4f} kg/m2")
+    print(f"Storage change:  {storage_change:.4f} kg/m2")
+    print(f"Water balance error (should be ~0): {balance_error:.6e} kg/m2")
+    if abs(balance_error) > 1e-6:
+        print("Warning: Water balance error exceeds tolerance!")
+    else:
+        print("Water balance is within acceptable limits: < 1e-6 kg/m2")
+
+
+def main():
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    ws1, ws2 = 0.45, 0.48
+    fc1, fc2 = 0.39, 0.43
+    wp1, wp2 = 0.24, 0.27
+
+    wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+
+    nsteps = 1000
+    w1_list = []
+    w2_list = []
+    awc1_list = []
+    awc2_list = []
+    runoff_list = []
+
+    for x in range(nsteps):
+        evapo = 5 if np.random.normal() > 0 else 0
+        roff = wp._update_pool(evapo + 1, evapo)
+        wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
+        wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
+        w1_list.append(wp.w1)
+        w2_list.append(wp.w2)
+        awc1_list.append(wp.awc1)
+        awc2_list.append(wp.awc2)
+        runoff_list.append(roff)
+
+    # Plotting
+    fig, axs = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+    axs[0].plot(w1_list, label='w1 (upper layer)')
+    axs[0].plot(w2_list, label='w2 (lower layer)')
+    axs[0].set_ylabel('Soil Water (kg/m²)')
+    axs[0].legend()
+    axs[0].set_title('Soil Water Content')
+
+    axs[1].plot(awc1_list, label='awc1 (upper layer)')
+    axs[1].plot(awc2_list, label='awc2 (lower layer)')
+    axs[1].set_ylabel('AWC (kg/m²)')
+    axs[1].legend()
+    axs[1].set_title('Available Water Capacity')
+
+    axs[2].plot(runoff_list, label='Runoff')
+    axs[2].set_ylabel('Runoff (kg/m²)')
+    axs[2].set_xlabel('Timestep')
+    axs[2].legend()
+    axs[2].set_title('Runoff')
+
+    plt.tight_layout()
+    plt.show()
+
+
+def test_water_balance_plot():
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    ws1, ws2 = 0.45, 0.48
+    fc1, fc2 = 0.39, 0.43
+    wp1, wp2 = 0.24, 0.27
+
+    wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+
+    nsteps = 1000
+    total_rain = 0.0
+    total_evap = 0.0
+    total_runoff = 0.0
+
+    initial_storage = wp.calc_total_water()
+
+    w1_list = []
+    w2_list = []
+    awc1_list = []
+    awc2_list = []
+    runoff_list = []
+    rain_list = []
+    evap_list = []
+    storage_list = []
+    balance_error_list = []
+
+    for x in range(nsteps):
+        evapo = 5 if np.random.normal() > 0 else 0
+        rain = evapo + 1
+        runoff = wp._update_pool(rain, evapo)
+        wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
+        wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
+
+        total_rain += rain
+        total_evap += evapo
+        total_runoff += runoff
+
+        w1_list.append(wp.w1)
+        w2_list.append(wp.w2)
+        awc1_list.append(wp.awc1)
+        awc2_list.append(wp.awc2)
+        runoff_list.append(runoff)
+        rain_list.append(rain)
+        evap_list.append(evapo)
+        storage_list.append(wp.calc_total_water())
+        # Water balance error up to this step
+        storage_change = wp.calc_total_water() - initial_storage
+        balance_error = total_rain - (total_evap + total_runoff + storage_change)
+        balance_error_list.append(balance_error)
+
+    # Plotting
+    fig, axs = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
+    axs[0].plot(w1_list, label='w1 (upper layer)')
+    axs[0].plot(w2_list, label='w2 (lower layer)')
+    axs[0].set_ylabel('Soil Water (kg/m²)')
+    axs[0].legend()
+    axs[0].set_title('Soil Water Content')
+
+    axs[1].plot(awc1_list, label='awc1 (upper layer)')
+    axs[1].plot(awc2_list, label='awc2 (lower layer)')
+    axs[1].set_ylabel('AWC (kg/m²)')
+    axs[1].legend()
+    axs[1].set_title('Available Water Capacity')
+
+    axs[2].plot(rain_list, label='Rain')
+    axs[2].plot(evap_list, label='Evaporation')
+    axs[2].plot(runoff_list, label='Runoff')
+    axs[2].set_ylabel('Fluxes (kg/m²)')
+    axs[2].legend()
+    axs[2].set_title('Water Fluxes')
+
+    axs[3].plot(storage_list, label='Total Storage')
+    axs[3].plot(balance_error_list, label='Cumulative Water Balance Error')
+    axs[3].set_ylabel('kg/m²')
+    axs[3].set_xlabel('Timestep')
+    axs[3].legend()
+    axs[3].set_title('Storage and Water Balance Error')
+
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
     main()
+    test_water_balance()
+    test_water_balance_plot()
+

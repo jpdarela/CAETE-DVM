@@ -79,9 +79,9 @@ contains
     real(r_8) :: jl_out
 
     real(r_8) :: f1       !Leaf level gross photosynthesis (molCO2/m2/s)
-    real(r_8) :: f1a, co2_pp      !auxiliar_f1
+    real(r_8) :: f1a, co2_pp, shade_lai, sun_lai, f4_sun, f4_shade      !auxiliar_f1
 
-    real(r_4) :: rc_pot, rc_aux
+    real(r_4) :: rc_pot
 
 !getting pls parameters
 
@@ -113,17 +113,18 @@ contains
     vpd = vapor_p_deficit(temp, rh)
 
     call photosynthesis_rate(catm,temp,p0,ipar,light_limit,c4_int,n2cl,&
-         & p2cl,tleaf,real(vpd, r_8),f1a,vm_out,jl_out)
+         & p2cl,tleaf,f1a,vm_out,jl_out)
 
     !Stomatal resistence
     !===================
-    rc_pot = canopy_resistence(vpd, f1a, g1, catm) ! Potential RCM leaf level - s m-1
+    co2_pp = (catm * (p0 * 1.0D2) / 1.0D6) /  (p0 * 1.0D2) ! term used in the medlyn model
+    rc_pot = stomatal_resistance(vpd, f1a, g1, co2_pp) ! Potential RCM leaf level - s m-1
+    if (rc_pot .gt. rcmax) rc_pot = rcmax
+    if (rc_pot .lt. rcmin) rc_pot = rcmin
 
     !Water stress response modifier (dimensionless)
     !----------------------------------------------
     f5 =  water_stress_modifier(w, cf1_prod, rc_pot, emax, wmax)
-    ! write(*,*) 'f5:', f5
-
 
 !     Photosysthesis minimum and maximum temperature
 !     ----------------------------------------------
@@ -134,24 +135,31 @@ contains
        f1 = 0.0      !Temperature above/below photosynthesis windown
     endif
 
-    co2_pp = (catm * (p0 * 1.0D2) / 1.0D6) /  (p0 * 1.0D2) ! term used in the medlyn model
-    rc_aux = canopy_resistence(vpd, f1, g1, co2_pp)  ! RCM leaf level -!s m-1
+    ! rc_aux = stomatal_resistance(vpd, f1, g1, co2_pp)  ! RCM leaf level -!s m-1
+    ! if (rc_aux .gt. rcmax) rc_aux = rcmax
+    ! if (rc_aux .lt. rcmin) rc_aux = rcmin
 
-    wue = water_ue(f1, rc_aux, p0, vpd)
-
+    wue = water_ue(f1, rc_pot, p0, vpd)
 
     !     calcula a transpiração em mm/s
-    e = transpiration(rc_aux, p0, vpd, 2)
+    e = transpiration(rc_pot, p0, vpd, 2)
 
     ! Leaf area index (m2/m2)
     ! recalcula rc e escalona para dossel
     ! laia = 0.2D0 * dexp((2.5D0 * f1)/p25)
     sla = spec_leaf_area(tleaf)  ! m2 g-1  ! Convertions made in leaf_area_index &  gross_ph + calls therein
 
-    laia = leaf_area_index(cl1_prod, sla)
-    ! laia = f_four(0, cl1_prod, sla) + f_four(1, cl1_prod, sla)
-    rc = rc_aux * real(laia,kind=r_4) ! RCM -!s m-1 ! CANOPY SCALING --
+    ! laia = f_four(90, cl1_prod, sla)
+    shade_lai = f_four(20, cl1_prod, sla)
+    sun_lai = f_four(90, cl1_prod, sla)
+    f4_shade = f_four(2, cl1_prod, sla) ! 20% of the canopy is shade
+    f4_sun = f_four(1, cl1_prod, sla) ! 80% of the canopy is sun
+    ! laia = leaf_area_index(cl1_prod, sla)
+    laia = shade_lai + sun_lai
 
+
+    rc = rc_pot / (f4_shade * f4_sun) !/ real(laia,kind=r_4) ! RCM -!s m-1 ! CANOPY SCALING --
+    ! rc = stomatal_conductance(vpd, f1, g1, catm) * laia
 !     Canopy gross photosynthesis (kgC/m2/yr)
 !     =======================================x
 

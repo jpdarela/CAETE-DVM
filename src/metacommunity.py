@@ -37,7 +37,7 @@ from config import fetch_config
 
 from caete_jit import process_tuples
 
-config_data = fetch_config("../src/caete.toml")
+config_data = fetch_config()
 
 ntraits =  config_data.metacomm.ntraits
 npls =  config_data.metacomm.npls_max
@@ -164,7 +164,7 @@ class metacommunity:
             self.mask[i] = community.masked
 
 
-    def wrapp_state(self, year:int) -> Dict[str, Any]:
+    def wrapp_state(self, year:int, pl:bool) -> Dict[str, Any]:
         """Returns a dictionary with the state of the metacommunity."""
         state = {}
         state['communities'] = {}
@@ -185,11 +185,12 @@ class metacommunity:
             state['communities'][k]['vp_ocp'] = community.vp_ocp
             state['communities'][k]['id'] = community.id[community.vp_lsid]
             # state['communities'][k]['vp_lsid'] = community.vp_lsid
-            state['communities'][k]['limitation_status_leaf'] = process_tuples(community.limitation_status_leaf) #type: ignore
-            state['communities'][k]['limitation_status_root'] = process_tuples(community.limitation_status_root) #type: ignore
-            state['communities'][k]['limitation_status_wood'] = process_tuples(community.limitation_status_wood) #type: ignore
-            state['communities'][k]['uptk_strat_n'] = process_tuples(community.uptake_strategy_n) #type: ignore
-            state['communities'][k]['uptk_strat_p'] = process_tuples(community.uptake_strategy_p) #type: ignore
+            if pl:
+                state['communities'][k]['limitation_status_leaf'] = process_tuples(community.limitation_status_leaf) #type: ignore
+                state['communities'][k]['limitation_status_root'] = process_tuples(community.limitation_status_root) #type: ignore
+                state['communities'][k]['limitation_status_wood'] = process_tuples(community.limitation_status_wood) #type: ignore
+                state['communities'][k]['uptk_strat_n'] = process_tuples(community.uptake_strategy_n) #type: ignore
+                state['communities'][k]['uptk_strat_p'] = process_tuples(community.uptake_strategy_p) #type: ignore
             state['communities'][k]['cleaf'] = community.cleaf
             state['communities'][k]['croot'] = community.croot
             state['communities'][k]['cwood'] = community.cwood
@@ -217,13 +218,13 @@ class metacommunity:
         return state
 
 
-    def save_state(self, file_path: Union[str, Path], year:int) -> None:
+    def save_state(self, file_path: Union[str, Path], year:int, pl:bool) -> None:
         """Save the state of the metacommunity to a binary file using joblib.
 
         Args:
             file_path (Union[str, Path]): The path to the file where the state will be saved.
         """
-        state = self.wrapp_state(year)
+        state = self.wrapp_state(year, pl)
         with open(file_path, 'wb') as f:
             dump(value=state, filename=f, compress=('lz4', 2), protocol=5) # type: ignore
 
@@ -277,12 +278,15 @@ def main():
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
-        if comm_npls == 1:
-            idx = np.random.randint(0, table.shape[1] - 1)
-            return idx, table[:, idx]
-        idx = np.random.randint(0, comm_npls, comm_npls)
-        return idx, table[:, idx]
+        assert comm_npls > 0, "Number of PLS must be greater than 0"
 
+        if comm_npls == 1:
+            idx = np.random.choice(table.shape[1], 1, replace=False)[0]
+
+            return idx, table[:, idx]
+
+        idx = np.random.choice(table.shape[1], comm_npls, replace=False)
+        return idx, table[:, idx]
 
     # Create a metacommunity with 99 communities. the number of PLSs in each community is set in the caete.toml file
     mt = metacommunity(99, __get_from_main_table)
@@ -299,7 +303,7 @@ def main():
     # mt[0].seed_pls(ident, func_id)
 
     mt2 = metacommunity(1, None)
-    return mt2
+    return mt
 
 if __name__ == "__main__":
     mt = main()

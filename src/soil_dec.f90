@@ -32,6 +32,10 @@ module soil_dec
    public :: solution_n_equil
    public :: leaching
    public :: add_pool
+   public :: leaching_n
+   public :: leaching_p
+   public :: denitrification_n
+   public :: n_deposition
 
 contains
 
@@ -474,5 +478,35 @@ contains
          new_amount = a1
       endif
    end function add_pool
+
+
+   ! Leaching loss for N and P (proportional to available pool and drainage)
+   function leaching_n(n_avail, drainage, k_leach) result(leached_n)
+      real(r_4), intent(in) :: n_avail, drainage, k_leach
+      real(r_4) :: leached_n
+      leached_n = min(n_avail, k_leach * n_avail * drainage)
+   end function leaching_n
+
+   function leaching_p(p_avail, drainage, k_leach) result(leached_p)
+      real(r_4), intent(in) :: p_avail, drainage, k_leach
+      real(r_4) :: leached_p
+      leached_p = min(p_avail, k_leach * p_avail * drainage)
+   end function leaching_p
+
+   ! Denitrification loss for N (proportional to available pool, moisture, and temperature)
+   function denitrification_n(n_avail, soil_moist, temp, k_deni) result(denit_n)
+      real(r_4), intent(in) :: n_avail, soil_moist, temp, k_deni
+      real(r_4) :: denit_n, moisture_factor, temp_factor
+      moisture_factor = min(1.0, soil_moist / 0.6)
+      temp_factor = max(0.0, (temp - 5.0) / 25.0)
+      denit_n = min(n_avail, k_deni * n_avail * moisture_factor * temp_factor)
+   end function denitrification_n
+
+   ! N deposition (external input, e.g. atmospheric)
+   function n_deposition(deposition_rate) result(dep_n)
+      real(r_4), intent(in) :: deposition_rate
+      real(r_4) :: dep_n
+      dep_n = deposition_rate
+   end function n_deposition
 
 end module soil_dec

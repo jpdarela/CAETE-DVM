@@ -26,38 +26,44 @@ module photo
 
    ! functions(f) and subroutines(s) defined here
    public ::                    &
-        gross_ph               ,& ! (f), gross photosynthesis (kgC m-2 y-1)
-        leaf_area_index        ,& ! (f), leaf area index(m2 m-2)
-        f_four                 ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
-        spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
-        sla_reich              ,& ! (f), specific leaf area (m2 g-1)
-        water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
-        photosynthesis_rate    ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
-        vcmax_a                ,& ! (f), VCmax from domingues et al. 2010 (eq.1)
-        vcmax_a1               ,& ! (f), VCmax from domingues et al. 2010 (eq.2)
-        vcmax_b                ,& ! (f), VCmax from domingues et al. 2010 (eq.1 Table SM)
-        canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m)
-        stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
-        vapor_p_deficit         ,& ! (f), Vapor pressure defcit  (kPa)
-        transpiration          ,&
-        tetens                 ,& ! (f), Maximum vapor pressure (hPa)
-        m_resp                 ,& ! (f), maintenance respiration (plants)
-        sto_resp               ,&
-        realized_npp           ,&
-        spinup2                ,& ! (s), SPINUP function for CVEG pools
-        spinup3                ,& ! (s), SPINUP function to check the viability of Allocation/residence time combinations
-        g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
-        pft_area_frac          ,& ! (s), area fraction by biomass
-        water_ue               ,&
-        leap                   ,&
-        vec_ranging            ,&
-        resp_aux                      ,& ! respiration auxiliary functions
+        gross_ph                    ,& ! (f), gross photosynthesis (kgC m-2 y-1)
+        leaf_area_index             ,& ! (f), leaf area index(m2 m-2)
+        f_four                      ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
+        spec_leaf_area              ,& ! (f), specific leaf area (m2 g-1)
+        sla_reich                   ,& ! (f), specific leaf area (m2 g-1)
+         leaf_nitrogen_concetration ,& ! (f), leaf nitrogen concentration (gN gC-1)
+        water_stress_modifier       ,& ! (f), F5 - water stress modifier (dimensionless)
+        photosynthesis_rate         ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
+        vcmax_a                     ,& ! (f), VCmax from domingues et al. 2010 (eq.1)
+        vcmax_a1                    ,& ! (f), VCmax from domingues et al. 2010 (eq.2)
+        vcmax_b                     ,& ! (f), VCmax from domingues et al. 2010 (eq.1 Table SM)
+        stomatal_resistance         ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m)
+        stomatal_conductance        ,& ! (f), IN DEVELOPMENT - return stomatal conductance
+        vapor_p_deficit             ,& ! (f), Vapor pressure defcit  (kPa)
+        transpiration               ,&
+        tetens                      ,& ! (f), Maximum vapor pressure (hPa)
+        m_resp                      ,& ! (f), maintenance respiration (plants)
+        sto_resp                    ,&
+        realized_npp                ,&
+        spinup2                     ,& ! (s), SPINUP function for CVEG pools
+        spinup3                     ,& ! (s), SPINUP function to check the viability of Allocation/residence time combinations
+        g_resp                      ,& ! (f), growth Respiration (kg m-2 yr-1)
+        pft_area_frac               ,& ! (s), area fraction by biomass
+        water_ue                    ,&
+        leap                        ,&
+        vec_ranging                 ,&
+        resp_aux                    ,& ! respiration auxiliary functions
         f
 
 contains
-
+   !=================================================================
+   !=================================================================
+   !> leap
+   !> Returns true if the year is a leap year
+   !> @param year Year to be checked
+   !> @return True if the year is a leap year, false otherwise
+   !=================================================================
    function leap(year) result(is_leap)
-
 
       integer(i_4),intent(in) :: year
       logical(l_1) :: is_leap
@@ -74,7 +80,13 @@ contains
 
    !=================================================================
    !=================================================================
-
+   !> gross_ph
+   !> Returns gross photosynthesis rate (kgC m-2 y-1) (GPP)
+   !> @param f1 Photosynthesis rate (molCO2 m-2 s-1)
+   !> @param cleaf Leaf carbon in kgC m-2
+   !> @param sla Specific leaf area in m2 gC-1
+   !> @return Gross photosynthesis rate in kgC m-2 y-1
+   !=================================================================
    function gross_ph(f1,cleaf,sla) result(ph)
       ! Returns gross photosynthesis rate (kgC m-2 y-1) (GPP)
       !implicit none
@@ -97,8 +109,14 @@ contains
 
    !=================================================================
    !=================================================================
-
+   !> leaf_area_index
+   !> Returns Leaf Area Index (m2 m-2) based on leaf carbon and specific leaf area
+   !> @param cleaf Leaf carbon in kgC m-2
+   !> @param sla Specific leaf area in m2 gC-1
+   !> @return Leaf Area Index in m2 m-2
+   !=================================================================
    function leaf_area_index(cleaf, sla) result(lai)
+      use photo_par, only: gap_fraction
       ! Returns Leaf Area Index m2 m-2
 
       !implicit none
@@ -108,26 +126,35 @@ contains
       real(r_8) :: lai
 
 
-      lai  = cleaf * 1.0D3 * sla  ! Converts cleaf from (KgC m-2) to (gCm-2)
+      lai  = cleaf * 1.0D3 * sla * (1.0D0 - gap_fraction) ! Converts cleaf from (KgC m-2) to (gCm-2)
       if(lai .lt. 0.0D0) lai = 0.0D0
 
    end function leaf_area_index
 
    !=================================================================
    !=================================================================
-
+   !> spec_leaf_area
+   !> Specific leaf area based on Reich et al. 1997
+   !> @param tau_leaf Leaf turnover time in years
+   !> @return Specific leaf area in m2 gC-1
+   !=================================================================
    function spec_leaf_area(tau_leaf) result(sla)
-      ! based on JeDi DGVM
       !implicit none
 
       real(r_8),intent(in) :: tau_leaf  !years
-      real(r_8):: sla   !m2 gC-1
+      real(r_8):: sla   !m2 gC-1 Dry mass
+      real(r_8), parameter :: fc = 0.47D0  ! carbon fraction of dry mass
 
-      sla = sla_reich(tau_leaf) * 0.0001 !(3D-2 * (365.2420D0 / tl0) ** (-0.460D0))
+      sla = sla_reich(tau_leaf) /fc * 0.0001
 
    end function spec_leaf_area
 
    !=================================================================
+   !=================================================================
+   !> sla_reich
+   !> Specific leaf area based on Reich et al. 1997
+   !> @param tau_leaf Leaf turnover time in years
+   !> @return Specific leaf area in cm2 gC-1
    !=================================================================
    function sla_reich(tau_leaf) result(sla)
       ! based on Reich et al. 1997
@@ -140,13 +167,48 @@ contains
 
       tl0 = tau_leaf * 12.0D0
 
-      sla = 266.0D0 * (tl0 ** (-0.55))
+      sla = 338.0D0 * (tl0 ** (-0.49))
 
    end function sla_reich
 
    !=================================================================
    !=================================================================
+   !> leaf_nitrogen_concetration
+   !> Leaf nitrogen concentration based on Reich et al. 1997
+   !> @param tau_leaf Leaf turnover time in years
+   !> @return Leaf nitrogen concentration in gN gC-1
+   !=================================================================
+   function leaf_nitrogen_concetration(tau_leaf) result(nleaf)
+      ! based on Reich et al. 1997
+      !implicit none
+      real(r_8),intent(in) :: tau_leaf  !years
+      real(r_8):: nleaf   !gN gC-1
+      real(r_8) :: tl0
+      real(r_8), parameter :: fc = 0.47D0  ! carbon fraction of dry mass
+      real(r_8) :: delta, r
+      tl0 = tau_leaf * 12.0D0
+      nleaf = 42.7D0 * (tl0 ** -0.32) / fc  ! mgN gC-1
+      nleaf = nleaf * 0.001D0 ! convert mgN gC-1 to gN gC-1
+      call random_number(r)
+      delta = (r - 0.5D0) * 0.01D0
+      nleaf = nleaf + delta
+   end function leaf_nitrogen_concetration
 
+   !=================================================================
+   !=================================================================
+   !> f_four
+   !> Function used to scale LAI from leaf to canopy level (2 layers)
+   !> @param fs Function mode:
+   !> 1  == f4sun   --->  to gross assimilation
+   !> 2  == f4shade --->  too
+   !> 90 == sun LAI
+   !> 20 == shade LAI
+   !> Any other number returns sunlai (not scaled to canopy)
+   !> @param cleaf Carbon in leaf (kg m-2)
+   !> @param sla Specific leaf area (m2 gC-1)
+   !> @return lai_ss Leaf area index (m2 m-2)
+   !> @note This function is based on de Pury & Farquhar (1997) adapted from the CPTEC-PVM2 model
+   !=================================================================
    function f_four(fs,cleaf,sla) result(lai_ss)
       ! Function used to scale LAI from leaf to canopy level (2 layers)
       use photo_par, only: p26, p27
@@ -201,7 +263,15 @@ contains
 
    !=================================================================
    !=================================================================
-
+   !> water_stress_modifier
+   !> Returns the water stress modifier (F5) based on soil water content, carbon in fine roots, canopy resistance, potential evapotranspiration and maximum soil water content
+   !> @param w Soil water content in mm
+   !> @param cfroot Carbon in fine roots in kg m-2
+   !> @param rc Canopy resistance in s/m
+   !> @param ep Potential evapotranspiration in mm s-1
+   !> @param wmax Maximum soil water content in mm
+   !> @return f5 Water stress modifier (dimensionless)
+   !=================================================================
    function water_stress_modifier(w, cfroot, rc, ep, wmax) result(f5)
       use global_par, only: csru, alfm, gm, rcmin, rcmax
       !implicit none
@@ -226,34 +296,37 @@ contains
       rc_aux = real(rc, kind=r_8)
       rcmin_aux = real(rcmin, kind=r_8)
       ep_aux = real(ep, kind=r_8)
-      if (rc .gt. rcmax) rc_aux = real(rcmax, r_8)
+      ! if (rc .gt. rcmax) rc_aux = real(rcmax, r_8)
 
       pt = csru*(cfroot*1000.0D0) * wa  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
-      if(rc_aux .gt. rcmin) then
-         gc = (1.0D0/(rc_aux * 1.15741D-08))  ! s/m
-      else
-         gc =  1.0D0/(rcmin_aux * 1.15741D-8) ! BIANCA E HELENA - Mudei este esquema..
-      endif
+      gc = max((1.0D0/rc_aux * 1000.0D0), gm) ! Canopy conductance (mm s-1)-> s m-1 to mm s-1
 
       !d =(ep * alfm) / (1. + gm/gc) !(based in Gerten et al. 2004)
       d = (ep_aux * alfm) / (1.0D0 + (gm/gc))
       if(d .gt. 0.0D0) then
          f5_64 = pt/d
-         ! print*, f5_64, 'f564'
-         f5_64 = exp((f5_64 * (-0.1D0)))
+         f5_64 = exp(-f5_64)
          f5_64 = 1.0D0 - f5_64
       else
          f5_64 = wa
       endif
 
       f5 = f5_64
-      if (f5 .lt. 0.0D0) f5 = 0.0D0
+      if (f5 .lt. wa) f5 = wa
+      if (f5 .gt. 0.6D0) f5 = 1.0D0
    end function water_stress_modifier
 
    ! =============================================================
    ! =============================================================
-
-   function canopy_resistence(vpd_in,f1_in,g1,ca) result(rc2_in)
+   !> stomatal_resistance
+   !> Returns stomatal resistance based on Medlyn et al. 2011a
+   !> @param vpd_in Vapor pressure deficit in hPa
+   !> @param f1_in Photosynthesis rate in molCO2 m-2 s-1
+   !> @param g1 Model m (slope) in sqrt(kPa)
+   !> @param ca Atmospheric CO2 concentration in ppm
+   !> @return rc2_in Canopy resistance in s m-1
+   !=================================================================
+   function stomatal_resistance(vpd_in,f1_in,g1,ca) result(rc2_in)
       ! return stomatal resistence based on Medlyn et al. 2011a
       ! Coded by Helena Alves do Prado
       use global_par, only: rcmin, rcmax
@@ -272,12 +345,13 @@ contains
       real(r_8) :: gs       !Canopy conductance (molCO2 m-2 s-1)
       real(r_8) :: D1       !sqrt(kPA)
       real(r_4) :: vapour_p_d
+      ! real(r_8):: GMIN = 2.0D-6
 
 
       vapour_p_d = vpd_in
       ! Assertions
-      if(vpd_in .le. 0.01) vapour_p_d = 0.01
-      if(vpd_in .gt. 4.0) vapour_p_d = 4.0
+      if(vpd_in .le. 0.01) vapour_p_d = 0.05
+      if(vpd_in .gt. 8.0) vapour_p_d = 8.0
       ! print *, 'vpd going mad in canopy_resistence'
       ! stop
       ! endif
@@ -291,11 +365,19 @@ contains
       if(rc2_in .ge. rcmax) rc2_in = rcmax
       if(rc2_in .lt. rcmin) rc2_in = rcmin
 
-   end function canopy_resistence
+   end function stomatal_resistance
 
    !=================================================================
    !=================================================================
-
+   !> stomatal_conductance
+   !> Returns stomatal conductance based on Medlyn et al. 2011
+   !> @param vpd_in Vapor pressure deficit in hPa
+   !> @param f1_in Photosynthesis rate in molCO2 m-2 s-1
+   !> @param g1 Model m (slope) in sqrt(kPa)
+   !> @param ca Atmospheric CO2 concentration in ppm
+   !> @return gs Canopy conductance in molCO2 m-2 s-1
+   !=================================================================
+   !> IN DEVELOPMENT - return stomatal conductance
    function stomatal_conductance(vpd_in,f1_in,g1,ca) result(gs)
     ! return stomatal conductance based on Medlyn et al. 2011
     ! Coded by Helena Alves do Prado
@@ -325,9 +407,16 @@ contains
     gs = 1.6 * (1.0 + (g1/D1)) * (f1_in/ca) !mol m-2 s-1
  end function stomatal_conductance
 
- !=================================================================
- !=================================================================
-
+   !=================================================================
+   !=================================================================
+   !> water_ue
+   !> Returns water use efficiency (WUE) based on assimilation, stomatal resistance, atmospheric pressure and vapor pressure deficit
+   !> @param a Assimilation rate in mol m-2 s-1
+   !> @param g Stomatal resistance in s m-1
+   !> @param p0 Atmospheric pressure in hPa
+   !> @param vpd Vapor pressure deficit in kPa
+   !> @return wue Water use efficiency in mol CO2 mol H2O-1
+   !=================================================================
    function water_ue(a, g, p0, vpd) result(wue)
       real(r_8),intent(in) :: a
       real(r_4),intent(in) :: g, p0, vpd
@@ -348,9 +437,16 @@ contains
    end function water_ue
 
 
- !=================================================================
- !=================================================================
-
+   !=================================================================
+   !=================================================================
+   !> transpiration
+   !> Returns transpiration rate based on stomatal resistance, atmospheric pressure and vapor pressure deficit
+   !> @param g Stomatal resistance in s m-1
+   !> @param p0 Atmospheric pressure in hPa
+   !> @param vpd Vapor pressure deficit in kPa
+   !> @param unit Unit of measurement: 1 for mol m-2 s-1, 2 for mm s-1
+   !> @return e Transpiration rate in mol m-2 s-1 or mm s-1
+   !=================================================================
    function transpiration(g, p0, vpd, unit) result(e)
       !implicit none
       real(r_4),intent(in) :: g, p0, vpd
@@ -376,7 +472,12 @@ contains
 
    !=================================================================
    !=================================================================
-
+   !> vapor_p_deficit
+   !> Returns vapor pressure deficit (VPD) based on temperature and relative humidity
+   !> @param t Temperature in °C
+   !> @param rh Relative humidity in percentage (0-100)
+   !> @return vpd_0 Vapor pressure deficit in kPa
+   !=================================================================
    function vapor_p_deficit(t,rh) result(vpd_0)
       real(r_4),intent(in) :: t
       real(r_4),intent(in) :: rh
@@ -397,9 +498,17 @@ contains
       vpd_0 = (es - vpd_ac) / 10.
    end function vapor_p_deficit
 
-!=================================================================
-!=================================================================
-
+   !=================================================================
+   !=================================================================
+   !> realized_npp
+   !> Calculates the realized NPP based on potential NPP, nutrient uptake potential and available nutrients
+   !> @param pot_npp_pool Potential NPP for the pool (leaf, root or wood)
+   !> @param nupt_pot Potential uptake of nutrient (N/P) for each pool
+   !> @param available_n Available nutrients for growth weighted for each pool
+   !> @param rnpp Realized NPP (output)
+   !> @param nl Is limited? (output)
+   !> @note If available nutrients are greater than or equal to potential nutrient uptake, there is no limitation
+   !=================================================================
    subroutine realized_npp(pot_npp_pool, nupt_pot, available_n,&
       &  rnpp, nl)
 
@@ -428,6 +537,14 @@ contains
 
 
    !=================================================================
+   !=================================================================
+   !> vcmax_a
+   !> Calculates Vcmax based on nitrogen and phosphorus content and specific leaf area
+   !> @param npa Nitrogen content in mg g-1
+   !> @param ppa Phosphorus content in mg g-1
+   !> @param sla Specific leaf area in m2 g-1
+   !> @return vcmaxd Vcmax in mol m-2 s-1
+   !> @note This function is based on Domingues et al. 2010 (eq.1)
    !=================================================================
    function vcmax_a(npa, ppa, sla) result(vcmaxd)
       ! TESTING eq.1 / Fig 5 Domingues et al. 2010
@@ -462,6 +579,14 @@ contains
 
    !=================================================================
    !=================================================================
+   !> vcmax_a1
+   !> Calculates Vcmax based on nitrogen and phosphorus content and specific leaf area
+   !> @param npa Nitrogen content in mg g-1
+   !> @param ppa Phosphorus content in mg g-1
+   !> @param sla Specific leaf area in m2 g-1
+   !> @return vcmaxd Vcmax in mol m-2 s-1
+   !> @note This function is based on Domingues et al. 2010 (eq.?)
+   !=================================================================
    function vcmax_a1(npa, ppa, sla) result(vcmaxd)
       ! TESTING
       real(r_8), intent(in) :: npa   ! N g m-2
@@ -470,7 +595,7 @@ contains
 
       real(r_8) :: vcmaxd !mol m⁻² s⁻¹
 
-      ! UNITS = LMA Domingues = cm2 g-1 (SLA CAETE = m² g⁻¹)
+      ! UNITS = LMA Domingues = cm2 g⁻¹ (SLA CAETE = m² g⁻¹)
       ! Dry weight -> mg g⁻¹
 
       real(r_8), parameter :: alpha_n = -1.56D0,&
@@ -498,6 +623,11 @@ contains
 
    !=================================================================
    !=================================================================
+   !> vcmax_b
+   !> Calculates Vcmax based on nitrogen content using Domingues et al. 2010 (eq.?)
+   !> @param npa Nitrogen content in mg g-1
+   !> @return vcmaxd Vcmax in mol m-2 s-1
+   !=================================================================
    function vcmax_b(npa) result(vcmaxd)
       ! TESTING Domingues f
       real(r_8), intent(in) :: npa   ! N g m-2
@@ -518,12 +648,28 @@ contains
    end function vcmax_b
    !=================================================================
    !=================================================================
-
+   !> photosynthesis_rate
+   !> Calculates the photosynthesis rate based on atmospheric CO2 concentration, temperature, light intensity, nitrogen and phosphorus content, leaf turnover time, and whether the plant is C4 or not
+   !> @param c_atm Atmospheric CO2 concentration in ppm
+   !> @param temp Temperature in °C
+   !> @param p0 Atmospheric pressure in hPa
+   !> @param ipar Light intensity in mol photons m-2 s-1
+   !> @param ll Is light limited? (1 for yes, 0 for no)
+   !> @param c4 Is C4 photosynthesis pathway? (1 for yes, 0 for no)
+   !> @param nbio Nitrogen content in mg g-1
+   !> @param pbio Phosphorus content in mg g-1
+   !> @param leaf_turnover Leaf turnover time in years
+   !> @param f1ab Instantaneous photosynthesis rate at leaf level in mol CO2 m-2 s-1 (output)
+   !> @param vm Maximum carboxylation rate (Vcmax) in mol CO2 m-2 s-1 (output)
+   !> @param amax Light saturated photosynthesis rate in mol CO2 m-2 s-1 (output)
+   !=================================================================
+   !> @note This function is based on the Farquhar/Collatz C3 model for photosynthesis adapted from the CPTEC-PVM2 model
+   !> C4 pathway is based on the model of Chen et al. 1994 Ecol. Model. 73 (63-80)
    subroutine photosynthesis_rate(c_atm,temp,p0,ipar,ll,c4,nbio,pbio,&
-        & leaf_turnover,vpd,f1ab,vm,amax)
+        & leaf_turnover,f1ab,vm,amax)
 
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
-      ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
+      ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m-2 s-1)
       use global_par
       use photo_par
       ! implicit none
@@ -536,7 +682,6 @@ contains
       integer(i_4),intent(in) :: ll ! is light limited?
       integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_8),intent(in) :: leaf_turnover   ! y
-      real(r_8),intent(in) :: vpd
       ! O
       real(r_8),intent(out) :: f1ab ! Gross CO2 Assimilation Rate mol m-2 s-1
       real(r_8),intent(out) :: vm   ! PLS Vcmax mol m-2 s-1
@@ -565,18 +710,19 @@ contains
       real(r_8) :: vpm, v4m
       real(r_8) :: cm, cm0, cm1, cm2
 
-      real(r_8) :: nbio2, pbio2, vpd_effect, dark_respiration  ! , cbio_aux
-      real(r_8), parameter :: light_penalization = 0.03D0, alpha_a = 0.7D0
+      real(r_8) :: nbio2, pbio2, dark_respiration  ! , cbio_aux
+      real(r_8), parameter :: light_penalization = 0.2D0, alpha_a = 1.0D0
 
 
-      vpd_effect = min(1.0D0, 1.0D0 - (0.25D0 * vpd))
+
+      ! vpd_effect = min(1.0D0, max(1.0D0 - (0.25D0 * vpd), 0.0D0))
       dark_respiration = 1.0D0 - 0.15D0 ! TODO:there is a problem upstream with the vm calculation
 
 
-      nbio2 = nbio * 0.5 !nrubisco(leaf_turnover, nbio)
-      pbio2 = pbio * 0.5 !nrubisco(leaf_turnover, pbio)
+      nbio2 = nbio ! mg (N) g (C) -1
+      pbio2 = pbio ! mg (P) g (C) -1
 
-      vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) * vpd_effect  ! 10**vm_nutri * 1D-6
+      vm = vcmax_a(nbio2, pbio2, spec_leaf_area(leaf_turnover)) !* vpd_effect  ! 10**vm_nutri * 1D-6
       if(vm .gt. p25) vm = p25
       vm = alpha_a * vm
 
@@ -633,7 +779,6 @@ contains
          j1 = (-b2-(sqrt(delta2)))/(2.0d0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0d0*a2)
          f1a = dmin1(j1,j2)
-
 
          f1ab = f1a * dark_respiration
          ! f1ab = max(f1a - (vm_in * 0.10), 0.0D0)
@@ -696,8 +841,13 @@ contains
 
    !=================================================================
    !=================================================================
-
-
+   !> spinup3
+   !> Performs a spin-up simulation for the carbon pools (leaf, root, wood) based on potential NPP and turnover rates
+   !> @param nppot Potential NPP in kg m-2 yr-1
+   !> @param dt Array containing turnover times and allocation percentages for leaf, root, and wood compartments
+   !> @param cleafini Initial carbon content in leaf compartment (output)
+   !> @param cfrootini Initial carbon content in fine root compartment (output)
+   !> @param cawoodini Initial carbon content in aboveground woody biomass compartment
    subroutine spinup3(nppot,dt,cleafini,cfrootini,cawoodini)
       implicit none
 
@@ -760,7 +910,7 @@ contains
             cfrooti_aux(k) = afroot * nppot2
          else
             aux_leaf = cleafi_aux(k-1) + (aleaf * nppot2)
-            aux_wood = cawoodi_aux(k-1) + (aleaf * nppot2)
+            aux_wood = cawoodi_aux(k-1) + (aawood * nppot2)
             aux_root = cfrooti_aux(k-1) + (afroot * nppot2)
 
             out_leaf = aux_leaf - (cleafi_aux(k-1) / tleaf)
@@ -786,7 +936,7 @@ contains
                   cleafini = cleafi_aux(k) ! carbon content (kg m-2)
                   cfrootini = cfrooti_aux(k)
                   cawoodini = cawoodi_aux(k)
-                  !  print *, 'woody exitet in', k
+                  ! print *, 'woody exitet in', k
                   exit
                endif
             else
@@ -797,7 +947,7 @@ contains
                   cleafini = cleafi_aux(k) ! carbon content (kg m-2)
                   cfrootini = cfrooti_aux(k)
                   cawoodini = 0.0
-                  !  print *, 'grass exitet in', k
+                  ! print *, 'grass exitet in', k
                   exit
                endif
             endif
@@ -811,7 +961,13 @@ contains
 
    ! ===========================================================
    ! ===========================================================
-
+   !> spinup2
+   !> Performs a spin-up simulation for the carbon pools (leaf, root, wood) based on potential NPP and turnover rates
+   !> @param nppot Potential NPP in kg m-2 yr-1
+   !> @param dt Array containing turnover times and allocation percentages for leaf, root, and wood compartments
+   !> @param cleafini Initial carbon content in leaf compartment (output)
+   !> @param cfrootini Initial carbon content in fine root compartment (output)
+   !> @param cawoodini Initial carbon content in aboveground woody biomass compartment
    subroutine spinup2(nppot,dt,cleafini,cfrootini,cawoodini)
       use global_par, only: ntraits,npls
       implicit none
@@ -877,7 +1033,7 @@ contains
 
             else
                aux_leaf = cleafi_aux(k-1) + (aleaf(i6) * nppot2)
-               aux_wood = cawoodi_aux(k-1) + (aleaf(i6) * nppot2)
+               aux_wood = cawoodi_aux(k-1) + (aawood(i6) * nppot2)
                aux_root = cfrooti_aux(k-1) + (afroot(i6) * nppot2)
 
                out_leaf = aux_leaf - (cleafi_aux(k-1) / tleaf(i6))
@@ -900,20 +1056,20 @@ contains
                        &(cleafi_aux(k)/cleafi_aux(kk).lt.sensitivity).and.&
                        &(cawoodi_aux(k)/cawoodi_aux(kk).lt.sensitivity)) then
 
-                     cleafini(i6) = cleafi_aux(k) ! carbon content (kg m-2)
-                     cfrootini(i6) = cfrooti_aux(k)
-                     cawoodini(i6) = cawoodi_aux(k)
-                     exit
+                    cleafini(i6) = cleafi_aux(k) ! carbon content (kg m-2)
+                    cfrootini(i6) = cfrooti_aux(k)
+                    cawoodini(i6) = cawoodi_aux(k)
+                    exit
                   endif
                else
                   if((cfrooti_aux(k)&
                        &/cfrooti_aux(kk).lt.sensitivity).and.&
                        &(cleafi_aux(k)/cleafi_aux(kk).lt.sensitivity)) then
 
-                     cleafini(i6) = cleafi_aux(k) ! carbon content (kg m-2)
-                     cfrootini(i6) = cfrooti_aux(k)
-                     cawoodini(i6) = 0.0
-                     exit
+                    cleafini(i6) = cleafi_aux(k) ! carbon content (kg m-2)
+                    cfrootini(i6) = cfrooti_aux(k)
+                    cawoodini(i6) = 0.0
+                    exit
                   endif
                endif
             endif
@@ -927,7 +1083,11 @@ contains
 
   !===================================================================
   !===================================================================
-  function resp_aux(temp) result(gtemp)
+  !> Based on Ryan 1991; Sitch et al. 2003; Levis et al. 2004
+  !> This function calculates the temperature response of respiration
+  !> @param temp Temperature in °C
+  !> @return gtemp Temperature response of respiration in kgC/m2/yr
+   function resp_aux(temp) result(gtemp)
 
   real(r_4), intent(in) :: temp
   real(r_4) :: gtemp
@@ -941,6 +1101,11 @@ contains
   end function resp_aux
 
   !===================================================================
+  !===================================================================
+  !> Deprecated function, use resp_aux instead
+  !> This function calculates the temperature response of respiration
+  !> @param temp Temperature in °C
+  !> @return gtemp Temperature response of respiration in kgC/m2/yr
   !===================================================================
   function f(temp) result(gtemp)
 
@@ -958,6 +1123,21 @@ contains
 
   !===================================================================
   !===================================================================
+   !> This function calculates the maintenance respiration
+   !> @param temp Temperature in °C
+   !> @param ts Soil temperature in °C
+   !> @param cl1_mr Carbon content in leaf pool (kgC/m2)
+   !> @param cf1_mr Carbon content in fine root pool (kgC/m2)
+   !> @param ca1_mr Carbon content in aboveground woody biomass pool (kgC/m2)
+   !> @param n2cl Nitrogen content in leaf pool (kgN/m2)
+   !> @param n2cw Nitrogen content in sapwood pool (kgN/m2)
+   !> @param n2cf Nitrogen content in fine root pool (kgN/m2)
+   !> @param aawood_mr Carbon content in aboveground woody biomass pool (kgC/m2)
+   !> @return rm Maintenance respiration in kgC/m2/yr
+   !> @author: JPdarela Adapted from LPJ-GUESS code
+   !> @date 2023-10-01
+   !> @version 1.0
+   !===================================================================
    function m_resp(temp, ts,cl1_mr,cf1_mr,ca1_mr,&
         & n2cl,n2cw,n2cf,aawood_mr) result(rm)
 
@@ -1004,9 +1184,13 @@ contains
 
    end function m_resp
 
-  !===================================================================
-  !===================================================================
-
+   !===================================================================
+   !===================================================================
+   !> Storage pool respiration
+   !> @param temp Temperature in °C
+   !> @param sto_mr Storage pool carbon content in kgC/m2 (3 elements: [1] = leaf, [2] = fine root, [3] = aboveground woody biomass)
+   !> @return rm Storage pool respiration in kgC/m2/yr
+   !====================================================================
    function sto_resp(temp, sto_mr) result(rm)
     !implicit none
 
@@ -1042,77 +1226,37 @@ contains
        rm = 0.0
     endif
     return
-
-
- end function sto_resp
-
+   end function sto_resp
 
    !====================================================================
    !====================================================================
+   !> Growth respiration
+   !> @param construction Construction cost in kgC/m2
+   !> @return rg Growth respiration in kgC/m2/yr
+   function g_resp(construction) result(rg)
+      !implicit none
 
- function g_resp(construction) result(rg)
-   !implicit none
+      real(r_8), intent(in) :: construction
+      real(r_4) :: rg
 
-   real(r_8), intent(in) :: construction
-   real(r_4) :: rg
+      !     Autothrophic respiration
+      !     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
+      !     2003; Levis et al. 2004)
+      if (construction .le. 0.0) then
+         rg = 0.0
+      else
+         rg = real(0.25D0 * construction * 1.0D-3, kind=r_4)
+      endif
 
-   !     Autothrophic respiration
-   !     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
-   !     2003; Levis et al. 2004)
-   rg = real(0.25D0 * construction * 1.0D-3, kind=r_4)
+   end function g_resp
 
-end function g_resp
-
-!====================================================================
-!====================================================================
-
-
-   ! function g_resp(beta_leaf,beta_awood, beta_froot,aawood_rg) result(rg)
-   !    !implicit none
-
-   !    real(r_8), intent(in) :: beta_leaf
-   !    real(r_8), intent(in) :: beta_froot
-   !    real(r_8), intent(in) :: beta_awood
-   !    real(r_8), intent(in) :: aawood_rg
-   !    real(r_4) :: rg
-
-   !    real(r_8) :: rg64, rgl64, rgf64, rgs64
-   !    real(r_8) :: a1,a2,a3
-
-   !    !     Autothrophic respiration
-   !    !     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
-   !    !     2003; Levis et al. 2004)
-
-   !    a1 = beta_leaf
-   !    a2 = beta_froot
-   !    a3 = beta_awood
-
-   !    if(a1 .le. 0.0D0) a1 = 0.0D0
-   !    if(a2 .le. 0.0D0) a2 = 0.0D0
-   !    if(a3 .le. 0.0D0) a3 = 0.0D0
-
-   !    rgl64 = 0.25D0 * a1
-   !    rgf64 = 0.25D0 * a2
-
-   !    if(aawood_rg .gt. 0.0D0) then
-   !       rgs64 = 0.25D0 * a3
-   !    else
-   !       rgs64 = 0.0D0
-   !    endif
-
-   !    rg64 = rgl64 + rgf64 + rgs64
-
-   !    rg = real(rg64,r_4)
-
-   !    if (rg.lt.0) then
-   !       rg = 0.0
-   !    endif
-
-   ! end function g_resp
-
-   ! !====================================================================
-   ! !====================================================================
-
+   !====================================================================
+   !====================================================================
+   !> tetens
+   !> This function calculates the saturation vapor pressure using the Arden Buck equation.
+   !> @param t Temperature in °C
+   !> @return es Saturation vapor pressure in hPa
+   !====================================================================
    function tetens(t) result(es)
       ! returns Saturation Vapor Pressure (hPa), using Buck equation
 
@@ -1123,7 +1267,6 @@ end function g_resp
 
       ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
       !      J. Appl. Meteorol. 20:1527–1532.
-
 
       real(r_4),intent( in) :: t
       real(r_4) :: es
@@ -1142,7 +1285,17 @@ end function g_resp
 
    !====================================================================
    !====================================================================
-
+   !> pft_area_frac
+   !> This subroutine calculates the area fraction occupied by each PFT based on their carbon content.
+   !> @param cleaf1 Carbon content in leaf pool (kg m-2)
+   !> @param cfroot1 Carbon content in fine root pool (kg m-2)
+   !> @param cawood1 Carbon content in aboveground woody biomass pool (kg m-2)
+   !> @param awood Allocation coefficient to wood (dimensionless)
+   !> @param ocp_coeffs Output occupation coefficients (area fraction) for each PFT
+   !> @param ocp_wood Output occupation coefficients for wood (integer)
+   !> @param run_pls Output array indicating whether each PFT is running (1) or not (0)
+   !> @param c_to_soil Output array of carbon transferred to soil (not implemented in budget)
+   !=======================================================================
    subroutine pft_area_frac(cleaf1, cfroot1, cawood1, awood,&
                           & ocp_coeffs, ocp_wood, run_pls, c_to_soil)
 
@@ -1267,6 +1420,13 @@ end function g_resp
 
    !====================================================================
    !====================================================================
+   !> vec_ranging
+   !> This subroutine rescales a vector of values to a new range defined by new_min and new_max.
+   !> @param values Input vector of values to be rescaled
+   !> @param new_min New minimum value for the rescaled range
+   !> @param new_max New maximum value for the rescaled range
+   !> @param output Output vector containing the rescaled values
+   !====================================================================
    subroutine vec_ranging(values, new_min, new_max, output)
        implicit none
        real, dimension(:), intent(in) :: values
@@ -1284,290 +1444,3 @@ end function g_resp
    end subroutine vec_ranging
 
 end module photo
-
-
-! module water
-
-!   ! this module defines functions related to surface water balance
-!   implicit none
-!   private
-
-!   ! functions defined here:
-
-!   public ::              &
-!        wtt              ,&
-!        soil_temp        ,&
-!        soil_temp_sub    ,&
-!        penman           ,&
-!        evpot2           ,&
-!        available_energy ,&
-!        runoff
-
-
-! contains
-
-!    !====================================================================
-!    !====================================================================
-
-! function wtt(t) result(es)
-!    ! returns Saturation Vapor Pressure (hPa), using Buck equation
-
-!    ! buck equation...references:
-!    ! http://www.hygrometers.com/wp-content/uploads/CR-1A-users-manual-2009-12.pdf
-!    ! Hartmann 1994 - Global Physical Climatology p.351
-!    ! https://en.wikipedia.org/wiki/Arden_Buck_equation#CITEREFBuck1996
-
-!    ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
-!    !      J. Appl. Meteorol. 20:1527–1532.
-
-!    use types, only: r_4
-!    !implicit none
-
-!    real(r_4),intent( in) :: t
-!    real(r_4) :: es
-
-!    if (t .ge. 0.) then
-!       es = 6.1121 * exp((18.729-(t/227.5))*(t/(257.87+t))) ! Arden Buck
-!       !es = es * 10 ! transform kPa in mbar == hPa
-!       return
-!    else
-!       es = 6.1115 * exp((23.036-(t/333.7))*(t/(279.82+t))) ! Arden Buck
-!       !es = es * 10 ! mbar == hPa ! mbar == hPa
-!       return
-!    endif
-
-! end function wtt
-
-! !====================================================================
-! !====================================================================
-
-!   !=================================================================
-!   !=================================================================
-
-!   subroutine soil_temp_sub(temp, tsoil)
-!   ! Calcula a temperatura do solo. Aqui vamos mudar no futuro!
-!   ! a tsoil deve ter relacao com a et realizada...
-!   ! a profundidade do solo (H) e o coef de difusao (DIFFU) devem ser
-!   ! variaveis (MAPA DE SOLO?; agua no solo?)
-!   use types
-!   use global_par
-!   !implicit none
-!   integer(i_4),parameter :: m = 1095
-
-!   real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
-!   real(r_4), intent(out) :: tsoil
-
-!   ! internal vars
-
-!   integer(i_4) :: n, k
-!   real(r_4) :: t0 = 0.0
-!   real(r_4) :: t1 = 0.0
-
-!   tsoil = -9999.0
-
-!   do n=1,m !run to attain equilibrium
-!      k = mod(n,12)
-!      if (k.eq.0) k = 12
-!      t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp(k)
-!      tsoil = (t0 + t1)/2.0
-!      t0 = t1
-!   enddo
-!   end subroutine soil_temp_sub
-
-!   !=================================================================
-!   !=================================================================
-
-!   function soil_temp(t0,temp) result(tsoil)
-!     use types
-!     use global_par, only: h, tau, diffu
-!     !implicit none
-
-!     real(r_4),intent( in) :: temp
-!     real(r_4),intent( in) :: t0
-!     real(r_4) :: tsoil
-
-!     real(r_4) :: t1 = 0.0
-
-!     t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp
-!     tsoil = (t0 + t1)/2.0
-!   end function soil_temp
-
-!   !=================================================================
-!   !=================================================================
-
-!   function penman (spre,temp,ur,rn,rc2) result(evap)
-!     use types, only: r_4
-!     use global_par, only: rcmin, rcmax
-!     !implicit none
-
-
-!     real(r_4),intent(in) :: spre                 !Surface pressure (mbar)
-!     real(r_4),intent(in) :: temp                 !Temperature (°C)
-!     real(r_4),intent(in) :: ur                   !Relative humidity (0-1)
-!     real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
-!     real(r_4),intent(in) :: rc2                  !Canopy resistence (s/m)
-
-!     real(r_4) :: evap                            !Evapotranspiration (mm/day)
-!     !     Parameters
-!     !     ----------
-!     real(r_4) :: ra, h5, t1, t2, es, es1, es2, delta_e, delta
-!     real(r_4) :: gama, gama2
-
-
-!     ra = rcmin
-!     h5 = 0.0275               !mb-1
-
-!     !     Delta
-!     !     -----
-!     t1 = temp + 1.
-!     t2 = temp - 1.
-!     es1 = wtt(t1)       !Saturation partial pressure of water vapour at temperature T
-!     es2 = wtt(t2)
-
-!     delta = (es1-es2)/(t1-t2) !mbar/oC
-!     !
-!     !     Delta_e
-!     !     -------
-!     es = wtt (temp)
-!     delta_e = es*(1. - ur)    !mbar
-
-!     if ((delta_e.ge.(1./h5)-0.5).or.(rc2.ge.rcmax)) evap = 0.
-!     if ((delta_e.lt.(1./h5)-0.5).or.(rc2.lt.rcmax)) then
-!        !     Gama and gama2
-!        !     --------------
-!        gama  = spre*(1004.)/(2.45e6*0.622)
-!        gama2 = gama*(ra + rc2)/ra
-
-!        !     Real evapotranspiration
-!        !     -----------------------
-!        ! LH
-!        evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
-!        ! H2O MASS
-!        evap = evap*(86400./2.45e6) !mm/day
-!        evap = amax1(evap,0.)  !Eliminates condensation
-!     endif
-!   end function penman
-
-!   !=================================================================
-!   !=================================================================
-
-!   function available_energy(temp) result(ae)
-!     use types, only: r_4
-!     !implicit none
-
-!     real(r_4),intent(in) :: temp
-!     real(r_4) :: ae
-
-!     ae = 2.895 * temp + 52.326 !from NCEP-NCAR Reanalysis data
-!   end function  available_energy
-
-!   !=================================================================
-!   !=================================================================
-
-!   function runoff(wa) result(roff)
-!     use types, only: r_4
-!     !implicit none
-
-!     real(r_4),intent(in) :: wa
-!     real(r_4):: roff
-
-!     !  roff = 38.*((w/wmax)**11.) ! [Eq. 10]
-!     roff = 11.5*((wa)**6.6) !from NCEP-NCAR Reanalysis data
-!   end function  runoff
-
-!   !=================================================================
-!   !=================================================================
-
-!   function evpot2 (spre,temp,ur,rn) result(evap)
-!     use types, only: r_4
-!     use global_par, only: rcmin, rcmax
-!     !implicit none
-
-!     !Commments from CPTEC-PVM2 code
-! !    c Entradas
-! !c --------
-! !c spre   = pressao aa supeficie (mb)
-! !c temp   = temperatura (oC)
-! !c ur     = umidade relativa  (0-1,adimensional)
-! !c rn     = saldo de radiacao (W m-2)
-! !c
-! !c Saida
-! !c -----
-! !c evap  = evapotranspiracao potencial sem estresse (mm/dia)
-
-!     !     Inputs
-
-!     real(r_4),intent(in) :: spre                 !Surface pressure (mb)
-!     real(r_4),intent(in) :: temp                 !Temperature (oC)
-!     real(r_4),intent(in) :: ur                   !Relative humidity (0-1,dimensionless)
-!     real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
-!     !     Output
-!     !     ------
-!     !
-!     real(r_4) :: evap                 !Evapotranspiration (mm/day)
-!     !     Parameters
-!     !     ----------
-!     real(r_4) :: ra, t1, t2, es, es1, es2, delta_e, delta
-!     real(r_4) :: gama, gama2, rc
-
-!     ra = rcmin            !s/m
-
-!     !     Delta
-
-!     t1 = temp + 1.
-!     t2 = temp - 1.
-!     es1 = wtt(t1)
-!     es2 = wtt(t2)
-!     delta = (es1-es2)/(t1-t2) !mb/oC
-
-!     !     Delta_e
-!     !     -------
-
-!     es = wtt (temp)
-!     delta_e = es*(1. - ur)    !mb
-
-!     !     Stomatal Conductance
-!     !     --------------------
-
-!     rc = rcmin
-
-!     !     Gama and gama2
-!     !     --------------
-
-!     gama  = spre*(1004.)/(2.45e6*0.622)
-!     gama2 = gama*(ra + rc)/ra
-
-!     !     Potencial evapotranspiration (without stress)
-!     !     ---------------------------------------------
-
-!     evap =(delta*rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
-!     evap = evap*(86400./2.45e6) !mm/day
-!     evap = amax1(evap,0.)     !Eliminates condensation
-!   end function evpot2
-
-!   !=================================================================
-!   !=================================================================
-
-! end module water
-
-! module vec_ranging_module
-!    implicit none
-!    contains
-
-!    subroutine vec_ranging(values, new_min, new_max, output)
-!        implicit none
-!        real, dimension(:), intent(in) :: values
-!        real, intent(in) :: new_min, new_max
-!        real, dimension(size(values)), intent(out) :: output
-!        real :: old_min, old_max
-!        integer :: i
-
-!        old_min = minval(values)
-!        old_max = maxval(values)
-
-!        do i = 1, size(values)
-!            output(i) = (new_max - new_min) / (old_max - old_min) * (values(i) - old_min) + new_min
-!        end do
-!    end subroutine vec_ranging
-
-! end module vec_ranging_module

@@ -28,19 +28,19 @@ module global_par
    real(r_4),parameter,public :: h = 1.0                         ! soil layer thickness (meters)
    real(r_4),parameter,public :: diffu = 1.036800e14             ! soil thermal diffusivity (m2/mes)
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)
-   real(r_4),parameter,public :: rcmax = 8400.0                  ! ResistÊncia estomática máxima s/m
-   real(r_4),parameter,public :: rcmin = 160.0                   ! ResistÊncia estomática mínima s/m
+   real(r_4),parameter,public :: rcmax = 2000.0                  ! ResistÊncia estomática máxima s/m
+   real(r_4),parameter,public :: rcmin = 100.0                   ! ResistÊncia estomática mínima s/m
    real(r_8),parameter,public :: cmin = 1.0D-3                   ! Minimum to survive kg m-2
    ! real(r_4),parameter,public :: wmax = 500.0                  ! Maximum water soil capacity (Kg m-2)
 
    real(r_8),parameter,public :: csru = 0.5D0                    ! Root attribute
    real(r_8),parameter,public :: alfm = 1.391D0                  ! Root attribute
-   real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
+   real(r_8),parameter,public :: gm = 3.0D0                      ! mm s-1
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
-   integer(i_4),parameter,public :: npls = 1000                ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: npls = 50                ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = 17          ! Number of traits for each PLS
-   integer(i_4),parameter,public :: omp_nthreads = 2 ! Number of OpenMP threads
+   integer(i_4),parameter,public :: omp_nthreads = 1 ! Number of OpenMP threads
 
 end module global_par
 

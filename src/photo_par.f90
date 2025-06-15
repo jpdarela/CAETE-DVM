@@ -41,7 +41,7 @@ module photo_par
         p15 = 1.20D0         ,&          !Michaelis-Menten constant for O2
         p19 = 0.90D0         ,&          !Maximum ratio of internal to external CO2
         p20 = 0.10D0         ,&          !Critical humidity deficit (kg/kg)
-        p25 = 8.0D-5         ,&          !Maximum gross photosynthesis rate (molCO2/m2/s)
+        p25 = 80.0D-6        ,&          !Maximum gross photosynthesis rate (molCO2/m2/s)
         p26 = 0.50D0         ,&          !light extinction coefficient for IPAR/sun (0.5/sen90)
         p27 = 1.50D0         ,&          !light extinction coefficient for IPAR/shade (0.5/sen20)
         alphap = 0.0913D0    ,&          ! 0.0913 parameter for v4m (c4 photosynthesis) Chen et al. 1994
@@ -50,6 +50,7 @@ module photo_par
         s_vpm = 591.0D0      ,&          ! Arrhenius eq. constant
         r_vpm = 8.314D0      ,&          ! Arrhenius eq. constant
         e_vpm = 60592.0D0    ,&          ! Arrhenius eq. constant
-        kp25 = 82.0D0                    ! µmol mol-1 (ppm)
+        kp25 = 82.0D0        ,&          !µmol mol-1 (ppm)
+        gap_fraction = 0.70D0          !Fraction of gap in the canopy
 
 end module photo_par
