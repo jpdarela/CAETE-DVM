@@ -130,8 +130,8 @@ def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.
 @numba.jit(nopython=True, cache=True)
 def linear_func(temp: float,
                 vpd: float,
-                T_max: float = 30.0,
-                VPD_max : float = 0.8) -> float:
+                T_max: float = 60.0,
+                VPD_max : float = 8.0) -> float:
     """Linear function to calculate the coupling between the atmosphere and the surface"""
     linear_func = (temp / T_max + vpd / VPD_max) / 2.0
 

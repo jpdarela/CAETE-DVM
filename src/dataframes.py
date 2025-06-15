@@ -27,12 +27,15 @@
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Union, Collection, Tuple, Dict, List
+
+import os
+
 from numpy.typing import NDArray
 
 import numpy as np
 import pandas as pd
-import polars as pl
-
+# import polars as pl
+from joblib import Parallel, delayed
 from worker import worker
 from region import region
 from caete import grd_mt, get_args, str_or_path
@@ -362,8 +365,8 @@ class table_data:
             grd (grd_mt): gridcell object
         """
         out = []
-        for year in grd._get_years():
-
+        years = grd._get_years()
+        for year in years:
             data = grd._read_annual_metacomm_biomass(year)
             data = pd.DataFrame(data)
             # count ench occurtences of each pls_id # type: ignore
@@ -404,8 +407,14 @@ class output_manager:
         """
         reg:region = worker.load_state_zstd(str_or_path(result))
         table_data.write_daily_data(r=reg, variables=variables)
-        for grd in reg:
+
+        nprocs = min(len(reg), os.cpu_count())
+        def process_gridcell(grd):
             table_data.write_metacomm_output(grd)
+
+        Parallel(n_jobs=nprocs)(delayed(process_gridcell)(grd) for grd in reg)
+        # for grd in reg:
+        #     table_data.write_metacomm_output(grd)
 
     @staticmethod
     def cities_output():
@@ -419,13 +428,31 @@ class output_manager:
             None
         """
         results = (Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
-                   Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"),
+                #    Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"))
 
-        for r in results:
-            output_manager.table_output_per_grd(r, ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
-                                                     "photo", "npp", "evapm", "lai"))
+        variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
+                    "photo", "npp", "evapm", "lai", "f5", "wsoil",
+                    "pupt", "nupt", "ls", "c_cost", "rcm", "storage_pool","inorg_n",
+                    "inorg_p", "snc", "vcmax")
+
+
+        # variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
+        #             "photo", "npp", "evapm", "lai", "f5", "wsoil",
+        #             "pupt", "nupt", "ls", "c_cost", "rcm", 'inorg_n', 'inorg_p',
+        #             'sorbed_n', 'sorbed_p', 'snc', 'runom', 'emaxm',
+        #             'nmin', 'pmin', 'vcmax', 'specific_la','litter_l','cwd',
+        #             'litter_fr', 'storage_pool')
+
+        Parallel(n_jobs=min(len(results), os.cpu_count()), verbose=3)(
+            delayed(output_manager.table_output_per_grd)(r, variables) for r in results
+        )
+
+        # for r in results:
+        #     output_manager.table_output_per_grd(r, ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
+        #                                              "photo", "npp", "evapm", "lai", "f5", "wsoil",
+        #                                              "pupt", "nupt", "ls", "c_cost","rcm"))
         return None
 
 
@@ -448,10 +475,10 @@ if __name__ == "__main__":
     # reg.load_gridcells()
     # variables_to_read = ("npp","photo")
 
-    import cProfile
-    # # # # # Gridded outputs
-    command = 'output_manager.cities_output()'
-    cProfile.run(command, sort="cumulative", filename="text_output_profile.prof")
+    # import cProfile
+    # # # # # # Gridded outputs
+    # command = 'output_manager.cities_output()'
+    # cProfile.run(command, sort="cumulative", filename="text_output_profile.prof")
 
     ## Gridded outputs
     # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))

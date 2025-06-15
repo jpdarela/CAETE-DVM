@@ -412,7 +412,7 @@ class region:
                     self.lons[i] = grd_cell.lon
                     i += 1
                 # Save the intermediate file
-                fname = self.output_path/Path(f"region_file{uuid4()}.lz4")
+                fname = self.output_path/Path(f"region_file_{uuid4()}.lz4")
                 self.file_objects.append(fname)
                 num_workers = min(self.config.multiprocessing.max_processes, len(result))
                 with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:

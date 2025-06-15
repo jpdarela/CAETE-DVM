@@ -1082,6 +1082,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                   reset_community: bool = False,
                   kill_and_reset: bool = False,
                   env_filter: bool = False,
+                  process_limitation: bool = False,
                   verbose: bool = False):
         """
         Run the model for a grid cell.
@@ -1249,10 +1250,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             lnc: NDArray[np.float32] = np.zeros(shape=(6, xsize), dtype=np.float32)
             # THis is added to leaf litter pool (that is basicaly a fast SOM pool)
             c_to_nfixers: NDArray[np.float32]= np.zeros(xsize, dtype=np.float32)
-
+            nupt = np.zeros(shape=(2, xsize), dtype=np.float32)
+            pupt = np.zeros(shape=(3, xsize), dtype=np.float32)
             if save:
-                nupt = np.zeros(shape=(2, xsize), dtype=np.float32)
-                pupt = np.zeros(shape=(3, xsize), dtype=np.float32)
+
                 cc = np.zeros(xsize, dtype=np.float32)
                 photo = np.zeros(xsize, dtype=np.float32)
                 aresp = np.zeros(xsize, dtype=np.float32)
@@ -1269,11 +1270,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 specific_la = np.zeros(xsize, dtype=np.float32)
                 storage_pool = np.zeros(shape=(3, xsize))
 
-                lim_status_y_leaf = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
-                lim_status_y_stem = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
-                lim_status_y_root = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
-                uptake_strategy_n = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
-                uptake_strategy_p = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
+                if process_limitation:
+                    lim_status_y_leaf = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
+                    lim_status_y_stem = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
+                    lim_status_y_root = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
+                    uptake_strategy_n = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
+                    uptake_strategy_p = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
 
             # <- Daily loop
 
@@ -1360,11 +1362,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     # Limiting nutrient organization:
                     # dim1 = leaf wood root, code: 1=N 2=P 4=N,COLIM 5=P,COLIM 6=COLIM 0=NOLIM
                     if save:
-                        lim_status_y_leaf[i, :, julian_day - 1] = daily_output.limitation_status[0,:]# type: ignore
-                        lim_status_y_stem[i, :, julian_day - 1] = daily_output.limitation_status[1,:]# type: ignore
-                        lim_status_y_root[i, :, julian_day - 1] = daily_output.limitation_status[2,:]# type: ignore
-                        uptake_strategy_n[i, :, julian_day - 1] =  daily_output.uptk_strat[0,:]# type: ignore
-                        uptake_strategy_p[i, :, julian_day - 1] =  daily_output.uptk_strat[1,:]# type: ignore
+                        if process_limitation:
+                            lim_status_y_leaf[i, :, julian_day - 1] = daily_output.limitation_status[0,:]# type: ignore
+                            lim_status_y_stem[i, :, julian_day - 1] = daily_output.limitation_status[1,:]# type: ignore
+                            lim_status_y_root[i, :, julian_day - 1] = daily_output.limitation_status[2,:]# type: ignore
+                            uptake_strategy_n[i, :, julian_day - 1] =  daily_output.uptk_strat[0,:]# type: ignore
+                            uptake_strategy_p[i, :, julian_day - 1] =  daily_output.uptk_strat[1,:]# type: ignore
 
                         community.anpp += cw_mean(community.vp_ocp, community.construction_npp.astype(np.float32))
                         community.uptake_costs += cw_mean(community.vp_ocp, community.sp_uptk_costs.astype(np.float32))
@@ -1380,58 +1383,61 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                         # process limitation data
                         # Filter non living PLS from the limitation status
-                        _data_leaf = lim_status_y_leaf[i, [community.vp_lsid], :] # type: ignore
-                        _data_stem = lim_status_y_stem[i, [community.vp_lsid], :] # type: ignore
-                        _data_root = lim_status_y_root[i, [community.vp_lsid], :] # type: ignore
+                        if process_limitation:
+                            _data_leaf = lim_status_y_leaf[i, [community.vp_lsid], :] # type: ignore
+                            _data_stem = lim_status_y_stem[i, [community.vp_lsid], :] # type: ignore
+                            _data_root = lim_status_y_root[i, [community.vp_lsid], :] # type: ignore
 
-                        _data_uptake_n = uptake_strategy_n[i, [community.vp_lsid], :]# type: ignore
-                        _data_uptake_p = uptake_strategy_p[i, [community.vp_lsid], :]# type: ignore
+                            _data_uptake_n = uptake_strategy_n[i, [community.vp_lsid], :]# type: ignore
+                            _data_uptake_p = uptake_strategy_p[i, [community.vp_lsid], :]# type: ignore
 
-                        # Loop over the living PLS to get the unique values and counts
-                        pls_lim_leaf = []
-                        pls_lim_stem = []
-                        pls_lim_root = []
-                        pls_uptake_n = []
-                        pls_uptake_p = []
+                            # Loop over the living PLS to get the unique values and counts
+                            pls_lim_leaf = []
+                            pls_lim_stem = []
+                            pls_lim_root = []
+                            pls_uptake_n = []
+                            pls_uptake_p = []
 
-                        for k in range(community.vp_lsid.size):
-                            # Get the unique values and counts for leaf limitation
-                            unique, counts = np.unique(_data_leaf[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False] # type: ignore
-                            pls_lim_leaf.append((unique, counts[:unique.size])) # type: ignore
+                            for k in range(community.vp_lsid.size):
+                                # Get the unique values and counts for leaf limitation
+                                unique, counts = np.unique(_data_leaf[0, k, :], return_counts=True)
+                                unique = unique.data[unique.mask == False] # type: ignore
+                                pls_lim_leaf.append((unique, counts[:unique.size])) # type: ignore
 
-                            # Stem limitation
-                            unique, counts = np.unique(_data_stem[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False] # type: ignore
-                            pls_lim_stem.append((unique, counts[:unique.size])) # type: ignore
+                                # Stem limitation
+                                unique, counts = np.unique(_data_stem[0, k, :], return_counts=True)
+                                unique = unique.data[unique.mask == False] # type: ignore
+                                pls_lim_stem.append((unique, counts[:unique.size])) # type: ignore
 
-                            # Root limitation
-                            unique, counts = np.unique(_data_root[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False]
-                            pls_lim_root.append((unique, counts[:unique.size])) # type: ignore
+                                # Root limitation
+                                unique, counts = np.unique(_data_root[0, k, :], return_counts=True)
+                                unique = unique.data[unique.mask == False]
+                                pls_lim_root.append((unique, counts[:unique.size])) # type: ignore
 
-                            # Uptake strategy N
-                            unique, counts = np.unique(_data_uptake_n[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False] # type: ignore
-                            pls_uptake_n.append((unique, counts[:unique.size])) # type: ignore
+                                # Uptake strategy N
+                                unique, counts = np.unique(_data_uptake_n[0, k, :], return_counts=True)
+                                unique = unique.data[unique.mask == False] # type: ignore
+                                pls_uptake_n.append((unique, counts[:unique.size])) # type: ignore
 
-                            # Uptake strategy P
-                            unique, counts = np.unique(_data_uptake_p[0, k, :], return_counts=True)
-                            unique = unique.data[unique.mask == False]  # type: ignore
-                            pls_uptake_p.append((unique, counts[:unique.size])) # type: ignore
+                                # Uptake strategy P
+                                unique, counts = np.unique(_data_uptake_p[0, k, :], return_counts=True)
+                                unique = unique.data[unique.mask == False]  # type: ignore
+                                pls_uptake_p.append((unique, counts[:unique.size])) # type: ignore
 
-                        community.limitation_status_leaf = pls_lim_leaf
-                        community.limitation_status_wood = pls_lim_stem
-                        community.limitation_status_root = pls_lim_root
-                        community.uptake_strategy_n = pls_uptake_n
-                        community.uptake_strategy_p = pls_uptake_p
+                            community.limitation_status_leaf = pls_lim_leaf
+                            community.limitation_status_wood = pls_lim_stem
+                            community.limitation_status_root = pls_lim_root
+                            community.uptake_strategy_n = pls_uptake_n
+                            community.uptake_strategy_p = pls_uptake_p
 
-                        # Reset the limitation masked arrays
-                        lim_status_y_leaf.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
-                        lim_status_y_stem.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
-                        lim_status_y_root.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
-                        uptake_strategy_n.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
-                        uptake_strategy_p.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                            # Reset the limitation masked arrays
+                            lim_status_y_leaf.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                            lim_status_y_stem.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                            lim_status_y_root.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                            uptake_strategy_n.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                            uptake_strategy_p.mask[i, :, :] = np.ones((self.metacomm.comm_npls, 366), dtype=bool) # type: ignore
+                        else:
+                            pass
 
                     if community.vp_lsid.size < 1:
                         if verbose: print(f"Empty community {i}: Gridcell: {self.lat} °N, {self.lon} °E: In spin:{s}, step:{step}")
@@ -1441,11 +1447,9 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                             new_life_strategies = self.get_from_main_array(community.npls)
                             community.restore_from_main_table(new_life_strategies)
-                            continue
+                            # continue
 
                         else:
-                            if len(self.metacomm) == 0:
-                                raise ValueError("All communities are empty. Cannot continue")
                             # In the transiant run - i.e., when reset_community is false and
                             # kill_and_reset is false; we mask the community if there is no PLS
                             self.metacomm.mask[i] = np.int8(1)
@@ -1460,7 +1464,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             community.shannon_entropy = -9999.0
                             community.shannon_evenness = -9999.0
                             # if the reset_community is true
-                            continue # cycle
+                            # continue # cycle
 
                     # Store values for each community
                     rnpp_mt[i] = cw_mean(community.vp_ocp, community.construction_npp.astype(np.float32)) # Community Weighted rNPP
@@ -1471,10 +1475,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     c_to_nfixers[i] = daily_output.cp[3]
                     evavg[i] = daily_output.evavg
                     epavg[i] = daily_output.epavg
+                    nupt[:, i] = daily_output.nupt #type: ignore
+                    pupt[:, i] = daily_output.pupt #type: ignore
 
                     if save:
-                        nupt[:, i] = daily_output.nupt #type: ignore
-                        pupt[:, i] = daily_output.pupt #type: ignore
                         cc[i] = daily_output.c_cost_cwm #type: ignore
                         npp[i] = daily_output.nppavg #type: ignore
                         photo[i] = daily_output.phavg #type: ignore
@@ -1502,7 +1506,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         # d = today.day
                         filename = self.out_dir/f"metacommunity_{y}.pkz"
                         # filename = self.out_dir/f"metacommunity_{d}{m}{y}.pkz"
-                        self.metacomm.save_state(filename, y)
+                        self.metacomm.save_state(filename, y, process_limitation)
                         self.metacomm_output[y] = filename
 
                         for community in self.metacomm:
@@ -1511,13 +1515,16 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             community.uptake_costs = np.float32(0.0)
 
                 # ------------
-                vpd = m.vapor_p_deficit(temp[step], ru[step])
-                et_pot = masked_mean(self.metacomm.mask, np.array(epavg).astype(np.float32)) #epavg.mean()
+                # Evapotranspiration
                 et = masked_mean(self.metacomm.mask, evavg) #evavg.mean()
+                ## Canopy-atmosphere coupling [EXPERIMENTAL]
+                # vpd = m.vapor_p_deficit(temp[step], ru[step])
+                # et_pot = masked_mean(self.metacomm.mask, np.array(epavg).astype(np.float32)) #epavg.mean()
+                # self.evapm[step] = atm_canopy_coupling(et_pot, et, temp[step], vpd)
+                self.evapm[step] = et
 
                 # Update water pools
-                self.evapm[step] = atm_canopy_coupling(et_pot, et, temp[step], vpd)
-                # self.evapm[step] = et
+
                 self.runom[step] = self.swp._update_pool(prec[step], self.evapm[step])
                 self.swp.w1 = 0.0 if self.swp.w1 < 0.0 else self.swp.w1
                 self.swp.w2 = 0.0 if self.swp.w2 < 0.0 else self.swp.w2
@@ -1541,45 +1548,44 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                 # Organic C N & P
                 self.sp_csoil = soil_out['cs']
+                self.sp_snc = np.zeros(shape=8)
                 self.sp_snc = soil_out['snc']
                 idx = np.where(self.sp_snc < 0.0)[0]
                 if len(idx) > 0:
                     self.sp_snc[idx] = 0.0
 
                 # <- Out of the community loop
-
+                self.nupt[:, step] = masked_mean_2D(self.metacomm.mask, nupt)
+                self.pupt[:, step] = masked_mean_2D(self.metacomm.mask, pupt)
                 # IF NUTRICYCLE:
+
                 if nutri_cycle:
                     # UPDATE ORGANIC POOLS
                     self.sp_organic_n = self.sp_snc[:2].sum()
                     self.sp_sorganic_n = self.sp_snc[2:4].sum()
                     self.sp_organic_p = self.sp_snc[4:6].sum()
                     self.sp_sorganic_p = self.sp_snc[6:].sum()
+
+                    # Update inorganic pools
                     self.sp_available_p += soil_out['pmin']
                     self.sp_available_n += soil_out['nmin']
+                    self.sp_available_p -= self.pupt[0, step]
+                    self.sp_available_n -= self.nupt[0, step]
+
                     # NUTRIENT DINAMICS
                     # Inorganic N
                     self.sp_in_n += self.sp_available_n + self.sp_so_n
                     self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
-                    self.sp_available_n = soil_dec.solution_n_equil(
-                        self.sp_in_n)
-                    self.sp_in_n -= self.sp_so_n + self.sp_available_n
+                    self.sp_available_n = soil_dec.solution_n_equil(self.sp_in_n)
+                    self.sp_in_n -= (self.sp_so_n + self.sp_available_n)
                     # Inorganic P
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
                     self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
-                    self.sp_available_p = soil_dec.solution_p_equil(
-                        self.sp_in_p)
-                    self.sp_in_p -= self.sp_so_p + self.sp_available_p
-                    # Sorbed P
-                    # if self.pupt[1, step] > 0.75:
-                    #     rwarn(
-                    #         f"Puptk_SO > soP_max - 987 | in spin{s}, step{step} - {self.pupt[1, step]}")
-                    #     self.pupt[1, step] = 0.0
+                    self.sp_available_p = soil_dec.solution_p_equil(self.sp_in_p)
+                    self.sp_in_p -= (self.sp_so_p + self.sp_available_p)
 
-                    # if self.pupt[1, step] > self.sp_so_p:
-                    #     rwarn(
-                    #         f"Puptk_SO > soP_pool - 992 | in spin{s}, step{step} - {self.pupt[1, step]}")
                     self.sp_so_p -= self.pupt[1, step]
+
                     try:
                         t1 = np.all(self.sp_snc > 0.0)
                     except:
@@ -1591,23 +1597,15 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                         rwarn(f"Exception while handling sp_snc pool")
                     if not t1:
                         self.sp_snc[np.where(self.sp_snc < 0)[0]] = 0.0
+
                     # ORGANIC nutrients uptake
-                    # N
-                    # if self.nupt[1, step] < 0.0:
-                    #     rwarn(
-                    #         f"NuptkO < 0 - 1003 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                    #     self.nupt[1, step] = 0.0
-                    # if self.nupt[1, step] > 2.5:
-                    #     rwarn(
-                    #         f"NuptkO  > max - 1007 | in spin{s}, step{step} - {self.nupt[1, step]}")
-                    #     self.nupt[1, step] = 0.0
                     total_on = self.sp_snc[:4].sum()
                     if total_on > 0.0:
                         frsn = [i / total_on for i in self.sp_snc[:4]]
                     else:
                         frsn = [0.0, 0.0, 0.0, 0.0]
                     for i, fr in enumerate(frsn):
-                        self.sp_snc[i] -= self.nupt[1, step] * fr
+                        self.sp_snc[i] -= (self.nupt[1, step] * fr)
 
                     idx = np.where(self.sp_snc < 0.0)[0]
                     if len(idx) > 0:
@@ -1617,21 +1615,13 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.sp_sorganic_n = self.sp_snc[2:4].sum()
 
                     # P
-                    # if self.pupt[2, step] < 0.0:
-                    #     rwarn(
-                    #         f"PuptkO < 0  in spin{s}, step{step} - {self.pupt[2, step]}")
-                    #     self.pupt[2, step] = 0.0
-                    # if self.pupt[2, step] > 1.0:
-                    #     rwarn(
-                    #         f"PuptkO > max  in spin{s}, step{step} - {self.pupt[2, step]}")
-                    #     self.pupt[2, step] = 0.0
                     total_op = self.sp_snc[4:].sum()
                     if total_op > 0.0:
                         frsp = [i / total_op for i in self.sp_snc[4:]]
                     else:
                         frsp = [0.0, 0.0, 0.0, 0.0]
                     for i, fr in enumerate(frsp):
-                        self.sp_snc[i + 4] -= self.pupt[2, step] * fr
+                        self.sp_snc[i + 4] -= (self.pupt[2, step] * fr)
 
                     idx = np.where(self.sp_snc < 0.0)[0]
                     if len(idx) > 0:
@@ -1639,40 +1629,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                     self.sp_organic_p = self.sp_snc[4:6].sum()
                     self.sp_sorganic_p = self.sp_snc[6:].sum()
-
-                    # # Raise some warnings
-                    # if self.sp_organic_n < 0.0:
-                    #     self.sp_organic_n = 0.0
-                    #     rwarn(f"ON negative in spin{s}, step{step}")
-                    # if self.sp_sorganic_n < 0.0:
-                    #     self.sp_sorganic_n = 0.0
-                    #     rwarn(f"SON negative in spin{s}, step{step}")
-                    # if self.sp_organic_p < 0.0:
-                    #     self.sp_organic_p = 0.0
-                    #     rwarn(f"OP negative in spin{s}, step{step}")
-                    # if self.sp_sorganic_p < 0.0:
-                    #     self.sp_sorganic_p = 0.0
-                    #     rwarn(f"SOP negative in spin{s}, step{step}")
-
-                    # Update available nutrients
-                    # Soluble and inorganic pools
-                    # if self.pupt[0, step] > 1e2:
-                    #     rwarn(
-                    #         f"Puptk > max - 786 | in spin{s}, step{step} - {self.pupt[0, step]}")
-                    #     self.pupt[0, step] = 0.0
-                    self.sp_available_p -= self.pupt[0, step]
-
-                    # if self.nupt[0, step] > 1e3:
-                    #     rwarn(
-                    #         f"Nuptk > max - 792 | in spin{s}, step{step} - {self.nupt[0, step]}")
-                    #     self.nupt[0, step] = 0.0
-                    self.sp_available_n -= self.nupt[0, step]
                 # END SOIL NUTRIENT DYNAMICS
 
                 if save:
                     # Plant uptake and Carbon costs of nutrient uptake
-                    self.nupt[:, step] = masked_mean_2D(self.metacomm.mask, nupt)
-                    self.pupt[:, step] = masked_mean_2D(self.metacomm.mask, pupt)
                     self.storage_pool[:, step] = masked_mean_2D(self.metacomm.mask, storage_pool.astype(np.float32))
                     self.carbon_costs[step] = masked_mean(self.metacomm.mask, cc)
                     self.tsoil.append(self.soil_temp)
@@ -1692,7 +1652,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.specific_la[step] = masked_mean(self.metacomm.mask, specific_la)
                     self.hresp[step] = soil_out['hr']
                     self.csoil[:, step] = soil_out['cs']
-                    self.wsoil[step] = self.wp_water_upper_mm + self.wp_water_lower_mm
+                    self.wsoil[step] = self.swp.calc_total_water()
                     self.inorg_n[step] = self.sp_in_n
                     self.inorg_p[step] = self.sp_in_p
                     self.sorbed_n[step] = self.sp_so_n

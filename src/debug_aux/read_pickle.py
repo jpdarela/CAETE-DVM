@@ -25,4 +25,4 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python read_pickle.py <pickle_file>")
         sys.exit(1)
-    dt = read_pickle(sys.argv[1])
+    dt = read_pickle(sys.argv[1]) 

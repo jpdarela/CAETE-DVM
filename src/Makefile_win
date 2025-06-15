@@ -64,6 +64,7 @@ sources = $(src_lib) $(MAIN_SUB)
 src_obj = types.obj photo_par.obj global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
 objects = $(src_obj) $(basename $(MAIN_SUB)).obj
 
+all: caete_lib
 
 setup:
 	@echo "Installing dependencies..."
@@ -88,7 +89,7 @@ so: $(sources) interface
 #	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 so_parallel: $(sources) interface
-	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp" --quiet
+	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
 #	$(CYTHON) -a community.py
 #	$(CYTHON) -a metacommunity.py

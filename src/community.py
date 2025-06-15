@@ -21,32 +21,36 @@
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # """
 
-
-import os
-import sys
 from typing import Any, Callable, List, Tuple
-
 import numpy as np
 from numpy.typing import NDArray
 
-from config import fortran_runtime
-
-if sys.platform == "win32":
-    try:
-        os.add_dll_directory(fortran_runtime)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
-
-from caete_module import photo as m
-from caete_jit import pft_area_frac64 as carea_frac
+def carea_frac(cleaf1:NDArray[np.float64],
+                  cfroot1:NDArray[np.float64],
+                  cawood1:NDArray[np.float64]) -> NDArray[np.float64]:
+    """Calculate the area fraction of each PFT based on the leaf, root and wood biomass."""
+    # Initialize variables
+    npft = cleaf1.size
+    ocp_coeffs = np.zeros(npft, dtype=np.float64)
+    total_biomass_pft = np.zeros(npft, dtype=np.float64)
+    # Compute total biomass for each PFT
+    total_biomass_pft = cleaf1 + cfroot1 + cawood1
+    # Compute total biomass for all PFTs
+    total_biomass = np.sum(total_biomass_pft)
+    # Calculate occupation coefficients
+    if total_biomass > 0.0:
+        ocp_coeffs = total_biomass_pft / total_biomass
+        ocp_coeffs[ocp_coeffs < 0.0] = 0.0
+    return ocp_coeffs
 
 class community:
     """Represents a community of plants. Instances of this class are used to
        create metacommunities."""
 
 
-    def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
-        """An assembly of plants.
+    def _reset(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
+        """Reset the community to an initial state with a new random sample of PLSs from the main table.
+
         Args:
             pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): Two arrays, the first stores the
                 ids of the PLSs in the main table, the second stores the functional traits of PLSs.
@@ -106,6 +110,11 @@ class community:
         return None
 
 
+    def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
+        self._reset(pls_data)
+        return None
+
+
     def __getitem__(self, index:int):
         """Gets a PLS (1D array) for given index.
 
@@ -156,8 +165,7 @@ class community:
 
 
     def restore_from_main_table(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
-        """A call to the __init__ method.
-        This is used to reset the community to a initial state with a new random sample of PLSs from the main table.
+        """Reset the community to a initial state with a new random sample of PLSs from the main table.
 
         Args:
             pls_data (Tuple[np.ndarray[int], np.ndarray[float]]): a tuple of arrays with the ids and the PLSs.
@@ -165,7 +173,7 @@ class community:
         Returns:
             None: The community is reset to the initial state with a new sample of PLSs from the main table.
         """
-        self.__init__(pls_data)
+        self._reset(pls_data)
 
 
     def get_free_lsid(self) -> NDArray[np.intp]:
