@@ -24,13 +24,15 @@ src/out_data
 src/tests/__pycache__
 src/tests/*.csv
 src/tests/*.txt
-
+src/.vscode
 input/.python-version
 input/20CRv3-ERA5
 input/MPI-ESM1-2-HR
 
 run_debug
-.vscode
+.vscode/c_cpp_properties.json
+.vscode/tasks.json
+.vscode/settings.json
 .vs
 .python-version
 
