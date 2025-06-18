@@ -31,15 +31,11 @@ import sys
 import plsgen as pls
 import numpy as np
 
-
-
 if sys.platform == "win32":
-    from config import fortran_runtime
-    try:
-        os.add_dll_directory(fortran_runtime)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
+    from config import fortran_runtime, update_sys_pathlib
+    update_sys_pathlib(fortran_runtime)
 
 import caete_module
+
 a = pls.table_gen(caete_module.global_par.npls)
 np.savetxt("pls_ex.txt", a.T) # type: ignore

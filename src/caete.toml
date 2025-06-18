@@ -44,7 +44,7 @@ rsds = 0.198
 # Set to 1 to run the model in single community mode.
 # You shouldn't set this to a value larger than 30 as it will
 # increase the memory usage and the time to run the model.
-n = 10 # Effects only in runtime, not in compile time.
+n = 1 # Effects only in runtime, not in compile time.
 
 # Maximum number of PLS to be considered in each community.
 # Very large values will cause stack overflow errors.

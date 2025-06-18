@@ -633,7 +633,7 @@ module alloc
             endif
             daily_growth(leaf) = min(real_npp(leaf,nitrog), real_npp(leaf,phosph))
             to_storage_234 = npp_leaf - daily_growth(leaf)
-            storage_out_alloc(1) = add_pool(storage_out_alloc(1), to_storage_234)
+            storage_out_alloc(1) = add_pool(storage_out_alloc(1), to_storage_234, "L636")
             to_storage_234 = 0.0D0
             rn_uptake(leaf) = ((daily_growth(leaf) * leaf_av_n) / npp_leaf)
             rp_uptake(leaf) = ((daily_growth(leaf) * leaf_av_p) / npp_leaf)
@@ -669,7 +669,7 @@ module alloc
             endif
             daily_growth(root) = min(real_npp(root,nitrog), real_npp(root,phosph))
             to_storage_234 = npp_root - daily_growth(root)
-            storage_out_alloc(1) = add_pool(storage_out_alloc(1), to_storage_234)
+            storage_out_alloc(1) = add_pool(storage_out_alloc(1), to_storage_234, "L672")
             to_storage_234 = 0.0D0
             rn_uptake(root) = ((daily_growth(root) * root_av_n) / npp_root)
             rp_uptake(root) = ((daily_growth(root) * root_av_p) / npp_root)
@@ -706,7 +706,7 @@ module alloc
                endif
                daily_growth(wood) = min(real_npp(wood,nitrog), real_npp(wood,phosph))
                to_storage_234 = npp_wood - daily_growth(wood)
-               storage_out_alloc(1) = add_pool(storage_out_alloc(1), to_storage_234)
+               storage_out_alloc(1) = add_pool(storage_out_alloc(1), to_storage_234, "L709")
                to_storage_234 = 0.0D0
                rn_uptake(wood) = ((daily_growth(wood) * wood_av_n) / npp_wood)
                rp_uptake(wood) = ((daily_growth(wood) * wood_av_p) / npp_wood)
@@ -774,8 +774,8 @@ module alloc
          p_to_storage(root) = max(0.0D0, (internal_p_root - rp_uptake(root)))
       endif
 
-      storage_out_alloc(2) = add_pool(storage_out_alloc(2), sum(n_to_storage))
-      storage_out_alloc(3) = add_pool(storage_out_alloc(3), sum(p_to_storage))
+      storage_out_alloc(2) = add_pool(storage_out_alloc(2), sum(n_to_storage), "L777")
+      storage_out_alloc(3) = add_pool(storage_out_alloc(3), sum(p_to_storage), "L778")
       nuptk = sum(n_uptake)
       puptk = sum(p_uptake)
 
@@ -804,7 +804,7 @@ module alloc
       if(ieee_is_nan(to_sto(1))) to_sto(1) = 0.0D0
       ! if(to_sto(1) .gt. 1.0D1) to_sto(1) = 0.0D0
       if(to_sto(1) .lt. 0.0D0) to_sto(1) = 0.0D0
-      storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
+      storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1), "L807")
 
       !  P
       ccp(:) = 0.0D0
@@ -825,7 +825,7 @@ module alloc
       if(ieee_is_nan(to_sto(2))) to_sto(2) = 0.0D0
       ! if(to_sto(2) .gt. 1.0D1) to_sto(2) = 0.0D0
       if(to_sto(2) .lt. 0.0D0) to_sto(2) = 0.0D0
-      storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
+      storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2), "L828")
 
       ! TODO calculate enzimatic n costs of enzimatic activity?
       ! ???????????????????????????????????????????????????????
@@ -847,8 +847,8 @@ module alloc
          phosphorus_uptake(1) = min(plant_passive_uptake(2), avail_p)
 
          ! Send to sto
-         storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1))
-         storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2))
+         storage_out_alloc(2) = add_pool(storage_out_alloc(2), to_sto(1), "L850")
+         storage_out_alloc(3) = add_pool(storage_out_alloc(3), to_sto(2), "L851")
       endif
 
       ! LEAF LITTER FLUX
@@ -901,7 +901,7 @@ module alloc
       new_leaf_n2c = (n_leaf - aux1) / leaf_litter
 
       ! N resorbed goes to storage pool
-      storage_out_alloc(2) = add_pool(storage_out_alloc(2), aux1)     ! g(N) m-2
+      storage_out_alloc(2) = add_pool(storage_out_alloc(2), aux1, "L904")     ! g(N) m-2
 
       ! CALCULATE THE NUTRIENT N IN LITTER FLUX
       litter_nutrient_content(1) = leaf_litter_o * new_leaf_n2c            ! g(N)m-2
@@ -924,7 +924,7 @@ module alloc
       new_leaf_p2c = 0.0D0
       new_leaf_p2c = (p_leaf - aux1) / leaf_litter
 
-      storage_out_alloc(3) = add_pool(storage_out_alloc(3) , aux1)
+      storage_out_alloc(3) = add_pool(storage_out_alloc(3) , aux1, "L927")
 
       ! CALCULATE THE NUTRIENT N IN LITTER FLUX
       litter_nutrient_content(4) = leaf_litter_o * new_leaf_p2c            ! g(P)m-2
@@ -957,42 +957,53 @@ module alloc
 
    contains
 
-      function add_pool(a1, a2) result(new_amount)
-
+      function add_pool(a1, a2, message) result(new_amount)
+         use, intrinsic :: ieee_arithmetic, only: ieee_is_normal, ieee_is_negative
          real(r_8), intent(in) :: a1, a2
+         character(len=*), intent(in), optional :: message  ! Optional diagnostic message
          real(r_8) :: new_amount
-         logical(l_1) :: is_number_a1 = .true.
-         logical(l_1) :: is_number_a2 = .true.
+         logical(l_1) :: a1_ok, a2_ok
 
-         if (.not. ieee_is_normal(a1)) then
-            write(*,*) "Warning: a1 NaN or Inf in add_pool", a1
-            new_amount = 0.0D0
-            is_number_a1 = .false.
-         endif
+         ! Check if inputs are normal numbers (not NaN/Inf)
+         a1_ok = ieee_is_normal(a1)
+         a2_ok = ieee_is_normal(a2)
 
-         if (.not. ieee_is_normal(a2)) then
-            write(*,*) "Warning: a2 NaN or Inf in add_pool", a2
-            new_amount = 0.0D0
-            is_number_a2 = .false.
-         endif
+         ! Handle non-normal inputs with optional message
+         if (.not. a1_ok) then
+            if (present(message)) then
+                  write(*,*) "Warning: a1 NaN/Inf in add_pool: ", a1, " | Message: ", message
+            else
+                  write(*,*) "Warning: a1 NaN/Inf in add_pool: ", a1
+            end if
+         end if
 
-         if (is_number_a1) then
-            if (is_number_a2) then
-               if(ieee_is_negative(a2)) then
-                  new_amount = a1
-                  return
-               else
-                  new_amount = a1 + a2
-                  return
-               endif
-            endif
-         else if (is_number_a2) then
-            write(*,*) "Setting pool as a2", a2
-            new_amount = a2
-            return
+         if (.not. a2_ok) then
+            if (present(message)) then
+                  write(*,*) "Warning: a2 NaN/Inf in add_pool: ", a2, " | Message: ", message
+            else
+                  write(*,*) "Warning: a2 NaN/Inf in add_pool: ", a2
+            end if
+         end if
+
+         ! Determine result based on input validity
+         if (a1_ok) then
+            if (a2_ok) then
+                  if (ieee_is_negative(a2)) then
+                     new_amount = a1  ! Ignore negative a2
+                  else
+                     new_amount = a1 + a2  ! Valid addition
+                  end if
+            else
+                  new_amount = a1  ! Use a1 when a2 invalid
+            end if
          else
-            new_amount = 0.0D0
-         endif
+            if (a2_ok) then
+                  write(*,*) "Setting pool as a2: ", a2
+                  new_amount = a2  ! Use a2 when a1 invalid
+            else
+                  new_amount = 0.0D0  ! Both inputs invalid
+            end if
+         end if
       end function add_pool
 
    end subroutine allocation

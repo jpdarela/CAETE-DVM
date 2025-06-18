@@ -68,11 +68,7 @@ all: caete_lib
 
 setup:
 	@echo "Installing dependencies..."
-	$(PIP) install -r requirements_311.txt
-
-setup_311:
-	@echo "Installing dependencies..."
-	$(PIP) install -r requirements_3xx_last.txt
+	$(PIP) install -r requirements_311_windows.txt
 
 interface: $(sources)
 	@echo "Creating Fortran interfaces for the caete_module using f2py..."

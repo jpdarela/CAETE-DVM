@@ -435,7 +435,7 @@ class output_manager:
         variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
                     "photo", "npp", "evapm", "lai", "f5", "wsoil",
                     "pupt", "nupt", "ls", "c_cost", "rcm", "storage_pool","inorg_n",
-                    "inorg_p", "snc", "vcmax")
+                    "inorg_p", "snc", "vcmax", 'specific_la',"cdef")
 
 
         # variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",

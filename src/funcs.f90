@@ -31,7 +31,7 @@ module photo
         f_four                      ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
         spec_leaf_area              ,& ! (f), specific leaf area (m2 g-1)
         sla_reich                   ,& ! (f), specific leaf area (m2 g-1)
-         leaf_nitrogen_concetration ,& ! (f), leaf nitrogen concentration (gN gC-1)
+        leaf_nitrogen_concetration  ,& ! (f), leaf nitrogen concentration (gN gC-1)
         water_stress_modifier       ,& ! (f), F5 - water stress modifier (dimensionless)
         photosynthesis_rate         ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
         vcmax_a                     ,& ! (f), VCmax from domingues et al. 2010 (eq.1)
@@ -145,7 +145,7 @@ contains
       real(r_8):: sla   !m2 gC-1 Dry mass
       real(r_8), parameter :: fc = 0.47D0  ! carbon fraction of dry mass
 
-      sla = sla_reich(tau_leaf) /fc * 0.0001
+      sla = sla_reich(tau_leaf) / fc * 0.0001 ! 1e-4 convert units  from cm2 gC-1 to m2 gC-1 and fc converts from dry mass to carbon mass
 
    end function spec_leaf_area
 
@@ -168,6 +168,9 @@ contains
       tl0 = tau_leaf * 12.0D0
 
       sla = 338.0D0 * (tl0 ** (-0.49))
+      ! sla = 96.68 * (tl0 ** (-0.49))
+      ! sla = 85.0D0 * (tl0 ** (-0.49)) ! cm2 gC-1 Dry mass
+
 
    end function sla_reich
 

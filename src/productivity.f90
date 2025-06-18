@@ -141,11 +141,10 @@ contains
 
     wue = water_ue(f1, rc_pot, p0, vpd)
 
-    !     calcula a transpiração em mm/s
-    e = transpiration(rc_pot, p0, vpd, 2)
+    ! transpiration em mm/s
+
 
     ! Leaf area index (m2/m2)
-    ! recalcula rc e escalona para dossel
     ! laia = 0.2D0 * dexp((2.5D0 * f1)/p25)
     sla = spec_leaf_area(tleaf)  ! m2 g-1  ! Convertions made in leaf_area_index &  gross_ph + calls therein
 
@@ -157,8 +156,8 @@ contains
     ! laia = leaf_area_index(cl1_prod, sla)
     laia = shade_lai + sun_lai
 
-
     rc = rc_pot / (f4_shade * f4_sun) !/ real(laia,kind=r_4) ! RCM -!s m-1 ! CANOPY SCALING --
+    e = transpiration(rc, p0, vpd, 2) * sun_lai !
     ! rc = stomatal_conductance(vpd, f1, g1, catm) * laia
 !     Canopy gross photosynthesis (kgC/m2/yr)
 !     =======================================x

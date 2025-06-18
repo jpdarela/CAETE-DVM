@@ -60,6 +60,8 @@ objects = $(src_obj) budget.o debug_caete.o
 # Targets
 .PHONY: setup interface so so_parallel clean clean_so modules
 
+all: ext_mod_legacy
+
 # Python setup
 setup:
 	@echo "Installing dependencies..."
@@ -71,14 +73,14 @@ modules: $(sources)
 # Build the extension module (caete_module) from .F90 source
 # To be used when python == 3.12
 ext_mod_meson: $(sources) modules
-	@$(PYEXEC) set_npls.py
+	@$(PYEXEC) precompilation_data.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
 	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --build-dir build --backend meson --f90flags="-Wall $(EXT_FLAGS)"
 
 # Build the extension module (caete_module) from .F90 source
 # To be used when python == 3.11
 ext_mod_legacy: $(sources) modules
-	@$(PYEXEC) set_npls.py
+	@$(PYEXEC) precompilation_data.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
 	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS)"
 
@@ -87,7 +89,7 @@ ext_mod_legacy: $(sources) modules
 # pyf interface
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
-	@$(PYEXEC) set_npls.py ## Set the number of PLS in the global module
+	@$(PYEXEC) precompilation_data.py ## Set the number of PLS in the global module
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 # Build the shared object (caete_module) from .F90 source

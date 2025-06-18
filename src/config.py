@@ -21,7 +21,7 @@ Copyright 2017- LabTerra
 
 from pathlib import Path
 from pprint import pformat
-from typing import Union, Dict , Any, Optional
+from typing import Union, Dict, Any, Optional
 
 import os
 import sys
@@ -29,12 +29,33 @@ import tomllib
 
 
 """This file contains some parameters that are used in the code.
-   Thehe is a class that read parameters stored in a toml file.
+   There is a class that read parameters stored in a toml file.
    The configurations can be accessed using the fetch_config function."""
 
-# path to the fortran compiler dlls, used in windows systems.
-fortran_runtime_fallback = r"C:\Program Files (x86)\Intel\oneAPI\compiler\2025.1\bin"
-fortran_runtime: Path = Path(os.environ.get("FC_RUNTIME", fortran_runtime_fallback)).resolve()
+config_file = Path(__file__).parent / "caete.toml"
+
+# IN windows systems, the fortran runtime is needed to import the caete_module.
+# Find path to the fortran compiler runtime, used in windows systems.
+if sys.platform == "win32":
+    ifort_compilers_env = [ "IFORT_COMPILER25", "IFORT_COMPILER24", "IFORT_COMPILER23"]
+    #
+    # Check if any of the environment variables are set
+    for env_var in ifort_compilers_env:
+        if env_var in os.environ:
+            fortran_runtime = Path(os.environ[env_var]) / "bin"
+            fortran_runtime = fortran_runtime.resolve()
+            # print(f"Using Fortran runtime from environment variable {env_var}: {fortran_runtime}")
+            break
+    else:
+        if "FC_RUNTIME" in os.environ:
+            # If FC_RUNTIME is set, use it as the fortran runtime path
+            fortran_runtime = Path(os.environ["FC_RUNTIME"]).resolve()
+        else:
+            # If none of the environment variables are set, use a default path
+            # This is the default path for Intel oneAPI Fortran compiler runtime
+            # Adjust this path according to your installation
+            fortran_runtime = Path(r"C:\Program Files (x86)\Intel\oneAPI\compiler\2025.1\bin").resolve()
+        # print(f"Using default Fortran runtime path: {fortran_runtime}")
 
 if sys.platform == "win32":
     # Check if the fortran runtime path exists
@@ -43,11 +64,12 @@ if sys.platform == "win32":
         print(f"\n HINT: the fortran runtime path is set to a path like:\n {fortran_runtime}.\n Please check if this is correct.")
         sys.exit(1)
 
-config_file = Path(__file__).parent / "caete.toml"
-
 def get_fortran_runtime() -> Path:
     """Get the path to the fortran compiler dlls."""
-    return Path(fortran_runtime).resolve()
+    if sys.platform == "win32":
+        return Path(fortran_runtime).resolve()
+    else:
+        return None
 
 def update_sys_pathlib(lib) -> None:
     if sys.platform == "win32":
@@ -55,6 +77,8 @@ def update_sys_pathlib(lib) -> None:
             os.add_dll_directory(lib)
         except:
             raise ImportError("Could not add the DLL directory to the PATH")
+    else:
+        pass
 
 
 class Config:

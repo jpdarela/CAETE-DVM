@@ -38,13 +38,14 @@ sys.path.append("../")
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 if sys.platform == "win32":
-    try:
-        os.add_dll_directory(fortran_runtime)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
+    from config import update_sys_pathlib, fortran_runtime
+    update_sys_pathlib(fortran_runtime)
+
+
 
 from caete_module import photo as model
 from caete_module import global_par as gp
+
 
 __author__ = 'JP Darela'
 
@@ -64,7 +65,7 @@ description = """ Generate and save a table of plant life strategies for CAETE.
 
                  The created object table is a numpy array with axis (NTRAITS, NPLS).
                  """
-print(gp.cmin)
+
 parser = argparse.ArgumentParser(
     description=description,
     usage='python plsgen.py [-h] -n NUMBER -f FOLDER'
@@ -75,6 +76,8 @@ parser.add_argument("-f", "--folder", type=str, required=False, help="Path to sa
 args = parser.parse_args()
 
 CONFIG_FILE = (Path(__file__).parent / "plsgen.toml").resolve()
+
+NUM_SAMPLES = 1_000_000  # Number of samples for Dirichlet distribution and residence times
 
 with open(CONFIG_FILE, 'rb') as f:
     data = tl.load(f)
@@ -134,7 +137,7 @@ def allocation_combinations():
     """
     data = get_parameters()
     ma = data["parameters"]["minimum_allocation"]
-    num_samples = 1_000_000
+    num_samples = NUM_SAMPLES
 
     alpha = data["dirichlet_alpha"]
     alpha_wood = np.array([alpha, alpha, alpha])
@@ -177,7 +180,7 @@ def carbon_coefficients(NPLS):
 
     alloc_w = []
     alloc_g = []
-    r_ceil = 1000000
+    r_ceil = NUM_SAMPLES
 
     if GRASS_FRAC == 0.0:
         pass
@@ -238,12 +241,13 @@ def carbon_coefficients(NPLS):
 
 def nutrient_ratios_combinations_reich(NPLS, alloc):
     data = get_parameters()
+
     nr = data["nutrient_carbon_ratios"]
 
     # 1. Leaf N from Reich et al. (1997)
     leaf_longevity_months = alloc[:, 0] * 12.0  # tleaf (years) to months
     N_leaf_mg_g = 42.7 * (leaf_longevity_months ** -0.32)
-    N_leaf_g_g = N_leaf_mg_g / 1000.0
+    N_leaf_g_g = N_leaf_mg_g / 1000.0 + np.random.normal(0, 0.005, NPLS)  # Convert to g/g and add noise
     # N_leaf_g_g = np.clip(N_leaf_g_g, nr["leaf_n2c"]["min"], nr["leaf_n2c"]["max"])
 
     # 2. Leaf P from fixed N:P ratio (Reich & Oleksyn 2004)
@@ -337,7 +341,7 @@ def table_gen(NPLS, fpath=None, ret=True):
     # Remaining traits
     # g1: stomatal conductance parameter
     # resorption: fraction of nutrients resorbed from leaves before leaf fall
-    g1 = np.random.uniform(0.5, 20.0, NPLS)
+    g1 = np.random.uniform(0.5, 30.0, NPLS)
     resorption = np.random.uniform(0.1, 0.8, NPLS)
 
     # Photosynthesis pathway for grasses
