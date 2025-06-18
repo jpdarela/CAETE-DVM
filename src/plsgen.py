@@ -42,7 +42,6 @@ if sys.platform == "win32":
     update_sys_pathlib(fortran_runtime)
 
 
-
 from caete_module import photo as model
 from caete_module import global_par as gp
 
@@ -247,11 +246,11 @@ def nutrient_ratios_combinations_reich(NPLS, alloc):
     # 1. Leaf N from Reich et al. (1997)
     leaf_longevity_months = alloc[:, 0] * 12.0  # tleaf (years) to months
     N_leaf_mg_g = 42.7 * (leaf_longevity_months ** -0.32)
-    N_leaf_g_g = N_leaf_mg_g / 1000.0 + np.random.normal(0, 0.005, NPLS)  # Convert to g/g and add noise
+    N_leaf_g_g = N_leaf_mg_g / 1000.0 + np.random.normal(0, 0.001, NPLS)  # Convert to g/g and add noise
     # N_leaf_g_g = np.clip(N_leaf_g_g, nr["leaf_n2c"]["min"], nr["leaf_n2c"]["max"])
 
     # 2. Leaf P from fixed N:P ratio (Reich & Oleksyn 2004)
-    ntop = np.random.uniform(4,20, NPLS)  # N:P ratio
+    ntop = np.random.uniform(8,20, NPLS)  # N:P ratio
     P_leaf_g_g = N_leaf_g_g / ntop  # P:N ratio
     # P_leaf_g_g = np.clip(P_leaf_g_g, nr["leaf_p2c"]["min"], nr["leaf_p2c"]["max"])
 

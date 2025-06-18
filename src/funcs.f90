@@ -512,32 +512,129 @@ contains
    !> @param nl Is limited? (output)
    !> @note If available nutrients are greater than or equal to potential nutrient uptake, there is no limitation
    !=================================================================
-   subroutine realized_npp(pot_npp_pool, nupt_pot, available_n,&
-      &  rnpp, nl)
+   ! subroutine realized_npp(pot_npp_pool, nupt_pot, available_n,&
+   !    &  rnpp, nl)
 
-      real(r_8), intent(in) :: pot_npp_pool ! POTENTIAL NPP (POOL - leaf, root or wood)
-      real(r_8), intent(in) :: nupt_pot     ! POTENTIAL UPTAKE OF NUTRIENT(N/P)for each pool
-      real(r_8), intent(in) :: available_n  ! AVAILABLE NUTRIENTS FOR GROWTH weighted for each pool
+   !    real(r_8), intent(in) :: pot_npp_pool ! POTENTIAL NPP (POOL - leaf, root or wood)
+   !    real(r_8), intent(in) :: nupt_pot     ! POTENTIAL UPTAKE OF NUTRIENT(N/P)for each pool
+   !    real(r_8), intent(in) :: available_n  ! AVAILABLE NUTRIENTS FOR GROWTH weighted for each pool
 
-      real(r_8), intent(out) :: rnpp        ! REALIZED NPP
-      logical(l_1), intent(out) :: nl       ! IS LIMITED?
+   !    real(r_8), intent(out) :: rnpp        ! REALIZED NPP
+   !    logical(l_1), intent(out) :: nl       ! IS LIMITED?
 
-      ! NUTRIENT LIMITED NPP TO(CVEGpool):
-      if (available_n .ge. nupt_pot) then
-         ! THere is NO LIMITATION in this case
-         nl = .false.
-         ! GROWTH IS ACCOMPLISHED (all npp can go to the CVEG pool)
-         rnpp = pot_npp_pool
-      else
-         ! NPP OF THIS POOL IS LIMITED BY Nutrient X
-         ! In this case the realized NPP for the pool is smaller than the Potential POOL
-         nl = .true.
-         ! ACOMPLISHED NPP
-         rnpp = max( 0.0D0, (available_n * pot_npp_pool) / nupt_pot)
+   !    ! NUTRIENT LIMITED NPP TO(CVEGpool):
+   !    if (available_n .ge. nupt_pot) then
+   !       ! THere is NO LIMITATION in this case
+   !       nl = .false.
+   !       ! GROWTH IS ACCOMPLISHED (all npp can go to the CVEG pool)
+   !       rnpp = pot_npp_pool
+   !    else
+   !       ! NPP OF THIS POOL IS LIMITED BY Nutrient X
+   !       ! In this case the realized NPP for the pool is smaller than the Potential POOL
+   !       nl = .true.
+   !       ! ACOMPLISHED NPP
+   !       rnpp = max( 0.0D0, (available_n * pot_npp_pool) / nupt_pot)
+   !    endif
+
+   !    end subroutine realized_npp
+
+   ! subroutine realized_npp(pot_npp_pool, nupt_pot, available_n, rnpp, nl)
+   !    real(r_8), intent(in) :: pot_npp_pool ! POTENTIAL NPP (POOL - leaf, root or wood)
+   !    real(r_8), intent(in) :: nupt_pot     ! POTENTIAL UPTAKE OF NUTRIENT(N/P)for each pool
+   !    real(r_8), intent(in) :: available_n  ! AVAILABLE NUTRIENTS FOR GROWTH weighted for each pool
+
+   !    real(r_8), intent(out) :: rnpp        ! REALIZED NPP
+   !    logical(l_1), intent(out) :: nl       ! IS LIMITED?
+
+   !    ! Constants
+   !    real(r_8), parameter :: ZERO = 0.0_r_8
+   !    real(r_8), parameter :: EPS = 1.0e-12_r_8  ! Small tolerance for floating-point comparisons
+
+   !    ! Check for invalid inputs
+   !    if (pot_npp_pool < ZERO .or. nupt_pot < ZERO .or. available_n < ZERO) then
+   !       write(*,*) "realized_npp: Negative input values are not allowed"
+   !    end if
+
+   !    ! NUTRIENT LIMITED NPP TO(CVEGpool):
+   !    if (nupt_pot < EPS) then
+   !       ! Handle case where nupt_pot is zero or very small
+   !       nl = .false.
+   !       rnpp = pot_npp_pool
+   !    elseif (available_n >= nupt_pot * (1.0_r_8 - EPS)) then
+   !       ! There is NO LIMITATION in this case (with tolerance for floating-point)
+   !       nl = .false.
+   !       ! GROWTH IS ACCOMPLISHED (all npp can go to the CVEG pool)
+   !       rnpp = pot_npp_pool
+   !    else
+   !       ! NPP OF THIS POOL IS LIMITED BY Nutrient X
+   !       nl = .true.
+   !       ! ACCOMPLISHED NPP
+   !       rnpp = max(ZERO, (available_n * pot_npp_pool) / nupt_pot)
+   !    endif
+
+   ! end subroutine realized_npp
+
+   subroutine realized_npp(pot_npp_pool, nupt_pot, available_n, rnpp, nl)
+      use, intrinsic :: ieee_arithmetic  ! For NaN checks
+      real(r_8), intent(in) :: pot_npp_pool
+      real(r_8), intent(in) :: nupt_pot
+      real(r_8), intent(in) :: available_n
+      real(r_8), intent(out) :: rnpp
+      logical(l_1), intent(out) :: nl
+
+      ! Constants
+      real(r_8), parameter :: ZERO = 0.0_r_8
+      real(r_8), parameter :: EPS = 1.0e-12_r_8
+      real(r_8), parameter :: REL_EPS = 1.0e-8_r_8
+
+      ! Initialize outputs (avoid NaN)
+      rnpp = ZERO
+      nl = .false.
+
+      ! Check for NaN/Inf inputs
+      if (ieee_is_nan(pot_npp_pool) .or. ieee_is_nan(nupt_pot) .or. ieee_is_nan(available_n)) then
+         write(*,*) "realized_npp: NaN detected in inputs!"
+         return
       endif
 
-      end subroutine realized_npp
+      ! Check for negative inputs (invalid case)
+      if (pot_npp_pool < ZERO .or. nupt_pot < ZERO .or. available_n < ZERO) then
+         write(*,*) "realized_npp: Negative inputs not allowed!"
+         return
+      endif
 
+      ! Early exit if potential NPP is negligible
+      if (pot_npp_pool <= EPS) then
+         rnpp = ZERO
+         nl = .false.
+         return
+      endif
+
+      ! Case 1: No nutrient limitation (available_n covers demand)
+      if (nupt_pot <= EPS * pot_npp_pool) then
+         nl = .false.
+         rnpp = pot_npp_pool
+      elseif (available_n >= nupt_pot * (1.0_r_8 - REL_EPS)) then
+         nl = .false.
+         rnpp = pot_npp_pool
+      else
+         ! Case 2: Nutrient-limited growth
+         nl = .true.
+         if (nupt_pot > EPS * pot_npp_pool) then
+            rnpp = max(ZERO, (available_n * pot_npp_pool) / nupt_pot)
+         else
+            rnpp = ZERO  ! Avoid division by zero
+         endif
+      endif
+
+      ! Final NaN check (should not happen, but just in case)
+      if (ieee_is_nan(rnpp)) then
+         write(*,*) "realized_npp: NaN in rnpp calculation!"
+         rnpp = ZERO
+         nl = .false.
+      endif
+
+   end subroutine realized_npp
 
    !=================================================================
    !=================================================================
