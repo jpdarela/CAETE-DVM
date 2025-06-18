@@ -20,10 +20,8 @@ from config import get_fortran_runtime
 # from sklearn.cluster import KMeans
 
 if sys.platform == "win32":
-    try:
-        os.add_dll_directory(get_fortran_runtime())
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
+    from config import update_sys_pathlib, fortran_runtime
+    update_sys_pathlib(get_fortran_runtime())
 
 
 import caete as mod

@@ -10,7 +10,7 @@ if not outputs_folder.exists():
 
 cities_output_text_folder = outputs_folder / 'cities_output_text'
 input_file = os.path.join(parent, 'input', 'gridlist_with_idx_cities.csv')
-pls_table = Path(os.path.join(parent, 'src', 'PLS_MAIN', 'pls_attrs-9999.csv'))
+pls_table = Path(os.path.join(parent, 'src', 'PLS_MAIN', 'pls_attrs-99999.csv'))
 
 print(f"Outputs folder: {outputs_folder}")
 print(f"Cities output text folder: {cities_output_text_folder}")
@@ -51,7 +51,7 @@ print(f"All CSV files have been copied to {cities_output_text_folder}")
 
 shutil.make_archive(str(cities_output_text_folder), 'zip', root_dir=str(cities_output_text_folder))
 # Move files to /Documents/TMP folder
-tmp_folder = Path.home() / 'Onedrive' / 'Documentos' / 'TMP'
+tmp_folder = Path.home() / 'Onedrive' / 'Documentos' / 'TMP_test2'
 if not tmp_folder.exists():
     os.makedirs(tmp_folder, exist_ok=True)
 shutil.move(str(cities_output_text_folder) + '.zip', tmp_folder)

@@ -28,6 +28,7 @@ src/.vscode
 input/.python-version
 input/20CRv3-ERA5
 input/MPI-ESM1-2-HR
+scripts/*.csv
 
 run_debug
 .vscode/c_cpp_properties.json
