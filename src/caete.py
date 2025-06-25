@@ -128,7 +128,7 @@ from numpy.typing import NDArray
 
 import metacommunity as mc
 from _geos import calculate_area, find_coordinates_xy, find_indices_xy
-from config import Config, fetch_config, fortran_runtime, update_sys_pathlib
+from config import Config, fetch_config
 from hydro_caete import soil_water
 from output import budget_output
 from caete_jit import inflate_array, masked_mean, masked_mean_2D, cw_mean
@@ -140,6 +140,7 @@ from caete_jit import atm_canopy_coupling, pft_area_frac64
 # so the shared library can find the fortran runtime libraries of the intel one API compiler (ifx)
 # Note: This is only necessary in Windows systems
 if sys.platform == "win32":
+    from config import fortran_runtime, update_sys_pathlib
     update_sys_pathlib(fortran_runtime)
 
 # shared library

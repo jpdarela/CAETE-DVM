@@ -156,7 +156,7 @@ contains
     ! laia = leaf_area_index(cl1_prod, sla)
     laia = shade_lai + sun_lai
 
-    rc = rc_pot / (f4_shade * f4_sun) !/ real(laia,kind=r_4) ! RCM -!s m-1 ! CANOPY SCALING --
+    rc = real(rc_pot / (f4_shade * f4_sun), kind=r_4) !/ real(laia,kind=r_4) ! RCM -!s m-1 ! CANOPY SCALING --
     e = transpiration(rc, p0, vpd, 2) * sun_lai !
     ! rc = stomatal_conductance(vpd, f1, g1, catm) * laia
 !     Canopy gross photosynthesis (kgC/m2/yr)

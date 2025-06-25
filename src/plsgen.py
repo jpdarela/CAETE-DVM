@@ -26,7 +26,6 @@
 # Residence times and nutrient ratios are randomly generated. Parameters are descibed in the pls_gen.toml file
 import os
 import sys
-from config import fortran_runtime
 import argparse
 from math import ceil, floor
 import csv

@@ -33,6 +33,7 @@ import tomllib
    The configurations can be accessed using the fetch_config function."""
 
 config_file = Path(__file__).parent / "caete.toml"
+fortran_runtime = None
 
 # IN windows systems, the fortran runtime is needed to import the caete_module.
 # Find path to the fortran compiler runtime, used in windows systems.

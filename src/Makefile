@@ -48,14 +48,15 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
+MAIN_SUB = budget_fixed.F90
 # Sources for extension module creation (F2PY)
 src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
-sources = $(src_lib) budget.F90
+sources = $(src_lib) $(MAIN_SUB)
 
 
 # Objects for compilation of the debug executable (LINUX)
 src_obj = types.o photo_par.o global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
-objects = $(src_obj) budget.o debug_caete.o
+objects = $(src_obj) $(basename $(MAIN_SUB)).o debug_caete.o
 
 # Targets
 .PHONY: setup interface so so_parallel clean clean_so modules

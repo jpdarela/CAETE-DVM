@@ -8,3 +8,5 @@ zstandard
 pyproj
 pandas
 pyarrow
+meson
+ninja

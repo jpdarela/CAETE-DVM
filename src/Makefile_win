@@ -60,7 +60,6 @@ src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.
 sources = $(src_lib) $(MAIN_SUB)
 
 # Fortran objects
-
 src_obj = types.obj photo_par.obj global.obj funcs.obj evap.obj soil_dec.obj cc.obj allocation.obj productivity.obj
 objects = $(src_obj) $(basename $(MAIN_SUB)).obj
 

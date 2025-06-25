@@ -167,7 +167,7 @@ contains
 
       tl0 = tau_leaf * 12.0D0
 
-      sla = 338.0D0 * (tl0 ** (-0.49))
+      sla = 278.0D0 * (tl0 ** (-0.49)) ! Intercept 278 extracted from the figure in Reich et al. 1997
       ! sla = 96.68 * (tl0 ** (-0.49))
       ! sla = 85.0D0 * (tl0 ** (-0.49)) ! cm2 gC-1 Dry mass
 
@@ -176,7 +176,7 @@ contains
 
    !=================================================================
    !=================================================================
-   !> leaf_nitrogen_concetration
+   !> leaf_nitrogen_concetration +++Not used in the code+++
    !> Leaf nitrogen concentration based on Reich et al. 1997
    !> @param tau_leaf Leaf turnover time in years
    !> @return Leaf nitrogen concentration in gN gC-1
@@ -190,7 +190,7 @@ contains
       real(r_8), parameter :: fc = 0.47D0  ! carbon fraction of dry mass
       real(r_8) :: delta, r
       tl0 = tau_leaf * 12.0D0
-      nleaf = 42.7D0 * (tl0 ** -0.32) / fc  ! mgN gC-1
+      nleaf = 42.7D0 * (tl0 ** (-0.32)) / fc  ! mgN gC-1
       nleaf = nleaf * 0.001D0 ! convert mgN gC-1 to gN gC-1
       call random_number(r)
       delta = (r - 0.5D0) * 0.01D0
@@ -811,7 +811,7 @@ contains
       real(r_8) :: cm, cm0, cm1, cm2
 
       real(r_8) :: nbio2, pbio2, dark_respiration  ! , cbio_aux
-      real(r_8), parameter :: light_penalization = 0.2D0, alpha_a = 1.0D0
+      real(r_8), parameter :: light_penalization = 0.2D0, alpha_a = 0.7D0
 
 
 
