@@ -470,10 +470,10 @@ if __name__ == "__main__":
     # output_manager.table_output_per_grd(model_results, variables=variables_to_read)    # # Load the region file
 
     # reg:region = worker.load_state_zstd("./cities_MPI-ESM1-2-HR_hist_output.psz")
-    # output_file = Path("./pan_amazon_hist_result.psz")
-    # reg:region = worker.load_state_zstd(output_file)
+    output_file = Path("./pan_amazon_hist_result.psz")
+    reg:region = worker.load_state_zstd(output_file)
     # reg.load_gridcells()
-    # variables_to_read = ("npp","photo")
+    variables_to_read = ("npp","photo")
 
     # import cProfile
     # # # # # # Gridded outputs
@@ -481,6 +481,6 @@ if __name__ == "__main__":
     # cProfile.run(command, sort="cumulative", filename="text_output_profile.prof")
 
     ## Gridded outputs
-    # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
+    a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
     # # # # TODO: Save netcdfs
 

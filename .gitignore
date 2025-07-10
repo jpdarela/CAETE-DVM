@@ -8,7 +8,6 @@ src/*.pyf
 src/*.pyd
 src/*.so
 src/__pycache__
-src/*.npy
 src/*.cfg
 src/*.csv
 src/pls_data-*

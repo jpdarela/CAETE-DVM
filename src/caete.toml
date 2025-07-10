@@ -8,7 +8,7 @@ doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 nprocs= 16 # Threads used to post process the output.
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of gridcells and not larger that the number of available CPUs.
-max_processes = 4
+max_processes = 128
 # Number of threads used by OpenMP which each python process can use.
 # Currently setting more than 1 degrades performance (overhead of creating new threads).
 omp_num_threads = 1
@@ -51,7 +51,7 @@ n = 1 # Effects only in runtime, not in compile time.
 # The final number of slots for PLSs in the model is equal to n * npls_max.
 # Changes here and in ntraits will not be applied to the model (fortran extension module)
 # unless you recompile it.
-npls_max = 50
+npls_max = 500
  # number of traits in a PLS
 ntraits = 17
 
