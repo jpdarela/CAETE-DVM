@@ -23,26 +23,38 @@
 # This script contains functions to read binary output
 # and create gridded and table outputs.
 # Author: Joao Paulo Darela Filho
+import argparse
+import cProfile
+import pstats
+import time
+import tracemalloc
+from pstats import SortKey
+from functools import wraps
 
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Union, Collection, Tuple, Dict, List
 
-import os
-
-from numpy.typing import NDArray
-
 import numpy as np
-import pandas as pd
-# import polars as pl
+import polars as pl
+from numpy.typing import NDArray
 from joblib import Parallel, delayed
-from worker import worker
-from region import region
-from caete import grd_mt, get_args, str_or_path
+from numba import jit
+
 from caete_jit import pft_area_frac64
 from config import fetch_config
-
 from _geos import pan_amazon_region, get_region
+
+if sys.platform == "win32":
+    from config import fortran_runtime, update_sys_pathlib
+    update_sys_pathlib(fortran_runtime)
+
+from caete import grd_mt, get_args, str_or_path
+from worker import worker
+from region import region
+
 
 #TODO: implement region configuration
 if pan_amazon_region is None:
@@ -147,11 +159,15 @@ def get_var_metadata(var):
 def write_metadata_to_csv(variable_names:Tuple[str,...], output_path:Path):
     metadata = get_var_metadata(("header", ) + variable_names)
     header = metadata.pop("header")
-    df = pd.DataFrame(metadata).T
-    df.columns = header
-    # Add a name for the index col
-    df.index.name = "variable_name"
-    df.to_csv(output_path / "output_metadata.csv", index_label="variable_name")
+
+    # Convert nested dict to pl.DataFrame
+    data = []
+    for var_name, values in metadata.items():
+        data.append([var_name] + values)
+
+    # Use orient="row" to avoid the warning
+    df = pl.DataFrame(data, schema=["variable_name"] + header, orient="row")
+    df.write_csv(output_path / "output_metadata.csv")
     return df
 
 
@@ -257,34 +273,42 @@ class gridded_data:
         for var in variables:
             dtypes.append(arrays_dict[0][var].dtype)
 
-        # Allocate the arrays
+        # Calculate region dimensions first
+        region_height = ymax - ymin
+        region_width = xmax - xmin
+
+        # Allocate the arrays - only for the region of interest (not the whole globe)
         arrays = []
         array_names = []
         nx, ny = -1, -1
         for i, var in enumerate(variables):
             dim = arrays_dict[0][var].shape
             if len(dim) == 1:
-                arrays.append(np.ma.masked_all(shape=(dim[0], 360, 720), dtype=dtypes[i]))
+                arrays.append(np.ma.masked_all(shape=(dim[0], region_height, region_width), dtype=dtypes[i]))
                 array_names.append(var)
             elif len(dim) == 2:
                 ny, nx = dim
                 for k in range(ny):
-                    arrays.append(np.ma.masked_all(shape=(nx, 360, 720), dtype=dtypes[i]))
+                    arrays.append(np.ma.masked_all(shape=(nx, region_height, region_width), dtype=dtypes[i]))
                     array_names.append(f"{var}_{k + 1}")
-        # Fill the arrays
+
+        # Fill the arrays - adjust coordinates to be relative to the region
         array_index = 0
         for i, var in enumerate(variables):
             for j in range(len(coords)):
-                if len(arrays_dict[j][var].shape) == 1:
-                    arrays[array_index][:, coords[j][0], coords[j][1]] = arrays_dict[j][var]
-                elif len(arrays_dict[j][var].shape) == 2:
-                    ny, nx = arrays_dict[j][var].shape
-                    for k in range(ny):
-                        arrays[array_index + k][:, coords[j][0], coords[j][1]] = arrays_dict[j][var][k, :]
-            array_index += ny if len(arrays_dict[j][var].shape) == 2 else 1 # type ignore
+                # Calculate coordinates relative to the region bounding box
+                y_rel = coords[j][0] - ymin
+                x_rel = coords[j][1] - xmin
 
-        # Crop the arrays to the region of interest
-        arrays = [a[:, ymin:ymax, xmin:xmax] for a in arrays]
+                # Only process points that fall within our region
+                if 0 <= y_rel < region_height and 0 <= x_rel < region_width:
+                    if len(arrays_dict[j][var].shape) == 1:
+                        arrays[array_index][:, y_rel, x_rel] = arrays_dict[j][var]
+                    elif len(arrays_dict[j][var].shape) == 2:
+                        ny, nx = arrays_dict[j][var].shape
+                        for k in range(ny):
+                            arrays[array_index + k][:, y_rel, x_rel] = arrays_dict[j][var][k, :]
+            array_index += ny if len(arrays_dict[j][var].shape) == 2 else 1 # type ignore
 
         return arrays, time, array_names
 
@@ -293,9 +317,79 @@ class gridded_data:
     def save_netcdf(data: dict, output_path: Path, file_name: str):
         pass
 
+
 # ======================================
 # Functions dealing with table outputs
 # ======================================
+
+def process_arrays(keys, arrays, shapes):
+    """Process multiple arrays efficiently.
+
+    Args:
+        keys: List of array key names
+        arrays: List of numpy arrays (both 1D and 2D)
+        shapes: List of shape information tuples for each array
+
+    Returns:
+        Dictionary with processed arrays
+    """
+    # Create a standard dictionary for results
+    result_dict = {}
+
+    for i in range(len(keys)):
+        # Skip if index is out of bounds
+        if i >= len(arrays) or i >= len(shapes):
+            continue
+
+        key = keys[i]
+        array = arrays[i]
+        shape = shapes[i]
+
+        # Check if shape is valid
+        if not isinstance(shape, tuple):
+            continue
+
+        # Check dimensionality based on shape information
+        if len(shape) == 1:
+            # Simply add 1D array to result
+            result_dict[key] = array
+        elif len(shape) == 2:
+            ny, nx = shape
+            # Use numpy's optimized sum along axis
+            _sum = np.sum(array, axis=0)
+
+            # Add sum to result
+            result_dict[key + "_sum"] = _sum
+
+            # Add individual rows
+            for j in range(ny):
+                result_dict[key + "_" + str(j+1)] = array[j, :].copy()
+
+    return result_dict
+
+# Standalone numba function for optimized calculations
+@jit(nopython=True, cache=True)
+def calculate_cveg_and_ocp(cleaf, croot, cwood):
+    """Numba-optimized function to calculate total vegetation carbon and area fraction.
+
+    Args:
+        cleaf: Numpy array of leaf carbon values
+        croot: Numpy array of root carbon values
+        cwood: Numpy array of wood carbon values
+
+    Returns:
+        Tuple of (cveg, ocp) arrays
+    """
+    # Calculate total vegetation carbon
+    cveg = cleaf + croot + cwood
+
+    # Calculate area fraction using the existing function
+    # Note: pft_area_frac64 must be compatible with numba
+    ocp = pft_area_frac64(cleaf, croot, cwood)
+
+    return cveg, ocp
+
+
 class table_data:
 
 
@@ -317,32 +411,44 @@ class table_data:
         for grd in r:
             d = grd._get_daily_data(get_args(variables), spin_slice, return_time=True) #type: ignore
 
-            time = [t.strftime("%Y-%m-%d") for  t in d[1]] # type: ignore
+            time = [t.strftime("%Y-%m-%d") for t in d[1]] # type: ignore
             data = d[0] # type: ignore
 
-            new_data = {}
+            # Prepare data for numba processing
+            keys = []
+            arrays = []
+            shapes = []
+
+            # Collect data for numba processing
             for k, v in data.items(): # type: ignore
-                if len(v.shape) == 1:
-                    new_data[k] = v
-                elif len(v.shape) == 2:
-                    ny, _ = v.shape
-                    _sum = np.sum(v, axis=0)
-                    new_data[f"{k}_sum"] = _sum
-                    for i in range(ny):
-                        new_data[f"{k}_{i+1}"] = v[i,:] # We assume that the first axis is the time axis
+                keys.append(k)
+                # Make a copy to ensure array is writable for numba
+                v_copy = v.copy()
+                arrays.append(v_copy)
+                # Ensure shape is always a valid tuple for numba
+                if not hasattr(v_copy, 'shape'):
+                    continue
+                if isinstance(v_copy.shape, tuple):
+                    shapes.append(v_copy.shape)
+                elif hasattr(v_copy, 'shape') and isinstance(v_copy.shape, int):
+                    # Handle case where shape might be an integer (1D array)
+                    shapes.append((v_copy.shape,))
+                else:
+                    # Skip invalid shapes
+                    continue
+
+            # Process arrays using our efficient processing function
+            new_data = process_arrays(keys, arrays, shapes)
+
+            # Add time information
+            new_data['day'] = time
 
             fname = f"grd_{grd.y}_{grd.x}_{time[0]}_{time[-1]}.csv"
-            df = pd.DataFrame(new_data, index=time)
-            df.rename_axis('day', axis='index')
-            df.to_csv(grd.out_dir / fname, index_label='day')
 
+            # Create DataFrame with polars and write to CSV efficiently
+            df = pl.DataFrame(new_data)
+            df.write_csv(grd.out_dir / fname)
 
-    # @staticmethod
-    # def write_daily_data(r:region, variables:Union[str, Collection[str]]):
-    #     periods = r[0].print_available_periods()
-    #     write_metadata_to_csv(variables, r.output_path) # type: ignore
-    #     for i in range(periods):
-    #         table_data.make_daily_dataframe(r, variables=variables, spin_slice=i+1)
 
     @staticmethod
     def write_daily_data(r: region, variables: Union[str, Collection[str]]):
@@ -350,10 +456,14 @@ class table_data:
         periods = r[0].print_available_periods() # assumes all gridcells have the same periods
         write_metadata_to_csv(variables, r.output_path)  # type: ignore
 
+        # Determine optimal number of workers based on CPU count and data size
+        max_workers = min(os.cpu_count() or 4, periods)
+
         def worker(i):
             table_data.make_daily_dataframe(r, variables=variables, spin_slice=i+1)
 
-        with ThreadPoolExecutor() as executor:
+        # Use ThreadPoolExecutor with optimized worker count
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             executor.map(worker, range(periods))
 
 
@@ -364,32 +474,102 @@ class table_data:
         Args:
             grd (grd_mt): gridcell object
         """
-        out = []
+        all_df_list = []
         years = grd._get_years()
-        for year in years:
-            data = grd._read_annual_metacomm_biomass(year)
-            data = pd.DataFrame(data)
-            # count ench occurtences of each pls_id # type: ignore
-            count = data["pls_id"].value_counts()
-            df = data.groupby("pls_id").mean().reset_index()
-            df.index = df["pls_id"].astype(np.int32) # type: ignore
 
-            # iterate over the liner and match the index with the count
-            for i in range(len(df)):
-                pls_id = df["pls_id"].iloc[i]
-                if pls_id in count.index:
-                    df.loc[pls_id, "count"] = count[pls_id]
-                # print(pls_id, count[pls_id])
-            selected_columns = ["vp_cleaf", "vp_croot", "vp_cwood", "count"]
-            df = df.loc[:, selected_columns]
-            cleaf, croot, cwood = df["vp_cleaf"].to_numpy(), df["vp_croot"].to_numpy(), df["vp_cwood"].to_numpy()
+        # Process each year in parallel when there are multiple years
+        if len(years) > 1:
+            with ThreadPoolExecutor(max_workers=min(len(years), os.cpu_count() or 4)) as executor:
+                futures = []
+
+                for year in years:
+                    futures.append(executor.submit(table_data._process_year_data, grd, year))
+
+                # Collect results as they complete
+                for future in futures:
+                    result_df = future.result()
+                    if result_df is not None:
+                        all_df_list.append(result_df)
+        else:
+            # Process single year directly
+            for year in years:
+                result_df = table_data._process_year_data(grd, year)
+                if result_df is not None:
+                    all_df_list.append(result_df)
+
+        # Concatenate all dataframes and write to CSV
+        if all_df_list:
+            pl.concat(all_df_list).write_csv(
+                grd.out_dir / f"metacomunity_biomass_{grd.xyname}.csv"
+            )
+
+
+    @staticmethod
+    def _process_year_data(grd:grd_mt, year):
+        """Process data for a single year - helper function for write_metacomm_output.
+
+        Args:
+            grd: The gridcell object
+            year: The year to process
+
+        Returns:
+            A polars DataFrame with the processed data
+        """
+        # Get data and convert to DataFrame once
+        data_dict = grd._read_annual_metacomm_biomass(year)
+
+        # Skip empty data
+        if not data_dict:
+            return None
+
+        # Create DataFrame with polars
+        data = pl.DataFrame(data_dict)
+
+        # Count occurrences of each pls_id
+        count_df = (data.group_by("pls_id")
+                    .agg(pl.len().alias("count"))
+                    .sort("pls_id"))
+
+        # Group by pls_id and calculate mean
+        df = (data.group_by("pls_id")
+              .mean()
+              .join(count_df, on="pls_id"))
+
+        # Select needed columns
+        df = df.select(["pls_id", "vp_cleaf", "vp_croot", "vp_cwood", "count"])
+
+        # Convert to numpy arrays for the pft_area_frac64 calculation
+        # Make copies of arrays to ensure they're writeable (not readonly)
+        pls_id_values = df.get_column("pls_id").to_numpy().copy()
+        cleaf = df.get_column("vp_cleaf").to_numpy().copy()
+        croot = df.get_column("vp_croot").to_numpy().copy()
+        cwood = df.get_column("vp_cwood").to_numpy().copy()
+
+        # Use the numba optimized function to calculate cveg and ocp
+        try:
+            cveg, ocp = calculate_cveg_and_ocp(cleaf, croot, cwood)
+        except Exception:
+            # Fallback to non-numba calculation if there's an error
             ocp = pft_area_frac64(cleaf, croot, cwood)
-            df.loc[:, "cveg"] = cleaf + croot + cwood
-            df.loc[:, "ocp"] = ocp
-            df.loc[:, "year"] = np.zeros(ocp.size, dtype=np.int32) + year
-            out.append(df)
-        pd.concat(out).to_csv(grd.out_dir / f"metacomunity_biomass_{grd.xyname}.csv", index_label="pls_id")
+            cveg = cleaf + croot + cwood
 
+        # Create new DataFrame with all columns
+        result_df = pl.DataFrame({
+            "pls_id": pls_id_values,
+            "vp_cleaf": cleaf,
+            "vp_croot": croot,
+            "vp_cwood": cwood,
+            "count": df.get_column("count").to_numpy(),
+            "cveg": cveg,
+            "ocp": ocp,
+            "year": [year] * len(pls_id_values)
+        })
+
+        return result_df
+
+#=======================================
+# Interface for output management
+#=======================================
 
 class output_manager:
 
@@ -405,16 +585,23 @@ class output_manager:
         Returns:
             None
         """
+        # Load state data
         reg:region = worker.load_state_zstd(str_or_path(result))
+
+        # Process daily data first
         table_data.write_daily_data(r=reg, variables=variables)
 
-        nprocs = min(len(reg), os.cpu_count())
+        # Determine optimal number of processes for parallelism
+        available_cpus = os.cpu_count() or 4
+        nprocs = min(len(reg), available_cpus)
+
+        # Define grid cell processing function
         def process_gridcell(grd):
             table_data.write_metacomm_output(grd)
 
-        Parallel(n_jobs=nprocs)(delayed(process_gridcell)(grd) for grd in reg)
-        # for grd in reg:
-        #     table_data.write_metacomm_output(grd)
+        # Use joblib's Parallel for efficient multiprocessing
+        # Set verbose=1 to show progress during longer operations
+        Parallel(n_jobs=nprocs, verbose=1)(delayed(process_gridcell)(grd) for grd in reg)
 
     @staticmethod
     def cities_output():
@@ -428,7 +615,6 @@ class output_manager:
             None
         """
         results = (Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
-                #    Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"))
 
@@ -437,50 +623,281 @@ class output_manager:
                     "pupt", "nupt", "ls", "c_cost", "rcm", "storage_pool","inorg_n",
                     "inorg_p", "snc", "vcmax", 'specific_la',"cdef")
 
+        # Determine optimal number of processes based on system resources
+        available_cpus = os.cpu_count() or 4
+        max_jobs = min(len(results), available_cpus)
 
-        # variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
-        #             "photo", "npp", "evapm", "lai", "f5", "wsoil",
-        #             "pupt", "nupt", "ls", "c_cost", "rcm", 'inorg_n', 'inorg_p',
-        #             'sorbed_n', 'sorbed_p', 'snc', 'runom', 'emaxm',
-        #             'nmin', 'pmin', 'vcmax', 'specific_la','litter_l','cwd',
-        #             'litter_fr', 'storage_pool')
-
-        Parallel(n_jobs=min(len(results), os.cpu_count()), verbose=3)(
+        # Process with progress reporting
+        print(f"Processing {len(results)} scenario outputs using {max_jobs} parallel jobs")
+        Parallel(n_jobs=max_jobs, verbose=3)(
             delayed(output_manager.table_output_per_grd)(r, variables) for r in results
         )
+        print("All scenarios processed successfully")
 
-        # for r in results:
-        #     output_manager.table_output_per_grd(r, ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
-        #                                              "photo", "npp", "evapm", "lai", "f5", "wsoil",
-        #                                              "pupt", "nupt", "ls", "c_cost","rcm"))
+        return None
+
+## PROFILING TOOLS
+
+"""
+Direcly from the script:
+python dataframes.py --profile cities
+
+Dedicated profiling script
+python profile_dataframes.py --test write_daily_data --size medium --visualize
+
+Using the decorator:
+
+from dataframes import profile_function
+
+@profile_function("my_optimization_test")
+def my_test_function():
+    # Your code here
+    pass
+
+
+"""
+
+# Create a function profiler decorator to use on specific methods
+def profile_function(output_file=None):
+    """Decorator for profiling individual functions"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Generate filename based on function if not provided
+            fname = output_file or f"{func.__name__}_profile"
+            print(f"\nProfiling function: {func.__name__}")
+
+            # Start memory tracking
+            tracemalloc.start()
+
+            # Start timing
+            start_time = time.time()
+
+            # Run the function with profiling
+            profiler = cProfile.Profile()
+            profiler.enable()
+            result = func(*args, **kwargs)
+            profiler.disable()
+
+            # Calculate elapsed time
+            elapsed = time.time() - start_time
+
+            # Get memory info
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+
+            # Save and print results
+            print(f"\nResults for {func.__name__}:")
+            print(f"Time elapsed: {elapsed:.2f} seconds")
+            print(f"Memory usage: current={current/1024/1024:.1f}MB, peak={peak/1024/1024:.1f}MB")
+
+            # Save profile data
+            stats_file = f"{fname}.prof"
+            profiler.dump_stats(stats_file)
+
+            # Print profile summary
+            stats = pstats.Stats(stats_file)
+            stats.strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats(15)
+
+            # Save stats for visualization
+            stats.dump_stats(f"{fname}.pstats")
+
+            # Try to generate visualization
+            try:
+                import gprof2dot
+                import os
+                print(f"Generating visualization in {fname}.png")
+                os.system(f"gprof2dot -f pstats {fname}.pstats | dot -Tpng -o {fname}.png")
+            except ImportError:
+                print("For visualization, install: pip install gprof2dot")
+
+            return result
+        return wrapper
+    return decorator
+
+# Create a class profiler to use on entire class or module
+class ProfilerManager:
+    def __init__(self, name="caete_profiler"):
+        self.name = name
+        self.profiler = None
+        self.memory_tracking = False
+        self.start_time = None
+        self.snapshots = []
+
+    def start(self):
+        """Start profiling session"""
+        if self.profiler is None:
+            self.profiler = cProfile.Profile()
+            self.profiler.enable()
+            print(f"Started profiling session: {self.name}")
+
+            # Start memory tracking
+            tracemalloc.start()
+            self.memory_tracking = True
+
+            # Start timer
+            self.start_time = time.time()
+
+    def take_snapshot(self, label="checkpoint"):
+        """Take a memory and time snapshot during profiling"""
+        if self.memory_tracking:
+            current, peak = tracemalloc.get_traced_memory()
+            elapsed = time.time() - self.start_time
+            snapshot = {
+                'label': label,
+                'time': elapsed,
+                'current_memory': current,
+                'peak_memory': peak
+            }
+            self.snapshots.append(snapshot)
+            print(f"Snapshot '{label}': {elapsed:.2f}s, {current/1024/1024:.1f}MB current, {peak/1024/1024:.1f}MB peak")
+
+    def stop(self):
+        """Stop profiling and show results"""
+        if self.profiler is not None:
+            self.profiler.disable()
+
+            # Record final time
+            total_time = time.time() - self.start_time
+
+            # Get final memory stats
+            if self.memory_tracking:
+                current, peak = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+                self.memory_tracking = False
+                print(f"Final memory usage: current={current/1024/1024:.1f}MB, peak={peak/1024/1024:.1f}MB")
+
+            # Print time
+            print(f"Total execution time: {total_time:.2f} seconds")
+
+            # Save stats to file
+            stats_file = f"{self.name}.prof"
+            self.profiler.dump_stats(stats_file)
+
+            # Print summary
+            print(f"\nProfile results for {self.name}:")
+            stats = pstats.Stats(stats_file)
+            stats.strip_dirs().sort_stats(SortKey.CUMULATIVE).print_stats(20)
+
+            # Generate detailed reports sorted by different metrics
+            print("\nTop 10 functions by cumulative time:")
+            stats.sort_stats(SortKey.CUMULATIVE).print_stats(10)
+
+            print("\nTop 10 functions by total time:")
+            stats.sort_stats(SortKey.TIME).print_stats(10)
+
+            print("\nTop 10 function calls by frequency:")
+            stats.sort_stats(SortKey.CALLS).print_stats(10)
+
+            # Save for visualization
+            stats.dump_stats(f"{self.name}.pstats")
+
+            # Try to generate visualization
+            try:
+                import gprof2dot
+                import os
+                print(f"\nGenerating visualization in {self.name}.png")
+                os.system(f"gprof2dot -f pstats {self.name}.pstats | dot -Tpng -o {self.name}.png")
+            except ImportError:
+                print("\nFor visualization, install gprof2dot and graphviz:")
+                print("pip install gprof2dot")
+
+            # Print memory snapshots if collected
+            if self.snapshots:
+                print("\nMemory and time snapshots:")
+                for snap in self.snapshots:
+                    print(f"  {snap['label']}: {snap['time']:.2f}s, " +
+                            f"{snap['current_memory']/1024/1024:.1f}MB current, " +
+                            f"{snap['peak_memory']/1024/1024:.1f}MB peak")
+
+            self.profiler = None
+            print("\nProfiling completed")
+            return stats
         return None
 
 
 if __name__ == "__main__":
-    pass
 
-    # output_manager.cities_output()
-    # hist_results: Path = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
-    # hist:region = worker.load_state_zstd(hist_results)
-    # grd = hist[0]
 
-    # # # IO apn_amazon test
-    # model_results: Path = Path("./pan_amazon_hist_result.psz")
-    # variables_to_read: Tuple[str,...] = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp", "photo", "npp", "evapm", "lai")
-    # output_manager.table_output_per_grd(model_results, variables=variables_to_read)    # # Load the region file
+    # Define profiling options with argparse
+    parser = argparse.ArgumentParser(description='Run CAETE-DVM with profiling options')
+    parser.add_argument('--profile', choices=['none', 'cities', 'table', 'both'],
+                      default='none', help='Profiling mode')
+    parser.add_argument('--method', choices=['table_output', 'metacomm_output', 'make_daily_df'],
+                      default=None, help='Specific method to profile')
+    parser.add_argument('--trace-memory', action='store_true',
+                      help='Enable memory tracing')
 
-    # reg:region = worker.load_state_zstd("./cities_MPI-ESM1-2-HR_hist_output.psz")
-    output_file = Path("./pan_amazon_hist_result.psz")
-    reg:region = worker.load_state_zstd(output_file)
-    # reg.load_gridcells()
-    variables_to_read = ("npp","photo")
+    # Parse command line arguments when run directly
+    if Path(__file__).name in sys.argv[0]:
+        args = parser.parse_args()
+    else:
+        # Default values for module import
+        class DefaultArgs:
+            def __init__(self):
+                self.profile = 'none'
+                self.method = None
+                self.trace_memory = False
+        args = DefaultArgs()
 
-    # import cProfile
-    # # # # # # Gridded outputs
-    # command = 'output_manager.cities_output()'
-    # cProfile.run(command, sort="cumulative", filename="text_output_profile.prof")
+    # Profiling test cases
+    def profile_cities_output():
+        """Profile the cities_output method"""
+        profiler = ProfilerManager("cities_output_profile")
+        profiler.start()
+        output_manager.cities_output()
+        profiler.stop()
 
-    ## Gridded outputs
-    a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
-    # # # # TODO: Save netcdfs
+    def profile_table_data_method(method_name, *args, **kwargs):
+        """Profile a specific method in table_data class"""
+        method = getattr(table_data, method_name, None)
+        if method is None:
+            print(f"Method {method_name} not found in table_data class")
+            return
 
+        decorated = profile_function(f"table_data_{method_name}_profile")(method)
+        return decorated(*args, **kwargs)
+
+    # Execute based on arguments
+    if args.profile == 'none':
+        # Regular execution without profiling
+        output_file = Path("./pan_amazon_hist_result.psz")
+        reg:region = worker.load_state_zstd(output_file)
+        variables_to_read = ("npp","photo")
+        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
+
+    elif args.profile == 'cities':
+        # Profile cities_output method
+        profile_cities_output()
+
+    elif args.profile == 'table' and args.method:
+        # Profile specific table_data method
+        if args.method == 'table_output':
+            results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+            variables = ("cue", "wue", "csoil", "hresp")
+            profile_table_data_method('write_daily_data',
+                                     worker.load_state_zstd(results), variables)
+
+        elif args.method == 'metacomm_output':
+            results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+            reg = worker.load_state_zstd(results)
+            profile_table_data_method('write_metacomm_output', reg[0])
+
+        elif args.method == 'make_daily_df':
+            results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+            reg = worker.load_state_zstd(results)
+            variables = ("cue", "wue", "csoil", "hresp")
+            profile_table_data_method('make_daily_dataframe', reg, variables, None)
+
+    elif args.profile == 'both':
+        # Profile both cities_output and table_data
+        print("Profiling cities_output...")
+        profile_cities_output()
+
+        print("\nProfilering table_data.write_daily_data...")
+        results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+        reg = worker.load_state_zstd(results)
+        variables = ("cue", "wue", "csoil", "hresp")
+        profile_table_data_method('write_daily_data', reg, variables)
+
+    print("\nDone.")
