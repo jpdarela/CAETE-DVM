@@ -38,7 +38,7 @@ module global_par
    real(r_8),parameter,public :: gm = 3.0D0                      ! mm s-1
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
-   integer(i_4),parameter,public :: npls = 500                ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: npls = 50                ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = 17          ! Number of traits for each PLS
    integer(i_4),parameter,public :: omp_nthreads = 1 ! Number of OpenMP threads
 

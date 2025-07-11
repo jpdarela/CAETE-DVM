@@ -439,7 +439,7 @@ contains
 
 
    function sorbed_n_equil(arg) result(retval)
-      ! Linear equilibrium between inorganic N and available P pool
+      ! Linear equilibrium between inorganic N and available N pool
 
       real(r_4), intent(in) :: arg
       real(r_4) :: retval

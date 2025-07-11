@@ -26,9 +26,8 @@ from concurrent.futures import ThreadPoolExecutor
 import copy
 import multiprocessing as mp
 import os
-
+import sys
 from pathlib import Path
-from threading import Thread
 from typing import Callable, Dict, List,Tuple, Union
 from uuid import uuid4
 
@@ -36,12 +35,16 @@ import numpy as np
 from numpy.typing import NDArray
 from joblib import dump, load
 
-from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
+
 from config import Config, fetch_config
 from parameters import hsoil, ssoil, tsoil
 import metacommunity as mc
 
-# Tuples with hydrological parameters for the soil water calculations
+if sys.platform == "win32":
+    from config import fortran_runtime, update_sys_pathlib
+    update_sys_pathlib(fortran_runtime)
+    
+from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
 
 # Global lock. Used to lock the access to the main table of Plant Life Strategies
 lock = mp.Lock()

@@ -577,7 +577,7 @@ class soil:
         self.sp_in_n = 0.4 * self.soil_dict['tn']
         self.sp_so_n = 0.2 * self.soil_dict['tn']
         self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
-        self.sp_in_p = self.soil_dict['ip']
+        self.sp_in_p = self.soil_dict['ip'] * 1.0
         self.sp_organic_n = 0.1 * self.soil_dict['tn']
         self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
         self.sp_organic_p = 0.5 * self.soil_dict['op']
@@ -1576,6 +1576,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
                     self.sp_available_n = soil_dec.solution_n_equil(self.sp_in_n)
                     self.sp_in_n -= (self.sp_so_n + self.sp_available_n)
+
                     # Inorganic P
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
                     self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
@@ -1998,7 +1999,7 @@ if __name__ == '__main__':
 
 
         r = region("region_test",
-                    "../input/20CRv3-ERA5/spinclim_test",
+                    "../input/MPI-ESM1-2-HR/historical_test",
                     (tsoil, ssoil, hsoil),
                     co2_path,
                     main_table)
@@ -2014,16 +2015,16 @@ if __name__ == '__main__':
             prof = False
         if prof:
             import cProfile
-            command = "gridcell.run_gridcell('1801-01-01', '1850-12-31', spinup=2, fixed_co2_atm_conc=1901, save=False, nutri_cycle=True, reset_community=True)"
+            command = "gridcell.run_gridcell('1901-01-01', '1950-12-31', spinup=2, fixed_co2_atm_conc=1901, save=False, nutri_cycle=True, reset_community=True)"
             cProfile.run(command, sort="cumulative", filename="profile.prof")
         else:
             start = tm.time()
             # test model functionality
-            gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
+            gridcell.run_gridcell("1901-01-01", "1950-12-31", spinup=1, fixed_co2_atm_conc=None,
                                                 save=False, nutri_cycle=True, reset_community=True,
                                                 env_filter=True)
 
-            gridcell.run_gridcell("1801-01-01", "1850-12-31", spinup=1, fixed_co2_atm_conc=None,
+            gridcell.run_gridcell("1901-01-01", "1950-12-31", spinup=1, fixed_co2_atm_conc=None,
                                     save=True, nutri_cycle=True)
 
             # test directory update

@@ -26,8 +26,14 @@ import pickle as pkl
 from pathlib import Path
 from typing import Tuple, Union, Any
 import zstandard as zstd
-from caete import grd_mt
 from config import fetch_config
+
+import sys
+if sys.platform == "win32":
+    from config import fortran_runtime, update_sys_pathlib
+    update_sys_pathlib(fortran_runtime)
+
+from caete import grd_mt
 
 config = fetch_config()
 
