@@ -110,20 +110,14 @@ class worker:
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc="1765",
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True, verbose=verb)
         # Glacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc=190.0,
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True, verbose=verb)
         # Interglacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=True, reset_community=True, env_filter=True, verbose=verb)
-        # Glacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
-                              save=False, nutri_cycle=True, reset_community=True, env_filter=True, verbose=verb)
-        # Interglacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=True, reset_community=True, env_filter=True, verbose=verb)
 
         # Final phase without resetting the community and without adding new PLS
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=7, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True, process_limitation=True)
 
         return gridcell
