@@ -4,8 +4,10 @@ src/PLS_MAIN
 src/*.obj
 src/*.i90
 src/*.mod
+src/*.npy
 src/*.pyf
 src/*.pyd
+src/*.dll
 src/*.so
 src/__pycache__
 src/*.cfg
@@ -15,6 +17,7 @@ src/*.pkz
 src/*.psz
 src/*pbz2
 src/debug_aux/*.txt
+src/windows_utils/__pycache__
 outputs/*
 src/.python-version
 src/execution.log
@@ -28,7 +31,7 @@ input/.python-version
 input/20CRv3-ERA5
 input/MPI-ESM1-2-HR
 scripts/*.csv
-
+.copilot*
 run_debug
 .vscode/c_cpp_properties.json
 .vscode/tasks.json
