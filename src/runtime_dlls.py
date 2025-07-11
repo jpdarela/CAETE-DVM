@@ -213,6 +213,14 @@ def check_loaded_dlls():
         except:
             pass
 
+    # SWearch dll in the local directory
+    local_dlls = glob.glob('./*.dll')
+    for dll in local_dlls:
+        dll_name = Path(dll).name.lower()
+        # Check if the DLL is already in the loaded modules
+        if dll_name not in module_names:
+            module_names[dll_name] = dll
+
     return module_names
 
 def check_caete_module_dlls():
