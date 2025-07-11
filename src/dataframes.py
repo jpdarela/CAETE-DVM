@@ -24,6 +24,7 @@
 # and create gridded and table outputs.
 # Author: Joao Paulo Darela Filho
 import argparse
+import gc
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -892,15 +893,214 @@ class table_data:
                 compression="snappy"
             )
 
-#=======================================
-# Interface for output management
-#=======================================
+    @staticmethod
+    def consolidate_annual_biomass(experiment_dir: Path,
+                                 output_format: str = "parquet",
+                                 chunk_size: int = 100) -> None:
+        """
+        Consolidate annual biomass CSV outputs from multiple gridcells into a single file.
 
+        Args:
+            experiment_dir (Path): Directory containing gridcell folders with biomass CSV files
+            output_format (str): Output format - "parquet", "feather", "hdf5", or "csv"
+            chunk_size (int): Number of CSV files to process in each chunk
+        """
+        print(f"Consolidating annual biomass outputs in {experiment_dir.name}")
+
+        # Find all biomass CSV files with the pattern metacomunity_biomass_*.csv
+        biomass_files = list(experiment_dir.rglob("metacomunity_biomass_*.csv"))
+
+        if not biomass_files:
+            print(f"No biomass CSV files found in {experiment_dir}")
+            return
+
+        print(f"Found {len(biomass_files)} biomass CSV files")
+
+        # Process files in chunks to manage memory
+        n_workers = min(os.cpu_count() or 4, 8)
+        all_dfs = []
+
+        for i in range(0, len(biomass_files), chunk_size):
+            chunk = biomass_files[i:i + chunk_size]
+            print(f"Processing chunk {i//chunk_size + 1}/{(len(biomass_files)-1)//chunk_size + 1}")
+
+            # Process chunk in parallel
+            with ProcessPoolExecutor(max_workers=n_workers) as executor:
+                chunk_dfs = list(executor.map(table_data._process_single_biomass_csv, chunk))
+
+            # Filter out empty DataFrames and concatenate
+            valid_dfs = [df for df in chunk_dfs if len(df) > 0]
+            if valid_dfs:
+                chunk_combined = pl.concat(valid_dfs, rechunk=True)
+                all_dfs.append(chunk_combined)
+
+            # Force garbage collection between chunks
+            import gc
+            gc.collect()
+
+        # Combine all chunks
+        if not all_dfs:
+            print(f"No valid biomass data found in {experiment_dir}")
+            return
+
+        print("Combining all chunks...")
+        final_df = pl.concat(all_dfs, rechunk=True)
+
+        # Sort by coordinates and year for better organization
+        final_df = final_df.sort(["grid_y", "grid_x", "year", "pls_id"])
+
+        # Write consolidated file based on format
+        output_file = experiment_dir / f"{experiment_dir.name}_biomass"
+
+        if output_format.lower() == "parquet":
+            final_df.write_parquet(
+                output_file.with_suffix('.parquet'),
+                compression="snappy"
+            )
+        elif output_format.lower() == "feather":
+            final_df.write_ipc(
+                output_file.with_suffix('.feather'),
+                compression="zstd"
+            )
+        elif output_format.lower() == "hdf5":
+            table_data._write_hdf5_biomass_consolidated(final_df, output_file.with_suffix('.h5'))
+        elif output_format.lower() == "csv":
+            final_df.write_csv(output_file.with_suffix('.csv'))
+        else:
+            raise ValueError(f"Unsupported output format: {output_format}")
+
+        print(f"Successfully consolidated {len(biomass_files)} biomass files into {output_file}")
+
+    @staticmethod
+    def _extract_coordinates_from_biomass_filename(csv_path: Path) -> Tuple[int, int]:
+        """Extract y, x coordinates from metacomunity_biomass_y-x.csv filename"""
+        parts = csv_path.stem.split('_')
+        if len(parts) >= 3:
+            try:
+                # Handle format like metacomunity_biomass_182-263.csv
+                coords = parts[-1].split('-')
+                if len(coords) == 2:
+                    y, x = int(coords[0]), int(coords[1])
+                    return y, x
+            except (ValueError, IndexError):
+                pass
+        return -1, -1
+
+    @staticmethod
+    def _process_single_biomass_csv(csv_path: Path) -> pl.DataFrame:
+        """Process a single biomass CSV file and add coordinate columns"""
+        try:
+            # Read CSV with polars
+            df = pl.read_csv(csv_path)
+
+            # Extract coordinates from filename
+            y, x = table_data._extract_coordinates_from_biomass_filename(csv_path)
+
+            if y == -1 or x == -1:
+                print(f"Warning: Could not extract coordinates from {csv_path.name}")
+                return pl.DataFrame()
+
+            # Convert indices to lat/lon
+            lat, lon = table_data._indices_to_latlon(y, x)
+
+            # Add coordinate columns
+            df = df.with_columns([
+                pl.lit(y).alias("grid_y"),
+                pl.lit(x).alias("grid_x"),
+                pl.lit(lat).alias("latitude"),
+                pl.lit(lon).alias("longitude")
+            ])
+
+            return df
+
+        except Exception as e:
+            print(f"Error processing {csv_path}: {e}")
+            return pl.DataFrame()
+
+    @staticmethod
+    def _write_hdf5_biomass_consolidated(df: pl.DataFrame, output_path: Path) -> None:
+        """Write consolidated biomass data to HDF5 format"""
+        print(f"Writing HDF5 biomass file: {output_path}")
+
+        try:
+            import h5py
+        except ImportError:
+            print("h5py not available. Please install it with: pip install h5py")
+            return
+
+        # Convert to pandas for HDF5 compatibility
+        df_pandas = df.to_pandas()
+
+        with h5py.File(output_path, 'w') as f:
+            # Create metadata group
+            meta_group = f.create_group('metadata')
+            meta_group.attrs['description'] = 'Consolidated annual biomass outputs from CAETE-DVM'
+            meta_group.attrs['data_type'] = 'annual_biomass'
+
+            from datetime import datetime
+            meta_group.attrs['creation_date'] = str(datetime.now())
+            meta_group.attrs['total_gridcells'] = len(df.select("grid_y", "grid_x").unique())
+            meta_group.attrs['year_range'] = f"{df['year'].min()} to {df['year'].max()}"
+            meta_group.attrs['variables'] = ['pls_id', 'vp_cleaf', 'vp_croot', 'vp_cwood', 'count', 'cveg', 'ocp']
+
+            # Store coordinate information
+            coords_group = f.create_group('coordinates')
+            unique_coords = df.select("grid_y", "grid_x", "latitude", "longitude").unique().to_pandas()
+            coords_group.create_dataset('grid_y', data=unique_coords['grid_y'].values, compression='gzip')
+            coords_group.create_dataset('grid_x', data=unique_coords['grid_x'].values, compression='gzip')
+            coords_group.create_dataset('latitude', data=unique_coords['latitude'].values, compression='gzip')
+            coords_group.create_dataset('longitude', data=unique_coords['longitude'].values, compression='gzip')
+
+            # Store main biomass data
+            biomass_group = f.create_group('biomass')
+            biomass_vars = ['pls_id', 'vp_cleaf', 'vp_croot', 'vp_cwood', 'count', 'cveg', 'ocp']
+
+            for var in biomass_vars:
+                var_data = df_pandas[var].values
+                biomass_group.create_dataset(var, data=var_data, compression='gzip', compression_opts=6)
+
+            # Store temporal information
+            time_group = f.create_group('time')
+            time_group.create_dataset('year', data=df_pandas['year'].values, compression='gzip')
+
+            # Store spatial indices for reconstruction
+            spatial_group = f.create_group('spatial')
+            spatial_group.create_dataset('grid_y', data=df_pandas['grid_y'].values, compression='gzip')
+            spatial_group.create_dataset('grid_x', data=df_pandas['grid_x'].values, compression='gzip')
+
+            print(f"Successfully wrote HDF5 biomass file with {len(df)} records")
+
+    @staticmethod
+    def consolidate_all_annual_outputs(experiment_dir: Path,
+                                     output_types: List[str] = None,
+                                     output_format: str = "parquet") -> None:
+        """
+        Consolidate all types of annual outputs (biomass, productivity, etc.)
+
+        Args:
+            experiment_dir (Path): Directory containing gridcell folders
+            output_types (List[str]): Types of outputs to consolidate (default: ['biomass'])
+            output_format (str): Output format for consolidated files
+        """
+        if output_types is None:
+            output_types = ['biomass']
+
+        print(f"Consolidating annual outputs for {experiment_dir.name}")
+
+        for output_type in output_types:
+            if output_type == 'biomass':
+                table_data.consolidate_annual_biomass(experiment_dir, output_format)
+            else:
+                print(f"Output type '{output_type}' not yet implemented")
+
+#==============================================
+# Output Manager Class
+#==============================================
 class output_manager:
     """
-    This class serves as an interface for managing outputs from the CAETE-DVM model.
-    It provides methods to process and save outputs for both gridded and table data.
-    Implement here the methods that will be used to manage outputs of your experiments."""
+    Manager class for organizing and processing different types of model outputs.
+    This class coordinates both daily and annual output processing workflows.
+    """
 
     @staticmethod
     def cities_output():
@@ -908,7 +1108,7 @@ class output_manager:
         Process and save outputs for predefined city scenarios.
 
         This method processes outputs for historical, ssp370, and ssp585 scenarios
-        and saves the results as CSV files and a consolidated output (feather format).
+        and saves the results as CSV files and the consolidated outputs to feather format.
 
         Returns:
             None
@@ -943,15 +1143,20 @@ class output_manager:
             if not res.exists():
                 print(f"Warning: Experiment directory {res} does not exist")
                 continue
-            print(f"Consolidating daily outputs for {res.name}")
+
             table_data.consolidate_daily_outputs(
                 res,
                 output_format="feather",
                 chunk_size=500
             )
 
-        return None
+            table_data.consolidate_all_annual_outputs(
+                res,
+                output_types=['biomass'],
+                output_format="hdf5"
+            )
 
+        return None
 
 
 if __name__ == "__main__":
@@ -980,9 +1185,6 @@ if __name__ == "__main__":
         pass
 
     """
-    from profiling import proftools
-    ProfilerManager = proftools.ProfilerManager
-    profile_function = proftools.profile_function
 
     # Define profiling options with argparse
     parser = argparse.ArgumentParser(description='Run CAETE-DVM with profiling options')
@@ -995,13 +1197,17 @@ if __name__ == "__main__":
 
     # Add consolidation options
     parser.add_argument('--consolidate', type=str, metavar='EXPERIMENT_DIR',
-                      help='Path to experiment directory to consolidate')
-    parser.add_argument('--format', choices=['parquet', 'feather', 'hdf5'],
+                      help='Path to experiment directory to consolidate daily outputs')
+    parser.add_argument('--consolidate-annual', type=str, metavar='EXPERIMENT_DIR',
+                      help='Path to experiment directory to consolidate annual outputs')
+    parser.add_argument('--format', choices=['parquet', 'feather', 'hdf5', 'csv'],
                       default='parquet', help='Output format for consolidated data')
     parser.add_argument('--partition', choices=['time', 'space'],
                       help='Partitioning strategy (parquet only)')
     parser.add_argument('--chunk-size', type=int, default=500,
                       help='Number of CSV files to process per chunk')
+    parser.add_argument('--annual-types', nargs='+', choices=['biomass'],
+                      default=['biomass'], help='Types of annual outputs to consolidate')
 
     # Parse command line arguments when run directly
     if Path(__file__).name in sys.argv[0]:
@@ -1045,6 +1251,28 @@ if __name__ == "__main__":
 
         print("Consolidation completed!")
         sys.exit(0)
+
+    # Handle annual consolidation requests
+    if args.consolidate_annual:
+        experiment_dir = Path(args.consolidate_annual)
+        if not experiment_dir.exists():
+            print(f"Error: Experiment directory {experiment_dir} does not exist")
+            sys.exit(1)
+
+        print(f"Consolidating annual outputs from {experiment_dir}")
+        table_data.consolidate_all_annual_outputs(
+            experiment_dir,
+            output_types=args.annual_types,
+            output_format=args.format
+        )
+
+        print("Annual consolidation completed!")
+        sys.exit(0)
+
+    # Profiling imports and setup
+    from profiling import proftools
+    ProfilerManager = proftools.ProfilerManager
+    profile_function = proftools.profile_function
 
     # Profiling test cases
     def profile_cities_output():
