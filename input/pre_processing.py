@@ -60,7 +60,11 @@ __descr__ = """ This script reads the raw data from the 20CRv3-ERA5 or any other
                 Look at the README.md file for more information.
 
                 """
+_DEBUG = True  # Set to False to disable debug prints
 
+
+# Argument parser. This script is not intended to be run as a module, or to be imported.
+# It is intended to be run from the command line
 parser = argparse.ArgumentParser(
     description= __descr__,
     usage="python pre_processing.py [-h] [--dataset DATASET] [--mode MODE] \n\t from ipython: run pre_processing.py --dataset DATASET --mode MODE"
@@ -68,10 +72,8 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--dataset', type=str, default="20CRv3-ERA5", help='Main dataset folder (e.g., 20CRv3-ERA5)')
 parser.add_argument('--mode', type=str, default="spinclim", help='Mode of the dataset, e.g., spinclim, transclim, etc.')
-parser.add_argument('--mask-file', type=str, default="./mask/mask_raisg-360-720.npy",
-                        help="Path to the mask file (default: ./mask/mask_raisg-360-720.npy)")
+parser.add_argument('--mask-file', type=str, default=None, help="Path to the mask file (default: ./mask/mask_raisg-360-720.npy)")
 parser.add_argument('--test', action='store_true', help="Run a test to check if the data was correctly processed")
-
 
 header = """CAETE-Copyright 2017- LabTerra
             This program is free software: you can redistribute it and/or modify
@@ -81,9 +83,15 @@ header = """CAETE-Copyright 2017- LabTerra
 
             Pre-processing tool for input data preparation"""
 
+# ===============================
+## ENVIRONMENT SETUP
+# ===============================
+# Read the configuration file
 with open("./pre_processing.toml", 'rb') as f:
-    # Works only with python 3.11 and above
     config_data = tomllib.load(f)
+
+climate_data = Path(config_data["climate_data"])
+assert climate_data.exists(), "Climate data folder does not exists"
 
 # Parse the arguments
 args = parser.parse_args()
@@ -95,23 +103,43 @@ mode = args.mode
 # OUTPUT FILE WITH METADATA
 metadata_filename_str = "ISIMIP_HISTORICAL_METADATA.pbz2"
 
-# NerCDF files with raw data to be processed
-raw_data = Path(f"{dataset}/{mode}_raw")
-assert raw_data.exists(), "Raw data folder does not exists"
+# NetCDF files with raw data to be processed
+raw_data = climate_data / dataset / f"{mode}_raw"
+if not raw_data.exists():
+    raise FileNotFoundError(f"Raw data folder {raw_data} does not exists")
 
-# INPUT FILES WITH SOIL DATA (NUTRIENTS)
-soil_data = Path(config_data["soil_nutrients_data"])
-assert soil_data.exists(), "Soil data folder does not exists"
+# Soil data folder
+soil_data = Path(config_data["soil_data"])
+if not soil_data.exists():
+    raise FileNotFoundError(f"Soil data folder {soil_data} does not exists")
 
 # Load mask
-mask_file = Path(args.mask_file)
-assert mask_file.exists(), "Mask file does not exists"
+if args.mask_file is None:
+    mask_file = Path(config_data["mask_file"])
+else:
+    mask_file = Path(args.mask_file)
+
+if not mask_file.exists():
+    raise FileNotFoundError(f"Mask file {mask_file} does not exists")
+
 mask = np.load(mask_file)
+if mask.shape != (360, 720):
+    raise ValueError(f"Mask file {mask_file} must have shape (360, 720), but has shape {mask.shape}")
 
 # dump folder. CAETE input files are stored here
 shared_data = Path(f"{dataset}/{mode}")
 os.makedirs(shared_data, exist_ok=True)
-assert shared_data.exists(), "Shared data folder does not exists"
+
+# Debug print
+if _DEBUG:
+    print("Debug information:")
+    print("\033[94m")
+    print(f"Dataset: {dataset}, Mode: {mode}")
+    print(f"Raw data folder: {raw_data}")
+    print(f"Soil data folder: {soil_data}")
+    print(f"Mask file: {mask_file}")
+    print(f"Shared data folder: {shared_data}")
+    print("\033[0m")
 
 # if there are files in the shared_data folder, remove them
 if args.test:
@@ -126,6 +154,13 @@ else:
         # Skip if something goes wrong, with some info
         print("info: Could not remove old files from shared_data folder")
         pass
+# ===============================
+## ENVIRONMENT SETUP END
+# ===============================
+
+# ===============================
+# FUNCTIONS
+# ===============================
 
 # Timer wrapper
 def timer(func):
@@ -144,7 +179,6 @@ def timer(func):
         else:
             print(f"Elapsed time: {hours}:{minutes}:{seconds}")
     return wrapper
-
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
     """FROM Stack Overflow/GIST, THANKS
@@ -174,7 +208,6 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
         sys.stdout.write('\n')
     sys.stdout.flush()
 
-
 @njit
 def get_values_at(array, mask=mask):
     size = np.logical_not(mask).sum()
@@ -186,6 +219,60 @@ def get_values_at(array, mask=mask):
                 out[n] = array[Y, X]
                 n += 1
     return out
+
+def read_clim_data(var:str) -> MFDataset | Dataset:
+    try:
+        files = raw_data.glob(f"*_{var}_*")
+    except:
+        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
+
+    files_list = list(files)
+
+    if len(files_list) == 0:
+        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
+
+    elif len(files_list) == 1:
+        reader = Dataset
+        to_read = files_list[0]
+
+    else:
+        reader = MFDataset
+        to_read = files_list
+
+    try:
+        dataset = reader(to_read)
+    except:
+        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
+
+    return dataset
+
+def get_dataset_size(dataset:MFDataset | Dataset) -> int:
+    out = dataset.variables["time"][:].size
+    return out
+
+def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
+    with read_clim_data(var) as dataset:
+        try:
+            zero_dim = get_dataset_size(dataset)
+        except:
+            raise ValueError("Cannot get dataset size")
+
+        for i in range(zero_dim):
+            yield dataset.variables[var][i, :, :].data
+
+def read_soil_data(var):
+    if var == 'tn':
+        return np.load(os.path.join(soil_data, Path(config_data["tn_file"])))
+    elif var == 'tp':
+        return np.load(os.path.join(soil_data, Path(config_data["tp_file"])))
+    elif var == 'ap':
+        return np.load(os.path.join(soil_data, Path(config_data["ap_file"])))
+    elif var == 'ip':
+        return np.load(os.path.join(soil_data, Path(config_data["ip_file"])))
+    elif var == 'op':
+        return np.load(os.path.join(soil_data, Path(config_data["op_file"])))
+    else:
+        raise ValueError("Variable not found")
 
 
 class ds_metadata:
@@ -248,7 +335,7 @@ class input_data:
         self.dpath = Path(dpath)
         self.fpath = Path(os.path.join(self.dpath, self.filename))
         self.vars = ["hurs", "tas", "ps", "pr",
-                     "rsds", "sfcwind", "tasmax", "tasmin", "tn", "tp", "ap", "ip", "op"]
+                     "rsds", "sfcwind", "tn", "tp", "ap", "ip", "op"]
 
         self.data = {"hurs": None,
                      "tas": None,
@@ -256,8 +343,6 @@ class input_data:
                      "pr": None,
                      "rsds": None,
                      "sfcwind": None,
-                     "tasmax": None,
-                     "tasmin": None,
                      "tn": None,
                      "tp": None,
                      "ap": None,
@@ -275,8 +360,6 @@ class input_data:
                      "pr": None,
                      "rsds": None,
                      "sfcwind": None,
-                     "tasmax": None,
-                     "tasmin": None,
                      "tn": None,
                      "tp": None,
                      "ap": None,
@@ -305,63 +388,6 @@ class input_data:
             self._clean_memory()
 
 
-def read_clim_data(var:str) -> MFDataset | Dataset:
-    try:
-        files = raw_data.glob(f"*_{var}_*")
-    except:
-        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
-
-    files_list = list(files)
-
-    if len(files_list) == 0:
-        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
-
-    elif len(files_list) == 1:
-        reader = Dataset
-        to_read = files_list[0]
-
-    else:
-        reader = MFDataset
-        to_read = files_list
-
-    try:
-        dataset = reader(to_read)
-    except:
-        raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
-
-    return dataset
-
-
-def get_dataset_size(dataset:MFDataset | Dataset) -> int:
-    out = dataset.variables["time"][:].size
-    return out
-
-
-def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
-    with read_clim_data(var) as dataset:
-        try:
-            zero_dim = get_dataset_size(dataset)
-        except:
-            raise ValueError("Cannot get dataset size")
-
-        for i in range(zero_dim):
-            yield dataset.variables[var][i, :, :].data
-
-
-def read_soil_data(var):
-    if var == 'tn':
-        return np.load(os.path.join(soil_data, Path(config_data["tn_file"])))
-    elif var == 'tp':
-        return np.load(os.path.join(soil_data, Path(config_data["tp_file"])))
-    elif var == 'ap':
-        return np.load(os.path.join(soil_data, Path(config_data["ap_file"])))
-    elif var == 'ip':
-        return np.load(os.path.join(soil_data, Path(config_data["ip_file"])))
-    elif var == 'op':
-        return np.load(os.path.join(soil_data, Path(config_data["op_file"])))
-    else:
-        raise ValueError("Variable not found")
-
 
 def process_gridcell(grd:input_data , var, data):
     grd.load()
@@ -369,22 +395,10 @@ def process_gridcell(grd:input_data , var, data):
     grd.write()
 
 
-# def process_data(j, hurs, tas, pr, ps, rsds, sfcwind):
-#     return {
-#         "j": j,
-#         "hurs": get_values_at(hurs),
-#         "tas": get_values_at(tas),
-#         "pr": get_values_at(pr),
-#         "ps": get_values_at(ps),
-#         "rsds": get_values_at(rsds),
-#         "sfcwind": get_values_at(sfcwind)
-#     }
-
-
 @timer
 def main():
     # SAVE METADATA
-    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind',"tasmax", "tasmin"]
+    variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
     dss = [read_clim_data(var) for var in variables]
     ancillary_data = ds_metadata(dss)
     ancillary_data.fill_metadata(dss[0])
@@ -446,45 +460,21 @@ def main():
     ps_gen = _read_clim_data_('ps')
     rsds_gen = _read_clim_data_('rsds')
     sfcwind_gen = _read_clim_data_('sfcwind')
-    tasmax_gen = _read_clim_data_('tasmax')
-    tasmin_gen = _read_clim_data_('tasmin')
 
     i = 0
     print(f"Reading data: {variables}{'' * 20}")
     print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    for hurs, tas, pr, ps, rsds, sfcwind, tasmax, tasmin, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, tasmax_gen, tasmin_gen, range(tsize)):
+    for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
         _data["hurs"][:, j] = get_values_at(hurs)
         _data["tas"][:, j] = get_values_at(tas)
         _data["pr"][:, j] = get_values_at(pr)
         _data["ps"][:, j] = get_values_at(ps)
         _data["rsds"][:, j] = get_values_at(rsds)
         _data["sfcwind"][:, j] = get_values_at(sfcwind)
-        _data["tasmax"][:, j] = get_values_at(tasmax)
-        _data["tasmin"][:, j] = get_values_at(tasmin)
         print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
         i += 1
-    # i = 0
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     futures = [
-    #         executor.submit(process_data, j, hurs, tas, pr, ps, rsds, sfcwind)
-    #         for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize))
-    #         ]
 
-    #     print(f"Reading data: {variables}{'' * 20}")
-    #     print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    #     for future in concurrent.futures.as_completed(futures):
-    #         result = future.result()
-    #         j = result["j"]
-    #         _data["hurs"][:, j] = result["hurs"]
-    #         _data["tas"][:, j] = result["tas"]
-    #         _data["pr"][:, j] = result["pr"]
-    #         _data["ps"][:, j] = result["ps"]
-    #         _data["rsds"][:, j] = result["rsds"]
-    #         _data["sfcwind"][:, j] = result["sfcwind"]
-    #         i += 1
-    #         print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-
-    array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"], _data["tasmax"], _data["tasmin"]
+    array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"]
 
     print("\033[94m Writing data to files \033[0m")
     # Write data to files in parallel
@@ -496,15 +486,9 @@ def main():
 
     # Write data to files
     print(f"Writing \033[94m{var}\033[0m{' ' * 20}", end="\r")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=256) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=24) as executor:
         futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
         concurrent.futures.wait(futures)
-
-    # for var, data in zip(variables, array_data):
-    #     print(f"Writing \033[94m{var}\033[0m{' ' * 20}", end="\r")
-    #     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-    #         futures = [executor.submit(process_gridcell, grd, var, data[i]) for i, grd in enumerate(input_templates)]
-    #         concurrent.futures.wait(futures)
 
 
 def test(var, y=160, x=236, sample=500):
@@ -514,7 +498,7 @@ def test(var, y=160, x=236, sample=500):
     CYAN = "\033[96m"
 
     # comapre raw data and processed data
-    assert var in {'hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind', 'tasmax', 'tasmin'}, "Variable not found"
+    assert var in {'hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind'}, "Variable not found"
     assert shared_data.exists(), "Shared data folder does not exists"
     file_name = shared_data/Path(f"input_data_{y}-{x}.pbz2")
     assert file_name.exists(), "File not found"
@@ -556,7 +540,7 @@ if __name__ == "__main__":
         indices = [indices[i] for i in idx]
         tested = [files[i] for i in idx]
         print(f"Testing the following indices: {indices}")
-        for var in ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind', 'tasmax', 'tasmin']:
+        for var in ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']:
             for y, x in indices:
                 print(f"Testing {var} for gridcell {y}-{x}")
                 test(var, y=y, x=x)
