@@ -24,15 +24,9 @@
 # and create gridded and table outputs.
 # Author: Joao Paulo Darela Filho
 import argparse
-import cProfile
-import pstats
-import time
-import tracemalloc
-from pstats import SortKey
-from functools import wraps
-
 import os
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Union, Collection, Tuple, Dict, List
@@ -321,52 +315,6 @@ class gridded_data:
 # ======================================
 # Functions dealing with table outputs
 # ======================================
-
-def process_arrays(keys, arrays, shapes):
-    """Process multiple arrays efficiently.
-
-    Args:
-        keys: List of array key names
-        arrays: List of numpy arrays (both 1D and 2D)
-        shapes: List of shape information tuples for each array
-
-    Returns:
-        Dictionary with processed arrays
-    """
-    # Create a standard dictionary for results
-    result_dict = {}
-
-    for i in range(len(keys)):
-        # Skip if index is out of bounds
-        if i >= len(arrays) or i >= len(shapes):
-            continue
-
-        key = keys[i]
-        array = arrays[i]
-        shape = shapes[i]
-
-        # Check if shape is valid
-        if not isinstance(shape, tuple):
-            continue
-
-        # Check dimensionality based on shape information
-        if len(shape) == 1:
-            # Simply add 1D array to result
-            result_dict[key] = array
-        elif len(shape) == 2:
-            ny, nx = shape
-            # Use numpy's optimized sum along axis
-            _sum = np.sum(array, axis=0)
-
-            # Add sum to result
-            result_dict[key + "_sum"] = _sum
-
-            # Add individual rows
-            for j in range(ny):
-                result_dict[key + "_" + str(j+1)] = array[j, :].copy()
-
-    return result_dict
-
 # Standalone numba function for optimized calculations
 @jit(nopython=True, cache=True)
 def calculate_cveg_and_ocp(cleaf, croot, cwood):
@@ -395,7 +343,8 @@ class table_data:
     Extracts and processes table data from the model outputs.
     This class contains methods to create daily dataframes for each grid cell in a region
     and save them as CSV files. It also includes methods to write yearly metacommunity biomass output
-    to CSV files.
+    to CSV files. Use this class to handle outputs from a small number of gridcells efficiently.
+    The output file sizes can be quite large if it contains many variables for large regions.
 
     Note:
     Do not use this class directly. It is designed to be used with the output_manager class.
@@ -404,7 +353,51 @@ class table_data:
     May not be suitable for very large datasets due to memory constraints.
     Use with caution for large regions or many variables.
     """
+    @staticmethod
+    def process_arrays(keys, arrays, shapes):
+        """Process multiple arrays efficiently.
 
+        Args:
+            keys: List of array key names
+            arrays: List of numpy arrays (both 1D and 2D)
+            shapes: List of shape information tuples for each array
+
+        Returns:
+            Dictionary with processed arrays
+        """
+        # Create a standard dictionary for results
+        result_dict = {}
+
+        for i in range(len(keys)):
+            # Skip if index is out of bounds
+            if i >= len(arrays) or i >= len(shapes):
+                continue
+
+            key = keys[i]
+            array = arrays[i]
+            shape = shapes[i]
+
+            # Check if shape is valid
+            if not isinstance(shape, tuple):
+                continue
+
+            # Check dimensionality based on shape information
+            if len(shape) == 1:
+                # Simply add 1D array to result
+                result_dict[key] = array
+            elif len(shape) == 2:
+                ny, nx = shape
+                # Use numpy's optimized sum along axis
+                _sum = np.sum(array, axis=0)
+
+                # Add sum to result
+                result_dict[key + "_sum"] = _sum
+
+                # Add individual rows
+                for j in range(ny):
+                    result_dict[key + "_" + str(j+1)] = array[j, :].copy()
+
+        return result_dict
 
     @staticmethod
     def make_daily_dataframe(r:region,
@@ -451,7 +444,7 @@ class table_data:
                     continue
 
             # Process arrays using our efficient processing function
-            new_data = process_arrays(keys, arrays, shapes)
+            new_data = table_data.process_arrays(keys, arrays, shapes)
 
             # Add time information
             new_data['day'] = time
@@ -461,7 +454,6 @@ class table_data:
             # Create DataFrame with polars and write to CSV efficiently
             df = pl.DataFrame(new_data)
             df.write_csv(grd.out_dir / fname)
-
 
     @staticmethod
     def write_daily_data(r: region, variables: Union[str, Collection[str]]):
@@ -478,7 +470,6 @@ class table_data:
         # Use ThreadPoolExecutor with optimized worker count
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             executor.map(worker, range(periods))
-
 
     @staticmethod
     def write_metacomm_output(grd:grd_mt) -> None:
@@ -516,6 +507,35 @@ class table_data:
                 grd.out_dir / f"metacomunity_biomass_{grd.xyname}.csv"
             )
 
+    @staticmethod
+    def table_output_per_grd(result:Union[Path, str], variables:Union[str, Collection[str]]):
+        """
+        Process table outputs for a grid (region) and save them as gridcell-individual CSV files.
+
+        Args:
+            result (Union[Path, str]): Path to the serialized state file containing the region data.
+            variables (Union[str, Collection[str]]): Variable names to process and save.
+
+        Returns:
+            None
+        """
+        # Load state data
+        reg:region = worker.load_state_zstd(str_or_path(result))
+
+        # Process daily data first
+        table_data.write_daily_data(r=reg, variables=variables)
+
+        # Determine optimal number of processes for parallelism
+        available_cpus = os.cpu_count() or 4
+        nprocs = min(len(reg), available_cpus)
+
+        # Define grid cell processing function
+        def process_gridcell(grd):
+            table_data.write_metacomm_output(grd)
+
+        # Use joblib's Parallel for efficient multiprocessing
+        # Set verbose=1 to show progress during longer operations
+        Parallel(n_jobs=nprocs, verbose=1)(delayed(process_gridcell)(grd) for grd in reg)
 
     @staticmethod
     def _process_year_data(grd:grd_mt, year):
@@ -580,49 +600,315 @@ class table_data:
 
         return result_df
 
+    @staticmethod
+    def _extract_coordinates_from_filename(csv_path: Path) -> Tuple[int, int]:
+        """Extract y, x coordinates from grd_y_x_startdate_enddate.csv filename"""
+        parts = csv_path.stem.split('_')
+        if len(parts) >= 3:
+            try:
+                y, x = int(parts[1]), int(parts[2])
+                return y, x
+            except (ValueError, IndexError):
+                pass
+        return -1, -1
+
+    @staticmethod
+    def _indices_to_latlon(y: int, x: int, res_y: float = 0.5, res_x: float = 0.5) -> Tuple[float, float]:
+        """Convert grid indices to latitude/longitude using _geos functionality"""
+        from _geos import find_coordinates_xy
+        return find_coordinates_xy(y, x, res_y, res_x)
+
+    @staticmethod
+    def _process_single_csv_for_consolidation(csv_path: Path) -> pl.DataFrame:
+        """Process a single CSV file and add coordinate columns"""
+        try:
+            # Read CSV with polars
+            df = pl.read_csv(csv_path)
+
+            # Extract coordinates from filename
+            y, x = table_data._extract_coordinates_from_filename(csv_path)
+
+            if y == -1 or x == -1:
+                print(f"Warning: Could not extract coordinates from {csv_path.name}")
+                return pl.DataFrame()
+
+            # Convert indices to lat/lon
+            lat, lon = table_data._indices_to_latlon(y, x)
+
+            # Add coordinate columns
+            df = df.with_columns([
+                pl.lit(y).alias("grid_y"),
+                pl.lit(x).alias("grid_x"),
+                pl.lit(lat).alias("latitude"),
+                pl.lit(lon).alias("longitude")
+            ])
+
+            return df
+
+        except Exception as e:
+            print(f"Error processing {csv_path}: {e}")
+            return pl.DataFrame()
+
+    @staticmethod
+    def consolidate_daily_outputs(experiment_dir: Path,
+                                output_format: str = "parquet",
+                                chunk_size: int = 500) -> None:
+        """
+        Consolidate daily CSV outputs from multiple gridcells into a single file.
+
+        Args:
+            experiment_dir (Path): Directory containing gridcell folders with CSV files
+            output_format (str): Output format - "parquet", "feather", or "hdf5"
+            chunk_size (int): Number of CSV files to process in each chunk
+        """
+        print(f"Consolidating daily outputs in {experiment_dir.name}")
+
+        # Find all CSV files with the expected pattern
+        csv_files = list(experiment_dir.rglob("grd_*.csv"))
+
+        if not csv_files:
+            print(f"No CSV files found in {experiment_dir}")
+            return
+
+        print(f"Found {len(csv_files)} CSV files")
+
+        # Process files in chunks to manage memory
+        n_workers = min(os.cpu_count() or 4, 8)  # Cap workers to avoid I/O saturation
+        all_dfs = []
+
+        for i in range(0, len(csv_files), chunk_size):
+            chunk = csv_files[i:i + chunk_size]
+            print(f"Processing chunk {i//chunk_size + 1}/{(len(csv_files)-1)//chunk_size + 1}")
+
+            # Process chunk in parallel
+            with ProcessPoolExecutor(max_workers=n_workers) as executor:
+                chunk_dfs = list(executor.map(table_data._process_single_csv_for_consolidation, chunk))
+
+            # Filter out empty DataFrames and concatenate
+            valid_dfs = [df for df in chunk_dfs if len(df) > 0]
+            if valid_dfs:
+                chunk_combined = pl.concat(valid_dfs, rechunk=True)
+                all_dfs.append(chunk_combined)
+
+            # Force garbage collection between chunks
+            import gc
+            gc.collect()
+
+        # Combine all chunks
+        if not all_dfs:
+            print(f"No valid data found in {experiment_dir}")
+            return
+
+        print("Combining all chunks...")
+        final_df = pl.concat(all_dfs, rechunk=True)
+
+        # Sort by coordinates and date for better organization
+        final_df = final_df.sort(["grid_y", "grid_x", "day"])
+
+        # Write consolidated file based on format
+        output_file = experiment_dir / f"{experiment_dir.name}"
+
+        if output_format.lower() == "parquet":
+            table_data._write_parquet_consolidated(final_df, output_file.with_suffix('.parquet'))
+        elif output_format.lower() == "feather":
+            table_data._write_feather_consolidated(final_df, output_file.with_suffix('.feather'))
+        elif output_format.lower() == "hdf5":
+            table_data._write_hdf5_consolidated(final_df, output_file.with_suffix('.h5'))
+        else:
+            raise ValueError(f"Unsupported output format: {output_format}")
+
+        print(f"Successfully consolidated {len(csv_files)} files")
+
+    @staticmethod
+    def _write_parquet_consolidated(df: pl.DataFrame, output_path: Path) -> None:
+        """Write consolidated data to Parquet format with partitioning"""
+        print(f"Writing Parquet file: {output_path}")
+
+        # Add partition columns for better query performance
+        df_partitioned = df.with_columns([
+            pl.col("day").str.slice(0, 4).alias("year"),
+            pl.col("day").str.slice(5, 2).alias("month")
+        ])
+
+        # Write as partitioned dataset for better performance
+        df_partitioned.write_parquet(
+            output_path,
+            compression="snappy",
+            row_group_size=50000,
+            use_pyarrow=True
+        )
+
+    @staticmethod
+    def _write_feather_consolidated(df: pl.DataFrame, output_path: Path) -> None:
+        """Write consolidated data to Feather format"""
+        print(f"Writing Feather file: {output_path}")
+
+        # Feather doesn't support partitioning, but is very fast for reading
+        df.write_ipc(output_path, compression="zstd")
+
+    @staticmethod
+    def _write_hdf5_consolidated(df: pl.DataFrame, output_path: Path) -> None:
+        """Write consolidated data to HDF5 format with hierarchical structure"""
+        print(f"Writing HDF5 file: {output_path}")
+
+        try:
+            import h5py
+        except ImportError:
+            print("h5py not available. Please install it with: pip install h5py")
+            return
+
+        # Convert to pandas for HDF5 compatibility
+        df_pandas = df.to_pandas()
+
+        with h5py.File(output_path, 'w') as f:
+            # Create groups for metadata
+            meta_group = f.create_group('metadata')
+            meta_group.attrs['description'] = 'Consolidated daily outputs from CAETE-DVM'
+
+            # Use standard datetime for creation date
+            from datetime import datetime
+            meta_group.attrs['creation_date'] = str(datetime.now())
+            meta_group.attrs['total_gridcells'] = len(df.select("grid_y", "grid_x").unique())
+            meta_group.attrs['date_range'] = f"{df['day'].min()} to {df['day'].max()}"
+
+            # Store coordinate information
+            coords_group = f.create_group('coordinates')
+            unique_coords = df.select("grid_y", "grid_x", "latitude", "longitude").unique().to_pandas()
+            coords_group.create_dataset('grid_y', data=unique_coords['grid_y'].values, compression='gzip')
+            coords_group.create_dataset('grid_x', data=unique_coords['grid_x'].values, compression='gzip')
+            coords_group.create_dataset('latitude', data=unique_coords['latitude'].values, compression='gzip')
+            coords_group.create_dataset('longitude', data=unique_coords['longitude'].values, compression='gzip')
+
+            # Store main data
+            data_group = f.create_group('data')
+
+            # Get all variable columns (exclude coordinate and date columns)
+            coord_cols = {"grid_y", "grid_x", "latitude", "longitude", "day"}
+            variable_cols = [col for col in df.columns if col not in coord_cols]
+
+            # Store each variable as a separate dataset
+            for var in variable_cols:
+                var_data = df_pandas[var].values
+                data_group.create_dataset(var, data=var_data, compression='gzip', compression_opts=6)
+
+            # Store time information
+            time_group = f.create_group('time')
+            days = df_pandas['day'].values.astype('S10')  # Convert to bytes for HDF5
+            time_group.create_dataset('day', data=days, compression='gzip')
+
+            # Store grid indices for reconstruction
+            grid_group = f.create_group('grid_indices')
+            grid_group.create_dataset('grid_y', data=df_pandas['grid_y'].values, compression='gzip')
+            grid_group.create_dataset('grid_x', data=df_pandas['grid_x'].values, compression='gzip')
+
+    @staticmethod
+    def consolidate_daily_outputs_partitioned(experiment_dir: Path,
+                                            output_format: str = "parquet",
+                                            partition_by: str = "time") -> None:
+        """
+        Consolidate daily outputs with smart partitioning for better query performance.
+
+        Args:
+            experiment_dir (Path): Directory containing gridcell folders with CSV files
+            output_format (str): Output format - "parquet" only for partitioned output
+            partition_by (str): Partition strategy - "time" or "space"
+        """
+        if output_format.lower() != "parquet":
+            print("Partitioned output only supported for Parquet format")
+            return
+
+        print(f"Consolidating daily outputs with {partition_by} partitioning")
+
+        # Find all CSV files
+        csv_files = list(experiment_dir.rglob("grd_*.csv"))
+
+        if not csv_files:
+            print(f"No CSV files found in {experiment_dir}")
+            return
+
+        print(f"Found {len(csv_files)} CSV files")
+
+        # Process all files
+        n_workers = min(os.cpu_count() or 4, 8)
+
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            all_dfs = list(executor.map(table_data._process_single_csv_for_consolidation, csv_files))
+
+        # Filter valid DataFrames
+        valid_dfs = [df for df in all_dfs if len(df) > 0]
+
+        if not valid_dfs:
+            print("No valid data found")
+            return
+
+        # Combine all data
+        final_df = pl.concat(valid_dfs, rechunk=True)
+
+        # Add partitioning columns
+        if partition_by == "time":
+            final_df = final_df.with_columns([
+                pl.col("day").str.slice(0, 4).alias("year"),
+                pl.col("day").str.slice(5, 2).alias("month")
+            ])
+            partition_cols = ["year", "month"]
+        elif partition_by == "space":
+            # Partition by latitude bands
+            final_df = final_df.with_columns([
+                (pl.col("latitude") // 10 * 10).alias("lat_band")
+            ])
+            partition_cols = ["lat_band"]
+        else:
+            raise ValueError(f"Unsupported partition strategy: {partition_by}")
+
+        # Write partitioned dataset
+        output_dir = experiment_dir / f"{experiment_dir.name}_partitioned"
+        output_dir.mkdir(exist_ok=True)
+
+        print(f"Writing partitioned dataset to {output_dir}")
+
+        # Use PyArrow for partitioned writing
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+
+            # Convert to PyArrow table
+            table = final_df.to_arrow()
+
+            # Write partitioned dataset
+            pq.write_to_dataset(
+                table,
+                root_path=str(output_dir),
+                partition_cols=partition_cols,
+                compression='snappy',
+                use_legacy_dataset=False
+            )
+
+            print(f"Successfully created partitioned dataset with {len(csv_files)} files")
+
+        except ImportError:
+            print("PyArrow not available for partitioned writing. Using standard Parquet.")
+            final_df.write_parquet(
+                output_dir / "output.parquet",
+                compression="snappy"
+            )
+
 #=======================================
 # Interface for output management
 #=======================================
 
 class output_manager:
-
-    @staticmethod
-    def table_output_per_grd(result:Union[Path, str], variables:Union[str, Collection[str]]):
-        """
-        Process table outputs for a grid and save them as CSV files.
-
-        Args:
-            result (Union[Path, str]): Path to the serialized state file containing the region data.
-            variables (Union[str, Collection[str]]): Variable names to process and save.
-
-        Returns:
-            None
-        """
-        # Load state data
-        reg:region = worker.load_state_zstd(str_or_path(result))
-
-        # Process daily data first
-        table_data.write_daily_data(r=reg, variables=variables)
-
-        # Determine optimal number of processes for parallelism
-        available_cpus = os.cpu_count() or 4
-        nprocs = min(len(reg), available_cpus)
-
-        # Define grid cell processing function
-        def process_gridcell(grd):
-            table_data.write_metacomm_output(grd)
-
-        # Use joblib's Parallel for efficient multiprocessing
-        # Set verbose=1 to show progress during longer operations
-        Parallel(n_jobs=nprocs, verbose=1)(delayed(process_gridcell)(grd) for grd in reg)
+    """
+    This class serves as an interface for managing outputs from the CAETE-DVM model.
+    It provides methods to process and save outputs for both gridded and table data.
+    Implement here the methods that will be used to manage outputs of your experiments."""
 
     @staticmethod
     def cities_output():
         """
         Process and save outputs for predefined city scenarios.
 
-        This method processes outputs for historical, piControl, ssp370, and ssp585 scenarios
-        and saves the results as CSV files.
+        This method processes outputs for historical, ssp370, and ssp585 scenarios
+        and saves the results as CSV files and a consolidated output (feather format).
 
         Returns:
             None
@@ -643,9 +929,26 @@ class output_manager:
         # Process with progress reporting
         print(f"Processing {len(results)} scenario outputs using {max_jobs} parallel jobs")
         Parallel(n_jobs=max_jobs, verbose=3)(
-            delayed(output_manager.table_output_per_grd)(r, variables) for r in results
+            delayed(table_data.table_output_per_grd)(r, variables) for r in results
         )
         print("All scenarios processed successfully")
+
+        print("Consolidating daily outputs for cities scenarios...")
+        experiments = ["../outputs/cities_MPI-ESM1-2-HR_hist",
+                       "../outputs/cities_MPI-ESM1-2-HR-ssp370",
+                       "../outputs/cities_MPI-ESM1-2-HR-ssp585"]
+
+        for experiment_dir in experiments:
+            res = Path(experiment_dir).resolve()
+            if not res.exists():
+                print(f"Warning: Experiment directory {res} does not exist")
+                continue
+            print(f"Consolidating daily outputs for {res.name}")
+            table_data.consolidate_daily_outputs(
+                res,
+                output_format="feather",
+                chunk_size=500
+            )
 
         return None
 
@@ -653,11 +956,18 @@ class output_manager:
 
 if __name__ == "__main__":
     """
+    Usage examples:
 
-    Direcly from the script:
+    # Basic daily output consolidation
+    python dataframes.py --consolidate /path/to/experiment --format parquet
+
+    # Consolidate with partitioning
+    python dataframes.py --consolidate /path/to/experiment --format parquet --partition time
+
+    # Profile cities output
     python dataframes.py --profile cities
 
-    Dedicated profiling script
+    # Dedicated profiling script
     python profile_dataframes.py --test write_daily_data --size medium --visualize
 
     Using the decorator:
@@ -683,6 +993,16 @@ if __name__ == "__main__":
     parser.add_argument('--trace-memory', action='store_true',
                       help='Enable memory tracing')
 
+    # Add consolidation options
+    parser.add_argument('--consolidate', type=str, metavar='EXPERIMENT_DIR',
+                      help='Path to experiment directory to consolidate')
+    parser.add_argument('--format', choices=['parquet', 'feather', 'hdf5'],
+                      default='parquet', help='Output format for consolidated data')
+    parser.add_argument('--partition', choices=['time', 'space'],
+                      help='Partitioning strategy (parquet only)')
+    parser.add_argument('--chunk-size', type=int, default=500,
+                      help='Number of CSV files to process per chunk')
+
     # Parse command line arguments when run directly
     if Path(__file__).name in sys.argv[0]:
         args = parser.parse_args()
@@ -693,7 +1013,38 @@ if __name__ == "__main__":
                 self.profile = 'none'
                 self.method = None
                 self.trace_memory = False
+                self.consolidate = None
+                self.format = 'parquet'
+                self.partition = None
+                self.chunk_size = 500
         args = DefaultArgs()
+
+    # Handle consolidation requests
+    if args.consolidate:
+        experiment_dir = Path(args.consolidate)
+        if not experiment_dir.exists():
+            print(f"Error: Experiment directory {experiment_dir} does not exist")
+            sys.exit(1)
+
+        print(f"Consolidating daily outputs from {experiment_dir}")
+
+        if args.partition:
+            # Use partitioned consolidation
+            table_data.consolidate_daily_outputs_partitioned(
+                experiment_dir,
+                output_format=args.format,
+                partition_by=args.partition
+            )
+        else:
+            # Use regular consolidation
+            table_data.consolidate_daily_outputs(
+                experiment_dir,
+                output_format=args.format,
+                chunk_size=args.chunk_size
+            )
+
+        print("Consolidation completed!")
+        sys.exit(0)
 
     # Profiling test cases
     def profile_cities_output():
@@ -724,7 +1075,16 @@ if __name__ == "__main__":
         a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
 
     elif args.profile == 'cities':
-        # Profile cities_output method
+        # Pro        from pathlib import Path
+        from dataframes import table_data
+
+        # Consolidate daily outputs from an experiment
+        experiment_dir = Path("outputs/cities_MPI-ESM1-2-HR_hist")
+        table_data.consolidate_daily_outputs(
+            experiment_dir,
+            output_format="parquet",
+            chunk_size=500
+        )
         profile_cities_output()
 
     elif args.profile == 'table' and args.method:
