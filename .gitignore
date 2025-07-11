@@ -18,6 +18,7 @@ src/*.psz
 src/*pbz2
 src/debug_aux/*.txt
 src/windows_utils/__pycache__
+src/profiling/__pycache__
 outputs/*
 src/.python-version
 src/execution.log
