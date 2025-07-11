@@ -401,3 +401,219 @@ def process_with_checkpointing(gridcells, checkpoint_interval=50):
 ```
 
 By addressing these concerns, the `table_data` class can be optimized to scale effectively to thousands of gridcells, maintaining performance while managing resources efficiently.
+
+### 13.6 Enhanced Scalability Improvements
+
+#### 13.6.1 Lazy Loading and Generator-Based Processing
+
+```python
+def lazy_gridcell_processor(region, variables, chunk_size=50):
+    """Generator-based processing to minimize memory footprint"""
+    def gridcell_chunks():
+        for i in range(0, len(region), chunk_size):
+            yield region[i:i+chunk_size]
+
+    for chunk in gridcell_chunks():
+        yield from process_chunk_async(chunk, variables)
+        # Explicit cleanup
+        del chunk
+        gc.collect()
+```
+
+#### 13.6.2 Adaptive Batch Sizing Based on System Resources
+
+```python
+def calculate_optimal_batch_size(available_memory_gb, avg_gridcell_size_mb):
+    """Dynamically calculate batch size based on available resources"""
+    safety_factor = 0.7  # Use 70% of available memory
+    optimal_batch = int((available_memory_gb * 1024 * safety_factor) / avg_gridcell_size_mb)
+    return max(1, min(optimal_batch, 200))  # Cap at reasonable limits
+
+def adaptive_processing(region, variables):
+    mem_info = psutil.virtual_memory()
+    avg_size = estimate_gridcell_memory_usage(region[0], variables)
+    batch_size = calculate_optimal_batch_size(
+        mem_info.available / (1024**3),
+        avg_size / (1024**2)
+    )
+    return process_in_batches(region, variables, batch_size)
+```
+
+#### 13.6.3 Asynchronous I/O with aiofiles
+
+```python
+import aiofiles
+import asyncio
+
+async def async_write_csv(data, filepath):
+    """Asynchronous CSV writing to prevent I/O blocking"""
+    async with aiofiles.open(filepath, 'w', newline='') as f:
+        # Convert polars DataFrame to CSV string
+        csv_string = data.write_csv()
+        await f.write(csv_string)
+
+async def process_gridcells_async(gridcells, variables):
+    """Process multiple gridcells with async I/O"""
+    semaphore = asyncio.Semaphore(10)  # Limit concurrent I/O operations
+
+    async def process_single(grd):
+        async with semaphore:
+            data = await asyncio.to_thread(grd._get_daily_data, variables)
+            df = pl.DataFrame(process_arrays(*prepare_data(data)))
+            await async_write_csv(df, grd.out_dir / f"grd_{grd.xyname}.csv")
+
+    await asyncio.gather(*[process_single(grd) for grd in gridcells])
+```
+
+#### 13.6.4 Columnar Storage with Apache Arrow/Parquet
+
+```python
+def write_to_parquet_partitioned(data, output_path, partition_cols=['year', 'month']):
+    """Use partitioned Parquet for efficient storage and querying"""
+    df = pl.DataFrame(data)
+
+    # Add partition columns
+    df = df.with_columns([
+        pl.col('day').str.slice(0, 4).alias('year'),
+        pl.col('day').str.slice(5, 2).alias('month')
+    ])
+
+    # Write as partitioned dataset
+    df.write_parquet(
+        output_path,
+        use_pyarrow=True,
+        partition_by=partition_cols,
+        compression='snappy'
+    )
+```
+
+#### 13.6.5 Distributed Processing with Ray
+
+```python
+import ray
+
+@ray.remote
+def process_gridcell_remote(grd_data, variables):
+    """Remote function for distributed processing"""
+    return table_data.make_daily_dataframe([grd_data], variables)
+
+def distributed_processing(region, variables, num_workers=None):
+    """Scale across multiple machines if needed"""
+    if not ray.is_initialized():
+        ray.init()
+
+    # Distribute work across Ray cluster
+    futures = []
+    for grd in region:
+        future = process_gridcell_remote.remote(grd, variables)
+        futures.append(future)
+
+    # Process results as they complete
+    while futures:
+        ready, futures = ray.wait(futures, num_returns=1)
+        for result_ref in ready:
+            result = ray.get(result_ref)
+            # Handle result
+```
+
+#### 13.6.6 Smart Caching and Memoization
+
+```python
+from functools import lru_cache
+import joblib
+
+class CachingTableData(table_data):
+    """Enhanced table_data with intelligent caching"""
+
+    @staticmethod
+    @joblib.Memory(location='./cache', verbose=0).cache
+    def cached_get_daily_data(grd_path, variables_hash, spin_slice):
+        """Cache processed data to avoid recomputation"""
+        # Load and process data
+        return processed_data
+
+    @lru_cache(maxsize=100)
+    def get_variable_metadata(self, variables_tuple):
+        """Cache metadata lookups"""
+        return get_var_metadata(variables_tuple)
+```
+
+#### 13.6.7 Resource-Aware Processing Pipeline
+
+```python
+class ResourceAwareProcessor:
+    def __init__(self, max_memory_gb=None, max_cpu_cores=None):
+        self.max_memory = max_memory_gb or (psutil.virtual_memory().total * 0.8 / 1024**3)
+        self.max_cores = max_cpu_cores or os.cpu_count()
+        self.current_memory = 0
+        self.active_workers = 0
+
+    def can_process_next(self, estimated_memory_mb):
+        """Check if we can process the next gridcell without exhausting resources"""
+        estimated_gb = estimated_memory_mb / 1024
+        return (self.current_memory + estimated_gb < self.max_memory and
+                self.active_workers < self.max_cores)
+
+    async def adaptive_process(self, gridcells, variables):
+        """Process gridcells with adaptive resource management"""
+        queue = asyncio.Queue()
+        for grd in gridcells:
+            await queue.put(grd)
+
+        workers = []
+        while not queue.empty() or workers:
+            # Start new workers if resources allow
+            while (not queue.empty() and
+                   len(workers) < self.max_cores and
+                   self.can_process_next(estimate_gridcell_size(queue._queue[0]))):
+
+                grd = await queue.get()
+                worker = asyncio.create_task(self.process_gridcell(grd, variables))
+                workers.append(worker)
+                self.active_workers += 1
+
+            # Wait for at least one worker to complete
+            if workers:
+                done, workers = await asyncio.wait(workers, return_when=asyncio.FIRST_COMPLETED)
+                for task in done:
+                    await task  # Get result and handle exceptions
+                    self.active_workers -= 1
+```
+
+#### 13.6.8 Output Format Optimization
+
+```python
+def optimized_output_strategy(region_size, data_complexity):
+    """Choose optimal output format based on scale and complexity"""
+
+    if region_size > 1000:
+        # Large regions: Use database or cloud storage
+        return "postgresql"  # Or "s3_parquet"
+    elif region_size > 100:
+        # Medium regions: Use HDF5 with compression
+        return "hdf5_compressed"
+    else:
+        # Small regions: Traditional CSV is fine
+        return "csv"
+
+class FlexibleOutputWriter:
+    def write_data(self, data, strategy, location):
+        writers = {
+            "csv": self._write_csv,
+            "hdf5_compressed": self._write_hdf5,
+            "postgresql": self._write_database,
+            "parquet": self._write_parquet
+        }
+        return writers[strategy](data, location)
+```
+
+### 13.7 Key Scalability Principles
+
+1. **Streaming Over Batch Loading**: Process data as streams rather than loading everything into memory
+2. **Adaptive Resource Management**: Monitor and respond to system resource availability
+3. **Asynchronous I/O**: Prevent I/O operations from blocking computation
+4. **Smart Partitioning**: Organize data for efficient querying and processing
+5. **Graceful Degradation**: Maintain functionality even when resources are constrained
+6. **Progress Visibility**: Provide clear feedback on long-running operations
+
+These enhanced scalability improvements allow the system to scale from hundreds to thousands of gridcells while maintaining performance and stability. The key is to implement these strategies incrementally, starting with the most impactful ones for your specific use case and gradually adding more sophisticated approaches as needed.
