@@ -133,7 +133,7 @@ from hydro_caete import soil_water
 from output import budget_output
 from caete_jit import inflate_array, masked_mean, masked_mean_2D, cw_mean
 from caete_jit import shannon_entropy, shannon_evenness, shannon_diversity
-from caete_jit import atm_canopy_coupling, pft_area_frac64
+from caete_jit import pft_area_frac64
 
 
 # This code is only relevant in Windows systems. It adds the fortran compiler dlls to the PATH
@@ -168,7 +168,6 @@ def get_args(variable: Union[T, Collection[T]]) -> Collection[Union[T, str, int,
         return variable
     else:
         return [variable,]
-
 
 def rwarn(txt:str='RuntimeWarning'):
     """Raise a RuntimeWarning"""
@@ -497,7 +496,7 @@ class time:
         self.eind: int
 
 
-    def _set_time(self, stime_i:Dict, assume_time_units:bool=False):
+    def _set_time(self, stime_i:Dict):
         """_summary_
 
         Args:
