@@ -42,7 +42,7 @@ Write-Host "[PY]  Python Script: $SCRIPT_NAME" -ForegroundColor Green
 Write-Host "[TASK] Total Tasks: $($tasks.Count)" -ForegroundColor White
 
 # Calculate optimal throttle limit based on available resources
-$throttleLimit = 5 
+$throttleLimit = 6
 
 Write-Host "[THROTTLE] Throttle Limit: $throttleLimit (manually set)" -ForegroundColor Magenta
 Write-Host ""

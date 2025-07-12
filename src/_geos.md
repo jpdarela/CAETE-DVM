@@ -1,9 +1,9 @@
 ````markdown
-# [_geos.md](http://_vscodecontentref_/2) - Geographical Operations Module Analysis and Recommendations
+# Geographical Operations Module Analysis and Recommendations
 
 ## Overview
 
-The [_geos](http://_vscodecontentref_/3) module provides essential geographical calculation and coordinate transformation functions for the CAETE-DVM model. It handles coordinate conversions, area calculations, and region definitions with a focus on performance optimization through Numba compilation.
+The [_geos](./_geos.py) module provides essential geographical calculation and coordinate transformation functions for the CAETE-DVM model. It handles coordinate conversions, area calculations, and region definitions with a focus on performance optimization through Numba compilation.
 
 ## Current Strengths
 

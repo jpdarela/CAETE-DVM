@@ -408,73 +408,85 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         nc.created = f"Created by preprocess_caete.py on {np.datetime64('now')}"
 
         # Create dimensions
-        nc.createDimension("station", n_stations)
         nc.createDimension("time", None)
-        
+        nc.createDimension("station", n_stations)
+        nc.createDimension("string_length", 15)
+
+
 
         # Create coordinate variables
+        time_var = nc.createVariable("time", 'f4', ("time",))
         station_var = nc.createVariable("station", 'i4', ("station",))
         lat_var = nc.createVariable("lat", 'f4', ("station",))
         lon_var = nc.createVariable("lon", 'f4', ("station",))
-        station_name_var = nc.createVariable("station_name", '<U15', ("station",))
-        time_var = nc.createVariable("time", 'f4', ("time",))
+        station_name_var = nc.createVariable("station_name", 'c', ("station", "string_length"))
+
 
         # Fill coordinate variables
+        time_var[:] = metadata['time']['time_data']
         station_var[:] = arange(n_stations, dtype='i4')
         lat_var[:] = lats
         lon_var[:] = lons
-        station_name_var[:] = station_names
-        time_var[:] = metadata['time']['time_data']
 
-        # Set coordinate attributes
-        lat_var.units = metadata['coordinates']['lat_units']
-        lat_var.long_name = metadata['coordinates']['lat_long_name']
-        lat_var.standard_name = metadata['coordinates']['lat_std_name']
+        # Convert string array to char array for CF compliance
+        for i, name in enumerate(station_names):
+            station_name_var[i] = name.ljust(15)[:15]
+
+
+        # COORDINATE ATTRIBUTES
+        time_var.units = metadata['time']['units']
+        time_var.calendar = metadata['time']['calendar']
+        time_var.standard_name = "time"
+        time_var.axis = "T"
+
+        station_var.long_name = "Station index"
+        station_var.cf_role = "timeseries_id"
+
+        lat_var.units = "degrees_north"
+        lat_var.long_name = "Latitude"
+        lat_var.standard_name = "latitude"
         lat_var.axis = "Y"
 
-        lon_var.units = metadata['coordinates']['lon_units']
-        lon_var.long_name = metadata['coordinates']['lon_long_name']
-        lon_var.standard_name = metadata['coordinates']['lon_std_name']
-        lon_var.axis = "X"
+        lon_var.units = "degrees_east"
+        lon_var.long_name = "Longitude"
+        lon_var.standard_name = "longitude"
+        lat_var.axis = "X"
 
         station_name_var.long_name = "Station identifier"
         station_name_var.cf_role = "timeseries_id"
 
-        time_var.units = metadata['time']['units']
-        time_var.calendar = metadata['time']['calendar']
-        time_var.standard_name = "time"
-        time_var.axis = metadata['time']['axis']
-
         # Create climate variables
         for var_name, data in climate_data.items():
-            var_obj = nc.createVariable(var_name, 'f4', ("station", "time"),
+            var_obj = nc.createVariable(var_name, 'f4', ("time", "station"),  # TIME FIRST!
                                       fill_value=1e+20, zlib=True, complevel=4)
-            var_obj[:] = data
+            # TRANSPOSE data from (station, time) to (time, station)
+            var_obj[:] = data.T  # Transpose the data
+
             var_obj.units = caete_var_metadata[var_name][0]
-            var_obj.standard_name = caete_var_metadata[var_name][1]
+            if caete_var_metadata[var_name][1] is not None:
+                var_obj.standard_name = caete_var_metadata[var_name][1]
             var_obj.long_name = f"{var_name.upper()} for CAETE"
             var_obj.coordinates = "lat lon"
 
-        # Add VPD
-        vpd_var = nc.createVariable("vpd", 'f4', ("station", "time"),
+        # Add VPD with CDO-compatible dimensions
+        vpd_var = nc.createVariable("vpd", 'f4', ("time", "station"),  # TIME FIRST!
                                    fill_value=1e+20, zlib=True, complevel=4)
-        vpd_var[:] = vpd_data
+        vpd_var[:] = vpd_data.T  # Transpose the data
         vpd_var.units = caete_var_metadata['vpd'][0]
         vpd_var.standard_name = caete_var_metadata['vpd'][1]
         vpd_var.long_name = "Vapor Pressure Deficit for CAETE"
         vpd_var.coordinates = "lat lon"
 
-        # Create soil variables
+        # Create soil variables (remain as station-only dimensions)
         for var_name, data in soil_data.items():
             var_obj = nc.createVariable(var_name, 'f4', ("station",),
                                       fill_value=1e+20, zlib=True, complevel=4)
             var_obj[:] = data
             var_obj.units = caete_var_metadata[var_name][0]
-            var_obj.standard_name = caete_var_metadata[var_name][1]
             var_obj.long_name = f"{var_name.upper()} for CAETE"
             var_obj.coordinates = "lat lon"
 
-    print(f"Successfully written: {output_file}")
+    print(f"Successfully written CDO-compatible file: {output_file}")
     return output_file
 
 def assemble_climate_data_vectorized(climate_vars, vpd_data):
