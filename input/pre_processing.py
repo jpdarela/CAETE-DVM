@@ -13,6 +13,12 @@ from numba import njit
 from numpy.typing import NDArray
 from typing import Generator
 
+## Add the path to the source folder to the sys.path
+source_path = Path(__file__).parent.parent
+if str(source_path) not in sys.path:
+    sys.path.append(str(source_path))
+
+from src._geos import pan_amazon_region
 import numpy as np
 
 __what__ = "Pre-processing of input data to feed CAETÊ"
@@ -87,6 +93,9 @@ header = """CAETE-Copyright 2017- LabTerra
 ## ENVIRONMENT SETUP
 # ===============================
 # Read the configuration file
+
+cc = type("PanAmazon", (), pan_amazon_region)()
+
 with open("./pre_processing.toml", 'rb') as f:
     config_data = tomllib.load(f)
 
@@ -118,6 +127,11 @@ if args.mask_file is None:
     mask_file = Path(config_data["mask_file"])
 else:
     mask_file = Path(args.mask_file)
+
+assert hasattr(cc, 'ymin') and hasattr(cc, 'ymax'), "Region must have ymin and ymax"
+assert hasattr(cc, 'xmin') and hasattr(cc, 'xmax'), "Region must have xmin and xmax"
+assert 0 <= cc.ymin < cc.ymax < 360, f"Invalid y coordinates: {cc.ymin}, {cc.ymax}"
+assert 0 <= cc.xmin < cc.xmax < 720, f"Invalid x coordinates: {cc.xmin}, {cc.xmax}"
 
 if not mask_file.exists():
     raise FileNotFoundError(f"Mask file {mask_file} does not exists")
@@ -209,12 +223,13 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
     sys.stdout.flush()
 
 @njit
-def get_values_at(array, mask=mask):
+def get_values_at(array, mask):
     size = np.logical_not(mask).sum()
     out = np.zeros(size, dtype=np.float32)
     n = 0
-    for Y in range(360):
-        for X in range(720):
+    ny, nx = mask.shape
+    for Y in range(ny):
+        for X in range(nx):
             if not mask[Y][X]:
                 out[n] = array[Y, X]
                 n += 1
@@ -246,10 +261,6 @@ def read_clim_data(var:str) -> MFDataset | Dataset:
 
     return dataset
 
-def get_dataset_size(dataset:MFDataset | Dataset) -> int:
-    out = dataset.variables["time"][:].size
-    return out
-
 def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
     with read_clim_data(var) as dataset:
         try:
@@ -258,7 +269,11 @@ def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
             raise ValueError("Cannot get dataset size")
 
         for i in range(zero_dim):
-            yield dataset.variables[var][i, :, :].data
+            yield dataset.variables[var][i, cc.ymin:cc.ymax+1, cc.xmin:cc.xmax+1].data
+
+def get_dataset_size(dataset:MFDataset | Dataset) -> int:
+    out = dataset.variables["time"][...].size
+    return out
 
 def read_soil_data(var):
     if var == 'tn':
@@ -273,7 +288,6 @@ def read_soil_data(var):
         return np.load(os.path.join(soil_data, Path(config_data["op_file"])))
     else:
         raise ValueError("Variable not found")
-
 
 class ds_metadata:
     """ Helper to collect and save the netCDF files ancillary data"""
@@ -324,13 +338,14 @@ class ds_metadata:
         with bz2.BZ2File(self.fpath, mode='w') as fh:
             pkl.dump(self.data, fh)
 
-
 class input_data:
     """ Helper to transform and write data for CAETÊ input"""
 
     def __init__(self, y, x, dpath):
-        self.y = y
-        self.x = x
+        self.y = y + cc.ymin
+        self.x = x + cc.xmin
+        # assert 0 <= self.y < cc.ymax - cc.ymin + 1, "y coordinate out of bounds"
+        # assert 0 <= self.x < cc.xmax - cc.xmin + 1, "x coordinate out of bounds"
         self.filename = f"input_data_{self.y}-{self.x}.pbz2"
         self.dpath = Path(dpath)
         self.fpath = Path(os.path.join(self.dpath, self.filename))
@@ -387,12 +402,26 @@ class input_data:
             self.loaded = False
             self._clean_memory()
 
-
-
 def process_gridcell(grd:input_data , var, data):
     grd.load()
     grd._load_dict(var, data)
     grd.write()
+
+
+def process_gridcell_batch(batch_data):
+    """Process multiple gridcells in one worker to reduce overhead"""
+    for grd, var, data in batch_data:
+        # Load existing data if file exists, otherwise ensure loaded state is True
+        if grd.cache:
+            grd.load()
+        else:
+            grd.loaded = True  # Ensure loaded state is True for new files
+
+        # Add the new variable data
+        grd._load_dict(var, data)
+
+        # Write back to file
+        grd.write()
 
 
 @timer
@@ -411,28 +440,43 @@ def main():
     # Prepare input templates
     input_templates = []
     ngrid = 0
-    for Y in range(360):
-        for X in range(720):
-            if not mask[Y][X]:
+    temp_mask = mask[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    ny, nx = temp_mask.shape
+    for Y in range(ny):
+        for X in range(nx):
+            if not temp_mask[Y][X]:
                 ngrid += 1
                 input_templates.append(input_data(Y, X, shared_data))
     input_templates = np.array(input_templates, dtype=object)
 
-    # Read Soil data
-    tn = read_soil_data('tn') # Total Nitrogen
-    tp = read_soil_data('tp') # Total Phosphorus
-    ap = read_soil_data('ap') # Available Phosphorus
-    ip = read_soil_data('ip') # Inorganic Phosphorus
-    op = read_soil_data('op') # Organic Phosphorus
+    # Read Soil data and slice to regional extent
+    tn_global = read_soil_data('tn') # Total Nitrogen
+    tp_global = read_soil_data('tp') # Total Phosphorus
+    ap_global = read_soil_data('ap') # Available Phosphorus
+    ip_global = read_soil_data('ip') # Inorganic Phosphorus
+    op_global = read_soil_data('op') # Organic Phosphorus
 
-    # Load soil data
+    # Slice soil data to regional extent
+    tn = tn_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    tp = tp_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    ap = ap_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    ip = ip_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    op = op_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+
+    del tn_global, tp_global, ap_global, ip_global, op_global
+
+
+    # Load soil data (using local coordinates for regional arrays)
     for grd in input_templates:
         print(f"Processing soil data for gridcell {grd.y}-{grd.x}{' ' * 20}", end="\r")
-        total_nitrogen = tn[grd.y, grd.x].copy(order="F")
-        total_phosphorus = tp[grd.y, grd.x].copy(order="F")
-        available_phosphorus = ap[grd.y, grd.x].copy(order="F")
-        inorganic_phosphorus = ip[grd.y, grd.x].copy(order="F")
-        organic_phosphorus = op[grd.y, grd.x].copy(order="F")
+        # Convert global coordinates back to local for indexing regional arrays
+        local_y = grd.y - cc.ymin
+        local_x = grd.x - cc.xmin
+        total_nitrogen = tn[local_y, local_x].copy(order="F")
+        total_phosphorus = tp[local_y, local_x].copy(order="F")
+        available_phosphorus = ap[local_y, local_x].copy(order="F")
+        inorganic_phosphorus = ip[local_y, local_x].copy(order="F")
+        organic_phosphorus = op[local_y, local_x].copy(order="F")
 
         assert total_nitrogen >= 0, "Total Nitrogen must be positive"
         assert total_phosphorus >= 0, "Total Phosphorus must be positive"
@@ -447,49 +491,101 @@ def main():
         grd._load_dict('op', organic_phosphorus)
         grd.write()
 
-    # Load clim_data and write to input templates
-    array_data = []
+    # PRE-LOAD ALL CLIMATE DATA INTO MEMORY WITH PARALLEL LOADING
+    print("Pre-loading all climate data into memory with parallel loading...")
+    climate_cache = {}
 
-    tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
+    with read_clim_data(variables[0]) as ds:
+        tsize = get_dataset_size(ds) # all datasets have the same size
 
+    # Load all climate data in parallel
+    max_workers = min(len(variables), os.cpu_count() or 1)
+    print(f"Using {max_workers} workers for parallel loading...")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(load_variable_to_memory, var, tsize) for var in variables]
+
+        for future in concurrent.futures.as_completed(futures):
+            var, data = future.result()
+            climate_cache[var] = data
+            print(f"Loaded {var} into memory ({data.nbytes / 1024**2:.1f} MB)")
+
+    print("All climate data loaded into memory!")
+
+    # Now process data using in-memory cache with vectorized operations
     _data = dict(zip(variables, [np.zeros((ngrid, tsize), dtype=np.float32) for _ in range(len(variables))]))
 
-    hurs_gen = _read_clim_data_('hurs')
-    tas_gen = _read_clim_data_('tas')
-    pr_gen = _read_clim_data_('pr')
-    ps_gen = _read_clim_data_('ps')
-    rsds_gen = _read_clim_data_('rsds')
-    sfcwind_gen = _read_clim_data_('sfcwind')
+    print(f"Processing data with vectorized operations: {variables}")
+    for j in range(tsize):
+        for var in variables:
+            _data[var][:, j] = get_values_at_vectorized(climate_cache[var][j], temp_mask)
+        if j % 100 == 0 or j == tsize - 1:  # Update progress less frequently
+            print_progress(j+1, tsize, prefix='Processing data:', suffix='Complete')
 
-    i = 0
-    print(f"Reading data: {variables}{'' * 20}")
-    print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
-        _data["hurs"][:, j] = get_values_at(hurs)
-        _data["tas"][:, j] = get_values_at(tas)
-        _data["pr"][:, j] = get_values_at(pr)
-        _data["ps"][:, j] = get_values_at(ps)
-        _data["rsds"][:, j] = get_values_at(rsds)
-        _data["sfcwind"][:, j] = get_values_at(sfcwind)
-        print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
-        i += 1
+    # Clear cache to free memory
+    del climate_cache
+
 
     array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"]
 
-    print("\033[94m Writing data to files \033[0m")
-    # Write data to files in parallel
-    tasks = []
-    # Collect all tasks
+    print("\033[94m Writing data to files with batch processing \033[0m")
+
+    # BATCH PROCESSING FOR FILE WRITING
+    # Group tasks into batches for better I/O efficiency
+    batch_size = 50  # Process 50 tasks per worker
+    batches = []
+    current_batch = []
+
+    # Collect all tasks and group them into batches
     for var, data in zip(variables, array_data):
         for i, grd in enumerate(input_templates):
-            tasks.append((grd, var, data[i]))
+            current_batch.append((grd, var, data[i]))
 
-    # Write data to files
-    print(f"Writing \033[94m{var}\033[0m{' ' * 20}", end="\r")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=24) as executor:
-        futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
-        concurrent.futures.wait(futures)
+            # When batch is full, add it to batches list
+            if len(current_batch) >= batch_size:
+                batches.append(current_batch)
+                current_batch = []
 
+    # Add remaining tasks if any
+    if current_batch:
+        batches.append(current_batch)
+
+    print(f"Created {len(batches)} batches with batch size {batch_size}")
+
+    # Process batches in parallel
+    max_workers = min(8, os.cpu_count() or 1)  # Fewer workers for I/O bound tasks
+    print(f"Using {max_workers} workers for batch processing...")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all batches
+        futures = [executor.submit(process_gridcell_batch, batch) for batch in batches]
+
+        # Process completed batches with error handling
+        completed_batches = 0
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+                completed_batches += 1
+                if completed_batches % max(1, len(batches) // 10) == 0 or completed_batches == len(batches):  # Show progress every 10%
+                    progress = (completed_batches / len(batches)) * 100
+                    print(f"Batch processing: {completed_batches}/{len(batches)} ({progress:.1f}%)")
+            except Exception as exc:
+                print(f'Batch generated an exception: {exc}')
+                raise
+
+    print("All batches completed successfully!")
+
+def load_variable_to_memory(var, tsize):
+    """Load a single variable into memory"""
+    data = np.zeros((tsize, cc.ymax - cc.ymin + 1, cc.xmax - cc.xmin + 1), dtype=np.float32)
+    with read_clim_data(var) as dataset:
+        for i in range(tsize):
+            data[i] = dataset.variables[var][i, cc.ymin:cc.ymax+1, cc.xmin:cc.xmax+1].data
+    return var, data
+
+def get_values_at_vectorized(array, mask):
+    """Vectorized version - much faster for large arrays"""
+    return array[~mask]
 
 def test(var, y=160, x=236, sample=500):
     # GREEN = "\033[92m"
@@ -508,10 +604,13 @@ def test(var, y=160, x=236, sample=500):
 
     dss = read_clim_data(var)
     # get a slice of the data
-    arr = dss.variables[var][:sample, y, x]
-    saved_arr = pbz2_data[var][:sample]
-    all_close=np.allclose(arr, saved_arr)
-    mean_error = np.mean(np.abs(arr - saved_arr))
+    try:
+        arr = dss.variables[var][:sample, y, x]
+        saved_arr = pbz2_data[var][:sample]
+        all_close=np.allclose(arr, saved_arr)
+        mean_error = np.mean(np.abs(arr - saved_arr))
+    finally:
+        dss.close()
 
     if all_close:
         print(f"{CYAN}Test for {var} PASSED with mean error {mean_error}{RESET}")
@@ -536,7 +635,8 @@ if __name__ == "__main__":
         indices = list(map(lambda x: (int(x[0]), int(x[1])), indices))
 
         # Select a random sample of indices to test
-        idx = np.random.randint(0, size_files, 3)
+        sample_size = min(3, size_files)
+        idx = np.random.randint(0, size_files, sample_size)
         indices = [indices[i] for i in idx]
         tested = [files[i] for i in idx]
         print(f"Testing the following indices: {indices}")
@@ -544,7 +644,7 @@ if __name__ == "__main__":
             for y, x in indices:
                 print(f"Testing {var} for gridcell {y}-{x}")
                 test(var, y=y, x=x)
-            print(f"Tested files {tested}\n\n")
+        print(f"Tested files {tested}\n\n")
     else:
         print("\nProcessing details:")
         print("\033[91m")

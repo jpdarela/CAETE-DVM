@@ -28,9 +28,11 @@ import numpy as np
 
 from numba import jit # type: ignore
 import pyproj
-from config import fetch_config
 
-# config_file = Path("../src/caete.toml").resolve()
+try:
+    from config import fetch_config
+except ImportError:
+    from .config import fetch_config
 
 config = fetch_config()
 datum = config.crs.datum # type: ignore

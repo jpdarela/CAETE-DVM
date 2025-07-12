@@ -1,7 +1,7 @@
 # Define the path to the data files
 climate_data = "C:\\Users\\darel\\OneDrive\\Desktop\\CAETE-DVM\\input"
 
-mask_file = "./mask/mask_test.npy"
+mask_file = "./mask/mask_raisg-360-720.npy"
 soil_data = "./soil"
 
 # Define the filenames for the data files in the soil_nutrients_data directory defined above

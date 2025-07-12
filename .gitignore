@@ -19,7 +19,6 @@ src/*pbz2
 src/debug_aux/*.txt
 src/windows_utils/__pycache__
 src/profiling/__pycache__
-outputs/*
 src/.python-version
 src/execution.log
 src/build
@@ -28,10 +27,15 @@ src/tests/__pycache__
 src/tests/*.csv
 src/tests/*.txt
 src/.vscode
+
+outputs/*
+
 input/.python-version
 input/20CRv3-ERA5
 input/MPI-ESM1-2-HR
+input/__pycache__
 scripts/*.csv
+
 .copilot*
 run_debug
 .vscode/c_cpp_properties.json
