@@ -144,10 +144,9 @@ if sys.platform == "win32":
     update_sys_pathlib(fortran_runtime)
 
 # shared library
-from caete_module import budget as model
-from caete_module import photo as m
-from caete_module import soil_dec
-from caete_module import water as st
+from caete_module import budget as model # type: ignore
+from caete_module import soil_dec        # type: ignore
+from caete_module import water as st     # type: ignore
 
 #from memory_profiler import profile
 
@@ -208,26 +207,6 @@ def budget_daily_result(out: Tuple[Union[NDArray, str, List, int, float]]) -> bu
         budget_output: _description_
     """
     return budget_output(*out)
-
-def catch_out_budget(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict[str, Union[NDArray, str, List, int, float]]:
-    """_summary_
-
-    Args:
-        out (Tuple[Union[NDArray, str, List, int, float]]): _description_
-
-    Returns:
-        Dict[str, Union[NDArray, str, List, int, float]]: _description_
-    """
-    # This is currently used in the old implementation (classes grd and plot)
-    # WARNING keep the lists of budget/carbon3 outputs updated with fortran code
-
-    lst = ["evavg", "epavg", "phavg", "aravg", "nppavg",
-           "laiavg", "rcavg", "f5avg", "rmavg", "rgavg", "cleafavg_pft", "cawoodavg_pft",
-           "cfrootavg_pft", "stodbg", "ocpavg", "wueavg", "cueavg", "c_defavg", "vcmax",
-           "specific_la", "nupt", "pupt", "litter_l", "cwd", "litter_fr", "npp2pay", "lnc",
-           "limitation_status", "uptk_strat", 'cp', 'c_cost_cwm', "rnpp_out"]
-
-    return dict(zip(lst, out))
 
 def catch_out_carbon3(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict:
     """_summary_
@@ -385,6 +364,7 @@ class state_zero:
         self.xyname = f"{self.y}-{self.x}"
 
         self.input_fname = f"input_data_{self.xyname}.pbz2"
+        self.station_name = f"station_{self.xyname}" # station name for the gridcell, used to fetch the climate data
         self.input_fpath = None
         self.data = None
         self.doy_months = set(self.config.doy_months) # type: ignore
@@ -444,35 +424,6 @@ class climate:
         self.ps = data['ps']
         self.rsds = data['rsds']
         self.tas = data['tas']
-        self.rhs = data['hurs']
-
-
-    def _set_tas(self, data:Dict):
-        """_summary_
-
-        Args:
-            data (Dict): _description_
-        """
-        self.tas = data['tas']
-
-
-    def _set_pr(self, data:Dict):
-        """_summary_"""
-        self.pr = data['pr']
-
-
-    def _set_ps(self, data:Dict):
-        """_summary_"""
-        self.ps = data['ps']
-
-
-    def _set_rsds(self, data:Dict):
-        """_summary_"""
-        self.rsds = data['rsds']
-
-
-    def _set_rhs(self, data:Dict):
-        """_summary_"""
         self.rhs = data['hurs']
 
 
@@ -921,7 +872,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             end (int): Time index of the end date (based on calendar and time unit)
 
         Raises:
-            ValueError: If the start or end date is out of bounds
+            ValueError: If the start or end date or both are out of bounds
 
         Returns:
             List(int,int): lower bound, upper bound
