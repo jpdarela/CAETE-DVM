@@ -820,7 +820,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
     """
 
 
-    def __init__(self, y: int | float,
+    def __init__(self,
+                y: int | float,
                 x: int | float,
                 data_dump_directory: str | Path,
                 get_main_table:Callable

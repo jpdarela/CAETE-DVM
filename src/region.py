@@ -43,7 +43,7 @@ import metacommunity as mc
 if sys.platform == "win32":
     from config import fortran_runtime, update_sys_pathlib
     update_sys_pathlib(fortran_runtime)
-    
+
 from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
 
 # Global lock. Used to lock the access to the main table of Plant Life Strategies
@@ -89,7 +89,7 @@ class region:
         self.file_objects = []
         self.region_size = 0
 
-        # calculate_matrix dimension size from grid resolution
+        # calculate_matrix size from grid resolution
         self.nx = len(np.arange(0, 180, self.config.crs.xres/2)) # type: ignore
         self.ny = len(np.arange(0,  90, self.config.crs.yres/2)) # type: ignore
 
