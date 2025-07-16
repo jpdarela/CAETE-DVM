@@ -114,7 +114,7 @@ class bz2_handler(base_handler):
         Args:
             fpath (str): Path to the bz2 file.
         """
-        super().__init__(fpath)
+        super().__init__(fpath, gridlist_df)
 
         # For the bz2 handler, we expect a valid directory path
         # Enforce that fpath is a directory
@@ -817,33 +817,29 @@ if __name__ == "__main__":
 
     df = gridlist_df.slice(0, 128)
 
-    # Testing the netcdf_handler
-    nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
+    # # Testing the netcdf_handler
+    # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
+    # nchd = netcdf_handler(nc_file_path, df)
+    # data_nc = nchd.load_data()
+    # metadata_nc = nchd.load_metadata()
 
-    nchd = netcdf_handler(nc_file_path, df)
-    data = nchd.load_data()
-    metadata = nchd.load_metadata()
-
-
-
-    # # Example usage of bz2_handler
-    # input_dir = 'C:\\Users\\darel\\Onedrive\\Desktop\\CAETE-DVM\\input\\20CRv3-ERA5\\obsclim'
-    # s1 = time.perf_counter()
-    # bz = bz2_handler(input_dir, df)
-    # data_bz = bz.load_data()
-    # s2 = time.perf_counter() - s1
-    # print(f"bz2_handler read data in {s2:.2f} seconds with {len(data_bz)} stations")
+    # Example usage of bz2_handler
+    input_dir = 'C:\\Users\\darel\\Onedrive\\Desktop\\CAETE-DVM\\input\\20CRv3-ERA5\\obsclim'
+    s1 = time.perf_counter()
+    bz = bz2_handler(input_dir, df)
+    data_bz = bz.load_data()
+    s2 = time.perf_counter() - s1
+    print(f"bz2_handler read data in {s2:.2f} seconds with {len(data_bz)} stations")
 
     # Example usage of netcdf_handler
-    # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
-    # s1 = time.perf_counter()
-    # with netcdf_handler(nc_file_path, df) as handler:
-    #     # Get data for all stations
-    #     data_nc = handler.load_data()
-    #     # metadata = handler.load_metadata()
-
-    # s2 = time.perf_counter() - s1
-    # print(f"netcdf_handler read data in {s2:.2f} seconds with {len(data_nc)} stations")
+    nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
+    s1 = time.perf_counter()
+    with netcdf_handler(nc_file_path, df) as handler:
+        # Get data for all stations
+        data_nc = handler.load_data()
+        # metadata = handler.load_metadata()
+    s2 = time.perf_counter() - s1
+    print(f"netcdf_handler read data in {s2:.2f} seconds with {len(data_nc)} stations")
 
     # Example usage of netcdf_handler with chunking
     # inc = 128
