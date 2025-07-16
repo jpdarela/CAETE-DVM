@@ -9,6 +9,8 @@ A class to read NetCDF files for CAETE model input.
 from abc import ABC, abstractmethod
 from pathlib import Path
 import concurrent.futures
+import pickle
+import sys
 
 import numpy as np
 import netCDF4 as nc
@@ -290,6 +292,7 @@ class netcdf_handler(base_handler):
 
         # Pre-load station indices and prepare for data loading
         self._station_indices = self._map_station_indices()
+        self.mpi = cfg.input_handler.mt  # Use MPI if configured
 
     def _map_station_indices(self):
         """
@@ -598,6 +601,41 @@ class netcdf_handler(base_handler):
             f"Consider checking variable names or CF convention compliance."
         )
 
+    def load_data_parallel(self):
+        """Load data using MPI subprocess for parallel reading."""
+        import subprocess
+
+        indices = np.array(list(self._station_indices.values()))
+        indices_str = ','.join(map(str, indices))
+
+        # Call MPI script for time variables
+        nprocs = len(self.time_vars)
+        cmd_time = [
+            'mpiexec', '-n', f'{nprocs}',  # Use 4 processes
+            sys.executable, 'netcdf_reader.py',
+            str(self.nc_file),
+            indices_str,
+            '--var-type', 'time'
+        ] + self.time_vars
+
+        result_time = subprocess.run(cmd_time, capture_output=True)
+        time_vars_data = pickle.loads(result_time.stdout)
+
+        # Call MPI script for station variables
+        nprocs = len(self.station_vars)
+        cmd_station = [
+            'mpiexec', '-n', f'{nprocs}',
+            sys.executable, 'netcdf_reader.py',
+            str(self.nc_file),
+            indices_str,
+            '--var-type', 'station'
+        ] + self.station_vars
+
+        result_station = subprocess.run(cmd_station, capture_output=True)
+        station_vars_data = pickle.loads(result_station.stdout)
+
+        return time_vars_data, station_vars_data
+
     def load_data(self):
         """
         Load data from the NetCDF file into a dictionary.
@@ -621,35 +659,39 @@ class netcdf_handler(base_handler):
 
         # Pre-load all time-series variables into memory at once
         time_vars_data = {}
-        
-        for var_name in self.time_vars:
-            if var_name in self.nc_data.variables:
-                # Read all station data at once using fancy indexing
-                # This is much faster than reading each station individually
-                var_data = self.nc_data.variables[var_name][:, indices].astype(np.float32)
-
-                # Convert masked arrays to regular arrays if needed
-                if isinstance(var_data, np.ma.MaskedArray):
-                    fill_value = var_data.mean()
-                    var_data = var_data.filled(fill_value=fill_value)
-
-                # Store for later distribution
-                time_vars_data[var_name] = var_data
-
-        # Pre-load all station variables into memory at once
         station_vars_data = {}
-        for var_name in self.station_vars:
-            if var_name in self.nc_data.variables:
-                # Read all station data at once
-                var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
 
-                # Convert masked arrays to regular arrays if needed
-                if isinstance(var_data, np.ma.MaskedArray):
-                    fill_value = var_data.mean()
-                    var_data = var_data.filled(fill_value=fill_value)
+        if self.mpi:
+            # Use parallel loading with MPI subprocesses
+            time_vars_data, station_vars_data = self.load_data_parallel()
+        else:
+            # Read sequentially
+            for var_name in self.time_vars:
+                if var_name in self.nc_data.variables:
+                    # Read all station data at once using fancy indexing
+                    # This is much faster than reading each station individually
+                    var_data = self.nc_data.variables[var_name][:, indices].astype(np.float32)
 
-                # Store for later distribution
-                station_vars_data[var_name] = var_data
+                    # Convert masked arrays to regular arrays if needed
+                    if isinstance(var_data, np.ma.MaskedArray):
+                        fill_value = var_data.mean()
+                        var_data = var_data.filled(fill_value=fill_value)
+
+                    # Store for later distribution
+                    time_vars_data[var_name] = var_data
+
+            for var_name in self.station_vars:
+                if var_name in self.nc_data.variables:
+                    # Read all station data at once
+                    var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
+
+                    # Convert masked arrays to regular arrays if needed
+                    if isinstance(var_data, np.ma.MaskedArray):
+                        fill_value = var_data.mean()
+                        var_data = var_data.filled(fill_value=fill_value)
+
+                    # Store for later distribution
+                    station_vars_data[var_name] = var_data
 
         # Distribute data to station dictionaries
         for i, station_name in enumerate(station_names):
@@ -765,105 +807,6 @@ class netcdf_handler(base_handler):
         Return the number of stations in the gridlist.
         """
         return len(self.gridlist)
-
-    # def __getitem__(self, key):
-    #     """
-    #     Allow dictionary-like access to station data using optimized bulk loading.
-
-    #     Args:
-    #         key (str): Station name or list of station names
-
-    #     Returns:
-    #         dict: Data for the specified station(s)
-    #     """
-    #     # Handle a list of station names
-    #     if isinstance(key, list):
-    #         # Use bulk loading for multiple stations
-    #         valid_stations = [k for k in key if k in self._station_indices]
-    #         if not valid_stations:
-    #             return {}
-
-    #         # Get indices for the requested stations
-    #         station_indices_subset = {name: self._station_indices[name] for name in valid_stations}
-    #         indices = np.array(list(station_indices_subset.values()))
-
-    #         # Bulk load time-series variables for all requested stations
-    #         time_vars_data = {}
-    #         for var_name in self.time_vars:
-    #             if var_name in self.nc_data.variables:
-    #                 var_data = self.nc_data.variables[var_name][:, indices].astype(np.float32)
-    #                 if isinstance(var_data, np.ma.MaskedArray):
-    #                     var_data = var_data.filled()
-    #                 time_vars_data[var_name] = var_data
-
-    #         # Bulk load station variables for all requested stations
-    #         station_vars_data = {}
-    #         for var_name in self.station_vars:
-    #             if var_name in self.nc_data.variables:
-    #                 var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
-    #                 if isinstance(var_data, np.ma.MaskedArray):
-    #                     var_data = var_data.filled()
-    #                 station_vars_data[var_name] = var_data
-
-    #         # Distribute data to individual station dictionaries
-    #         result = {}
-    #         for i, station_name in enumerate(valid_stations):
-    #             station_data = {}
-
-    #             # Extract time-varying variables for this station
-    #             for var_name in self.time_vars:
-    #                 if var_name in time_vars_data:
-    #                     station_data[var_name] = time_vars_data[var_name][:, i]
-
-    #             # Extract station-specific variables
-    #             for var_name in self.station_vars:
-    #                 if var_name in station_vars_data:
-    #                     station_data[var_name] = float(station_vars_data[var_name][i])
-
-    #             result[station_name] = station_data
-
-    #         return result
-
-    #     # Handle a single station name using bulk loading for consistency
-    #     if key not in self._station_indices:
-    #         raise KeyError(f"Station '{key}' not found in gridlist")
-
-    #     nc_idx = self._station_indices[key]
-    #     indices = np.array([nc_idx])  # Single station as array for consistent indexing
-
-    #     # Bulk load time variables for this station
-    #     time_vars_data = {}
-    #     for var_name in self.time_vars:
-    #         if var_name in self.nc_data.variables:
-    #             var_data = self.nc_data.variables[var_name][:, indices].astype(np.float32)
-    #             if isinstance(var_data, np.ma.MaskedArray):
-    #                 var_data = var_data.filled()
-    #             time_vars_data[var_name] = var_data
-
-    #     # Bulk load station variables for this station
-    #     station_vars_data = {}
-    #     for var_name in self.station_vars:
-    #         if var_name in self.nc_data.variables:
-    #             var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
-    #             if isinstance(var_data, np.ma.MaskedArray):
-    #                 var_data = var_data.filled()
-    #             station_vars_data[var_name] = var_data
-
-    #     # Build station data dictionary
-    #     station_data = {}
-
-    #     # Extract time-varying variables (flatten single station dimension)
-    #     for var_name in self.time_vars:
-    #         if var_name in time_vars_data:
-    #             station_data[var_name] = time_vars_data[var_name][:, 0]  # Get first (only) station
-
-    #     # Extract station-specific variables
-    #     for var_name in self.station_vars:
-    #         if var_name in station_vars_data:
-    #             station_data[var_name] = float(station_vars_data[var_name][0])  # Get first (only) station
-
-    #     return station_data
-
 
 if __name__ == "__main__":
     import time
