@@ -7,7 +7,7 @@ A standalone script to read NetCDF variables in parallel using MPI.
 Called as a subprocess from the netcdf_handler class.
 
 Usage:
-    mpirun -n <num_processes> python netcdf_reader.py <nc_file> <indices> <var1> [var2] [var3] ...
+    mpiexec -n <num_processes> python netcdf_reader.py <nc_file> <indices> <var1> [var2] [var3] ...
 
 Arguments:
     nc_file: Path to NetCDF file
@@ -38,7 +38,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def read_variable_chunk(nc_file, var_name, indices, var_type, rank, size):
+def read_variable_chunk(nc_file, var_name, indices, var_type):
     """
     Read a variable using MPI process rank assignment.
 
@@ -133,7 +133,7 @@ def main():
     my_results = {}
     for var_name in my_variables:
         var_name_result, var_data = read_variable_chunk(
-            nc_file, var_name, indices, var_type, rank, size
+            nc_file, var_name, indices, var_type,
         )
 
         if var_data is not None and not isinstance(var_data, str):

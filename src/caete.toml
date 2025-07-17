@@ -4,14 +4,15 @@
 doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 # doy_months = [32, 91, 152, 213, 274, 335]
 
-# Configs for parallelization
-[multiprocessing]
-nprocs= 16 # Threads used to post process the output. Not used by the model itself.
 
 [input_handler]
 input_type = "netcdf" # Type of input data. THe other option is "pbz2"
-mt = true # Use multithreading (MPI) for reading netcdf files.
+mp = false # Use MPI for reading netcdf files.
 # If set to false, the model will read the netcdf files sequentially.
+
+# Configs for parallelization
+[multiprocessing]
+nprocs= 16 # Threads used to post process the output. Not used by the model itself.
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of gridcells and not ideally not larger that the number of available CPUs.

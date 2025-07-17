@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-NetCDF Handler
+Input Handler
 -------------
-A class to read NetCDF files for CAETE model input.
+Functionality to read input files for CAETE model.
+
 """
 
 from abc import ABC, abstractmethod
@@ -46,12 +47,11 @@ class base_handler(ABC):
         self.time_vars = ['hurs', 'tas', 'ps', 'pr', 'rsds', 'sfcwind', 'vpd']
         self.station_vars = ['tn', 'tp', 'ap', 'ip', 'op']
 
-        # Metadata filename for pickled bz2 files.
-        self.b22_metadata_filename = "ISIMIP_HISTORICAL_METADATA.pbz2"
 
         # Store the gridlist DataFrame
         if not isinstance(gridlist_df, pl.DataFrame):
             raise TypeError("gridlist_df must be a Polars DataFrame")
+
         self.gridlist = gridlist_df
         self._validate_gridlist()
 
@@ -74,6 +74,23 @@ class base_handler(ABC):
     def load_metadata(self):
         """
         Abstract method to read metadata from the input source.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    @abstractmethod
+    def update_fpath(self, fpath):
+        """
+        Abstract method to update the file path.
+        Must be implemented by subclasses.
+        """
+        pass
+
+
+    @abstractmethod
+    def update_gridlist(self, gridlist_df):
+        """
+        Abstract method to update the gridlist DataFrame.
         Must be implemented by subclasses.
         """
         pass
@@ -116,49 +133,17 @@ class bz2_handler(base_handler):
         """
         super().__init__(fpath, gridlist_df)
 
+        # Metadata filename for pickled bz2 files.
+        self.b22_metadata_filename = "METADATA.pbz2"
+
         # For the bz2 handler, we expect a valid directory path
         # Enforce that fpath is a directory
         if not self.isdir:
             raise ValueError(f"Provided path {self.fpath} is not a valid directory")
 
-        # Enforce that gridlist_df is a Polars DataFrame (TODO implement support for pandas DataFrame?)
-        if not isinstance(gridlist_df, pl.DataFrame):
-            raise TypeError("gridlist_df must be a Polars DataFrame")
-        self.gridlist = gridlist_df
-
         self.input_files = []
         self.station_names = []
         self._find_files(gridlist_df)
-
-    def _update_fpath(self, fpath):
-        """
-        Update the file path for the bz2 handler.
-
-        Args:
-            fpath (str): New file path to set.
-        """
-        self.fpath = str_or_path(fpath)
-        if not self.fpath.is_dir():
-            raise ValueError("fpath must be a directory for bz2_handler")
-        self.input_files = []
-        self._find_files(self.gridlist)
-        if len(self.input_files) == 0:
-            raise ValueError("No input files found for the given gridlist DataFrame")
-
-    def _update_gridlist(self, gridlist_df):
-        """
-        Update the gridlist DataFrame and re-map input files.
-
-        Args:
-            gridlist_df (polars.DataFrame): New gridlist DataFrame.
-        """
-        if not isinstance(gridlist_df, pl.DataFrame):
-            raise TypeError("gridlist_df must be a Polars DataFrame")
-        self.gridlist = gridlist_df
-        self.input_files = []
-        self._find_files(gridlist_df)
-        if len(self.input_files) == 0:
-            raise ValueError("No input files found for the given gridlist DataFrame")
 
     def _find_files(self, gridlist_df):
         """
@@ -204,13 +189,50 @@ class bz2_handler(base_handler):
 
     def _read_metadata_file(self):
         """
-        Returns metadata from the bz2 file.
+        Returns metadata from the bz2 file, filtered to match gridlist stations.
         """
         fpath = self.fpath / self.b22_metadata_filename
         if not fpath.exists():
             raise FileNotFoundError(f"Metadata file {fpath} does not exist.")
-        return read_bz2_file(self.fpath / self.b22_metadata_filename)
 
+        # Read the full metadata
+        full_metadata = read_bz2_file(self.fpath / self.b22_metadata_filename)
+
+        # Extract time, lat, lon metadata
+        time_meta, lat_meta, lon_meta = full_metadata
+
+        # Get the coordinates for our specific stations from the gridlist
+        gridlist_data = self.gridlist.select(['global_y', 'global_x', 'lat', 'lon']).to_pandas()
+
+        # Filter latitude metadata to only include our stations
+        filtered_lat_meta = lat_meta.copy()
+        # Remove the full global array and replace with station-specific data
+        if 'lat_index' in filtered_lat_meta:
+            # Convert masked array to regular array if needed
+            if hasattr(filtered_lat_meta['lat_index'], 'filled'):
+                filtered_lat_meta['lat_index'] = gridlist_data['lat'].values.astype(np.float64)
+            else:
+                filtered_lat_meta['lat_index'] = gridlist_data['lat'].values.astype(np.float64)
+
+        # Filter longitude metadata to only include our stations
+        filtered_lon_meta = lon_meta.copy()
+        # Remove the full global array and replace with station-specific data
+        if 'lon_index' in filtered_lon_meta:
+            # Convert masked array to regular array if needed
+            if hasattr(filtered_lon_meta['lon_index'], 'filled'):
+                filtered_lon_meta['lon_index'] = gridlist_data['lon'].values.astype(np.float64)
+            else:
+                filtered_lon_meta['lon_index'] = gridlist_data['lon'].values.astype(np.float64)
+
+        # Convert time metadata to regular array if it's masked
+        filtered_time_meta = time_meta.copy()
+        if 'time_index' in filtered_time_meta:
+            if hasattr(filtered_time_meta['time_index'], 'filled'):
+                filtered_time_meta['time_index'] = filtered_time_meta['time_index'].filled()
+
+        return filtered_time_meta, filtered_lat_meta, filtered_lon_meta
+
+    # Required methods by base_handler
     def load_data(self):
         """
         Load data from bz2 files using multithreading with map().
@@ -231,7 +253,7 @@ class bz2_handler(base_handler):
         file_station_pairs = list(zip(self.input_files, self.station_names))
         max_workers = min(len(file_station_pairs), 8)
 
-        # Use ThreadPoolExecutor with map for cleaner code
+        # REad files
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             results = list(executor.map(read_file_with_name, file_station_pairs))
 
@@ -243,7 +265,45 @@ class bz2_handler(base_handler):
         Load metadata from the bz2 file.
         Currently not implemented, raises NotImplementedError.
         """
-        raise NotImplementedError("bz2Handler is not yet implemented")
+        return self._read_metadata_file()
+
+    def update_fpath(self, fpath, gridlist_df=None):
+        """
+        Update the file path for the bz2 handler.
+
+        Args:
+            fpath (str): New file path to set.
+        """
+        if gridlist_df is not None:
+            self.update_gridlist(gridlist_df)
+        else:
+            print("[WARN] No gridlist_df provided, using existing gridlist")
+        if not fpath:
+            raise ValueError("fpath is required")
+
+        self.fpath = str_or_path(fpath)
+        if not self.fpath.is_dir():
+            raise ValueError("fpath must be a directory for bz2_handler")
+        self.input_files = []
+        self._find_files(self.gridlist)
+        if len(self.input_files) == 0:
+            raise ValueError("No input files found for the given gridlist DataFrame")
+
+    def update_gridlist(self, gridlist_df):
+        """
+        Update the gridlist DataFrame and re-map input files.
+
+        Args:
+            gridlist_df (polars.DataFrame): New gridlist DataFrame.
+        """
+        if not isinstance(gridlist_df, pl.DataFrame):
+            raise TypeError("gridlist_df must be a Polars DataFrame")
+        self.gridlist = gridlist_df
+        self._validate_gridlist()
+        self.input_files = []
+        self._find_files(gridlist_df)
+        if len(self.input_files) == 0:
+            raise ValueError("No input files found for the given gridlist DataFrame")
 
 
 class netcdf_handler(base_handler):
@@ -292,7 +352,8 @@ class netcdf_handler(base_handler):
 
         # Pre-load station indices and prepare for data loading
         self._station_indices = self._map_station_indices()
-        self.mpi = cfg.input_handler.mt  # Use MPI if configured
+
+        self.mpi = cfg.input_handler.mp  # Use MPI if configured
 
     def _map_station_indices(self):
         """
@@ -384,6 +445,8 @@ class netcdf_handler(base_handler):
                             'station': station_name,
                             'gridlist_lat': grid_lat,
                             'gridlist_lon': grid_lon,
+                            'netcdf_lat': nc_lats[closest_idx],
+                            'netcdf_lon': nc_lons[closest_idx],
                             'netcdf_idx': closest_idx,
                             'distance': min_dist
                         })
@@ -394,6 +457,8 @@ class netcdf_handler(base_handler):
                     'station': station_name,
                     'gridlist_lat': grid_lat,
                     'gridlist_lon': grid_lon,
+                    'netcdf_lat': nc_lats[closest_idx],
+                    'netcdf_lon': nc_lons[closest_idx],
                     'closest_nc_idx': self._find_closest_coordinate(grid_lat, grid_lon, nc_lats, nc_lons),
                     'min_distance': self._calculate_min_distance(grid_lat, grid_lon, nc_lats, nc_lons)
                 })
@@ -422,17 +487,21 @@ class netcdf_handler(base_handler):
         # Report fallback matches if any were used
         if fallback_matches:
             import warnings
-            warning_msg = f"Used closest coordinate fallback for {len(fallback_matches)} stations:\n"
+            warning_msg = f"\nUsed closest coordinate fallback for {len(fallback_matches)} stations:\n"
             for match_info in fallback_matches[:5]:  # Show first 5 for brevity
                 warning_msg += (
                     f"  - '{match_info['station']}': "
                     f"gridlist=({match_info['gridlist_lat']:.6f}, {match_info['gridlist_lon']:.6f}), "
-                    f"distance={match_info['distance']:.6f}°\n"
+                    f"netcdf=({match_info['netcdf_lat']:.6f}, {match_info['netcdf_lon']:.6f}), "
+                    f"distance={match_info['distance']:.6f}°, "
+                    f" NetCDF Index {match_info['netcdf_idx']}\n"
                 )
             if len(fallback_matches) > 5:
                 warning_msg += f"  ... and {len(fallback_matches) - 5} more stations\n"
 
             warning_msg += f"Fallback tolerance: {self.fallback_tolerance}°"
+
+            # Fallback matches are not errors, so use a warning
             warnings.warn(warning_msg, UserWarning)
 
         # Report unmatched stations
@@ -442,6 +511,7 @@ class netcdf_handler(base_handler):
                 error_msg += (
                     f"  - '{station_info['station']}': "
                     f"gridlist=({station_info['gridlist_lat']:.6f}, {station_info['gridlist_lon']:.6f}), "
+                    f"closest_netcdf=({station_info['netcdf_lat']:.6f}, {station_info['netcdf_lon']:.6f}), "
                     f"min_distance={station_info['min_distance']:.6f}°\n"
                 )
             if len(unmatched_stations) > 5:
@@ -602,7 +672,7 @@ class netcdf_handler(base_handler):
         )
 
     def load_data_parallel(self):
-        """Load data using MPI subprocess for parallel reading."""
+        """Load data using MPI for parallel file reading."""
         import subprocess
 
         indices = np.array(list(self._station_indices.values()))
@@ -619,22 +689,27 @@ class netcdf_handler(base_handler):
         ] + self.time_vars
 
         result_time = subprocess.run(cmd_time, capture_output=True)
+        if result_time.returncode != 0:
+            raise RuntimeError(f"MPI time variables process failed: {result_time.stderr.decode()}")
         time_vars_data = pickle.loads(result_time.stdout)
 
-        # Call MPI script for station variables
-        nprocs = len(self.station_vars)
-        cmd_station = [
-            'mpiexec', '-n', f'{nprocs}',
-            sys.executable, 'netcdf_reader.py',
-            str(self.nc_file),
-            indices_str,
-            '--var-type', 'station'
-        ] + self.station_vars
+        # Causes overhead launching processes, so commented out for now
+        # # Call MPI script for station variables
+        # nprocs = len(self.station_vars)
+        # cmd_station = [
+        #     'mpiexec', '-n', f'{nprocs}',
+        #     sys.executable, 'netcdf_reader.py',
+        #     str(self.nc_file),
+        #     indices_str,
+        #     '--var-type', 'station'
+        # ] + self.station_vars
 
-        result_station = subprocess.run(cmd_station, capture_output=True)
-        station_vars_data = pickle.loads(result_station.stdout)
+        # result_station = subprocess.run(cmd_station, capture_output=True)
+        # if result_station.returncode != 0:
+        #     raise RuntimeError(f"MPI station variables process failed: {result_station.stderr.decode()}")
+        # station_vars_data = pickle.loads(result_station.stdout)
 
-        return time_vars_data, station_vars_data
+        return time_vars_data #, station_vars_data
 
     def load_data(self):
         """
@@ -662,8 +737,8 @@ class netcdf_handler(base_handler):
         station_vars_data = {}
 
         if self.mpi:
-            # Use parallel loading with MPI subprocesses
-            time_vars_data, station_vars_data = self.load_data_parallel()
+            # Use parallel loading with MPI processes to read time-varying variables
+            time_vars_data = self.load_data_parallel()
         else:
             # Read sequentially
             for var_name in self.time_vars:
@@ -680,18 +755,19 @@ class netcdf_handler(base_handler):
                     # Store for later distribution
                     time_vars_data[var_name] = var_data
 
-            for var_name in self.station_vars:
-                if var_name in self.nc_data.variables:
-                    # Read all station data at once
-                    var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
+        # Read non time-varying station-specific variables
+        for var_name in self.station_vars:
+            if var_name in self.nc_data.variables:
+                # Read all station data at once
+                var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
 
-                    # Convert masked arrays to regular arrays if needed
-                    if isinstance(var_data, np.ma.MaskedArray):
-                        fill_value = var_data.mean()
-                        var_data = var_data.filled(fill_value=fill_value)
+                # Convert masked arrays to regular arrays if needed
+                if isinstance(var_data, np.ma.MaskedArray):
+                    fill_value = var_data.mean()
+                    var_data = var_data.filled(fill_value=fill_value)
 
-                    # Store for later distribution
-                    station_vars_data[var_name] = var_data
+                # Store for later distribution
+                station_vars_data[var_name] = var_data
 
         # Distribute data to station dictionaries
         for i, station_name in enumerate(station_names):
@@ -783,6 +859,49 @@ class netcdf_handler(base_handler):
 
         return time_meta, lat_meta, lon_meta
 
+    def update_fpath(self, fpath, gridlist_df=None):
+        """Update the file path for the NetCDF handler, reopens the file and remaps station indices."""
+
+        if gridlist_df is not None:
+            self.update_gridlist(gridlist_df)
+        else:
+            print("[WARN] No gridlist_df provided, using existing gridlist")
+        if not fpath:
+            raise ValueError("fpath is required")
+
+        self.fpath = str_or_path(fpath)
+        if not self.isfile:
+            raise ValueError("fpath must be a valid NetCDF file for netcdf_handler")
+        self.nc_file = self.fpath
+
+        # Close the existing NetCDF dataset if open
+        if hasattr(self, 'nc_data'):
+            self.nc_data.close()
+
+        # Reopen the NetCDF file
+        try:
+            self.nc_data = nc.Dataset(self.nc_file, 'r')
+        except Exception as e:
+            raise IOError(f"Error opening NetCDF file: {e}")
+
+        # Remap station indices
+        self._station_indices = self._map_station_indices()
+
+    def update_gridlist(self, gridlist_df):
+        """
+        Update the gridlist DataFrame and remap station indices.
+
+        Args:
+            gridlist_df (polars.DataFrame): New gridlist DataFrame.
+        """
+        if not isinstance(gridlist_df, pl.DataFrame):
+            raise TypeError("gridlist_df must be a Polars DataFrame")
+        self.gridlist = gridlist_df
+
+        # Remap station indices based on the new gridlist
+        self._station_indices = self._map_station_indices()
+
+
     def close(self):
         """
         Close the NetCDF file.
@@ -808,6 +927,27 @@ class netcdf_handler(base_handler):
         """
         return len(self.gridlist)
 
+
+# class input_handler:
+#     """A unified input handler for CAETÊ input data."""
+
+#     def __init__(self, fpath, gridlist_df, batch_size=128):
+#         """
+#         Initialize the input handler.
+#         This class can handle both bz2 and NetCDF files based on the provided file path.
+#         """
+#         self.handler = None
+
+#         if cfg.input_handler.input_type in {'bz2', 'bz2_handler', "pbz2", "pbz2_handler"}:
+#             self.handler(fpath, gridlist_df)
+#         elif cfg.input_handler.input_type in {'netcdf', 'netcdf_handler', 'nc', 'nc_handler'}:
+#             self.handler(fpath, gridlist_df)
+#         else:
+#             raise ValueError(f"Unsupported input type: {cfg.input_handler.input_type}. "
+#                              "Supported types are 'bz2' and 'netcdf'.")
+#         self.batch_size = batch_size
+
+
 if __name__ == "__main__":
     import time
 
@@ -815,7 +955,7 @@ if __name__ == "__main__":
     gridlist_path = '../input/20CRv3-ERA5/obsclim/gridlist_caete.csv'
     gridlist_df = pl.read_csv(gridlist_path)
 
-    df = gridlist_df.slice(0, 128)
+    df = gridlist_df.slice(0, 128)  # Use a slice for testing
 
     # # Testing the netcdf_handler
     # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
@@ -824,10 +964,11 @@ if __name__ == "__main__":
     # metadata_nc = nchd.load_metadata()
 
     # Example usage of bz2_handler
-    input_dir = 'C:\\Users\\darel\\Onedrive\\Desktop\\CAETE-DVM\\input\\20CRv3-ERA5\\obsclim'
+    input_dir = '../input/20CRv3-ERA5/obsclim'
     s1 = time.perf_counter()
     bz = bz2_handler(input_dir, df)
     data_bz = bz.load_data()
+    metadata_bz = bz.load_metadata()
     s2 = time.perf_counter() - s1
     print(f"bz2_handler read data in {s2:.2f} seconds with {len(data_bz)} stations")
 
@@ -837,7 +978,7 @@ if __name__ == "__main__":
     with netcdf_handler(nc_file_path, df) as handler:
         # Get data for all stations
         data_nc = handler.load_data()
-        # metadata = handler.load_metadata()
+        metadata_nc = handler.load_metadata()
     s2 = time.perf_counter() - s1
     print(f"netcdf_handler read data in {s2:.2f} seconds with {len(data_nc)} stations")
 
