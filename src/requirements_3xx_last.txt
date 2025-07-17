@@ -10,3 +10,4 @@ pandas
 pyarrow
 meson
 ninja
+h5py
