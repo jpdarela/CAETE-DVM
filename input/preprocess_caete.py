@@ -22,12 +22,10 @@ import numpy as np
 from numpy import exp, array, arange, hstack, concatenate, meshgrid, column_stack
 from numpy import float32 as flt
 
-# Add the path to the source folder to the sys.path
-source_path = Path(__file__).parent.parent
-if str(source_path) not in sys.path:
-    sys.path.append(str(source_path))
 
-from src._geos import pan_amazon_region
+sys.path.append("../src")
+
+from _geos import pan_amazon_region
 
 __what__ = "Pre-processing of input data for CAETE model"
 __author__ = "jpdarela"

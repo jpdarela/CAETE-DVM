@@ -7,79 +7,142 @@ import os
 import sys
 import pickle as pkl
 import tomllib
+from copy import deepcopy
 
 from netCDF4 import Dataset, MFDataset # type: ignore
 from numba import njit
 from numpy.typing import NDArray
 from typing import Generator
-
-## Add the path to the source folder to the sys.path
-source_path = Path(__file__).parent.parent
-if str(source_path) not in sys.path:
-    sys.path.append(str(source_path))
-
-from src._geos import pan_amazon_region
 import numpy as np
+
+
+sys.path.append("../src")
+from _geos import pan_amazon_region
+
 
 __what__ = "Pre-processing of input data to feed CAETÊ"
 __author__ = "jpdarela"
 __date__ = "Mon Dec 28 18:08:27 -03 2020"
-__descr__ = """ This script reads the raw data from the 20CRv3-ERA5 or any other
-                ISIMIP climate forcing dataset (0.5 degrees resolution) and reorganize the
-                data to feed the CAETÊ model. This script also reads the soil data and save
-                it along with the climate data. The script assumes that the raw data is
-                already downloaded and the soil data is available in the soil folder.
-                It also assumes that the mask file is available in the mask folder.
-                The processed data is stored in the shared_data folder.
-                This program also saves the metadata of the processed data in a compressed file named
-                as ISIMIP_HISTORICAL_METADATA.pbz2 in the shared_data folder.
+__descr__ = """Preprocesses climate and soil data for the CAETÊ Dynamic Vegetation Model.
 
-                IT can be run from the command line or from an ipython environment.
+OVERVIEW:
+    Transforms raw ISIMIP climate datasets and soil nutrient data into gridcell-specific
+    compressed files for efficient CAETÊ model input. Processes only valid land pixels
+    within the Pan-Amazon region as defined by the geographic coordinate bounds.
+    Variable units are not transformed, but the data is cropped to the Pan-Amazon region.
 
-                The dataset is given by the --dataset argument
+INPUT DATA STRUCTURE & PATH RESOLUTION:
+    Raw Climate Data Search Path:
+    The script constructs the climate data path using a hierarchical approach:
 
-                The mode (spinclim, transclim, etc.) is given by the --mode argument
-                It sets the name of the folder where the data will be stored. The raw data downloaded
-                from the ISIMIP data repository must be found in the folder named as dataset/<mode>_raw.
-                The soil data must be found in the soil folder.
+    1. Base Path: Defined in pre_processing.toml as "climate_data"
+       Example: "/path/to/climate/root/"
 
-                The mask file is given by the --mask-file argument
+    2. Dataset Directory: Specified via --dataset argument
+       Example: "20CRv3-ERA5"
 
-                Both for the mask file and the soil files, the data must be in numpy format.
-                Examples of the mask file and the soil data are available in the mask and soil folders.
-                Currently, all files represents the data for the entire globe in a 360x720 grid.
-                The mask file is a numpy array with boolean values. The soil data are numpy arrays with
-                float32 values.
+    3. Mode-Specific Raw Data Folder: "{mode}_raw"
+       Example: "spinclim_raw" or "transclim_raw"
 
-                You can change the mask file and the soil data folders (also the filenames of the soil data)
-                by editing the pre_processing.toml file.
+    Final Search Path: {climate_data}/{dataset}/{mode}_raw/
+    Complete Example: "/path/to/climate/root/20CRv3-ERA5/spinclim_raw/"
 
-                You can have a look at the parameters.py file in the source folder.
-                There are extra numpy arrays defining soil hydrological parameters that are read
-                directly from the files during model execution. You can check the file formats
-                necessary for the mask and soil input data by looking at it.
+    Expected NetCDF Files in Raw Data Directory:
+    ├── *_hurs_*.nc     # Relative humidity (any files matching pattern)
+    ├── *_tas_*.nc      # Air temperature
+    ├── *_pr_*.nc       # Precipitation
+    ├── *_ps_*.nc       # Surface pressure
+    ├── *_rsds_*.nc     # Solar radiation
+    └── *_sfcwind_*.nc  # Wind speed
 
-                The variables from the ISIMIP dataset to be processed are: hurs, tas, pr, ps, rsds, sfcwind
-                The soil data variables are: tn, tp, ap, ip, op (Total Nitrogen, Total Phosphorus, Available Phosphorus,
-                Inorganic Phosphorus, Organic Phosphorus)
+    File Discovery: Uses glob patterns (*_{variable}_*) to automatically detect
+    single files or multiple files per variable (handled via MFDataset).
 
-                Look at the README.md file for more information.
+    Soil Data Path Resolution:
+    Base path defined in pre_processing.toml as "soil_data", with individual
+    filenames specified in [soil_files] section:
+    ├── {tn_file}       # Total nitrogen (.npy)
+    ├── {tp_file}       # Total phosphorus (.npy)
+    ├── {ap_file}       # Available phosphorus (.npy)
+    ├── {ip_file}       # Inorganic phosphorus (.npy)
+    └── {op_file}       # Organic phosphorus (.npy)
 
-                """
-_DEBUG = True  # Set to False to disable debug prints
+OUTPUT STRUCTURE & DIRECTORY MIRRORING:
+    The output directory structure mirrors the input climate data organization:
 
+    Input:  {climate_data}/{dataset}/{mode}_raw/
+    Output: ./{dataset}/{mode}/
 
-# Argument parser. This script is not intended to be run as a module, or to be imported.
-# It is intended to be run from the command line
+    Example:
+    Input:  "/data/climate/20CRv3-ERA5/spinclim_raw/"
+    Output: "./20CRv3-ERA5/spinclim/"
+
+    Generated Files:
+    ├── input_data_{global_y}-{global_x}.pbz2    # Per-gridcell data packages
+    └── METADATA.pbz2                            # NetCDF coordinate/time metadata
+
+    Where {global_y} and {global_x} are the original global grid coordinates
+    (y ∈ [0,360), x ∈ [0,720) for 0.5° resolution).
+
+PROCESSING WORKFLOW:
+    1. Resolves climate data path: {climate_data}/{dataset}/{mode}_raw/
+    2. Discovers NetCDF files using glob patterns (*_{var}_*)
+    3. Extracts metadata (time, lat, lon) from first climate dataset
+    4. Applies mask filtering to identify valid land pixels
+    5. Crops all data to Pan-Amazon region bounds (ymin:ymax, xmin:xmax)
+    6. Loads soil nutrient arrays and crops to same region
+    7. Creates time-series matrices for all climate variables simultaneously
+    8. Packages each gridcell's complete dataset (climate + soil) into .pbz2 files
+
+GRIDCELL DATA FORMAT:
+    Each .pbz2 file contains a dictionary with:
+    • Climate time series: hurs[time], tas[time], pr[time], ps[time], rsds[time], sfcwind[time]
+    • Soil scalars: tn, tp, ap, ip, op (single values per gridcell)
+
+COORDINATE SYSTEM:
+    • Global indices: y ∈ [0,360), x ∈ [0,720) for 0.5° resolution
+    • Regional processing: Constrained to Pan-Amazon bounds from src/_geos
+    • Mask-based filtering: Only processes pixels where mask[y,x] = False
+    • Output filenames use global coordinates: input_data_{global_y}-{global_x}.pbz2
+
+CONFIGURATION (pre_processing.toml):
+    [climate_data] = "/path/to/climate/root"     # Base path for dataset directories
+    [soil_data] = "/path/to/soil/arrays"         # Directory containing .npy files
+    [mask_file] = "/path/to/land_mask.npy"       # Boolean mask (360×720)
+
+    [tn_file] = "filename.npy"                   # Total nitrogen
+    [tp_file] = "filename.npy"                   # Total phosphorus
+    [ap_file] = "filename.npy"                   # Available phosphorus
+    [ip_file] = "filename.npy"                   # Inorganic phosphorus
+    [op_file] = "filename.npy"                   # Organic phosphorus
+
+COMMAND LINE USAGE:
+    python preprocess_caete_pbz2.py --dataset "20CRv3-ERA5" --mode "spinclim"
+    python preprocess_caete_pbz2.py --test                    # Validates output integrity
+    python preprocess_caete_pbz2.py --mask-file custom.npy    # Override default mask
+
+PERFORMANCE FEATURES:
+    • Memory-efficient time-series processing using generators
+    • Parallel file I/O (up to 256 threads) for gridcell data writing
+    • Numba-accelerated mask-based data extraction
+    • Automatic cleanup of previous runs (unless --test mode)
+
+VALIDATION:
+    Test mode randomly samples 3 gridcells and compares processed data against
+    raw NetCDF files to ensure numerical accuracy (tests: hurs, tas, pr, ps, rsds, sfcwind).
+"""
+# ===============================
+
 parser = argparse.ArgumentParser(
     description= __descr__,
-    usage="python pre_processing.py [-h] [--dataset DATASET] [--mode MODE] \n\t from ipython: run pre_processing.py --dataset DATASET --mode MODE"
+    usage="python preprocess_caete_pbz2.py [-h] [--dataset DATASET] [--mode MODE]"
 )
 
 parser.add_argument('--dataset', type=str, default="20CRv3-ERA5", help='Main dataset folder (e.g., 20CRv3-ERA5)')
 parser.add_argument('--mode', type=str, default="spinclim", help='Mode of the dataset, e.g., spinclim, transclim, etc.')
-parser.add_argument('--mask-file', type=str, default=None, help="Path to the mask file (default: ./mask/mask_raisg-360-720.npy)")
+parser.add_argument('--mask-file', type=str, default=None, help="Path to the mask file. Default from configuration file [pre_process.toml]")
 parser.add_argument('--test', action='store_true', help="Run a test to check if the data was correctly processed")
+
 
 header = """CAETE-Copyright 2017- LabTerra
             This program is free software: you can redistribute it and/or modify
@@ -89,16 +152,22 @@ header = """CAETE-Copyright 2017- LabTerra
 
             Pre-processing tool for input data preparation"""
 
-# ===============================
-## ENVIRONMENT SETUP
-# ===============================
-# Read the configuration file
 
-cc = type("PanAmazon", (), pan_amazon_region)()
+#===============================
+# ENVIRONMENT SETUP
+#===============================
+cc = type("PanAmazon", (), pan_amazon_region)() # Create a PanAmazon region object (contains ymin, ymax, xmin, xmax)
+assert hasattr(cc, 'ymin') and hasattr(cc, 'ymax'), "Region must have ymin and ymax"
+assert hasattr(cc, 'xmin') and hasattr(cc, 'xmax'), "Region must have xmin and xmax"
+assert 0 <= cc.ymin < cc.ymax < 360, f"Invalid y coordinates: {cc.ymin}, {cc.ymax}"
+assert 0 <= cc.xmin < cc.xmax < 720, f"Invalid x coordinates: {cc.xmin}, {cc.xmax}"
 
+# Load configuration file
 with open("./pre_processing.toml", 'rb') as f:
+    # Works only with python 3.11 and above
     config_data = tomllib.load(f)
 
+# St the climate data path and check if it exists
 climate_data = Path(config_data["climate_data"])
 assert climate_data.exists(), "Climate data folder does not exists"
 
@@ -110,14 +179,14 @@ dataset = args.dataset
 mode = args.mode
 
 # OUTPUT FILE WITH METADATA
-metadata_filename_str = "ISIMIP_HISTORICAL_METADATA.pbz2"
+metadata_filename_str = "METADATA.pbz2"
 
 # NetCDF files with raw data to be processed
 raw_data = climate_data / dataset / f"{mode}_raw"
 if not raw_data.exists():
     raise FileNotFoundError(f"Raw data folder {raw_data} does not exists")
 
-# Soil data folder
+# INPUT FILES WITH SOIL DATA (NUTRIENTS)
 soil_data = Path(config_data["soil_data"])
 if not soil_data.exists():
     raise FileNotFoundError(f"Soil data folder {soil_data} does not exists")
@@ -127,11 +196,6 @@ if args.mask_file is None:
     mask_file = Path(config_data["mask_file"])
 else:
     mask_file = Path(args.mask_file)
-
-assert hasattr(cc, 'ymin') and hasattr(cc, 'ymax'), "Region must have ymin and ymax"
-assert hasattr(cc, 'xmin') and hasattr(cc, 'xmax'), "Region must have xmin and xmax"
-assert 0 <= cc.ymin < cc.ymax < 360, f"Invalid y coordinates: {cc.ymin}, {cc.ymax}"
-assert 0 <= cc.xmin < cc.xmax < 720, f"Invalid x coordinates: {cc.xmin}, {cc.xmax}"
 
 if not mask_file.exists():
     raise FileNotFoundError(f"Mask file {mask_file} does not exists")
@@ -144,55 +208,27 @@ if mask.shape != (360, 720):
 shared_data = Path(f"{dataset}/{mode}")
 os.makedirs(shared_data, exist_ok=True)
 
-# Debug print
-if _DEBUG:
-    print("Debug information:")
-    print("\033[94m")
-    print(f"Dataset: {dataset}, Mode: {mode}")
-    print(f"Raw data folder: {raw_data}")
-    print(f"Soil data folder: {soil_data}")
-    print(f"Mask file: {mask_file}")
-    print(f"Shared data folder: {shared_data}")
-    print("\033[0m")
-
 # if there are files in the shared_data folder, remove them
 if args.test:
     # We dont want to remove the files if we are testing
     pass
 else:
     try:
-        for file in shared_data.glob("*"):
+        for file in shared_data.glob("*.pbz2"):
             os.remove(file)
         print("Removing old files from shared_data folder")
     except:
         # Skip if something goes wrong, with some info
         print("info: Could not remove old files from shared_data folder")
         pass
+
 # ===============================
 ## ENVIRONMENT SETUP END
 # ===============================
 
 # ===============================
-# FUNCTIONS
+# FUNCTIONS & CLASSES
 # ===============================
-
-# Timer wrapper
-def timer(func):
-    def wrapper(*args, **kwargs):
-        import time
-        start = time.time()
-        func(*args, **kwargs)
-        end = time.time()
-        hours = int((end - start) // 3600)
-        minutes = round(((end - start) % 3600) // 60)
-        seconds = round((end - start) % 60)
-        if hours == 0:
-            print(f"Elapsed time: {minutes}:{seconds}")
-        elif minutes == 0:
-            print(f"Elapsed time: {seconds} seconds")
-        else:
-            print(f"Elapsed time: {hours}:{minutes}:{seconds}")
-    return wrapper
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
     """FROM Stack Overflow/GIST, THANKS
@@ -261,6 +297,10 @@ def read_clim_data(var:str) -> MFDataset | Dataset:
 
     return dataset
 
+def get_dataset_size(dataset:MFDataset | Dataset) -> int:
+    out = dataset.variables["time"][:].size
+    return out
+
 def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
     with read_clim_data(var) as dataset:
         try:
@@ -269,11 +309,7 @@ def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
             raise ValueError("Cannot get dataset size")
 
         for i in range(zero_dim):
-            yield dataset.variables[var][i, cc.ymin:cc.ymax+1, cc.xmin:cc.xmax+1].data
-
-def get_dataset_size(dataset:MFDataset | Dataset) -> int:
-    out = dataset.variables["time"][...].size
-    return out
+            yield dataset.variables[var][i, cc.ymin:cc.ymax, cc.xmin:cc.xmax].data
 
 def read_soil_data(var):
     if var == 'tn':
@@ -289,8 +325,15 @@ def read_soil_data(var):
     else:
         raise ValueError("Variable not found")
 
+def process_gridcell(grd , var, data):
+    grd.load()
+    grd._load_dict(var, data)
+    grd.write()
+
+
 class ds_metadata:
     """ Helper to collect and save the netCDF files ancillary data"""
+
 
     def __init__(self, dsets):
         self.ds_dict = [ds.__dict__ for ds in dsets]
@@ -313,6 +356,7 @@ class ds_metadata:
                     "lon_index": None}
         return None
 
+
     def fill_metadata(self, ds):
         self.time["standard_name"] = ds.variables['time'].standard_name
         self.time["units"] = ds.variables['time'].units
@@ -332,20 +376,21 @@ class ds_metadata:
 
         self.data = (self.time, self.lat, self.lon)
 
+
     def write(self, fpath):
         assert self.ok, 'INcomplte data, apply fill_metadata first'
         self.fpath = fpath
         with bz2.BZ2File(self.fpath, mode='w') as fh:
             pkl.dump(self.data, fh)
 
+
 class input_data:
     """ Helper to transform and write data for CAETÊ input"""
+
 
     def __init__(self, y, x, dpath):
         self.y = y + cc.ymin
         self.x = x + cc.xmin
-        # assert 0 <= self.y < cc.ymax - cc.ymin + 1, "y coordinate out of bounds"
-        # assert 0 <= self.x < cc.xmax - cc.xmin + 1, "x coordinate out of bounds"
         self.filename = f"input_data_{self.y}-{self.x}.pbz2"
         self.dpath = Path(dpath)
         self.fpath = Path(os.path.join(self.dpath, self.filename))
@@ -367,6 +412,7 @@ class input_data:
         self.cache = True if self.fpath.exists() else False
         self.loaded = True
 
+
     def _clean_memory(self):
         self.loaded = False
         self.data = {"hurs": None,
@@ -381,10 +427,12 @@ class input_data:
                      "ip": None,
                      "op": None}
 
+
     def _load_dict(self, var, DATA):
         assert var in self.vars, "Variable does not exists"
         # assert self.data[var] is None, "Variable already has data"
-        self.data[var] = DATA
+        self.data[var] = deepcopy(DATA)
+
 
     def load(self):
         # assert self.cache == True, "There is no cache data"
@@ -392,6 +440,7 @@ class input_data:
         with bz2.BZ2File(self.fpath, mode='r') as fh:
             self.data = pkl.load(fh)
             self.loaded = True
+
 
     def write(self):
         assert self.loaded, "Data struct not loaded in memory for file write"
@@ -402,29 +451,10 @@ class input_data:
             self.loaded = False
             self._clean_memory()
 
-def process_gridcell(grd:input_data , var, data):
-    grd.load()
-    grd._load_dict(var, data)
-    grd.write()
+# ===============================
+# END OF FUNCTIONS & CLASSES
+# ===============================
 
-
-def process_gridcell_batch(batch_data):
-    """Process multiple gridcells in one worker to reduce overhead"""
-    for grd, var, data in batch_data:
-        # Load existing data if file exists, otherwise ensure loaded state is True
-        if grd.cache:
-            grd.load()
-        else:
-            grd.loaded = True  # Ensure loaded state is True for new files
-
-        # Add the new variable data
-        grd._load_dict(var, data)
-
-        # Write back to file
-        grd.write()
-
-
-@timer
 def main():
     # SAVE METADATA
     variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
@@ -440,7 +470,7 @@ def main():
     # Prepare input templates
     input_templates = []
     ngrid = 0
-    temp_mask = mask[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    temp_mask = mask[cc.ymin: cc.ymax, cc.xmin:cc.xmax]
     ny, nx = temp_mask.shape
     for Y in range(ny):
         for X in range(nx):
@@ -449,34 +479,30 @@ def main():
                 input_templates.append(input_data(Y, X, shared_data))
     input_templates = np.array(input_templates, dtype=object)
 
-    # Read Soil data and slice to regional extent
+
+    # Read Soil data
     tn_global = read_soil_data('tn') # Total Nitrogen
     tp_global = read_soil_data('tp') # Total Phosphorus
     ap_global = read_soil_data('ap') # Available Phosphorus
     ip_global = read_soil_data('ip') # Inorganic Phosphorus
     op_global = read_soil_data('op') # Organic Phosphorus
-
     # Slice soil data to regional extent
-    tn = tn_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
-    tp = tp_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
-    ap = ap_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
-    ip = ip_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
-    op = op_global[cc.ymin: cc.ymax+1, cc.xmin:cc.xmax+1]
+    tn = tn_global[cc.ymin: cc.ymax, cc.xmin:cc.xmax]
+    tp = tp_global[cc.ymin: cc.ymax, cc.xmin:cc.xmax]
+    ap = ap_global[cc.ymin: cc.ymax, cc.xmin:cc.xmax]
+    ip = ip_global[cc.ymin: cc.ymax, cc.xmin:cc.xmax]
+    op = op_global[cc.ymin: cc.ymax, cc.xmin:cc.xmax]
 
-    del tn_global, tp_global, ap_global, ip_global, op_global
-
-
-    # Load soil data (using local coordinates for regional arrays)
+    # Load soil data
     for grd in input_templates:
         print(f"Processing soil data for gridcell {grd.y}-{grd.x}{' ' * 20}", end="\r")
-        # Convert global coordinates back to local for indexing regional arrays
         local_y = grd.y - cc.ymin
         local_x = grd.x - cc.xmin
-        total_nitrogen = tn[local_y, local_x].copy(order="F")
-        total_phosphorus = tp[local_y, local_x].copy(order="F")
-        available_phosphorus = ap[local_y, local_x].copy(order="F")
-        inorganic_phosphorus = ip[local_y, local_x].copy(order="F")
-        organic_phosphorus = op[local_y, local_x].copy(order="F")
+        total_nitrogen = tn[local_y, local_x]
+        total_phosphorus = tp[local_y, local_x]
+        available_phosphorus = ap[local_y, local_x]
+        inorganic_phosphorus = ip[local_y, local_x]
+        organic_phosphorus = op[local_y, local_x]
 
         assert total_nitrogen >= 0, "Total Nitrogen must be positive"
         assert total_phosphorus >= 0, "Total Phosphorus must be positive"
@@ -491,101 +517,52 @@ def main():
         grd._load_dict('op', organic_phosphorus)
         grd.write()
 
-    # PRE-LOAD ALL CLIMATE DATA INTO MEMORY WITH PARALLEL LOADING
-    print("Pre-loading all climate data into memory with parallel loading...")
-    climate_cache = {}
 
-    with read_clim_data(variables[0]) as ds:
-        tsize = get_dataset_size(ds) # all datasets have the same size
+    # Load clim_data and write to input templates
+    array_data = []
 
-    # Load all climate data in parallel
-    max_workers = min(len(variables), os.cpu_count() or 1)
-    print(f"Using {max_workers} workers for parallel loading...")
+    tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [executor.submit(load_variable_to_memory, var, tsize) for var in variables]
+#     # with read_clim_data(variables[0]) as ds:
+#     #     tsize = get_dataset_size(ds) # all datasets have the same size
 
-        for future in concurrent.futures.as_completed(futures):
-            var, data = future.result()
-            climate_cache[var] = data
-            print(f"Loaded {var} into memory ({data.nbytes / 1024**2:.1f} MB)")
-
-    print("All climate data loaded into memory!")
-
-    # Now process data using in-memory cache with vectorized operations
     _data = dict(zip(variables, [np.zeros((ngrid, tsize), dtype=np.float32) for _ in range(len(variables))]))
 
-    print(f"Processing data with vectorized operations: {variables}")
-    for j in range(tsize):
-        for var in variables:
-            _data[var][:, j] = get_values_at_vectorized(climate_cache[var][j], temp_mask)
-        if j % 100 == 0 or j == tsize - 1:  # Update progress less frequently
-            print_progress(j+1, tsize, prefix='Processing data:', suffix='Complete')
+    hurs_gen = _read_clim_data_('hurs')
+    tas_gen = _read_clim_data_('tas')
+    pr_gen = _read_clim_data_('pr')
+    ps_gen = _read_clim_data_('ps')
+    rsds_gen = _read_clim_data_('rsds')
+    sfcwind_gen = _read_clim_data_('sfcwind')
 
-    # Clear cache to free memory
-    del climate_cache
-
+    i = 0
+    print(f"Reading data: {variables}{'' * 20}")
+    print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
+    for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
+        _data["hurs"][:, j] = get_values_at(hurs, temp_mask)
+        _data["tas"][:, j] = get_values_at(tas, temp_mask)
+        _data["pr"][:, j] = get_values_at(pr, temp_mask)
+        _data["ps"][:, j] = get_values_at(ps, temp_mask)
+        _data["rsds"][:, j] = get_values_at(rsds, temp_mask)
+        _data["sfcwind"][:, j] = get_values_at(sfcwind, temp_mask)
+        print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
+        i += 1
 
     array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"]
-
-    print("\033[94m Writing data to files with batch processing \033[0m")
-
-    # BATCH PROCESSING FOR FILE WRITING
-    # Group tasks into batches for better I/O efficiency
-    batch_size = 50  # Process 50 tasks per worker
-    batches = []
-    current_batch = []
-
-    # Collect all tasks and group them into batches
+    print("\033[94m Writing data to files \033[0m")
+    # Write data to files in parallel
+    tasks = []
+    # Collect all tasks
     for var, data in zip(variables, array_data):
         for i, grd in enumerate(input_templates):
-            current_batch.append((grd, var, data[i]))
+            tasks.append((grd, var, data[i]))
 
-            # When batch is full, add it to batches list
-            if len(current_batch) >= batch_size:
-                batches.append(current_batch)
-                current_batch = []
+    # Write data to files
+    print(f"Writing \033[94m{var}\033[0m{' ' * 20}", end="\r")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=256) as executor:
+        futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
+        concurrent.futures.wait(futures)
 
-    # Add remaining tasks if any
-    if current_batch:
-        batches.append(current_batch)
-
-    print(f"Created {len(batches)} batches with batch size {batch_size}")
-
-    # Process batches in parallel
-    max_workers = min(8, os.cpu_count() or 1)  # Fewer workers for I/O bound tasks
-    print(f"Using {max_workers} workers for batch processing...")
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all batches
-        futures = [executor.submit(process_gridcell_batch, batch) for batch in batches]
-
-        # Process completed batches with error handling
-        completed_batches = 0
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-                completed_batches += 1
-                if completed_batches % max(1, len(batches) // 10) == 0 or completed_batches == len(batches):  # Show progress every 10%
-                    progress = (completed_batches / len(batches)) * 100
-                    print(f"Batch processing: {completed_batches}/{len(batches)} ({progress:.1f}%)")
-            except Exception as exc:
-                print(f'Batch generated an exception: {exc}')
-                raise
-
-    print("All batches completed successfully!")
-
-def load_variable_to_memory(var, tsize):
-    """Load a single variable into memory"""
-    data = np.zeros((tsize, cc.ymax - cc.ymin + 1, cc.xmax - cc.xmin + 1), dtype=np.float32)
-    with read_clim_data(var) as dataset:
-        for i in range(tsize):
-            data[i] = dataset.variables[var][i, cc.ymin:cc.ymax+1, cc.xmin:cc.xmax+1].data
-    return var, data
-
-def get_values_at_vectorized(array, mask):
-    """Vectorized version - much faster for large arrays"""
-    return array[~mask]
 
 def test(var, y=160, x=236, sample=500):
     # GREEN = "\033[92m"
@@ -604,13 +581,11 @@ def test(var, y=160, x=236, sample=500):
 
     dss = read_clim_data(var)
     # get a slice of the data
-    try:
-        arr = dss.variables[var][:sample, y, x]
-        saved_arr = pbz2_data[var][:sample]
-        all_close=np.allclose(arr, saved_arr)
-        mean_error = np.mean(np.abs(arr - saved_arr))
-    finally:
-        dss.close()
+    arr = dss.variables[var][:sample, y, x]
+    saved_arr = pbz2_data[var][:sample]
+    all_close=np.allclose(arr, saved_arr)
+    mean_error = np.mean(np.abs(arr - saved_arr))
+    dss.close()
 
     if all_close:
         print(f"{CYAN}Test for {var} PASSED with mean error {mean_error}{RESET}")
@@ -635,8 +610,7 @@ if __name__ == "__main__":
         indices = list(map(lambda x: (int(x[0]), int(x[1])), indices))
 
         # Select a random sample of indices to test
-        sample_size = min(3, size_files)
-        idx = np.random.randint(0, size_files, sample_size)
+        idx = np.random.randint(0, size_files, min(5, size_files - 1))
         indices = [indices[i] for i in idx]
         tested = [files[i] for i in idx]
         print(f"Testing the following indices: {indices}")
@@ -644,7 +618,7 @@ if __name__ == "__main__":
             for y, x in indices:
                 print(f"Testing {var} for gridcell {y}-{x}")
                 test(var, y=y, x=x)
-        print(f"Tested files {tested}\n\n")
+            print(f"Tested files {tested}\n\n")
     else:
         print("\nProcessing details:")
         print("\033[91m")
