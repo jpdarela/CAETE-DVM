@@ -75,6 +75,8 @@ def find_intel_runtime():
 
     dll_patterns = [
         'libifcoremd.dll',
+        'common_clang64.dll',
+        'libircmd.dll',
         'libmmd.dll',
         'svml_dispmd.dll',
         'libiomp5md.dll'  # OpenMP runtime
