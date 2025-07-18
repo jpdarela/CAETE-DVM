@@ -34,7 +34,7 @@ dt.index = idxT
 with bz2.BZ2File("../input/20CRv3-ERA5/obsclim/input_data_185-240.pbz2", mode='rb') as fh:
     dth = pkl.load(fh)
 
-with bz2.BZ2File("../input/20CRv3-ERA5/obsclim//ISIMIP_HISTORICAL_METADATA.pbz2", mode='rb') as fh:
+with bz2.BZ2File("../input/20CRv3-ERA5/obsclim/METADATA.pbz2", mode='rb') as fh:
     mdt = pkl.load(fh)
 
 

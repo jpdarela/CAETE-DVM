@@ -4,7 +4,7 @@
 # =============================================================================
 
 # GLOBAL CONFIGURATION - Change this to switch between scripts
-$SCRIPT_NAME = "preprocess_caete.py"     # Options: "pre_processing.py" or "preprocess_caete.py"
+$SCRIPT_NAME = "preprocess_caete_pbz2.py"  # Options: "preprocess_caete.py" or "preprocess_caete_pbz2.py"
 
 # Define all preprocessing tasks
 $tasks = @(
@@ -13,6 +13,7 @@ $tasks = @(
     @{dataset = "20CRv3-ERA5"; mode = "transclim"},
     @{dataset = "20CRv3-ERA5"; mode = "counterclim"},
     @{dataset = "MPI-ESM1-2-HR"; mode = "historical"},
+    @{dataset = "MPI-ESM1-2-HR"; mode = "piControl"},
     @{dataset = "MPI-ESM1-2-HR"; mode = "ssp370"},
     @{dataset = "MPI-ESM1-2-HR"; mode = "ssp585"}
 )

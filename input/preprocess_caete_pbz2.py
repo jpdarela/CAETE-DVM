@@ -3,13 +3,14 @@ from pathlib import Path
 import argparse
 import bz2
 import concurrent.futures
+import gc
 import os
 import sys
 import pickle as pkl
 import tomllib
 from copy import deepcopy
 
-from netCDF4 import Dataset, MFDataset # type: ignore
+from netCDF4 import Dataset, MFDataset, MFTime
 from numba import njit
 from numpy.typing import NDArray
 from typing import Generator
@@ -230,33 +231,33 @@ else:
 # FUNCTIONS & CLASSES
 # ===============================
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
-    """FROM Stack Overflow/GIST, THANKS
-    Call in a loop to create terminal progress bar
+# def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
+#     """FROM Stack Overflow/GIST, THANKS
+#     Call in a loop to create terminal progress bar
 
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        bar_length  - Optional  : character length of bar (Int)
-    """
-    RESET = "\033[0m"
-    CYAN = "\033[96m"
-    blue_bar = f"{CYAN}{'█'}{RESET}"
-    bar_utf = b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
-    str_format = "{0:." + str(decimals) + "f}"
-    percents = str_format.format(100 * (iteration / float(total)))
-    filled_length = int(round(bar_length * iteration / float(total)))
-    bar = blue_bar * filled_length + '-' * (bar_length - filled_length)
+#     @params:
+#         iteration   - Required  : current iteration (Int)
+#         total       - Required  : total iterations (Int)
+#         prefix      - Optional  : prefix string (Str)
+#         suffix      - Optional  : suffix string (Str)
+#         decimals    - Optional  : positive number of decimals in percent complete (Int)
+#         bar_length  - Optional  : character length of bar (Int)
+#     """
+#     RESET = "\033[0m"
+#     CYAN = "\033[96m"
+#     blue_bar = f"{CYAN}{'█'}{RESET}"
+#     bar_utf = b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
+#     str_format = "{0:." + str(decimals) + "f}"
+#     percents = str_format.format(100 * (iteration / float(total)))
+#     filled_length = int(round(bar_length * iteration / float(total)))
+#     bar = blue_bar * filled_length + '-' * (bar_length - filled_length)
 
-    sys.stdout.write('\r\033[95m%s\033[0m \033[91m|%s|\033[0m \033[94m%s%s\033[0m %s' %
-                     (prefix, bar, percents, '%', suffix)), # type: ignore
+#     sys.stdout.write('\r\033[95m%s\033[0m \033[91m|%s|\033[0m \033[94m%s%s\033[0m %s' %
+#                      (prefix, bar, percents, '%', suffix)), # type: ignore
 
-    if iteration == total:
-        sys.stdout.write('\n')
-    sys.stdout.flush()
+#     if iteration == total:
+#         sys.stdout.write('\n')
+#     sys.stdout.flush()
 
 @njit
 def get_values_at(array, mask):
@@ -294,6 +295,8 @@ def read_clim_data(var:str) -> MFDataset | Dataset:
         dataset = reader(to_read)
     except:
         raise FileNotFoundError(f"No netCDF file for variable {var} in {raw_data}")
+
+    # Correct the time index if it is not in the correct format
 
     return dataset
 
@@ -335,8 +338,7 @@ class ds_metadata:
     """ Helper to collect and save the netCDF files ancillary data"""
 
 
-    def __init__(self, dsets):
-        self.ds_dict = [ds.__dict__ for ds in dsets]
+    def __init__(self):
         self.data = None
         self.ok = False
         self.fpath = None
@@ -357,11 +359,17 @@ class ds_metadata:
         return None
 
 
-    def fill_metadata(self, ds):
-        self.time["standard_name"] = ds.variables['time'].standard_name
-        self.time["units"] = ds.variables['time'].units
-        self.time["calendar"] = ds.variables['time'].calendar
-        self.time["time_index"] = ds.variables['time'][:]
+    def fill_metadata(self, ds, ts=None):
+        if ts is None:
+            self.time["standard_name"] = ds.variables['time'].standard_name
+            self.time["units"] = ds.variables['time'].units
+            self.time["calendar"] = ds.variables['time'].calendar
+            self.time["time_index"] = ds.variables['time'][:]
+        else:
+            self.time["standard_name"] = ts.standard_name
+            self.time["units"] = ts.units
+            self.time["calendar"] = ts.calendar
+            self.time["time_index"] = ts[:]
 
         self.lat["standard_name"] = ds.variables['lat'].standard_name
         self.lat["units"] = ds.variables['lat'].units
@@ -378,7 +386,7 @@ class ds_metadata:
 
 
     def write(self, fpath):
-        assert self.ok, 'INcomplte data, apply fill_metadata first'
+        assert self.ok, 'Incomplte data, apply fill_metadata first'
         self.fpath = fpath
         with bz2.BZ2File(self.fpath, mode='w') as fh:
             pkl.dump(self.data, fh)
@@ -459,8 +467,25 @@ def main():
     # SAVE METADATA
     variables = ['hurs', 'tas', 'pr', 'ps', 'rsds', 'sfcwind']
     dss = [read_clim_data(var) for var in variables]
-    ancillary_data = ds_metadata(dss)
-    ancillary_data.fill_metadata(dss[0])
+    times = []
+
+    # Use MFTime to standardize the time dimesion across datasets
+    for ds in dss:
+        if isinstance(ds, MFDataset):
+            times.append(MFTime(ds.variables['time']))
+        elif isinstance(ds, Dataset):
+            times.append(ds.variables['time'])
+        else:
+            raise TypeError("Dataset must be either MFDataset or Dataset")
+
+    for x in range(1, len(times)):
+        assert np.all(times[0][:] == times[x][:]), "Time values are not equal across datasets"
+        assert times[0].calendar == times[x].calendar, "Calendars are not equal across datasets"
+        assert times[0].units == times[x].units, "Units are not equal across datasets"
+        # assert times[0].standard_name == times[x].standard_name, "Standard names are not equal across datasets"
+
+    ancillary_data = ds_metadata()
+    ancillary_data.fill_metadata(dss[0], ts=times[0])
     ancillary_data.write(shared_data / metadata_filename_str)
     # Close the datasets
     for ds in dss:
@@ -495,7 +520,7 @@ def main():
 
     # Load soil data
     for grd in input_templates:
-        print(f"Processing soil data for gridcell {grd.y}-{grd.x}{' ' * 20}", end="\r")
+        print(f"Processing soil data for gridcell {grd.y}-{grd.x}{' ' * 20}")
         local_y = grd.y - cc.ymin
         local_x = grd.x - cc.xmin
         total_nitrogen = tn[local_y, local_x]
@@ -517,14 +542,11 @@ def main():
         grd._load_dict('op', organic_phosphorus)
         grd.write()
 
+    # tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
 
-    # Load clim_data and write to input templates
-    array_data = []
+    with read_clim_data(variables[0]) as ds:
+        tsize = get_dataset_size(ds) # all datasets have the same size
 
-    tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
-
-#     # with read_clim_data(variables[0]) as ds:
-#     #     tsize = get_dataset_size(ds) # all datasets have the same size
 
     _data = dict(zip(variables, [np.zeros((ngrid, tsize), dtype=np.float32) for _ in range(len(variables))]))
 
@@ -535,31 +557,64 @@ def main():
     rsds_gen = _read_clim_data_('rsds')
     sfcwind_gen = _read_clim_data_('sfcwind')
 
+    # Batch1 ===========================================================
     i = 0
-    print(f"Reading data: {variables}{'' * 20}")
-    print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    for hurs, tas, pr, ps, rsds, sfcwind, j in zip(hurs_gen, tas_gen, pr_gen, ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
+    print(f"Reading data: {variables[:3]}{' ' * 20}")
+    # print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
+    for hurs, tas, pr, j in zip(hurs_gen, tas_gen, pr_gen, range(tsize)):
         _data["hurs"][:, j] = get_values_at(hurs, temp_mask)
         _data["tas"][:, j] = get_values_at(tas, temp_mask)
         _data["pr"][:, j] = get_values_at(pr, temp_mask)
-        _data["ps"][:, j] = get_values_at(ps, temp_mask)
-        _data["rsds"][:, j] = get_values_at(rsds, temp_mask)
-        _data["sfcwind"][:, j] = get_values_at(sfcwind, temp_mask)
-        print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
+        # print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
         i += 1
+    print("Completed reading data for variables: hurs, tas, pr")
+    array_data = _data["hurs"], _data["tas"], _data["pr"]
 
-    array_data = _data["hurs"], _data["tas"], _data["pr"], _data["ps"], _data["rsds"], _data["sfcwind"]
+
     print("\033[94m Writing data to files \033[0m")
     # Write data to files in parallel
     tasks = []
     # Collect all tasks
-    for var, data in zip(variables, array_data):
+    for var, data in zip(variables[:3], array_data):
         for i, grd in enumerate(input_templates):
             tasks.append((grd, var, data[i]))
 
     # Write data to files
-    print(f"Writing \033[94m{var}\033[0m{' ' * 20}", end="\r")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=256) as executor:
+    print(f"\033[94m  Writing... \033[0m{' ' * 20}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+        futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
+        concurrent.futures.wait(futures)
+
+    # release memory
+    del array_data
+    _data["hurs"] = None
+    _data["tas"] = None
+    _data["pr"] = None
+    gc.collect()
+
+    # Batch2 ==============================================================
+    tasks = []
+    print(f"Reading data: {variables[3:]}{'' * 20}")
+    # print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
+    i = 0
+    for ps, rsds, sfcwind, j in zip(ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
+        _data["ps"][:, j] = get_values_at(ps, temp_mask)
+        _data["rsds"][:, j] = get_values_at(rsds, temp_mask)
+        _data["sfcwind"][:, j] = get_values_at(sfcwind, temp_mask)
+        # print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
+        i += 1
+    print("Completed reading data for variables: ps, rsds, sfcwind")
+    array_data = _data["ps"], _data["rsds"], _data["sfcwind"]
+    # Write data to files in parallel
+    tasks = []
+    # Collect all tasks
+    for var, data in zip(variables[3:], array_data):
+        for i, grd in enumerate(input_templates):
+            tasks.append((grd, var, data[i]))
+
+    # Write data to files
+    print(f"\033[94m  Writing... \033[0m{' ' * 20}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
         futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
         concurrent.futures.wait(futures)
 

@@ -969,7 +969,7 @@ class table_data:
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
 
-        print(f"Successfully consolidated {len(biomass_files)} biomass files into {output_file}")
+        print(f"Successfully consolidated {len(biomass_files)} biomass files into {output_file}.{output_format.lower()}")
 
     @staticmethod
     def _extract_coordinates_from_biomass_filename(csv_path: Path) -> Tuple[int, int]:
@@ -1153,7 +1153,7 @@ class output_manager:
             table_data.consolidate_all_annual_outputs(
                 res,
                 output_types=['biomass'],
-                output_format="hdf5"
+                output_format="feather"
             )
 
         return None

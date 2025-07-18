@@ -50,10 +50,10 @@ if __name__ == "__main__":
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
     # # Input files. The model will look for the input files in these folders.
-    obsclim_files = "../input/20CRv3-ERA5/obsclim/"
-    spinclim_files = "../input/20CRv3-ERA5/spinclim/"
-    transclim_files = "../input/20CRv3-ERA5/transclim/"
-    counterclim_files = "../input/20CRv3-ERA5/counterclim/"
+    obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
+    spinclim_files = "../input/20CRv3-ERA5/spinclim_test/"
+    transclim_files = "../input/20CRv3-ERA5/transclim_test/"
+    counterclim_files = "../input/20CRv3-ERA5/counterclim_test/"
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # Create the region using the spinup climate files
     r = region(region_name,

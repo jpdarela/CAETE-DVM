@@ -106,6 +106,7 @@
 import bz2
 import copy
 import csv
+import gc
 import os
 import pickle as pkl
 import sys
@@ -808,7 +809,9 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
-            dump(data_obj, fh, compress=('lz4', 2), protocol=5) # type: ignore
+            dump(data_obj, fh, compress=('lz4', 5), protocol=5)
+            fh.flush()
+        gc.collect() # type: ignore
         self.flush_data = None
 
 

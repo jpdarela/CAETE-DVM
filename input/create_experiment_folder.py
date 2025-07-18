@@ -125,7 +125,7 @@ def create_experiment_input2(
     for indices in idx:
         y, x = indices
         file_name = Path(f"input_data_{y}-{x}.pbz2")
-        metadata_file = Path(f"ISIMIP_HISTORICAL_METADATA.pbz2")
+        metadata_file = Path(f"METADATA.pbz2")
 
         for src, dest in zip(src_folders, dest_folders):
             src_path = Path(src) / file_name
@@ -154,13 +154,13 @@ if __name__ == '__main__':
     # _gridlist = 'gridlist_cities.csv'
     # write_gridlist_with_indices = False
 
-    # _append = '_test'
-    # _gridlist = 'gridlist_test.csv'
-    # write_gridlist_with_indices = False
+    _append = '_test'
+    _gridlist = 'gridlist_test.csv'
+    write_gridlist_with_indices = False
 
-    _append = '_pan_amazon_forest'
-    _gridlist = "gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv"
-    write_gridlist_with_indices = True
+    # _append = '_pan_amazon_forest'
+    # _gridlist = "gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv"
+    # write_gridlist_with_indices = True
 
     # Define source and destination folders
     # order is important here. The source folders must be in the same order as the destination folders
@@ -170,7 +170,6 @@ if __name__ == '__main__':
         './20CRv3-ERA5/obsclim',
         './20CRv3-ERA5/spinclim',
         './20CRv3-ERA5/transclim',
-        './MPI-ESM1-2-HR/piControl',
         './MPI-ESM1-2-HR/historical',
         './MPI-ESM1-2-HR/ssp370',
         './MPI-ESM1-2-HR/ssp585'
@@ -182,7 +181,6 @@ if __name__ == '__main__':
         f'./20CRv3-ERA5/obsclim{_append}',
         f'./20CRv3-ERA5/spinclim{_append}',
         f'./20CRv3-ERA5/transclim{_append}',
-        f'./MPI-ESM1-2-HR/piControl{_append}',
         f'./MPI-ESM1-2-HR/historical{_append}',
         f'./MPI-ESM1-2-HR/ssp370{_append}',
         f'./MPI-ESM1-2-HR/ssp585{_append}'

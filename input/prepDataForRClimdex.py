@@ -55,7 +55,7 @@ def main(model, scen):
     data_path = Path(f"./{model}").resolve()
     scen_path = data_path / scen
     print(scen_path.resolve())
-    metadata = scen_path / "ISIMIP_HISTORICAL_METADATA.pbz2"
+    metadata = scen_path / "METADATA.pbz2"
     print(metadata.resolve().exists())
     with bz2.BZ2File(metadata, mode='r') as fh:
         ancillData = pickle.load(fh)

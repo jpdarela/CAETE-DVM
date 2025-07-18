@@ -6,8 +6,6 @@ CAETE Data Preprocessing Script
 Converts ISIMIP climate forcing data to optimized NetCDF format for CAETE model.
 Creates station-based timeseries format similar to LPJ-GUESS preprocessing.
 
-Author: jpdarela & Claudio Chupetinha
-Date: 2025-01-12
 """
 
 from pathlib import Path
@@ -17,7 +15,7 @@ import os
 import sys
 import tomllib
 
-from netCDF4 import Dataset, MFDataset
+from netCDF4 import Dataset, MFDataset, MFTime, stringtochar
 import numpy as np
 from numpy import exp, array, arange, hstack, concatenate, meshgrid, column_stack
 from numpy import float32 as flt
@@ -29,7 +27,7 @@ from _geos import pan_amazon_region
 
 __what__ = "Pre-processing of input data for CAETE model"
 __author__ = "jpdarela"
-__date__ = "2025-01-12"
+__date__ = "2025-07-12"
 __description__ = """
 This script converts ISIMIP climate forcing data to an optimized NetCDF format
 for the CAETE model. It creates station-based timeseries similar to LPJ-GUESS
@@ -211,11 +209,32 @@ def read_soil_data(var: str):
     else:
         raise ValueError(f"Unknown soil variable: {var}")
 
-def get_metadata_from_dataset(var: str):
+def get_metadata_from_dataset(variables: str):
     """Extract metadata from NetCDF dataset"""
+
+    dss = [read_clim_data(var) for var in variables]
+    times = []
+
+    # Use MFTime to standardize the time dimension across datasets
+    for ds in dss:
+        if isinstance(ds, MFDataset):
+            times.append(MFTime(ds.variables['time']))
+        elif isinstance(ds, Dataset):
+            times.append(ds.variables['time'])
+        else:
+            raise TypeError("Dataset must be either MFDataset or Dataset")
+
+    # Check if all time variables are equal
+    for x in range(1, len(times)):
+        assert np.all(times[0][:] == times[x][:]), "Time values are not equal across datasets"
+        assert times[0].calendar == times[x].calendar, "Calendars are not equal across datasets"
+        assert times[0].units == times[x].units, "Units are not equal across datasets"
+        # assert times[0].standard_name == times[x].standard_name, "Standard names are not equal across datasets"
+
+    var = variables[0]
     with read_clim_data(var) as dataset:
         var_obj = dataset.variables[var]
-        time_obj = dataset.variables["time"]
+        time_obj = times[0]  # Use the first dataset's time object
         lat_obj = dataset.variables["lat"]
         lon_obj = dataset.variables["lon"]
 
@@ -242,6 +261,10 @@ def get_metadata_from_dataset(var: str):
                 'lon_std_name': getattr(lon_obj, 'standard_name', 'longitude')
             }
         }
+
+    for ds in dss:
+        ds.close()
+    del dss
 
     return metadata
 
@@ -274,9 +297,8 @@ def process_climate_variable(var: str):
         print(f"  Reading all {tsize} time steps for region...")
         regional_data = variable_obj[:, cc.ymin:cc.ymax+1, cc.xmin:cc.xmax+1]  # (time, y, x)
 
-        # VECTORIZED STATION EXTRACTION using advanced indexing
         # Extract all station data at once: (time, station)
-        station_data = regional_data[:, valid_i, valid_j].T  # Transpose to (station, time)
+        station_data = regional_data[:, valid_i, valid_j]  # Transpose to (station, time)
 
         print(f"  Extracted {station_count} stations x {tsize} time steps")
 
@@ -417,7 +439,8 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         station_var = nc.createVariable("station", 'i4', ("station",))
         lat_var = nc.createVariable("lat", 'f4', ("station",))
         lon_var = nc.createVariable("lon", 'f4', ("station",))
-        station_name_var = nc.createVariable("station_name", 'c', ("station", "string_length"))
+        station_name_var = nc.createVariable("station_name", 'S1', ("station", "string_length"))
+        station_name_var._Encoding = 'ascii'
 
 
         # Fill coordinate variables
@@ -426,10 +449,8 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         lat_var[:] = lats
         lon_var[:] = lons
 
-        # Convert string array to char array for CF compliance
-        for i, name in enumerate(station_names):
-            station_name_var[i] = name.ljust(15)[:15]
-
+        station_names_padded = np.array([name.ljust(15)[:15] for name in station_names], dtype='S15')
+        station_name_var[:] = stringtochar(station_names_padded)
 
         # COORDINATE ATTRIBUTES
         time_var.units = metadata['time']['units']
@@ -458,7 +479,7 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
             var_obj = nc.createVariable(var_name, 'f4', ("time", "station"),  # TIME FIRST!
                                       fill_value=1e+20, zlib=True, complevel=4)
             # TRANSPOSE data from (station, time) to (time, station)
-            var_obj[:] = data.T  # Transpose the data
+            var_obj[:] = data  # Transpose the data
 
             var_obj.units = caete_var_metadata[var_name][0]
             if caete_var_metadata[var_name][1] is not None:
@@ -469,7 +490,7 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         # Add VPD with CDO-compatible dimensions
         vpd_var = nc.createVariable("vpd", 'f4', ("time", "station"),  # TIME FIRST!
                                    fill_value=1e+20, zlib=True, complevel=4)
-        vpd_var[:] = vpd_data.T  # Transpose the data
+        vpd_var[:] = vpd_data  # Transpose the data
         vpd_var.units = caete_var_metadata['vpd'][0]
         vpd_var.standard_name = caete_var_metadata['vpd'][1]
         vpd_var.long_name = "Vapor Pressure Deficit for CAETE"
@@ -648,7 +669,7 @@ def main():
     print()
 
     # Get metadata from first climate variable
-    metadata = get_metadata_from_dataset(climate_vars[0])
+    metadata = get_metadata_from_dataset(climate_vars)
 
     # Process climate variables using VECTORIZED APPROACH
     print("Processing climate variables with vectorized operations...")

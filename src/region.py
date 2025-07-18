@@ -24,6 +24,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import copy
+import gc
 import multiprocessing as mp
 import os
 import sys
@@ -103,7 +104,7 @@ class region:
         self.npls_main_table = self.pls_table.npls
 
         try:
-            metadata_file = list(self.input_data.glob("*_METADATA.pbz2"))[0]
+            metadata_file = list(self.input_data.glob("METADATA.pbz2"))[0]
         except:
             raise FileNotFoundError("Metadata file not found in the input data folder")
 
@@ -190,6 +191,8 @@ class region:
             # Save the gridcells to the intermediate files
             with open(f, 'wb') as fh:
                 dump(chunk, f, compress=("lz4", 1))
+                fh.flush()  # Explicitly flush before closing
+            gc.collect()  # Collect garbage to free memory after saving
 
 
     def update_dump_directory(self, new_name:str="copy", in_memory:bool=False):
@@ -231,6 +234,8 @@ class region:
 
                 with open(f, 'wb') as fh:
                     dump(gridcells, fh, compress=("lz4", 1))
+                    fh.flush()  # Explicitly flush before closing
+                gc.collect()
 
             with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
                 executor.map(process_file, self.file_objects)
@@ -271,7 +276,7 @@ class region:
             # Read the climate data
             self.input_data = str_or_path(input_folder)
             try:
-                metadata_file = list(self.input_data.glob("*_METADATA.pbz2"))[0]
+                metadata_file = list(self.input_data.glob("METADATA.pbz2"))[0]
             except:
                 raise FileNotFoundError("Metadata file not found in the input data folder")
 
@@ -300,6 +305,8 @@ class region:
                             gridcell.change_input(self.input_data, self.stime)
                     with open(f, 'wb') as file:
                         dump(gridcells, file, compress=("lz4", 1))
+                        file.flush()
+                    gc.collect()
                 except Exception as e:
                     print(f"Error processing file {f}: {e}")
                     raise e
@@ -390,6 +397,8 @@ class region:
                 result = []
                 with open(f, 'wb') as fh:
                     dump(new_chunk, fh, compress=("lz4", 1))
+                    fh.flush()  # Explicitly flush before closing
+                gc.collect()
                 print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
                 j += 1
 
@@ -430,6 +439,8 @@ class region:
                         pool.join()
                 with open(fname, 'wb') as f:
                     dump(result, f, compress=("lz4", 1))
+                    f.flush()  # Explicitly flush before closing
+                gc.collect()
                 result = []
                 print_progress(j+1, len(chunks), prefix='Progress:', suffix='Complete')
                 j += 1
@@ -457,6 +468,8 @@ class region:
                     pool.join()
             with open(f, 'wb') as fh:
                 dump(result, fh, compress=("lz4", 1))
+                fh.flush()
+            gc.collect()
             print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
             j += 1
 
