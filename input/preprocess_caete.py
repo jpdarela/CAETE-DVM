@@ -431,8 +431,6 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         nc.createDimension("station", n_stations)
         nc.createDimension("string_length", 15)
 
-
-
         # Create coordinate variables
         time_var = nc.createVariable("time", 'f4', ("time",))
         station_var = nc.createVariable("station", 'i4', ("station",))
@@ -440,7 +438,6 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         lon_var = nc.createVariable("lon", 'f4', ("station",))
         station_name_var = nc.createVariable("station_name", 'S1', ("station", "string_length"))
         station_name_var._Encoding = 'ascii'
-
 
         # Fill coordinate variables
         time_var[:] = metadata['time']['time_data']
@@ -475,7 +472,7 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
 
         # Create climate variables
         for var_name, data in climate_data.items():
-            var_obj = nc.createVariable(var_name, 'f4', ("time", "station"),  # TIME FIRST!
+            var_obj = nc.createVariable(var_name, 'f4', ("time", "station"),
                                       fill_value=1e+20, zlib=True, complevel=4)
             # TRANSPOSE data from (station, time) to (time, station)
             var_obj[:] = data  # Transpose the data
@@ -487,7 +484,7 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
             var_obj.coordinates = "lat lon"
 
         # Add VPD with CDO-compatible dimensions
-        vpd_var = nc.createVariable("vpd", 'f4', ("time", "station"),  # TIME FIRST!
+        vpd_var = nc.createVariable("vpd", 'f4', ("time", "station"),
                                    fill_value=1e+20, zlib=True, complevel=4)
         vpd_var[:] = vpd_data  # Transpose the data
         vpd_var.units = caete_var_metadata['vpd'][0]
