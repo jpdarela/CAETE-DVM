@@ -4,7 +4,7 @@
 # =============================================================================
 
 # GLOBAL CONFIGURATION - Change this to switch between scripts
-$SCRIPT_NAME = "preprocess_caete_pbz2.py"  # Options: "preprocess_caete.py" or "preprocess_caete_pbz2.py"
+$SCRIPT_NAME = "preprocess_caete.py"   # Options: "preprocess_caete.py" or "preprocess_caete_pbz2.py"
 
 # Define all preprocessing tasks
 $tasks = @(

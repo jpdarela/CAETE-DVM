@@ -22,7 +22,6 @@ from numpy import float32 as flt
 
 
 sys.path.append("../src")
-
 from _geos import pan_amazon_region
 
 __what__ = "Pre-processing of input data for CAETE model"
@@ -709,7 +708,7 @@ def main():
         'mode': mode,
         'region': 'pan_amazon',
         'n_stations': int(n_stations),
-        'n_timesteps': int(climate_data['tas'].shape[1]),
+        'n_timesteps': int(climate_data['tas'].shape[0]),
         'climate_variables': climate_vars + ['vpd'],
         'soil_variables': soil_vars,
         'output_files': {

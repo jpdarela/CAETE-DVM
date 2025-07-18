@@ -12,8 +12,8 @@ from copy import deepcopy
 
 from netCDF4 import Dataset, MFDataset, MFTime
 from numba import njit
-from numpy.typing import NDArray
-from typing import Generator
+# from numpy.typing import NDArray
+# from typing import Generator
 import numpy as np
 
 
@@ -231,34 +231,6 @@ else:
 # FUNCTIONS & CLASSES
 # ===============================
 
-# def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
-#     """FROM Stack Overflow/GIST, THANKS
-#     Call in a loop to create terminal progress bar
-
-#     @params:
-#         iteration   - Required  : current iteration (Int)
-#         total       - Required  : total iterations (Int)
-#         prefix      - Optional  : prefix string (Str)
-#         suffix      - Optional  : suffix string (Str)
-#         decimals    - Optional  : positive number of decimals in percent complete (Int)
-#         bar_length  - Optional  : character length of bar (Int)
-#     """
-#     RESET = "\033[0m"
-#     CYAN = "\033[96m"
-#     blue_bar = f"{CYAN}{'█'}{RESET}"
-#     bar_utf = b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
-#     str_format = "{0:." + str(decimals) + "f}"
-#     percents = str_format.format(100 * (iteration / float(total)))
-#     filled_length = int(round(bar_length * iteration / float(total)))
-#     bar = blue_bar * filled_length + '-' * (bar_length - filled_length)
-
-#     sys.stdout.write('\r\033[95m%s\033[0m \033[91m|%s|\033[0m \033[94m%s%s\033[0m %s' %
-#                      (prefix, bar, percents, '%', suffix)), # type: ignore
-
-#     if iteration == total:
-#         sys.stdout.write('\n')
-#     sys.stdout.flush()
-
 @njit
 def get_values_at(array, mask):
     size = np.logical_not(mask).sum()
@@ -304,15 +276,32 @@ def get_dataset_size(dataset:MFDataset | Dataset) -> int:
     out = dataset.variables["time"][:].size
     return out
 
-def _read_clim_data_(var:str) -> Generator[NDArray, None, None]:
-    with read_clim_data(var) as dataset:
-        try:
-            zero_dim = get_dataset_size(dataset)
-        except:
-            raise ValueError("Cannot get dataset size")
+def process_climate_variable_vectorized(var: str, temp_mask):
+    """
+    VECTORIZED IMPLEMENTATION: Read all timesteps at once like preprocess_caete.py
+    """
+    print(f"Processing {var} (vectorized)...")
 
-        for i in range(zero_dim):
-            yield dataset.variables[var][i, cc.ymin:cc.ymax, cc.xmin:cc.xmax].data
+    with read_clim_data(var) as dataset:
+        tsize = get_dataset_size(dataset)
+
+        # Read ALL timesteps at once (vectorized)
+        print(f"  Reading all {tsize} timesteps...")
+        regional_data = dataset.variables[var][:, cc.ymin:cc.ymax, cc.xmin:cc.xmax]  # (time, y, x)
+
+        # Extract all station data at once using vectorized indexing
+        ny, nx = temp_mask.shape
+        i_indices, j_indices = np.meshgrid(np.arange(ny), np.arange(nx), indexing='ij')
+        valid_mask = ~temp_mask
+        valid_i = i_indices[valid_mask]
+        valid_j = j_indices[valid_mask]
+
+        # Vectorized extraction: (time, station) -> (station, time)
+        station_data = regional_data[:, valid_i, valid_j].T  # Transpose for pbz2 format
+
+        print(f"  Extracted {len(valid_i)} stations x {tsize} timesteps")
+
+    return station_data.filled(fill_value=station_data.mean())  # Fill NaNs for missing data
 
 def read_soil_data(var):
     if var == 'tn':
@@ -469,7 +458,7 @@ def main():
     dss = [read_clim_data(var) for var in variables]
     times = []
 
-    # Use MFTime to standardize the time dimesion across datasets
+    # Use MFTime to standardize the time dimension across datasets
     for ds in dss:
         if isinstance(ds, MFDataset):
             times.append(MFTime(ds.variables['time']))
@@ -542,42 +531,23 @@ def main():
         grd._load_dict('op', organic_phosphorus)
         grd.write()
 
-    # tsize = get_dataset_size(read_clim_data(variables[0])) # all datasets have the same size
 
-    with read_clim_data(variables[0]) as ds:
-        tsize = get_dataset_size(ds) # all datasets have the same size
+    # VECTORIZED CLIMATE DATA PROCESSING
+    print("Processing climate data with vectorized approach...")
 
+    # Process all variables using vectorized approach
+    climate_data = {}
+    for var in variables:
+        climate_data[var] = process_climate_variable_vectorized(var, temp_mask)
 
-    _data = dict(zip(variables, [np.zeros((ngrid, tsize), dtype=np.float32) for _ in range(len(variables))]))
-
-    hurs_gen = _read_clim_data_('hurs')
-    tas_gen = _read_clim_data_('tas')
-    pr_gen = _read_clim_data_('pr')
-    ps_gen = _read_clim_data_('ps')
-    rsds_gen = _read_clim_data_('rsds')
-    sfcwind_gen = _read_clim_data_('sfcwind')
-
-    # Batch1 ===========================================================
-    i = 0
-    print(f"Reading data: {variables[:3]}{' ' * 20}")
-    # print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    for hurs, tas, pr, j in zip(hurs_gen, tas_gen, pr_gen, range(tsize)):
-        _data["hurs"][:, j] = get_values_at(hurs, temp_mask)
-        _data["tas"][:, j] = get_values_at(tas, temp_mask)
-        _data["pr"][:, j] = get_values_at(pr, temp_mask)
-        # print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
-        i += 1
-    print("Completed reading data for variables: hurs, tas, pr")
-    array_data = _data["hurs"], _data["tas"], _data["pr"]
-
-
-    print("\033[94m Writing data to files \033[0m")
-    # Write data to files in parallel
+    # Write climate data to files in parallel
+    print("\033[94m Writing climate data to files \033[0m")
     tasks = []
+
     # Collect all tasks
-    for var, data in zip(variables[:3], array_data):
+    for var in variables:
         for i, grd in enumerate(input_templates):
-            tasks.append((grd, var, data[i]))
+            tasks.append((grd, var, climate_data[var][i]))
 
     # Write data to files
     print(f"\033[94m  Writing... \033[0m{' ' * 20}")
@@ -585,38 +555,7 @@ def main():
         futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
         concurrent.futures.wait(futures)
 
-    # release memory
-    del array_data
-    _data["hurs"] = None
-    _data["tas"] = None
-    _data["pr"] = None
-    gc.collect()
-
-    # Batch2 ==============================================================
-    tasks = []
-    print(f"Reading data: {variables[3:]}{'' * 20}")
-    # print_progress(i, tsize, prefix='Reading data:', suffix='Complete')
-    i = 0
-    for ps, rsds, sfcwind, j in zip(ps_gen, rsds_gen, sfcwind_gen, range(tsize)):
-        _data["ps"][:, j] = get_values_at(ps, temp_mask)
-        _data["rsds"][:, j] = get_values_at(rsds, temp_mask)
-        _data["sfcwind"][:, j] = get_values_at(sfcwind, temp_mask)
-        # print_progress(i+1, tsize, prefix='Reading data:', suffix='Complete')
-        i += 1
-    print("Completed reading data for variables: ps, rsds, sfcwind")
-    array_data = _data["ps"], _data["rsds"], _data["sfcwind"]
-    # Write data to files in parallel
-    tasks = []
-    # Collect all tasks
-    for var, data in zip(variables[3:], array_data):
-        for i, grd in enumerate(input_templates):
-            tasks.append((grd, var, data[i]))
-
-    # Write data to files
-    print(f"\033[94m  Writing... \033[0m{' ' * 20}")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
-        futures = [executor.submit(process_gridcell, grd, var, data) for grd, var, data in tasks]
-        concurrent.futures.wait(futures)
+    print("Completed processing all climate variables")
 
 
 def test(var, y=160, x=236, sample=500):
