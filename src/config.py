@@ -32,31 +32,62 @@ import tomllib
    There is a class that read parameters stored in a toml file.
    The configurations can be accessed using the fetch_config function."""
 
-config_file = Path(__file__).parent / "caete.toml"
-fortran_runtime = None
 
+# Path to the configuration file
+# This is the default path to the caete.toml file.
+config_file = Path(__file__).parent / "caete.toml"
+
+# C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin\compiler
+
+# Path to the fortran runtime
+# This is used to import the caete_module in windows systems.
+fortran_runtime = None
 # IN windows systems, the fortran runtime is needed to import the caete_module.
-# Find path to the fortran compiler runtime, used in windows systems.
+# Find path to the fortran compiler root, used in windows systems.
 if sys.platform == "win32":
-    ifort_compilers_env = [ "IFORT_COMPILER25", "IFORT_COMPILER24", "IFORT_COMPILER23"]
+    ifort_compilers_env = [ "CMPLR_ROOT",
+                            "ONEAPI_ROOT",
+                            "IFORT_COMPILER25",
+                            "IFORT_COMPILER24",
+                            "IFORT_COMPILER23",
+                            "FORTRAN_COMPILER",
+                            "IFORT_COMPILER",
+                            'IFORT_COMPILER_DIR',
+                            'IFORT_COMPILER_ROOT']
     #
     # Check if any of the environment variables are set
+    # This env var should point to the root directory of the fortran compiler
+    # e.g. C:\Program Files (x86)\Intel\oneAPI\compiler\latest
     for env_var in ifort_compilers_env:
         if env_var in os.environ:
-            fortran_runtime = Path(os.environ[env_var]) / "bin"
+            if env_var == "ONEAPI_ROOT":
+                # If ONEAPI_ROOT is set, use it as the fortran runtime path
+                # This should point to the root directory of the oneAPI installation
+                # e.g. C:\Program Files (x86)\Intel\oneAPI\compiler\latest
+                fortran_runtime = Path(os.environ[env_var]) / "compiler" / "latest" / "bin"
+            else:
+                fortran_runtime = Path(os.environ[env_var]) / "bin"
+
             fortran_runtime = fortran_runtime.resolve()
             # print(f"Using Fortran runtime from environment variable {env_var}: {fortran_runtime}")
+
+            if not fortran_runtime.exists():
+                # fallback to the next environment variable
+                continue
             break
     else:
         if "FC_RUNTIME" in os.environ:
             # If FC_RUNTIME is set, use it as the fortran runtime path
+            # THis should point to the directory containing the fortran compiler dlls
+            # e.g. C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin
             fortran_runtime = Path(os.environ["FC_RUNTIME"]).resolve()
         else:
             # If none of the environment variables are set, use a default path
             # This is the default path for Intel oneAPI Fortran compiler runtime
             # Adjust this path according to your installation
-            fortran_runtime = Path(r"C:\Program Files (x86)\Intel\oneAPI\compiler\2025.1\bin").resolve()
-        # print(f"Using default Fortran runtime path: {fortran_runtime}")
+            fortran_runtime = Path(r"C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin").resolve()
+            # print(f"Using default Fortran runtime path (last): {fortran_runtime}")
+
 
 if sys.platform == "win32":
     # Check if the fortran runtime path exists
@@ -72,14 +103,49 @@ def get_fortran_runtime() -> Path:
     else:
         return None
 
+# Keep track of added directories
+_added_dll_directories = set()
+
 def update_sys_pathlib(lib) -> None:
-    if sys.platform == "win32":
-        try:
-            os.add_dll_directory(lib)
-        except:
-            raise ImportError("Could not add the DLL directory to the PATH")
+    global _added_dll_directories
+    if sys.platform != "win32":
+        # On non-Windows systems, we don't need to add DLL directories
+        return
+
+    if isinstance(lib, str):
+        lib_path = lib
+    elif isinstance(lib, Path):
+        lib_path = str(lib)
     else:
-        pass
+        # Handle other types recursively...
+        if isinstance(lib, (list, tuple, set)):
+            for l in lib:
+                update_sys_pathlib(l)
+            return
+        elif isinstance(lib, dict):
+            for k, v in lib.items():
+                update_sys_pathlib(v)
+            return
+    if lib_path in _added_dll_directories:
+        # print(f"Directory {lib_path} already added to the PATH.")
+        return  # Already added, skip
+
+    try:
+        os.add_dll_directory(lib_path)
+        _added_dll_directories.add(lib_path)
+        # print(f"Added DLL directory: {lib_path}")
+    except OSError as e:
+        if "directory has already been added" in str(e).lower():
+            _added_dll_directories.add(lib_path)  # Track it anyway
+            return  # Already added by another process/module
+        else:
+            raise ImportError(f"Could not add the DLL directory to the PATH: {e}")
+
+
+if sys.platform == "win32":
+    # Add the fortran runtime path to the system path
+    # This is needed to import the caete_module in windows systems
+    update_sys_pathlib(get_fortran_runtime())
 
 
 class Config:
@@ -120,6 +186,6 @@ def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
 
 # Can be used in the code to get the parameters any the toml file
 def fetch_config(config: Union[str, Path] = config_file) -> Config:
-    """ Get parameters from the a toml file.
+    """ Get parameters from the  caete.toml file.
     Returns a Config object"""
     return Config(_fetch_config_parameters(config))

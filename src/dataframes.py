@@ -24,8 +24,8 @@
 # and create gridded and table outputs.
 # Author: Joao Paulo Darela Filho
 import argparse
-import gc
 import os
+import gc
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
@@ -40,8 +40,7 @@ from numba import jit
 
 from caete_jit import pft_area_frac64
 from config import fetch_config
-from _geos import pan_amazon_region, get_region
-
+from _geos import pan_amazon_region, get_region, find_coordinates_xy
 if sys.platform == "win32":
     from config import fortran_runtime, update_sys_pathlib
     update_sys_pathlib(fortran_runtime)
@@ -179,7 +178,7 @@ class gridded_data:
                  spin_slice: Union[int, Tuple[int, int], None]
                  ) -> Tuple[NDArray, Union[Dict, NDArray, List, Tuple], Union[int, float], Union[int, float]]:
         """ Reads the data from a gridcell and returns a tuple with the following keys:
-        time, coord, data holding data to be transformed.
+        time, coord, data, holding data to be transformed.
 
         Args:
             grd (grd_mt): A gridcell object
@@ -221,7 +220,7 @@ class gridded_data:
         output = []
         # nproc = min(len(r), 56)
         nproc = config.multiprocessing.nprocs # type_ignore
-        nproc = max(1, nproc) # Ensure at least one thread is used
+        nproc = max(1, 56) # Ensure at least one thread is used
         with ThreadPoolExecutor(max_workers=nproc) as executor:
             futures = [executor.submit(gridded_data.read_grd, grd, variables, spin_slice) for grd in r]
             for future in futures:
@@ -616,7 +615,7 @@ class table_data:
     @staticmethod
     def _indices_to_latlon(y: int, x: int, res_y: float = 0.5, res_x: float = 0.5) -> Tuple[float, float]:
         """Convert grid indices to latitude/longitude using _geos functionality"""
-        from _geos import find_coordinates_xy
+
         return find_coordinates_xy(y, x, res_y, res_x)
 
     @staticmethod
@@ -692,7 +691,7 @@ class table_data:
                 all_dfs.append(chunk_combined)
 
             # Force garbage collection between chunks
-            import gc
+
             gc.collect()
 
         # Combine all chunks
@@ -869,7 +868,6 @@ class table_data:
 
         # Use PyArrow for partitioned writing
         try:
-            import pyarrow as pa
             import pyarrow.parquet as pq
 
             # Convert to PyArrow table
@@ -935,7 +933,6 @@ class table_data:
                 all_dfs.append(chunk_combined)
 
             # Force garbage collection between chunks
-            import gc
             gc.collect()
 
         # Combine all chunks
@@ -1115,7 +1112,8 @@ class output_manager:
         """
         results = (Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
                    Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),
-                   Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"))
+                   Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"),
+                   Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"))
 
         variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
                     "photo", "npp", "evapm", "lai", "f5", "wsoil",
@@ -1136,7 +1134,8 @@ class output_manager:
         print("Consolidating daily outputs for cities scenarios...")
         experiments = ["../outputs/cities_MPI-ESM1-2-HR_hist",
                        "../outputs/cities_MPI-ESM1-2-HR-ssp370",
-                       "../outputs/cities_MPI-ESM1-2-HR-ssp585"]
+                       "../outputs/cities_MPI-ESM1-2-HR-ssp585",
+                       "../outputs/cities_MPI-ESM1-2-HR-piControl"]
 
         for experiment_dir in experiments:
             res = Path(experiment_dir).resolve()

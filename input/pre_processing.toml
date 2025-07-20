@@ -1,6 +1,10 @@
 # Define the path to the data files
 climate_data = "C:\\Users\\darel\\OneDrive\\Desktop\\CAETE-DVM\\input"
 
+# Resolution settings of climate and soil data
+yres = 0.5 # Define the resolution in degrees
+xres = 0.5 # Define the resolution in degrees
+
 mask_file = "./mask/mask_raisg-360-720.npy"
 soil_data = "./soil"
 

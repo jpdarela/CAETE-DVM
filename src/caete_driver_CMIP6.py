@@ -154,19 +154,19 @@ if __name__ == "__main__":
     r_ssp585.clean_model_state()
     fn.save_state_zstd(r_ssp585, Path(f"{ssp585_out}_output.psz"))
 
-    # # piControl
-    # r_piControl:region = fn.load_state_zstd(piControl_state)
-    # print("\nUpdate input to piControl")
-    # r_piControl.update_input(piControl_files, co2_path_hist)
-    # # Update region dump directory piControl
-    # piControl_out = "cities_MPI-ESM1-2-HR-piControl"
-    # r_piControl.update_dump_directory(piControl_out)
-    # run_breaks = fn.create_run_breaks(1901, 2050, 30)
-    # for period in run_breaks:
-    #     print(f"Running period {period[0]} - {period[1]}")
-    #     r_piControl.run_region_starmap(fn.transient_piControl_brk, period)
-    # r_piControl.clean_model_state()
-    # fn.save_state_zstd(r_piControl, Path(f"{piControl_out}_output.psz"))
+    # piControl
+    r_piControl:region = fn.load_state_zstd(piControl_state)
+    print("\nUpdate input to piControl")
+    r_piControl.update_input(piControl_files, co2_path_hist)
+    # Update region dump directory piControl
+    piControl_out = "cities_MPI-ESM1-2-HR-piControl"
+    r_piControl.update_dump_directory(piControl_out)
+    run_breaks = fn.create_run_breaks(1901, 2100, 30)
+    for period in run_breaks:
+        print(f"Running period {period[0]} - {period[1]}")
+        r_piControl.run_region_starmap(fn.transient_piControl_brk, period)
+    r_piControl.clean_model_state()
+    fn.save_state_zstd(r_piControl, Path(f"{piControl_out}_output.psz"))
 
     # END of the simulation
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")

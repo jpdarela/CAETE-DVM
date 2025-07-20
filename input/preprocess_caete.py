@@ -364,13 +364,11 @@ def create_station_coordinates():
     valid_i = i_indices[valid_mask]
     valid_j = j_indices[valid_mask]
 
-    station_count = len(valid_i)
-
     # Calculate global coordinates (vectorized)
     global_y = valid_i + cc.ymin
     global_x = valid_j + cc.xmin
 
-    # Convert to lat/lon (vectorized)
+    # Convert to lat/lon (vectorized) !! Assuming 0.5 degree resolution
     lats = 90.0 - (global_y + 0.5) * 0.5
     lons = -180.0 + (global_x + 0.5) * 0.5
 
@@ -417,7 +415,12 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
 
     # Get dimensions
     n_stations = len(lats)
-    n_time = climate_data['tas'].shape[1]
+    n_times = climate_data['tas'].shape[0]  # Assuming all climate variables have same time dimension
+
+    # OPTIMAL CHUNKING for access pattern (reading all time for selected stations)
+    time_chunk = n_times
+    station_chunk = min(128, n_stations)  # Chunk 128 stations
+    chunks = (time_chunk, station_chunk)
 
     with Dataset(output_file, 'w', format='NETCDF4') as nc:
         # Global attributes
@@ -436,9 +439,9 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         station_var = nc.createVariable("station", 'i4', ("station",))
         lat_var = nc.createVariable("lat", 'f4', ("station",))
         lon_var = nc.createVariable("lon", 'f4', ("station",))
+
         station_name_var = nc.createVariable("station_name", 'S1', ("station", "string_length"))
         station_name_var._Encoding = 'ascii'
-
         # Fill coordinate variables
         time_var[:] = metadata['time']['time_data']
         station_var[:] = arange(n_stations, dtype='i4')
@@ -446,7 +449,7 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         lon_var[:] = lons
 
         station_names_padded = np.array([name.ljust(15)[:15] for name in station_names], dtype='S15')
-        station_name_var[:] = stringtochar(station_names_padded)
+        station_name_var[:] = stringtochar(station_names_padded, encoding='ascii')
 
         # COORDINATE ATTRIBUTES
         time_var.units = metadata['time']['units']
@@ -473,9 +476,9 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         # Create climate variables
         for var_name, data in climate_data.items():
             var_obj = nc.createVariable(var_name, 'f4', ("time", "station"),
-                                      fill_value=1e+20, zlib=True, complevel=4)
-            # TRANSPOSE data from (station, time) to (time, station)
-            var_obj[:] = data  # Transpose the data
+                                      fill_value=1e+20, compression='zlib', complevel=1,
+                                      chunksizes=chunks)
+            var_obj[:] = data
 
             var_obj.units = caete_var_metadata[var_name][0]
             if caete_var_metadata[var_name][1] is not None:
@@ -485,8 +488,9 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
 
         # Add VPD with CDO-compatible dimensions
         vpd_var = nc.createVariable("vpd", 'f4', ("time", "station"),
-                                   fill_value=1e+20, zlib=True, complevel=4)
-        vpd_var[:] = vpd_data  # Transpose the data
+                                   fill_value=1e+20, compression='zlib', complevel=1,
+                                   chunksizes=chunks)
+        vpd_var[:] = vpd_data
         vpd_var.units = caete_var_metadata['vpd'][0]
         vpd_var.standard_name = caete_var_metadata['vpd'][1]
         vpd_var.long_name = "Vapor Pressure Deficit for CAETE"
@@ -495,7 +499,7 @@ def write_caete_netcdf(climate_data, soil_data, vpd_data, lats, lons, station_na
         # Create soil variables (remain as station-only dimensions)
         for var_name, data in soil_data.items():
             var_obj = nc.createVariable(var_name, 'f4', ("station",),
-                                      fill_value=1e+20, zlib=True, complevel=4)
+                                      fill_value=1e+20, contiguous=True)
             var_obj[:] = data
             var_obj.units = caete_var_metadata[var_name][0]
             var_obj.long_name = f"{var_name.upper()} for CAETE"

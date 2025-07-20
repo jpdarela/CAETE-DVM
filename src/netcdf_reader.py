@@ -25,11 +25,18 @@ import netCDF4 as nc
 from mpi4py import MPI
 import argparse
 
+# Check if the netCDF4 module has parallel support for NetCDF4 via HDF5 parallel I/O.
+# This is necessary for parallel reading of NetCDF files. PnetCDF not yet supported.
+if nc.__has_parallel4_support__ :
+    pass
+else:
+    print("ERROR: NetCDF4 parallel support is not enabled. Please install the parallel version of netCDF4.", file=sys.stderr)
+    sys.exit(1)
 
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Parallel NetCDF variable reader')
-    parser.add_argument('nc_file', help='Path to NetCDF file')
+    parser = argparse.ArgumentParser(description='Parallel NetCDF variable reader. Output is a pickled dictionary of variable data to stdout.')
+    parser.add_argument('nc_file', help='Path to NetCDF4-HDF5 file')
     parser.add_argument('indices', help='Comma-separated list of station indices')
     parser.add_argument('variables', nargs='+', help='Variable names to read')
     parser.add_argument('--var-type', choices=['time', 'station'], default='time',

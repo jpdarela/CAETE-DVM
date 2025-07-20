@@ -18,10 +18,10 @@ import netCDF4 as nc
 import polars as pl
 
 from caete import str_or_path, read_bz2_file
-from _geos import find_coordinates
 from config import fetch_config
 
 cfg = fetch_config()
+
 
 class base_handler(ABC):
     """
@@ -95,6 +95,40 @@ class base_handler(ABC):
         """
         pass
 
+    @abstractmethod
+    def close(self):
+        """
+        Abstract method to close any open resources.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    @abstractmethod
+    def __enter__(self):
+        """
+        Abstract method for context manager entry.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Abstract method for context manager exit.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    # Optional: Add __del__ as abstract too
+    def __del__(self):
+        """
+        Default cleanup method that calls close().
+        Subclasses can override if needed.
+        """
+        try:
+            self.close()
+        except:
+            pass  # Ignore errors during cleanup
 
     # Common methods for all handlers
     def _find_closest_coordinate(self, target_lat, target_lon, nc_lats, nc_lons):
@@ -120,8 +154,7 @@ class base_handler(ABC):
 
 class bz2_handler(base_handler):
     """
-    A placeholder class for handling bz2 compressed files. Deprecated in favor of netCDF handler.
-    This will be maintained for backward compatibility but newer users should use netcdf_handler.
+    A placeholder class for handling bz2 compressed files (Fastest option).
     This class is intended to read bz2 files containing input data for the CAETE model.
     """
     def __init__(self, fpath, gridlist_df):
@@ -306,6 +339,33 @@ class bz2_handler(base_handler):
             raise ValueError("No input files found for the given gridlist DataFrame")
 
 
+    def close(self):
+        """
+        Close method for bz2_handler (no-op since bz2 files don't stay open).
+        """
+        # bz2_handler doesn't keep files open, so nothing to close
+        # But we implement this for consistency with the interface
+        pass
+
+    def __enter__(self):
+        """
+        Support for context manager protocol.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Support for context manager protocol.
+        """
+        self.close()
+
+    def __del__(self):
+        """
+        Cleanup method (no-op for bz2_handler).
+        """
+        self.close()
+
+
 class netcdf_handler(base_handler):
     """
     A class for handling NetCDF input files for the CAETE model.
@@ -343,17 +403,21 @@ class netcdf_handler(base_handler):
         if not self.isfile:
             raise ValueError(f"Provided path {self.fpath} is not a valid file file")
         self.nc_file = self.fpath
+        self.nc_data = None
 
-        # Open the NetCDF file with optimal chunking for faster access
         try:
             self.nc_data = nc.Dataset(self.nc_file, 'r')
+            # Pre-load station indices and prepare for data loading
+            self._station_indices = self._map_station_indices()
+            self.mpi = cfg.input_handler.mp
         except Exception as e:
-            raise IOError(f"Error opening NetCDF file: {e}")
-
-        # Pre-load station indices and prepare for data loading
-        self._station_indices = self._map_station_indices()
-
-        self.mpi = cfg.input_handler.mp  # Use MPI if configured
+            # Ensure file is closed if initialization fails
+            if self.nc_data is not None:
+                try:
+                    self.nc_data.close()
+                except:
+                    pass  # Ignore errors during cleanup
+            raise IOError(f"Error during NetCDF handler initialization: {e}")
 
     def _map_station_indices(self):
         """
@@ -585,26 +649,9 @@ class netcdf_handler(base_handler):
         # Get the station_name variable
         station_name_var = self.nc_data.variables['station_name']
 
-        # NetCDF stores character arrays as multi-dimensional arrays
-        # Convert to a list of strings
-        if len(station_name_var.shape) == 2:
-            # For 2D character arrays (common in netCDF)
-            # Load entire array at once for better performance
-            char_array = station_name_var[:].astype(str)
-
-            stations = []
-            for i in range(char_array.shape[0]):
-                # Convert char array to string and strip any padding
-                name = ''.join(char_array[i, :]).strip()
-                stations.append(name)
-
-            self._station_names_cache = stations
-            return stations
-        else:
-            # For 1D string arrays (less common)
-            names = [str(name).strip() for name in station_name_var[:]]
-            self._station_names_cache = names
-            return names
+        # We assume 1D string arrays for the station names
+        names = [str(name).strip() for name in station_name_var[:]]
+        return names
 
     def _find_coordinate_variable(self, coord_type):
         """
@@ -904,10 +951,18 @@ class netcdf_handler(base_handler):
 
     def close(self):
         """
-        Close the NetCDF file.
+        Close the NetCDF file safely.
         """
-        if hasattr(self, 'nc_data'):
-            self.nc_data.close()
+        if hasattr(self, 'nc_data') and self.nc_data is not None:
+            try:
+                if self.nc_data.isopen():
+                    self.nc_data.close()
+            except Exception:
+                # Ignore errors during close (file might already be closed)
+                pass
+            finally:
+                self.nc_data = None  # Mark as closed
+
 
     def __enter__(self):
         """
@@ -927,6 +982,13 @@ class netcdf_handler(base_handler):
         """
         return len(self.gridlist)
 
+    def __del__(self):
+        """
+        Ensure the NetCDF file is closed when the handler is deleted.
+        """
+        self.close()
+
+
 class input_handler:
     """A unified input handler for CAETÊ input data."""
 
@@ -943,6 +1005,7 @@ class input_handler:
         # Initialize the handler based on input type
         self._handler = None
         self._init_handler()
+        self.metadata = self._handler.load_metadata()
 
         # Generator state
         self._current_batch = 0
@@ -972,6 +1035,10 @@ class input_handler:
         chunk_size = min(self.batch_size, len(self.gridlist) - start_index)
         return self.gridlist.slice(start_index, chunk_size)
 
+    def get_metadata(self):
+        """load metadata from the handler."""
+        return self.metadata
+
     def _load_batch_data(self, batch_index):
         """Load data for a specific batch."""
         batch_gridlist = self._get_batch_gridlist(batch_index)
@@ -981,12 +1048,10 @@ class input_handler:
 
         # Load data and metadata
         data = self._handler.load_data()
-        metadata = self._handler.load_metadata()
 
         return {
             'batch_index': batch_index,
             'data': data,
-            'metadata': metadata,
             'gridlist': batch_gridlist,
             'batch_size': len(batch_gridlist)
         }
@@ -995,7 +1060,8 @@ class input_handler:
         """Asynchronously preload the next batch."""
         if batch_index < self._total_batches:
             if self._executor is None:
-                self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1,
+                                                                       thread_name_prefix='preloadInputDataBatchExecutor')
             return self._executor.submit(self._load_batch_data, batch_index)
         return None
 
@@ -1015,15 +1081,27 @@ class input_handler:
             return
 
         try:
+            # Reset any existing futures
+            self._next_batch_future = None
+
             # Preload first batch
             self._next_batch_future = self._preload_next_batch(0)
 
             for batch_index in range(self._total_batches):
                 # Get current batch (either from future or load synchronously)
                 if self._next_batch_future is not None:
-                    current_batch = self._next_batch_future.result()
+                    try:
+                        current_batch = self._next_batch_future.result()
+                    except concurrent.futures.CancelledError:
+                        # Future was cancelled, load synchronously
+                        current_batch = self._load_batch_data(batch_index)
+                        print(f"[WARN] Batch {batch_index} was cancelled, loading synchronously")
+                    except Exception as e:
+                        # Other errors - re-raise
+                        raise e
                 else:
                     current_batch = self._load_batch_data(batch_index)
+                    print(f"[WARN] No next batch future, loading batch {batch_index} synchronously")
 
                 # Start preloading next batch asynchronously
                 next_batch_index = batch_index + 1
@@ -1037,8 +1115,14 @@ class input_handler:
         finally:
             # Clean up executor
             if self._executor is not None:
+                # Cancel any pending futures
+                if self._next_batch_future is not None and not self._next_batch_future.done():
+                    self._next_batch_future.cancel()
+
                 self._executor.shutdown(wait=True)
                 self._executor = None
+
+            self._next_batch_future = None
 
     def update(self, fpath, gridlist_df=None):
         """
@@ -1052,10 +1136,17 @@ class input_handler:
         if not fpath:
             raise ValueError("fpath is required")
 
-        # Clean up existing executor if running
+        # Clean up existing executor if running - WAIT for any pending operations
         if self._executor is not None:
+            # Cancel any pending futures first
+            if self._next_batch_future is not None and not self._next_batch_future.done():
+                self._next_batch_future.cancel()
+
             self._executor.shutdown(wait=True)
             self._executor = None
+
+        # Reset futures
+        self._next_batch_future = None
 
         # Update file path
         self.fpath = str_or_path(fpath)
@@ -1072,21 +1163,11 @@ class input_handler:
                 self._handler.close()
 
         self._init_handler()
+        self.metadata = self._handler.load_metadata()
 
         # Reset generator state
         self._calculate_batches()
-        self._next_batch_future = None
 
-    def reset_generator(self):
-        """Reset the generator to start from the beginning."""
-        # Clean up existing executor if running
-        if self._executor is not None:
-            self._executor.shutdown(wait=True)
-            self._executor = None
-
-        # Reset state
-        self._current_batch = 0
-        self._next_batch_future = None
 
     @property
     def current_batch_index(self):
@@ -1113,12 +1194,17 @@ class input_handler:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Clean up resources when exiting context manager."""
+        # Cancel any pending futures first
+        if self._next_batch_future is not None and not self._next_batch_future.done():
+            self._next_batch_future.cancel()
+
         if self._executor is not None:
             self._executor.shutdown(wait=True)
             self._executor = None
 
         if self._handler is not None and hasattr(self._handler, 'close'):
             self._handler.close()
+
 
 if __name__ == "__main__":
     import time
@@ -1129,53 +1215,17 @@ if __name__ == "__main__":
     nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
     input_dir = '../input/20CRv3-ERA5/obsclim'
 
-    df = gridlist_df.slice(0, 20)  # Use a slice for testing
+    df = gridlist_df.slice(0, 128)  # Use a slice for testing
 
-    if cfg.input_handler.input_type == 'netcdf':
-        handler = input_handler(nc_file_path, df, batch_size=10)
-
-        # Process all batches
-        for batch in handler.batch_generator():
-            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-            print(f"Batch size: {batch['batch_size']}")
-            # Process batch['data'] and batch['metadata']
-            print(batch['data'])  # Example processing step
-            print(batch['metadata'])  # Example processing step
-
-        print("All batches processed.")
-        print(f"Total batches: {handler.total_batches}")
-        print("Changing file path and updating gridlist...")
-        handler.update(nc_file_path, df)
-
-        for batch in handler.batch_generator():
-            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-            print(f"Batch size: {batch['batch_size']}")
-            # Process batch['data'] and batch['metadata']
-            print(batch['data'])  # Example processing step
-            print(batch['metadata'])  # Example processing step
-
-    elif cfg.input_handler.input_type == 'bz2':
-        handler = input_handler(input_dir, df, batch_size=10)
-
-        # Process all batches
-        for batch in handler.batch_generator():
-            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-            print(f"Batch size: {batch['batch_size']}")
-            # Process batch['data'] and batch['metadata']
-            print(batch['data'])  # Example processing step
-            print(batch['metadata'])  # Example processing step
-
-        print("All batches processed.")
-        print(f"Total batches: {handler.total_batches}")
-        print("Changing file path and updating gridlist...")
-        handler.update(input_dir, df)
-
-        for batch in handler.batch_generator():
-            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-            print(f"Batch size: {batch['batch_size']}")
-            # Process batch['data'] and batch['metadata']
-            print(batch['data'])  # Example processing step
-            print(batch['metadata'])  # Example processing step
+    # # Example usage of netcdf_handler
+    # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
+    # s1 = time.perf_counter()
+    # handler = netcdf_handler(nc_file_path, df)
+    #     # Get data for all stations
+    # data_nc = handler.load_data()
+    # metadata_nc = handler.load_metadata()
+    # s2 = time.perf_counter() - s1
+    # print(f"netcdf_handler read data in {s2:.2f} seconds with {len(data_nc)} stations")
 
     # # Example usage of bz2_handler
     # input_dir = '../input/20CRv3-ERA5/obsclim'
@@ -1221,3 +1271,62 @@ if __name__ == "__main__":
     #         print("Data loaded successfully.")
     #         print(f"Loaded {len(data)} stations.")
     #         print("Time Metadata:", metadata)
+
+
+
+# ## TEST input_handler class
+    if cfg.input_handler.input_type == 'netcdf':
+        start = time.perf_counter()
+
+        with input_handler(nc_file_path, gridlist_df, batch_size=128) as handler:
+            # handler = input_handler(nc_file_path, gridlist_df, batch_size=128)
+
+            mtdt_nc = handler.get_metadata()
+            # Process all batches
+            for batch in handler.batch_generator():
+                print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
+                print(f"Batch size: {batch['batch_size']}")
+                # Process batch['data'] and batch['metadata']
+                # print(batch['data'])  # Example processing step
+                # print(batch['metadata'])  # Example processing step
+
+            print("All batches processed.")
+            print(f"Total batches: {handler.total_batches}")
+            print("Changing file path and updating gridlist...")
+            handler.update(nc_file_path, df)
+            mtdt_nc_updated = handler.get_metadata()
+            for batch in handler.batch_generator():
+                print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
+                print(f"Batch size: {batch['batch_size']}")
+                # Process batch['data'] and batch['metadata']
+                # print(batch['data'])  # Example processing
+
+            end = time.perf_counter() - start
+            print(f"input_handler with NetCDF took {end:.2f} seconds to process {len(handler.gridlist)} stations.")
+
+    elif cfg.input_handler.input_type == 'bz2':
+        start = time.perf_counter()
+        handler = input_handler(input_dir, gridlist_df, batch_size=128)
+
+        # Process all batches
+        mtdt_bz = handler.get_metadata()
+        for batch in handler.batch_generator():
+            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
+            print(f"Batch size: {batch['batch_size']}")
+            # Process batch['data'] and batch['metadata']
+            # print(batch['data'])  # Example processing step
+            # print(batch['metadata'])  # Example processing step
+
+        print("All batches processed.")
+        print(f"Total batches: {handler.total_batches}")
+        print("Changing file path and updating gridlist...")
+        handler.update(input_dir, df)
+        mtdt_bz = handler.get_metadata()
+        for batch in handler.batch_generator():
+            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
+            print(f"Batch size: {batch['batch_size']}")
+            # Process batch['data'] and batch['metadata']
+            print(batch['data'])  # Example processing step
+            print(batch['metadata'])  # Example processing step
+        end = time.perf_counter() - start
+        print(f"input_handler with bz2 took {end:.2f} seconds to process {len(handler.gridlist)} stations.")

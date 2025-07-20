@@ -147,6 +147,7 @@ class region:
         # Some magic methods are defined to deal with this list
         self.gridcells:List[grd_mt] = []
 
+
     def load_gridcells(self):
         """Load the gridcells from the intermediate files in parallel using threads, keeping order."""
         if not self.file_objects:
@@ -167,21 +168,10 @@ class region:
             self.gridcells.extend(gridcell_list)
 
 
-    # def load_gridcells(self):
-    #     """Load the gridcells from the intermediate files"""
-    #     if not self.file_objects:
-    #         raise ValueError("No file objects found. Cannot read intermediate files")
-    #     for f in self.file_objects:
-    #         with open(f, 'rb') as fh:
-    #             gridcells = load(fh)
-    #         for gridcell in gridcells:
-    #             self.gridcells.append(gridcell)
-
-
     def unload_gridcells(self):
         """Unload the gridcells to the intermediate files"""
         if not self.file_objects:
-            raise ValueError("No file objects found. Cannot read intermediate files")
+            raise ValueError("No file objects found. write read intermediate files")
         if not self.gridcells:
             raise ValueError("No gridcells found. Cannot save intermediate files")
         # Divide the gridcelss in self.gridcells into chunks and save them to the intermediate files
@@ -572,18 +562,18 @@ class region:
 
     def __del__(self):
         """Ensure proper cleanup of multiprocessing resources."""
-        # try:
-        #     if hasattr(self, 'gridcells') and self.gridcells:
-        #         for gridcell in self.gridcells:
-        #             if hasattr(gridcell, 'outputs'):
-        #                 gridcell.outputs.clear()
-        #             if hasattr(gridcell, 'metacomm_output'):
-        #                 gridcell.metacomm_output.clear()
-        # except Exception as e:
-        #     print(f"Error during cleanup: {e}")
-        # finally:
-        #     # Explicitly release the global lock if necessary
-        global lock
-        if lock:
-            lock = None
+        try:
+            if hasattr(self, 'gridcells') and self.gridcells:
+                for gridcell in self.gridcells:
+                    if hasattr(gridcell, 'outputs'):
+                        gridcell.outputs.clear()
+                    if hasattr(gridcell, 'metacomm_output'):
+                        gridcell.metacomm_output.clear()
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+        finally:
+            # Explicitly release the global lock if necessary
+            global lock
+            if lock:
+                lock = None
 

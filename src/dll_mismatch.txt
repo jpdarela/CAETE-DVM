@@ -1,0 +1,338 @@
+In [5]: run runtime_dlls.py --loaded-dlls
+
+Loaded DLLs (69):
+  _asyncio.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_asyncio.pyd
+  _bz2.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_bz2.pyd
+  _ctypes.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_ctypes.pyd
+  _decimal.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_decimal.pyd
+  _hashlib.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_hashlib.pyd
+  _lzma.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_lzma.pyd
+  _overlapped.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_overlapped.pyd
+  _queue.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_queue.pyd
+  _socket.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_socket.pyd
+  _sqlite3.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_sqlite3.pyd
+  _ssl.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_ssl.pyd
+  _uuid.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_uuid.pyd
+  advapi32.dll: C:\WINDOWS\System32\ADVAPI32.dll
+  bcrypt.dll: C:\WINDOWS\SYSTEM32\bcrypt.dll
+  bcryptprimitives.dll: C:\WINDOWS\System32\bcryptprimitives.dll
+  combase.dll: C:\WINDOWS\System32\combase.dll
+  common_clang64.dll: .\common_clang64.dll
+  concrt140.dll: .\concrt140.dll
+  crypt32.dll: C:\WINDOWS\System32\CRYPT32.dll
+  gdi32.dll: C:\WINDOWS\System32\GDI32.dll
+  gdi32full.dll: C:\WINDOWS\System32\gdi32full.dll
+  imm32.dll: C:\WINDOWS\System32\IMM32.DLL
+  iphlpapi.dll: C:\WINDOWS\SYSTEM32\IPHLPAPI.DLL
+  kernel.appcore.dll: C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+  kernel32.dll: C:\WINDOWS\System32\KERNEL32.DLL
+  kernelbase.dll: C:\WINDOWS\System32\KERNELBASE.dll
+  libcrypto-3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\libcrypto-3.dll
+  libffi-8.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\libffi-8.dll
+  libifcoremd.dll: .\libifcoremd.dll
+  libiomp5md.dll: .\libiomp5md.dll
+  libircmd.dll: .\libircmd.dll
+  libmmd.dll: .\libmmd.dll
+  libssl-3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\libssl-3.dll
+  msvcp140.dll: .\msvcp140.dll
+  msvcp140_1.dll: .\msvcp140_1.dll
+  msvcp140_2.dll: .\msvcp140_2.dll
+  msvcp140_atomic_wait.dll: .\msvcp140_atomic_wait.dll
+  msvcp_win.dll: C:\WINDOWS\System32\msvcp_win.dll
+  msvcrt.dll: C:\WINDOWS\System32\msvcrt.dll
+  mswsock.dll: C:\WINDOWS\system32\mswsock.dll
+  ntdll.dll: C:\WINDOWS\SYSTEM32\ntdll.dll
+  ole32.dll: C:\WINDOWS\System32\ole32.dll
+  oleaut32.dll: C:\WINDOWS\System32\OLEAUT32.dll
+  psapi.dll: C:\WINDOWS\System32\psapi.dll
+  pyexpat.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\pyexpat.pyd
+  python.exe: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python.exe
+  python3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python3.DLL
+  python311.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python311.dll
+  pywintypes311.dll: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\pywin32_system32\pywintypes311.dll
+  rpcrt4.dll: C:\WINDOWS\System32\RPCRT4.dll
+  sechost.dll: C:\WINDOWS\System32\sechost.dll
+  secur32.dll: C:\WINDOWS\SYSTEM32\secur32.dll
+  select.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\select.pyd
+  shcore.dll: C:\WINDOWS\System32\shcore.dll
+  shell32.dll: C:\WINDOWS\System32\shell32.DLL
+  sqlite3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\sqlite3.dll
+  sspicli.dll: C:\WINDOWS\SYSTEM32\SSPICLI.DLL
+  svml_dispmd.dll: .\svml_dispmd.dll
+  ucrtbase.dll: C:\WINDOWS\System32\ucrtbase.dll
+  unicodedata.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\unicodedata.pyd
+  user32.dll: C:\WINDOWS\System32\USER32.dll
+  vcruntime140.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140.dll
+  vcruntime140_1.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140_1.dll
+  version.dll: C:\WINDOWS\SYSTEM32\VERSION.dll
+  win32api.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32api.pyd
+  win32process.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32process.pyd
+  win32u.dll: C:\WINDOWS\System32\win32u.dll
+  wintypes.dll: C:\WINDOWS\System32\wintypes.dll
+  ws2_32.dll: C:\WINDOWS\System32\WS2_32.dll
+
+In [6]: import caete_module as caete
+---------------------------------------------------------------------------
+ImportError                               Traceback (most recent call last)
+Cell In[6], line 1
+----> 1 import caete_module as caete
+
+ImportError: DLL load failed while importing caete_module: The specified module could not be found.
+
+In [7]: import caete_module as caete
+
+In [8]: run runtime_dlls.py --loaded-dlls
+
+
+Loaded DLLs (85):
+  _asyncio.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_asyncio.pyd
+  _bounded_integers.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_bounded_integers.cp311-win_amd64.pyd
+  _bz2.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_bz2.pyd
+  _common.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_common.cp311-win_amd64.pyd
+  _ctypes.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_ctypes.pyd
+  _decimal.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_decimal.pyd
+  _generator.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_generator.cp311-win_amd64.pyd
+  _hashlib.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_hashlib.pyd
+  _lzma.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_lzma.pyd
+  _mt19937.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_mt19937.cp311-win_amd64.pyd
+  _multiarray_tests.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\core\_multiarray_tests.cp311-win_amd64.pyd
+  _multiarray_umath.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\core\_multiarray_umath.cp311-win_amd64.pyd
+  _overlapped.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_overlapped.pyd
+  _pcg64.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_pcg64.cp311-win_amd64.pyd
+  _philox.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_philox.cp311-win_amd64.pyd
+  _pocketfft_internal.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\fft\_pocketfft_internal.cp311-win_amd64.pyd
+  _queue.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_queue.pyd
+  _sfc64.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\_sfc64.cp311-win_amd64.pyd
+  _socket.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_socket.pyd
+  _sqlite3.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_sqlite3.pyd
+  _ssl.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_ssl.pyd
+  _umath_linalg.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\linalg\_umath_linalg.cp311-win_amd64.pyd
+  _uuid.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_uuid.pyd
+  advapi32.dll: C:\WINDOWS\System32\ADVAPI32.dll
+  bcrypt.dll: C:\WINDOWS\SYSTEM32\bcrypt.dll
+  bcryptprimitives.dll: C:\WINDOWS\System32\bcryptprimitives.dll
+  bit_generator.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\bit_generator.cp311-win_amd64.pyd
+  caete_module.cp311-win_amd64.pyd: C:\Users\darel\Desktop\CAETE-DVM\src\caete_module.cp311-win_amd64.pyd
+  combase.dll: C:\WINDOWS\System32\combase.dll
+  common_clang64.dll: .\common_clang64.dll
+  concrt140.dll: .\concrt140.dll
+  crypt32.dll: C:\WINDOWS\System32\CRYPT32.dll
+  gdi32.dll: C:\WINDOWS\System32\GDI32.dll
+  gdi32full.dll: C:\WINDOWS\System32\gdi32full.dll
+  imagehlp.dll: C:\WINDOWS\System32\imagehlp.dll
+  imm32.dll: C:\WINDOWS\System32\IMM32.DLL
+  iphlpapi.dll: C:\WINDOWS\SYSTEM32\IPHLPAPI.DLL
+  kernel.appcore.dll: C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+  kernel32.dll: C:\WINDOWS\System32\KERNEL32.DLL
+  kernelbase.dll: C:\WINDOWS\System32\KERNELBASE.dll
+  libcrypto-3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\libcrypto-3.dll
+  libffi-8.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\libffi-8.dll
+  libifcoremd.dll: C:\Users\darel\Desktop\CAETE-DVM\src\libifcoremd.dll
+  libiomp5md.dll: .\libiomp5md.dll
+  libircmd.dll: .\libircmd.dll
+  libmmd.dll: C:\Users\darel\Desktop\CAETE-DVM\src\libmmd.dll
+  libopenblas.fb5ae2tyxyh2ijrdkgdgq3xbklktf43h.gfortran-win_amd64.dll: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\.libs\libopenblas.FB5AE2TYXYH2IJRDKGDGQ3XBKLKTF43H.gfortran-win_amd64.dll
+  libssl-3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\libssl-3.dll
+  msvcp140.dll: .\msvcp140.dll
+  msvcp140_1.dll: .\msvcp140_1.dll
+  msvcp140_2.dll: .\msvcp140_2.dll
+  msvcp140_atomic_wait.dll: .\msvcp140_atomic_wait.dll
+  msvcp_win.dll: C:\WINDOWS\System32\msvcp_win.dll
+  msvcrt.dll: C:\WINDOWS\System32\msvcrt.dll
+  mswsock.dll: C:\WINDOWS\system32\mswsock.dll
+  mtrand.cp311-win_amd64.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\numpy\random\mtrand.cp311-win_amd64.pyd
+  ntdll.dll: C:\WINDOWS\SYSTEM32\ntdll.dll
+  ole32.dll: C:\WINDOWS\System32\ole32.dll
+  oleaut32.dll: C:\WINDOWS\System32\OLEAUT32.dll
+  psapi.dll: C:\WINDOWS\System32\psapi.dll
+  pyexpat.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\pyexpat.pyd
+  python.exe: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python.exe
+  python3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python3.DLL
+  python311.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python311.dll
+  pywintypes311.dll: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\pywin32_system32\pywintypes311.dll
+  rpcrt4.dll: C:\WINDOWS\System32\RPCRT4.dll
+  sechost.dll: C:\WINDOWS\System32\sechost.dll
+  secur32.dll: C:\WINDOWS\SYSTEM32\secur32.dll
+  select.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\select.pyd
+  shcore.dll: C:\WINDOWS\System32\shcore.dll
+  shell32.dll: C:\WINDOWS\System32\shell32.DLL
+  sqlite3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\sqlite3.dll
+  sspicli.dll: C:\WINDOWS\SYSTEM32\SSPICLI.DLL
+  svml_dispmd.dll: .\svml_dispmd.dll
+  ucrtbase.dll: C:\WINDOWS\System32\ucrtbase.dll
+  unicodedata.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\unicodedata.pyd
+  user32.dll: C:\WINDOWS\System32\USER32.dll
+  vcruntime140.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140.dll
+  vcruntime140_1.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140_1.dll
+  version.dll: C:\WINDOWS\SYSTEM32\VERSION.dll
+  win32api.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32api.pyd
+  win32process.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32process.pyd
+  win32u.dll: C:\WINDOWS\System32\win32u.dll
+  wintypes.dll: C:\WINDOWS\System32\wintypes.dll
+  ws2_32.dll: C:\WINDOWS\System32\WS2_32.dll
+
+
+
+  ### IFX loading: BEFORE
+
+  PS C:\Users\darel\Desktop\CAETE-DVM> cd .\src\
+PS C:\Users\darel\Desktop\CAETE-DVM\src> python runtime_dlls.py --loaded-dlls
+
+Loaded DLLs (47):
+  _bz2.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_bz2.pyd
+  _lzma.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_lzma.pyd
+  advapi32.dll: C:\WINDOWS\System32\ADVAPI32.dll
+  bcrypt.dll: C:\WINDOWS\SYSTEM32\bcrypt.dll
+  bcryptprimitives.dll: C:\WINDOWS\System32\bcryptprimitives.dll
+  combase.dll: C:\WINDOWS\System32\combase.dll
+  common_clang64.dll: .\common_clang64.dll
+  concrt140.dll: .\concrt140.dll
+  gdi32.dll: C:\WINDOWS\System32\GDI32.dll
+  gdi32full.dll: C:\WINDOWS\System32\gdi32full.dll
+  imm32.dll: C:\WINDOWS\System32\IMM32.DLL
+  kernel32.dll: C:\WINDOWS\System32\KERNEL32.DLL
+  kernelbase.dll: C:\WINDOWS\System32\KERNELBASE.dll
+  libifcoremd.dll: .\libifcoremd.dll
+  libiomp5md.dll: .\libiomp5md.dll
+  libircmd.dll: .\libircmd.dll
+  libmmd.dll: .\libmmd.dll
+  msvcp140.dll: .\msvcp140.dll
+  msvcp140_1.dll: .\msvcp140_1.dll
+  msvcp140_2.dll: .\msvcp140_2.dll
+  msvcp140_atomic_wait.dll: .\msvcp140_atomic_wait.dll
+  msvcp_win.dll: C:\WINDOWS\System32\msvcp_win.dll
+  msvcrt.dll: C:\WINDOWS\System32\msvcrt.dll
+  ntdll.dll: C:\WINDOWS\SYSTEM32\ntdll.dll
+  ole32.dll: C:\WINDOWS\System32\ole32.dll
+  oleaut32.dll: C:\WINDOWS\System32\OLEAUT32.dll
+  psapi.dll: C:\WINDOWS\System32\psapi.dll
+  python.exe: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python.exe
+  python3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python3.DLL
+  python311.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python311.dll
+  pywintypes311.dll: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\pywin32_system32\pywintypes311.dll
+  rpcrt4.dll: C:\WINDOWS\System32\RPCRT4.dll
+  sechost.dll: C:\WINDOWS\System32\sechost.dll
+  secur32.dll: C:\WINDOWS\SYSTEM32\secur32.dll
+  shell32.dll: C:\WINDOWS\System32\SHELL32.dll
+  sspicli.dll: C:\WINDOWS\SYSTEM32\SSPICLI.DLL
+  svml_dispmd.dll: .\svml_dispmd.dll
+  ucrtbase.dll: C:\WINDOWS\System32\ucrtbase.dll
+  user32.dll: C:\WINDOWS\System32\USER32.dll
+  vcruntime140.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140.dll
+  vcruntime140_1.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140_1.dll
+  version.dll: C:\WINDOWS\SYSTEM32\VERSION.dll
+  win32api.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32api.pyd
+  win32process.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32process.pyd
+  win32u.dll: C:\WINDOWS\System32\win32u.dll
+  wintypes.dll: C:\WINDOWS\System32\wintypes.dll
+  ws2_32.dll: C:\WINDOWS\System32\WS2_32.dl
+
+  IFX loading: AFTER
+
+  Loaded DLLs (47):
+  _bz2.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_bz2.pyd
+  _lzma.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_lzma.pyd
+  advapi32.dll: C:\WINDOWS\System32\ADVAPI32.dll
+  bcrypt.dll: C:\WINDOWS\SYSTEM32\bcrypt.dll
+  bcryptprimitives.dll: C:\WINDOWS\System32\bcryptprimitives.dll
+  combase.dll: C:\WINDOWS\System32\combase.dll
+  common_clang64.dll: .\common_clang64.dll
+  concrt140.dll: .\concrt140.dll
+  gdi32.dll: C:\WINDOWS\System32\GDI32.dll
+  gdi32full.dll: C:\WINDOWS\System32\gdi32full.dll
+  imm32.dll: C:\WINDOWS\System32\IMM32.DLL
+  kernel32.dll: C:\WINDOWS\System32\KERNEL32.DLL
+  kernelbase.dll: C:\WINDOWS\System32\KERNELBASE.dll
+  libifcoremd.dll: .\libifcoremd.dll
+  libiomp5md.dll: .\libiomp5md.dll
+  libircmd.dll: .\libircmd.dll
+  libmmd.dll: .\libmmd.dll
+  msvcp140.dll: .\msvcp140.dll
+  msvcp140_1.dll: .\msvcp140_1.dll
+  msvcp140_2.dll: .\msvcp140_2.dll
+  msvcp140_atomic_wait.dll: .\msvcp140_atomic_wait.dll
+  msvcp_win.dll: C:\WINDOWS\System32\msvcp_win.dll
+  msvcrt.dll: C:\WINDOWS\System32\msvcrt.dll
+  ntdll.dll: C:\WINDOWS\SYSTEM32\ntdll.dll
+  ole32.dll: C:\WINDOWS\System32\ole32.dll
+  oleaut32.dll: C:\WINDOWS\System32\OLEAUT32.dll
+  psapi.dll: C:\WINDOWS\System32\psapi.dll
+  python.exe: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python.exe
+  python3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python3.DLL
+  python311.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python311.dll
+  pywintypes311.dll: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\pywin32_system32\pywintypes311.dll
+  rpcrt4.dll: C:\WINDOWS\System32\RPCRT4.dll
+  sechost.dll: C:\WINDOWS\System32\sechost.dll
+  secur32.dll: C:\WINDOWS\SYSTEM32\secur32.dll
+  shell32.dll: C:\WINDOWS\System32\SHELL32.dll
+  sspicli.dll: C:\WINDOWS\SYSTEM32\SSPICLI.DLL
+  svml_dispmd.dll: .\svml_dispmd.dll
+  ucrtbase.dll: C:\WINDOWS\System32\ucrtbase.dll
+  user32.dll: C:\WINDOWS\System32\USER32.dll
+  vcruntime140.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140.dll
+  vcruntime140_1.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140_1.dll
+  version.dll: C:\WINDOWS\SYSTEM32\VERSION.dll
+  win32api.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32api.pyd
+  win32process.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32process.pyd
+  win32u.dll: C:\WINDOWS\System32\win32u.dll
+  wintypes.dll: C:\WINDOWS\System32\wintypes.dll
+  ws2_32.dll: C:\WINDOWS\System32\WS2_32.dll
+PS C:\Users\darel\Desktop\CAETE-DVM\src>
+
+## IMPORT CAETE MODULE
+
+In [1]: import caete_module as caete
+
+In [2]:
+Do you really want to exit ([y]/n)?
+PS C:\Users\darel\Desktop\CAETE-DVM\src> python runtime_dlls.py --loaded-dlls
+
+Loaded DLLs (47):
+  _bz2.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_bz2.pyd
+  _lzma.pyd: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\_lzma.pyd
+  advapi32.dll: C:\WINDOWS\System32\ADVAPI32.dll
+  bcrypt.dll: C:\WINDOWS\SYSTEM32\bcrypt.dll
+  bcryptprimitives.dll: C:\WINDOWS\System32\bcryptprimitives.dll
+  combase.dll: C:\WINDOWS\System32\combase.dll
+  common_clang64.dll: .\common_clang64.dll
+  concrt140.dll: .\concrt140.dll
+  gdi32.dll: C:\WINDOWS\System32\GDI32.dll
+  gdi32full.dll: C:\WINDOWS\System32\gdi32full.dll
+  imm32.dll: C:\WINDOWS\System32\IMM32.DLL
+  kernel32.dll: C:\WINDOWS\System32\KERNEL32.DLL
+  kernelbase.dll: C:\WINDOWS\System32\KERNELBASE.dll
+  libifcoremd.dll: .\libifcoremd.dll
+  libiomp5md.dll: .\libiomp5md.dll
+  libircmd.dll: .\libircmd.dll
+  libmmd.dll: .\libmmd.dll
+  msvcp140.dll: .\msvcp140.dll
+  msvcp140_1.dll: .\msvcp140_1.dll
+  msvcp140_2.dll: .\msvcp140_2.dll
+  msvcp140_atomic_wait.dll: .\msvcp140_atomic_wait.dll
+  msvcp_win.dll: C:\WINDOWS\System32\msvcp_win.dll
+  msvcrt.dll: C:\WINDOWS\System32\msvcrt.dll
+  ntdll.dll: C:\WINDOWS\SYSTEM32\ntdll.dll
+  ole32.dll: C:\WINDOWS\System32\ole32.dll
+  oleaut32.dll: C:\WINDOWS\System32\OLEAUT32.dll
+  psapi.dll: C:\WINDOWS\System32\psapi.dll
+  python.exe: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python.exe
+  python3.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python3.DLL
+  python311.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\python311.dll
+  pywintypes311.dll: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\pywin32_system32\pywintypes311.dll
+  rpcrt4.dll: C:\WINDOWS\System32\RPCRT4.dll
+  sechost.dll: C:\WINDOWS\System32\sechost.dll
+  secur32.dll: C:\WINDOWS\SYSTEM32\secur32.dll
+  shell32.dll: C:\WINDOWS\System32\SHELL32.dll
+  sspicli.dll: C:\WINDOWS\SYSTEM32\SSPICLI.DLL
+  svml_dispmd.dll: .\svml_dispmd.dll
+  ucrtbase.dll: C:\WINDOWS\System32\ucrtbase.dll
+  user32.dll: C:\WINDOWS\System32\USER32.dll
+  vcruntime140.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140.dll
+  vcruntime140_1.dll: C:\Users\darel\opt\Python-3.11.13\PCbuild\amd64\VCRUNTIME140_1.dll
+  version.dll: C:\WINDOWS\SYSTEM32\VERSION.dll
+  win32api.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32api.pyd
+  win32process.pyd: C:\Users\darel\opt\Python-3.11.13\Lib\site-packages\win32\win32process.pyd
+  win32u.dll: C:\WINDOWS\System32\win32u.dll
+  wintypes.dll: C:\WINDOWS\System32\wintypes.dll
+  ws2_32.dll: C:\WINDOWS\System32\WS2_32.dll
+PS C:\Users\darel\Desktop\CAETE-DVM\src>

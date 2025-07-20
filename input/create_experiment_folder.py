@@ -150,13 +150,13 @@ if __name__ == '__main__':
     # give a string with the name of the new folders
     # Change these variables to match you needs
 
-    _append = '_cities'
-    _gridlist = 'gridlist_cities.csv'
-    write_gridlist_with_indices = False
-
-    # _append = '_test'
-    # _gridlist = 'gridlist_test.csv'
+    # _append = '_cities'
+    # _gridlist = 'gridlist_cities.csv'
     # write_gridlist_with_indices = False
+
+    _append = '_test'
+    _gridlist = 'gridlist_test.csv'
+    write_gridlist_with_indices = False
 
     # _append = '_pan_amazon_forest'
     # _gridlist = "gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv"
@@ -172,7 +172,8 @@ if __name__ == '__main__':
         './20CRv3-ERA5/transclim',
         './MPI-ESM1-2-HR/historical',
         './MPI-ESM1-2-HR/ssp370',
-        './MPI-ESM1-2-HR/ssp585'
+        './MPI-ESM1-2-HR/ssp585',
+        './MPI-ESM1-2-HR/piControl'
     ]
 
 
@@ -183,7 +184,8 @@ if __name__ == '__main__':
         f'./20CRv3-ERA5/transclim{_append}',
         f'./MPI-ESM1-2-HR/historical{_append}',
         f'./MPI-ESM1-2-HR/ssp370{_append}',
-        f'./MPI-ESM1-2-HR/ssp585{_append}'
+        f'./MPI-ESM1-2-HR/ssp585{_append}',
+        f'./MPI-ESM1-2-HR/piControl{_append}'
     ]
 
     try:

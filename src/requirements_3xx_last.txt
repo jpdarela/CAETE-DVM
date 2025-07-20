@@ -1,5 +1,6 @@
 numpy
 joblib
+mpi4py
 netCDF4
 charset-normalizer
 lz4
