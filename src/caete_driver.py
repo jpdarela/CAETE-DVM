@@ -50,10 +50,10 @@ if __name__ == "__main__":
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
     # # Input files. The model will look for the input files in these folders.
-    obsclim_files = "../input/20CRv3-ERA5/obsclim/"
-    spinclim_files = "../input/20CRv3-ERA5/spinclim/"
-    transclim_files = "../input/20CRv3-ERA5/transclim/"
-    counterclim_files = "../input/20CRv3-ERA5/counterclim/"
+    obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
+    spinclim_files = "../input/20CRv3-ERA5/spinclim_test/"
+    transclim_files = "../input/20CRv3-ERA5/transclim_test/"
+    counterclim_files = "../input/20CRv3-ERA5/counterclim_test/"
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -92,7 +92,9 @@ if __name__ == "__main__":
     # # This state file can be used to restart the model from this point.
     state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
     print(f"\n\nSaving state file as {state_file}")
-    fn.save_state_zstd(r, state_file)
+    # r.save_state(state_file)
+    r.save_state(state_file)
+    r.set_new_state()
 
     # # Update the input source to the transient run - obsclim files
     # print("\nUpdate input and run obsclim")
@@ -108,8 +110,9 @@ if __name__ == "__main__":
     # We clean the state of the gridcells to save the final state of the region
     # THis final state is not useful to restart the model, but it is useful to
     # access the model outputs and export it to other formats.
-    fn.save_state_zstd(r, Path(f"./{region_name}_{period[1]}_final_state.psz"))
+    r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
+    r.set_new_state()
     r.clean_model_state()
-    fn.save_state_zstd(r, Path(f"./{region_name}_result.psz"))
+    r.save_state(Path(f"./{region_name}_result.psz"))
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")

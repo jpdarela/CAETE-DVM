@@ -22,8 +22,10 @@ Copyright 2017- LabTerra
 from pathlib import Path
 import multiprocessing as mp
 from typing import Tuple
-from dataframes import output_manager
+import time
 
+from metacommunity import pls_table
+from parameters import tsoil, ssoil, hsoil
 
 
 # Adapted from the caete_driver.py script to run the model with CMIP6 data.
@@ -38,19 +40,15 @@ from dataframes import output_manager
 
 
 if __name__ == "__main__":
-
-    import time
-    time_start = time.time()
-
-    from metacommunity import pls_table
-    from parameters import tsoil, ssoil, hsoil
-    from region import region
-    from worker import worker
-
     # Force spawn method to avoid issues with multiprocessing use with threading in Linux
     # This statement is awways necessary when running the model. Specifically, it needs to be
     # always after the if __name__ == "__main__": statement. This is a Python requirement.
     mp.set_start_method('spawn', force=True)
+
+    from region import region
+    from worker import worker
+    from dataframes import output_manager
+    
     fn: worker = worker()
 
     input_path = Path("../input/").resolve()
@@ -83,6 +81,7 @@ if __name__ == "__main__":
     # Create the region using the piControl climate files and historical CO2 data
     region_name = "cities_MPI-ESM1-2-HR_hist" # Name of the run (the outputs of this region will be saved in this folder).
 
+    time_start = time.time()
     r = region(region_name,
                piControl_files,
                soil_tuple,
@@ -100,11 +99,15 @@ if __name__ == "__main__":
 
     # Save initial state right after spinup - This will be used to run the piControl simulation
     piControl_state = Path(f"./{region_name}_piControl_1900.psz")
-    fn.save_state_zstd(r, piControl_state)
+    # fn.save_state_zstd(r, piControl_state)
+
+    # Save the state
+    r.save_state(piControl_state)  # type: ignore
 
     # Transient run with historical data
-    # # Update the input source for the transient run - historical files
+    # Update the input source for the transient run - historical files
     print("\nUpdate input and run historical")
+    r.set_new_state() # Set a new state and update inputs
     r.update_input(hist_files)  # type: ignore
 
     print("\n\nSTART transient run")
@@ -114,18 +117,26 @@ if __name__ == "__main__":
         r.run_region_starmap(fn.transient_run_brk, period)  # type: ignore
     # End of historical simulation
 
-    # Save region state file. This will be used to run the ssp370 and ssp585 simulations.
-    state_file = Path(f"./{region_name}.psz")
-    print(f"\n\nSaving state file as {state_file}")
-    fn.save_state_zstd(r, state_file)
+    # Save region state file.
+    # This will be used to run the ssp370 and ssp585 simulations.
+    # Again we save the state defining a new state to avoid overwriting
+    # the previous state files.
+    state_file = Path(f"./{region_name}.psz") # Historical state file
+    r.save_state(state_file)  # type: ignore
 
     # Clean the model state, this state file is used to access model outputs
+    # We are finished with this region object. No need to keep it in memory.
     r.clean_model_state()
-    fn.save_state_zstd(r, Path(f"./{region_name}_output.psz"))
+    output_file = Path(f"./{region_name}_output.psz")
+    # THe state file for ouputs does not need a new state.
+    r.save_state(output_file)  # type: ignore
+    # fn.save_state_zstd(r, Path(f"./{region_name}_output.psz"))
     del r
 
     # Run ssp370
     r_ssp370:region = fn.load_state_zstd(state_file)
+    r_ssp370.set_new_state()  # Set a new state and update inputsb by copying the previous state.
+                              # This avoids overwriting the historical state files.
     print("\nUpdate input to ssp370")
     r_ssp370.update_input(ssp370_files, co2_path_ssp370)  # type: ignore
     # Update region dump directory ssp370
@@ -137,36 +148,56 @@ if __name__ == "__main__":
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_ssp370.run_region_starmap(fn.transient_run_brk, period)
+
     r_ssp370.clean_model_state()
-    fn.save_state_zstd(r_ssp370, Path(f"{ssp370_out}_output.psz"))
+    ssp370_out = Path(f"{ssp370_out}_output.psz")
+    # r_ssp370.delete_state() # Delete the state files to free memory
+    r_ssp370.save_state(ssp370_out)  # type: ignore
+    del r_ssp370
+
 
     # ssp585
     r_ssp585:region = fn.load_state_zstd(state_file)
+    r_ssp585.set_new_state()  # Set a new state and update inputs by copying the previous state.
+
     print("\nUpdate input to ssp585")
     r_ssp585.update_input(ssp585_files, co2_path_ssp585)
     # Update region dump directory ssp585
     ssp585_out = "cities_MPI-ESM1-2-HR-ssp585"
     r_ssp585.update_dump_directory(ssp585_out)
+
     run_breaks = fn.create_run_breaks(2015, 2100, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_ssp585.run_region_starmap(fn.transient_run_brk, period)
+
     r_ssp585.clean_model_state()
-    fn.save_state_zstd(r_ssp585, Path(f"{ssp585_out}_output.psz"))
+    ssp585_out = Path(f"{ssp585_out}_output.psz")
+    # r_ssp585.delete_state()  # Delete the state files to free memory
+    r_ssp585.save_state(ssp585_out)
+    del r_ssp585
 
     # piControl
     r_piControl:region = fn.load_state_zstd(piControl_state)
+    r_piControl.set_new_state()  # Set a new state and update inputs by copying the previous state.
+
     print("\nUpdate input to piControl")
     r_piControl.update_input(piControl_files, co2_path_hist)
     # Update region dump directory piControl
     piControl_out = "cities_MPI-ESM1-2-HR-piControl"
     r_piControl.update_dump_directory(piControl_out)
+
     run_breaks = fn.create_run_breaks(1901, 2100, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r_piControl.run_region_starmap(fn.transient_piControl_brk, period)
+
     r_piControl.clean_model_state()
-    fn.save_state_zstd(r_piControl, Path(f"{piControl_out}_output.psz"))
+    piControl_out = Path(f"{piControl_out}_output.psz")
+    # r_piControl.delete_state()  # Delete the state files to free memory
+    r_piControl.save_state(piControl_out)  # type: ignore
+    del r_piControl
+
 
     # END of the simulation
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")

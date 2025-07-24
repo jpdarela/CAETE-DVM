@@ -27,6 +27,7 @@ import copy
 import gc
 import multiprocessing as mp
 import os
+from shutil import copy2
 import sys
 from pathlib import Path
 from typing import Callable, Dict, List,Tuple, Union
@@ -47,10 +48,9 @@ if sys.platform == "win32":
 
 from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
 
-# Global lock. Used to lock the access to the main table of Plant Life Strategies
-lock = mp.Lock()
-
+# Standard output path for the model
 from parameters import output_path
+from input_handler import input_handler
 
 
 class region:
@@ -83,7 +83,7 @@ class region:
         self.co2_data = get_co2_concentration(self.co2_path)
 
         # IO
-        self.climate_files = []
+        self.climate_files = [] # Climate files for the region. Used only during the set_gridcells method.
         self.input_data = str_or_path(clim_data)
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
@@ -117,6 +117,9 @@ class region:
         self.metadata = read_bz2_file(mtd)
         self.stime = copy.deepcopy(self.metadata[0])
 
+        # These paths are only used at construction time (this method) and
+        # at gridcell creation time (self.set_gridcell). After that,
+        # the path to the climate files is update at the gridcell level when needed.
         for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
             self.climate_files.append(file_path)
 
@@ -140,8 +143,15 @@ class region:
         os.makedirs(output_path, exist_ok=True)
 
         # This is the output path for this region
-        self.output_path = output_path/self.name
+        self.output_root = output_path
+        self.output_path = self.output_root / self.name
+
+        # Path to the state files for this region
+        self.state_path = self.output_root / f"state_files_{uuid4().hex}"
+
+        # Create the output and state folders for this region
         os.makedirs(self.output_path, exist_ok=True)
+        os.makedirs(self.state_path, exist_ok=True)
 
         # A list to store this region's gridcells
         # Some magic methods are defined to deal with this list
@@ -169,9 +179,9 @@ class region:
 
 
     def unload_gridcells(self):
-        """Unload the gridcells to the intermediate files"""
+        """Force the gridcells writing to the intermediate files"""
         if not self.file_objects:
-            raise ValueError("No file objects found. write read intermediate files")
+            raise ValueError("No file objects found. Cannot read intermediate files")
         if not self.gridcells:
             raise ValueError("No gridcells found. Cannot save intermediate files")
         # Divide the gridcelss in self.gridcells into chunks and save them to the intermediate files
@@ -180,9 +190,75 @@ class region:
         for f, chunk in zip(self.file_objects, chunks):
             # Save the gridcells to the intermediate files
             with open(f, 'wb') as fh:
-                dump(chunk, f, compress=("lz4", 1))
-                fh.flush()  # Explicitly flush before closing
-            gc.collect()  # Collect garbage to free memory after saving
+                dump(chunk, fh, compress=("zlib", 5))
+
+
+    def set_new_state(self):
+        # print("Creating a copy of the state files in a new folder")
+        new_id = uuid4().hex
+        new_state_folder = self.output_root / f"state_files_{new_id}"
+        os.makedirs(new_state_folder, exist_ok=True)
+
+        # Use ThreadPoolExecutor for I/O-bound operations like file copying
+        with ThreadPoolExecutor(max_workers=min(32, len(self.file_objects))) as executor:
+            # Create a list to store the new file paths
+            new_file_objects = []
+
+            # Create a mapping function that copies files and returns the new path
+            def copy_file(f):
+                dest_path = new_state_folder / f.name
+                copy2(f, dest_path)
+                return dest_path
+
+            # Submit all copy tasks
+            futures = [executor.submit(copy_file, f) for f in self.file_objects]
+
+            # Handle exceptions if any
+            for f, future in zip(self.file_objects, futures):
+                try:
+                    new_file_objects.append(future.result())  # Get the new file path
+                except Exception as e:
+                    print(f"Error copying file {f}: {e}")
+                    raise e
+
+        # Update file objects with the new paths
+        self.file_objects = new_file_objects
+        self.state_path = new_state_folder
+
+
+    def delete_state(self):
+        """Delete the state files of the region using parallel processing"""
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot delete state files")
+
+        # Use ThreadPoolExecutor for I/O-bound operations like file deletion
+        with ThreadPoolExecutor(max_workers=min(32, len(self.file_objects))) as executor:
+            # Submit all delete tasks
+            futures = [executor.submit(os.remove, f) for f in self.file_objects]
+
+            # Handle exceptions if any
+            for f, future in zip(self.file_objects, futures):
+                try:
+                    future.result()  # This will raise any exception that occurred
+                except Exception as e:
+                    print(f"Error deleting file {f}: {e}")
+                    raise e
+
+        self.file_objects = []
+        os.rmdir(str(self.state_path))
+        self.state_path = None
+
+
+    def save_state(self, state_file:Union[str, Path], new_state = False):
+        """Save the state of the region to a file
+
+        Args:
+            state_file (Union[str, Path]): Path to the file where the state will be saved
+        """
+        from worker import worker 
+        worker.save_state_zstd(self, state_file)
+        if new_state:
+            self.set_new_state()
 
 
     def update_dump_directory(self, new_name:str="copy", in_memory:bool=False):
@@ -223,26 +299,12 @@ class region:
                     os.makedirs(gridcell.out_dir, exist_ok=True)
 
                 with open(f, 'wb') as fh:
-                    dump(gridcells, fh, compress=("lz4", 1))
+                    dump(gridcells, fh, compress=("zlib", 5))
                     fh.flush()  # Explicitly flush before closing
                 gc.collect()
 
             with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
                 executor.map(process_file, self.file_objects)
-
-        # for f in self.file_objects:
-        #     gridcells = load(f)
-
-        #     for gridcell in gridcells:
-        #         # Update the output folder for each gridcell
-        #         gridcell.run_counter = 0
-        #         gridcell.outputs = {}
-        #         gridcell.metacomm_output = {}
-        #         gridcell.executed_iterations = []
-
-        #         gridcell.out_dir  = self.output_path/Path(f"grd_{gridcell.xyname}")
-        #         os.makedirs(gridcell.out_dir, exist_ok=True)
-        #     dump(gridcells, f, compress=("lz4", 1))
 
 
     def update_input(self, input_folder=None, co2=None, in_memory:bool=False):
@@ -294,7 +356,7 @@ class region:
                         for gridcell in gridcells:
                             gridcell.change_input(self.input_data, self.stime)
                     with open(f, 'wb') as file:
-                        dump(gridcells, file, compress=("lz4", 1))
+                        dump(gridcells, file, compress=("zlib", 5))
                         file.flush()
                     gc.collect()
                 except Exception as e:
@@ -312,13 +374,12 @@ class region:
                     gridcell.change_input(self.input_data, self.stime)
 
 
-    def get_from_main_table(self, comm_npls, lock = lock) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
+    def get_from_main_table(self, comm_npls) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
         """Returns a number of IDs (in the main table) and the respective
         functional identities (PLS table) to set or reset a community
 
         This method is passed as an argument for the gridcell class. It is used to read
-        the main table and the PLS table to set or reset a community. This method
-        must be called with a lock.
+        the main table and the PLS table to set or reset a community.
 
         Args:
         comm_npls: (int) Number of PLS in the output table (must match npls_max (see caete.toml))"""
@@ -327,14 +388,12 @@ class region:
 
         if comm_npls == 1:
             idx = np.random.choice(self.npls_main_table, 1, replace=False)[0]
-            with lock:
-                return idx, self.pls_table.table[:, idx]
+            return idx, self.pls_table.table[:, idx]
 
         assert comm_npls <= self.npls_main_table, "Number of PLS must be less than the number of PLS in the main table"
 
         idx = np.random.choice(self.npls_main_table, comm_npls, replace=False)
-        with lock:
-            return idx, self.pls_table.table[:, idx]
+        return idx, self.pls_table.table[:, idx]
 
 
     def set_gridcells(self):
@@ -386,7 +445,7 @@ class region:
                         pool.join()
                 result = []
                 with open(f, 'wb') as fh:
-                    dump(new_chunk, fh, compress=("lz4", 1))
+                    dump(new_chunk, fh, compress=("zlib", 5))
                     fh.flush()  # Explicitly flush before closing
                 gc.collect()
                 print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
@@ -414,7 +473,7 @@ class region:
                     self.lons[i] = grd_cell.lon
                     i += 1
                 # Save the intermediate file
-                fname = self.output_path/Path(f"region_file_{uuid4()}.lz4")
+                fname = self.state_path/Path(f"region_file_{uuid4()}.z")
                 self.file_objects.append(fname)
                 num_workers = min(self.config.multiprocessing.max_processes, len(result))
                 with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
@@ -428,7 +487,7 @@ class region:
                         pool.close()
                         pool.join()
                 with open(fname, 'wb') as f:
-                    dump(result, f, compress=("lz4", 1))
+                    dump(result, f, compress=("zlib", 5))
                     f.flush()  # Explicitly flush before closing
                 gc.collect()
                 result = []
@@ -457,24 +516,60 @@ class region:
                     pool.close()
                     pool.join()
             with open(f, 'wb') as fh:
-                dump(result, fh, compress=("lz4", 1))
+                dump(result, fh, compress=("zlib", 5))
                 fh.flush()
             gc.collect()
             print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
             j += 1
 
 
-    # Methods to deal with model outputs
+    # # Methods to deal with model outputs
+    # def clean_model_state(self):
+    #     """
+    #     Clean state of the region. Deletes all attributes that are not necessary
+
+    #     This is useful to access model outputs after a run
+
+    #     Warning: This method will erase all data related to the state of the region.
+    #     The region cannot be used directly to run the model after this method is called.
+    #     However, you can still use it to access the output data generated by the model.
+
+    #     """
+    #     attributes_to_keep = {'calendar',
+    #                           'time_unit',
+    #                           'cell_area',
+    #                           'config',
+    #                           'executed_iterations',
+    #                           'lat',
+    #                           'lon',
+    #                           'ncomms',
+    #                           'out_dir',
+    #                           'outputs',
+    #                           'metacomm_output',
+    #                           'run_counter',
+    #                           'x',
+    #                           'xres',
+    #                           'xyname',
+    #                           'y',
+    #                           'yres',
+    #                           'grid_filename'
+    #                           }
+
+
+
+    #     for gridcell in self:
+    #         all_attributes = set(gridcell.__dict__.keys())
+
+    #         # # Delete attributes that are not in the subset
+    #         for attr in all_attributes - attributes_to_keep:
+    #             delattr(gridcell, attr)
+    #     # self.unload_gridcells()
+
     def clean_model_state(self):
         """
-        Clean state of the region. Deletes all attributes that are not necessary
+        Clean state of the region by removing unnecessary attributes from gridcells.
 
-        This is useful to access model outputs after a run
-
-        Warning: This method will erase all data related to the state of the region.
-        The region cannot be used directly to run the model after this method is called.
-        However, you can still use it to access the output data generated by the model.
-
+        Optimized to process files one at a time to minimize memory usage.
         """
         attributes_to_keep = {'calendar',
                               'time_unit',
@@ -493,19 +588,27 @@ class region:
                               'xyname',
                               'y',
                               'yres',
-                              'grid_filename',
-                              'file_objects'}
+                              'grid_filename'
+                              }
 
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot clean model state.")
 
+        def process_file(f):
+            with open(f, 'rb') as file:
+                gridcells = load(file)
 
-        for gridcell in self:
-            all_attributes = set(gridcell.__dict__.keys())
+            # Clean each gridcell in this file
+            for gridcell in gridcells:
+                all_attributes = set(gridcell.__dict__.keys())
+                # Delete attributes that are not in the subset
+                for attr in all_attributes - attributes_to_keep:
+                    delattr(gridcell, attr)
+                gc.collect()
 
-            # # Delete attributes that are not in the subset
-            for attr in all_attributes - attributes_to_keep:
-                delattr(gridcell, attr)
-        # self.unload_gridcells()
-
+        # Process files in parallel for better performance
+        with ThreadPoolExecutor(max_workers=min(32, len(self.file_objects))) as executor:
+            list(executor.map(process_file, self.file_objects))
 
     def get_mask(self)->np.ndarray:
         """returns region mask
@@ -571,9 +674,3 @@ class region:
                         gridcell.metacomm_output.clear()
         except Exception as e:
             print(f"Error during cleanup: {e}")
-        finally:
-            # Explicitly release the global lock if necessary
-            global lock
-            if lock:
-                lock = None
-
