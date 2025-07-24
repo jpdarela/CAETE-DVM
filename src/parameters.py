@@ -28,30 +28,16 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple
 
-# Running in sombrero:
-# These variables point to the directory where the input data is stored.
-input_in_sombrero: Path = Path("/home/amazonfaceme/shared_data/").resolve()
 local_input: Path = Path("../input").resolve()
-
 #masks
 # Pan-Amazon mask. Only forest dominated gridcells are considered. MAPBIOMAS 2000
 mask_am: NDArray = np.load("../input/mask/pan_amazon_05d_FORESTS_MAPBIOMASS_2000.npy")
-
 # Pan-Amazon mask.
 mask_pan_am: NDArray = np.load("../input/mask/mask_raisg-360-720.npy")
 
 
-# Name of the base historical observed run.
-# Used in the old version scripts
-BASE_RUN: str = 'HISTORICAL-RUN' #"HISTORICAL-RUN" <- in sombrero this is the
-                  # STANDARD name for the historical observed run.
-
-ATTR_FILENAME: str = "pls_attrs-2000.csv"
-START_COND_FILENAME: str = f"CAETE_STATE_START_{BASE_RUN}_.pkz"
-
 output_path: Path = Path(f"../outputs").resolve()
-run_path: Path = Path(f"../outputs/{BASE_RUN}/{START_COND_FILENAME}")
-pls_path: Path = Path(f"./{ATTR_FILENAME}")
+
 
 # Soil Parameters
 # Water saturation, field capacity & wilting point
