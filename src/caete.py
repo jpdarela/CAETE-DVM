@@ -809,7 +809,7 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
-            dump(data_obj, fh, compress=('lz4', 5), protocol=5)
+            dump(data_obj, fh, compress=('zlib', 5), protocol=5)
             fh.flush()
         gc.collect() # type: ignore
         self.flush_data = None
@@ -1923,10 +1923,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             return output_dict, datelist  # return the Tuple[Dict[str, NDArray], NDArray[datetime]]
 
 
-    def print_available_periods(self):
+    def print_available_periods(self, verbose: bool = False) -> int:
         assert len(self.executed_iterations) > 0, "No output data available. Run the model first"
+
         for i, period in enumerate(self.executed_iterations):
-            print(f"Period {i + 1}: {period[0]} - {period[1]}")
+            if verbose:
+                print(f"Period {i + 1}: {period[0]} - {period[1]}")
         return i + 1
 
 
