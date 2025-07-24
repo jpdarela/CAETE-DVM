@@ -41,6 +41,7 @@ from numba import jit
 from caete_jit import pft_area_frac64
 from config import fetch_config
 from _geos import pan_amazon_region, get_region, find_coordinates_xy
+
 if sys.platform == "win32":
     from config import fortran_runtime, update_sys_pathlib
     update_sys_pathlib(fortran_runtime)
@@ -173,7 +174,7 @@ class gridded_data:
     """
      # Daily data --------------------------------
     @staticmethod
-    def read_grd(grd:grd_mt,
+    def read_grd(grd: grd_mt,
                  variables: Union[str, Collection[str]],
                  spin_slice: Union[int, Tuple[int, int], None]
                  ) -> Tuple[NDArray, Union[Dict, NDArray, List, Tuple], Union[int, float], Union[int, float]]:
@@ -190,55 +191,435 @@ class gridded_data:
               a tuple with the following keys: time, coord, data holding data to be transformed
 
         """
-        # returns a tuple with data and time Tuple[NDArray, NDArray]
-        data = grd._get_daily_data(get_args(variables), spin_slice, return_time=True) # type: ignore
-        time = data[-1]
-        data = data[0]
+        # Get the raw data - this can return different formats depending on input
+        raw_data = grd._get_daily_data(get_args(variables), spin_slice, return_time=True)
+
+        time = raw_data[-1]  # Time is always the last element
+        data_part = raw_data[0]  # Data is always the first element
+
+        # Handle different return formats from _get_daily_data
+        if isinstance(variables, str):
+            # Single variable case - _get_daily_data returns just the array
+            # We need to convert it to a dictionary format
+            data = {variables: data_part}
+        else:
+            # Multiple variables case - _get_daily_data returns a dictionary
+            data = data_part
+
         return time, data, grd.y, grd.x
 
 
     @staticmethod
     def aggregate_region_data(r: region,
-                variables: Union[str, Collection[str]],
-                spin_slice: Union[int, Tuple[int, int], None] = None
-                )-> Dict[str, NDArray]:
-        """_summary_
+                              variables: Union[str, Collection[str]],
+                              spin_slice: Union[int, Tuple[int, int], None] = None,
+                              temp_dir: Path = None,
+                              batch_size: int = 58,
+                            ) -> Dict[str, NDArray]:
+        """Fully memory-mapped version for large regions"""
+
+        import tempfile
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if temp_dir is None:
+            temp_dir = Path(tempfile.gettempdir()) / "caete_memmap"
+        temp_dir.mkdir(exist_ok=True)
+
+        n_gridcells = len(r)
+
+        # Get sample data to determine dimensions
+        sample_data = gridded_data.read_grd(r[0], variables, spin_slice)
+        time_data = sample_data[0]
+        sample_vars = sample_data[1]
+
+        # Determine variable shapes and dtypes
+        var_info = {}
+        if isinstance(variables, str):
+            var_list = [variables]
+        else:
+            var_list = list(variables)
+
+        for var_name in var_list:
+            var_data = sample_vars[var_name]
+            var_info[var_name] = {
+                'shape': var_data.shape,
+                'dtype': var_data.dtype
+            }
+
+        # Create memory-mapped arrays for coordinates
+        coord_memmap_file = temp_dir / f"coords_{os.getpid()}.dat"
+        coord_memmap = np.memmap(
+            coord_memmap_file,
+            dtype=np.int64,
+            mode='w+',
+            shape=(n_gridcells, 2)
+        )
+
+        # Create memory-mapped arrays for EACH VARIABLE
+        var_memmaps = {}
+        var_files = {}
+
+        for var_name, info in var_info.items():
+            var_file = temp_dir / f"{var_name}_{os.getpid()}.dat"
+            var_files[var_name] = var_file
+
+            # Create memory-mapped array for this variable
+            if len(info['shape']) == 1:
+                # 1D variable (time series)
+                full_shape = (n_gridcells, info['shape'][0])
+            elif len(info['shape']) == 2:
+                # 2D variable (e.g., multiple PFTs over time)
+                full_shape = (n_gridcells, info['shape'][0], info['shape'][1])
+            else:
+                raise ValueError(f"Unsupported variable shape: {info['shape']}")
+
+            var_memmaps[var_name] = np.memmap(
+                var_file,
+                dtype=info['dtype'],
+                mode='w+',
+                shape=full_shape
+            )
+
+        # Process batches and store directly in memory-mapped arrays
+        def read_batch_parallel(batch_indices, batch_gridcells):
+            """Read batch and return structured results"""
+            batch_results = []
+
+            with ThreadPoolExecutor(max_workers=config.multiprocessing.nprocs) as batch_executor:
+                future_to_idx = {}
+                for local_idx, (global_idx, grd) in enumerate(zip(batch_indices, batch_gridcells)):
+                    future = batch_executor.submit(gridded_data.read_grd, grd, variables, spin_slice)
+                    future_to_idx[future] = global_idx
+
+                for future in as_completed(future_to_idx):
+                    global_idx = future_to_idx[future]
+                    try:
+                        time, data, y, x = future.result()
+                        batch_results.append((global_idx, data, y, x))
+                    except Exception as e:
+                        print(f"Error reading gridcell: {e}")
+
+            return batch_results
+
+        # Process in batches
+        processed_count = 0
+        for batch_start in range(0, n_gridcells, batch_size):
+            batch_end = min(batch_start + batch_size, n_gridcells)
+            batch_indices = list(range(batch_start, batch_end))
+            batch_gridcells = [r[i] for i in batch_indices]
+
+            # Read batch
+            batch_results = read_batch_parallel(batch_indices, batch_gridcells)
+
+            # Store results directly in memory-mapped arrays
+            for global_idx, data, y, x in batch_results:
+                # Store coordinates
+                coord_memmap[global_idx] = [y, x]
+
+                # Store variable data in memory-mapped arrays
+                for var_name in var_list:
+                    if var_name in data:
+                        var_data = data[var_name]
+                        if len(var_data.shape) == 1:
+                            var_memmaps[var_name][global_idx, :] = var_data
+                        elif len(var_data.shape) == 2:
+                            var_memmaps[var_name][global_idx, :, :] = var_data
+
+            processed_count += len(batch_results)
+
+            # Force flush to disk
+            for var_memmap in var_memmaps.values():
+                var_memmap.flush()
+            coord_memmap.flush()
+
+            # Garbage collection
+            if batch_start % (batch_size * 4) == 0:
+                gc.collect()
+
+        # Convert memory-mapped arrays to regular arrays for return
+        coord_array = np.array(coord_memmap)
+
+        # CONSISTENT RETURN FORMAT: Always return as list of dicts
+        variable_data = []
+
+        # Convert each gridcell's data to the expected dict format
+        for i in range(processed_count):
+            gridcell_data = {}
+            for var_name in var_list:
+                gridcell_data[var_name] = var_memmaps[var_name][i]
+            variable_data.append(gridcell_data)
+
+        # Clean up memory-mapped files
+        try:
+            coord_memmap_file.unlink(missing_ok=True)
+            for var_file in var_files.values():
+                var_file.unlink(missing_ok=True)
+        except:
+            pass
+
+        # Clean up temp directory
+        try:
+            temp_dir.rmdir()
+        except:
+            pass
+
+        # CONSISTENT RETURN FORMAT: Always return with "data" key containing list of dicts
+        return {
+            "time": time_data,
+            "coord": coord_array[:processed_count],  # Trim to actual processed data
+            "data": variable_data  # List of dicts, one per gridcell - CONSISTENT for both single and multiple variables
+        }
+
+
+    @staticmethod
+    def read_grd_annual(grd: grd_mt,
+                       data_type: str = "biomass",
+                       years: Union[int, List[int], None] = None
+                       ) -> Tuple[NDArray, Dict, Union[int, float], Union[int, float]]:
+        """Read annual data from a gridcell for gridded output
 
         Args:
-            r (region): a region object
-
-            variables (Union[str, Collection[str]]): variable names to read
-
-            spin_slice (Union[int, Tuple[int, int], None], optional): which spin slice to read.
-            Defaults to None, read all available data. Consumes a lot of memory.
+            grd: Gridcell object
+            data_type: Type of annual data ("biomass", "productivity", etc.)
+            years: Specific years to read (None for all available)
 
         Returns:
-            dict: a dict with the following keys: time, coord, data holding data to be transformed
-            necessary to create masked arrays and subsequent netCDF files.
+            Tuple of (years_array, data_dict, y, x)
         """
+        available_years = grd._get_years()
 
-        output = []
-        # nproc = min(len(r), 56)
-        nproc = config.multiprocessing.nprocs # type_ignore
-        nproc = max(1, 56) # Ensure at least one thread is used
-        with ThreadPoolExecutor(max_workers=nproc) as executor:
-            futures = [executor.submit(gridded_data.read_grd, grd, variables, spin_slice) for grd in r]
-            for future in futures:
-                output.append(future.result())
-
-        # Finalize the data object
-        raw_data = np.array(output, dtype=object)
-        # Reoeganize resources
-        time = raw_data[:,0][0] # We assume all slices have the same time, thus we get the first one
-        coord = raw_data[:,2:4][:].astype(np.int64) # 2D matrix of coordinates (y(lat), x(lon))}
-        data = raw_data[:,1][:]  # array of dicts, each dict has the variables as keys and the time series as values
-
-        if isinstance(variables, str):
-            dim_names = ["time", "coord", variables]
+        if years is None:
+            target_years = available_years
+        elif isinstance(years, int):
+            target_years = [years] if years in available_years else []
         else:
-            dim_names = ["time", "coord", "data"]
+            target_years = [y for y in years if y in available_years]
 
-        return dict(zip(dim_names, (time, coord, data)))
+        if not target_years:
+            raise ValueError(f"No valid years found. Available: {available_years}")
+
+        if data_type == "biomass":
+            # Process biomass data for all years
+            all_data = {}
+
+            for year in target_years:
+                year_data = grd._read_annual_metacomm_biomass(year)
+                if year_data:
+                    # Convert to DataFrame and process like in table_data
+                    df = pl.DataFrame(year_data)
+
+                    # Calculate aggregated metrics
+                    grouped = df.group_by("pls_id").agg([
+                        pl.col("vp_cleaf").mean().alias("cleaf"),
+                        pl.col("vp_croot").mean().alias("croot"),
+                        pl.col("vp_cwood").mean().alias("cwood"),
+                        pl.len().alias("count")
+                    ])
+
+                    # Calculate cveg and ocp using the optimized function
+                    # Ensure float64 for Numba compatibility
+                    cleaf = grouped.get_column("cleaf").to_numpy().astype(np.float64)
+                    croot = grouped.get_column("croot").to_numpy().astype(np.float64)
+                    cwood = grouped.get_column("cwood").to_numpy().astype(np.float64)
+
+                    cveg, ocp = calculate_cveg_and_ocp(cleaf, croot, cwood)
+
+                    # Store aggregated annual data
+                    all_data[year] = {
+                        "pls_id": grouped.get_column("pls_id").to_numpy(),
+                        "cleaf": cleaf,
+                        "croot": croot,
+                        "cwood": cwood,
+                        "cveg": cveg,
+                        "ocp": ocp,
+                        "count": grouped.get_column("count").to_numpy()
+                    }
+
+            # Organize data by variable across years
+            if all_data:
+                variables = ["cleaf", "croot", "cwood", "cveg", "ocp", "count"]
+                organized_data = {}
+                years_array = np.array(sorted(all_data.keys()))
+
+                # Get maximum number of PFTs across all years for consistent array size
+                max_pfts = max(len(all_data[year]["pls_id"]) for year in all_data.keys())
+
+                for var in variables:
+                    # Create (n_years, n_pfts) array
+                    var_array = np.full((len(years_array), max_pfts), np.nan)
+
+                    for i, year in enumerate(years_array):
+                        year_data = all_data[year][var]
+                        var_array[i, :len(year_data)] = year_data
+
+                    organized_data[var] = var_array
+
+                # Also store PLS IDs (use the year with most PFTs as reference)
+                reference_year = max(all_data.keys(), key=lambda y: len(all_data[y]["pls_id"]))
+                pls_ids = np.full(max_pfts, -1)
+                ref_ids = all_data[reference_year]["pls_id"]
+                pls_ids[:len(ref_ids)] = ref_ids
+                organized_data["pls_id"] = pls_ids
+
+                return years_array, organized_data, grd.y, grd.x
+
+        return np.array([]), {}, grd.y, grd.x
+
+
+    @staticmethod
+    def aggregate_region_annual_data(r: region,
+                                    data_type: str = "biomass",
+                                    years: Union[int, List[int], None] = None,
+                                    temp_dir: Path = None,
+                                    batch_size: int = 58
+                                    ) -> Dict[str, NDArray]:
+        """Aggregate annual data across a region for gridded output"""
+        import tempfile
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if temp_dir is None:
+            # Use a simpler temp directory path for Windows compatibility
+            temp_dir = Path.cwd() / "temp_annual_data"
+
+        temp_dir.mkdir(exist_ok=True)
+
+        n_gridcells = len(r)
+
+        # Get sample data to determine structure
+        sample_data = gridded_data.read_grd_annual(r[0], data_type, years)
+        years_array = sample_data[0]
+        sample_vars = sample_data[1]
+
+        if len(years_array) == 0:
+            raise ValueError("No valid annual data found in sample gridcell")
+
+        # Determine data structure
+        var_info = {}
+        for var_name, var_data in sample_vars.items():
+            var_info[var_name] = {
+                'shape': var_data.shape,
+                'dtype': var_data.dtype
+            }
+
+        # Create memory-mapped arrays with Windows-safe file names
+        coord_memmap_file = temp_dir / f"coords.dat"
+        coord_memmap = np.memmap(
+            coord_memmap_file,
+            dtype=np.int64,
+            mode='w+',
+            shape=(n_gridcells, 2)
+        )
+
+        var_memmaps = {}
+        var_files = {}
+
+        for var_name, info in var_info.items():
+            # Use simple file names for Windows compatibility
+            var_file = temp_dir / f"{var_name}.dat"
+            var_files[var_name] = var_file
+
+            # Annual data has shape (n_gridcells, n_years, n_pfts) for 2D vars
+            if len(info['shape']) == 1:
+                full_shape = (n_gridcells, info['shape'][0])
+            elif len(info['shape']) == 2:
+                full_shape = (n_gridcells, info['shape'][0], info['shape'][1])
+            else:
+                raise ValueError(f"Unsupported annual data shape: {info['shape']}")
+
+            var_memmaps[var_name] = np.memmap(
+                var_file,
+                dtype=info['dtype'],
+                mode='w+',
+                shape=full_shape
+            )
+
+            # Initialize with appropriate fill values based on dtype
+            if np.issubdtype(info['dtype'], np.integer):
+                if var_name == "pls_id":
+                    var_memmaps[var_name][:] = -1
+                else:
+                    var_memmaps[var_name][:] = 0
+            else:
+                var_memmaps[var_name][:] = np.nan
+
+        # Process in batches (rest of the function remains the same)
+        def read_annual_batch_parallel(batch_indices, batch_gridcells):
+            batch_results = []
+
+            with ThreadPoolExecutor(max_workers=config.multiprocessing.nprocs) as executor:
+                future_to_idx = {}
+                for global_idx, grd in zip(batch_indices, batch_gridcells):
+                    future = executor.submit(gridded_data.read_grd_annual, grd, data_type, years)
+                    future_to_idx[future] = global_idx
+
+                for future in as_completed(future_to_idx):
+                    global_idx = future_to_idx[future]
+                    try:
+                        years_data, data, y, x = future.result()
+                        if len(years_data) > 0:
+                            batch_results.append((global_idx, data, y, x))
+                    except Exception as e:
+                        print(f"Error reading annual data for gridcell: {e}")
+
+            return batch_results
+
+        processed_count = 0
+        for batch_start in range(0, n_gridcells, batch_size):
+            batch_end = min(batch_start + batch_size, n_gridcells)
+            batch_indices = list(range(batch_start, batch_end))
+            batch_gridcells = [r[i] for i in batch_indices]
+
+            batch_results = read_annual_batch_parallel(batch_indices, batch_gridcells)
+
+            # Store results in memory-mapped arrays
+            for global_idx, data, y, x in batch_results:
+                coord_memmap[global_idx] = [y, x]
+
+                for var_name, var_data in data.items():
+                    if var_name in var_memmaps:
+                        # Handle different dimensionalities
+                        if len(var_data.shape) == 1:
+                            var_memmaps[var_name][global_idx, :var_data.shape[0]] = var_data
+                        elif len(var_data.shape) == 2:
+                            var_memmaps[var_name][global_idx, :var_data.shape[0], :var_data.shape[1]] = var_data
+
+            processed_count += len(batch_results)
+
+            # Flush and cleanup
+            for var_memmap in var_memmaps.values():
+                var_memmap.flush()
+            coord_memmap.flush()
+
+            if batch_start % (batch_size * 4) == 0:
+                gc.collect()
+
+        # Convert to regular arrays and format return
+        coord_array = np.array(coord_memmap)
+
+        # Convert each gridcell's data to expected format
+        variable_data = []
+        var_names = list(var_info.keys())
+
+        for i in range(processed_count):
+            gridcell_data = {}
+            for var_name in var_names:
+                gridcell_data[var_name] = var_memmaps[var_name][i]
+            variable_data.append(gridcell_data)
+
+        # Cleanup
+        try:
+            coord_memmap_file.unlink(missing_ok=True)
+            for var_file in var_files.values():
+                var_file.unlink(missing_ok=True)
+            temp_dir.rmdir()
+        except:
+            pass
+
+        return {
+            "years": years_array,
+            "coord": coord_array[:processed_count],
+            "data": variable_data
+        }
 
 
     @staticmethod
@@ -308,6 +689,203 @@ class gridded_data:
 
 
     @staticmethod
+    def create_annual_masked_arrays(data: dict, data_type: str = "biomass"):
+        """Create masked arrays from annual aggregated data"""
+        years = data["years"]
+        coords = data["coord"]
+        arrays_dict = data["data"]
+
+        if not arrays_dict:
+            return [], years, []
+
+        # Get variable names
+        variables = list(arrays_dict[0].keys())
+
+        # Get region bounds from coordinates
+        ymin_coord, ymax_coord = coords[:, 0].min(), coords[:, 0].max()
+        xmin_coord, xmax_coord = coords[:, 1].min(), coords[:, 1].max()
+
+        # Calculate region dimensions
+        region_height = ymax_coord - ymin_coord + 1
+        region_width = xmax_coord - xmin_coord + 1
+
+        print(f"Annual data bounds: Y={ymin_coord}-{ymax_coord}, X={xmin_coord}-{xmax_coord}")
+        print(f"Annual array shape: {region_height} × {region_width}")
+
+        arrays = []
+        array_names = []
+
+        # For biomass data, create CWM arrays
+        if data_type == "biomass":
+            # Create arrays for Community Weighted Mean biomass variables
+            biomass_vars = ["cleaf", "croot", "cwood", "cveg"]
+
+            for var in biomass_vars:
+                if var in variables:
+                    # Create arrays for each year (CWM values)
+                    for year_idx, year in enumerate(years):
+                        arrays.append(np.ma.masked_all(shape=(region_height, region_width), dtype=np.float64))
+                        array_names.append(f"{var}_cwm_{year}")
+
+                    # Create mean across years
+                    arrays.append(np.ma.masked_all(shape=(region_height, region_width), dtype=np.float64))
+                    array_names.append(f"{var}_cwm_mean")
+
+            # Create PFT richness array
+            if "pls_id" in variables:
+                arrays.append(np.ma.masked_all(shape=(region_height, region_width), dtype=np.int32))
+                array_names.append("pft_richness")
+
+            # Create total occupation array (sum of all ocp values)
+            if "ocp" in variables:
+                for year_idx, year in enumerate(years):
+                    arrays.append(np.ma.masked_all(shape=(region_height, region_width), dtype=np.float64))
+                    array_names.append(f"total_ocp_{year}")
+
+                arrays.append(np.ma.masked_all(shape=(region_height, region_width), dtype=np.float64))
+                array_names.append("total_ocp_mean")
+
+        # Fill the arrays
+        array_index = 0
+
+        if data_type == "biomass":
+            biomass_vars = ["cleaf", "croot", "cwood", "cveg"]
+
+            # Process biomass variables with CWM calculation
+            for var in biomass_vars:
+                if var in variables:
+                    for j in range(len(coords)):
+                        y_rel = coords[j][0] - ymin_coord
+                        x_rel = coords[j][1] - xmin_coord
+
+                        if 0 <= y_rel < region_height and 0 <= x_rel < region_width:
+                            var_data = arrays_dict[j][var]  # Shape: (n_years, n_pfts)
+                            ocp_data = arrays_dict[j]["ocp"]  # Shape: (n_years, n_pfts)
+
+                            if len(var_data.shape) == 2 and len(ocp_data.shape) == 2:
+                                n_years, n_pfts = var_data.shape
+
+                                # Calculate CWM for each year
+                                cwm_values = []
+                                for year_idx in range(n_years):
+                                    # Community Weighted Mean: sum(biomass * occupation)
+                                    valid_mask = ~np.isnan(var_data[year_idx, :]) & ~np.isnan(ocp_data[year_idx, :])
+                                    if np.any(valid_mask):
+                                        cwm = np.sum(var_data[year_idx, valid_mask] * ocp_data[year_idx, valid_mask])
+                                        if array_index + year_idx < len(arrays):
+                                            arrays[array_index + year_idx][y_rel, x_rel] = cwm
+                                        cwm_values.append(cwm)
+
+                                # Calculate mean CWM across years
+                                if cwm_values and array_index + n_years < len(arrays):
+                                    mean_cwm = np.mean(cwm_values)
+                                    arrays[array_index + n_years][y_rel, x_rel] = mean_cwm
+
+                    array_index += len(years) + 1  # +1 for mean
+
+            # Process PFT richness - FIXED FOR 2D ARRAYS
+            if "pls_id" in variables:
+                print("Processing PFT richness...")
+                richness_count = 0
+
+                for j in range(len(coords)):
+                    y_rel = coords[j][0] - ymin_coord
+                    x_rel = coords[j][1] - xmin_coord
+
+                    if 0 <= y_rel < region_height and 0 <= x_rel < region_width:
+                        pls_data = arrays_dict[j]["pls_id"]
+
+                        # Debug: Check the structure of pls_data
+                        if j == 0:  # Only print for first gridcell
+                            print(f"First gridcell pls_data shape: {pls_data.shape}")
+
+                        if len(pls_data.shape) == 2:
+                            # 2D array: (n_years, n_pfts) - CORRECT HANDLING
+                            # Count unique valid PFTs across all years
+                            valid_pfts = pls_data[pls_data >= 0]
+                            unique_pfts = len(np.unique(valid_pfts)) if len(valid_pfts) > 0 else 0
+
+                            if unique_pfts > 0:
+                                richness_count += 1
+                                if array_index < len(arrays):
+                                    arrays[array_index][y_rel, x_rel] = unique_pfts
+
+                        elif len(pls_data.shape) == 1:
+                            # 1D array: just count valid PFTs (fallback for old format)
+                            valid_pfts = pls_data[pls_data >= 0]
+                            unique_pfts = len(np.unique(valid_pfts)) if len(valid_pfts) > 0 else 0
+
+                            if unique_pfts > 0:
+                                richness_count += 1
+                                if array_index < len(arrays):
+                                    arrays[array_index][y_rel, x_rel] = unique_pfts
+
+                print(f"Processed PFT richness for {richness_count} gridcells")
+                array_index += 1
+
+            # Process total occupation (same logic as biomass vars)
+            if "ocp" in variables:
+                for j in range(len(coords)):
+                    y_rel = coords[j][0] - ymin_coord
+                    x_rel = coords[j][1] - xmin_coord
+
+                    if 0 <= y_rel < region_height and 0 <= x_rel < region_width:
+                        ocp_data = arrays_dict[j]["ocp"]
+
+                        if len(ocp_data.shape) == 2:
+                            n_years, n_pfts = ocp_data.shape
+
+                            # Calculate total occupation for each year
+                            total_ocp_values = []
+                            for year_idx in range(n_years):
+                                valid_mask = ~np.isnan(ocp_data[year_idx, :])
+                                if np.any(valid_mask):
+                                    total_ocp = np.sum(ocp_data[year_idx, valid_mask])
+                                    if array_index + year_idx < len(arrays):
+                                        arrays[array_index + year_idx][y_rel, x_rel] = total_ocp
+                                    total_ocp_values.append(total_ocp)
+
+                            # Calculate mean total occupation
+                            if total_ocp_values and array_index + n_years < len(arrays):
+                                mean_total_ocp = np.mean(total_ocp_values)
+                                arrays[array_index + n_years][y_rel, x_rel] = mean_total_ocp
+
+        return arrays, years, array_names
+
+
+    @staticmethod
+    def process_annual_gridded_data(r: region,
+                                   data_type: str = "biomass",
+                                   years: Union[int, List[int], None] = None,
+                                   output_path: Path = None,
+                                   file_name: str = None
+                                   ) -> Tuple[List, NDArray, List[str]]:
+        """Complete workflow for processing annual data into gridded format
+
+        Args:
+            r: Region object
+            data_type: Type of annual data ("biomass", "productivity")
+            years: Years to process
+            output_path: Path to save NetCDF file (optional)
+            file_name: Name for output file (optional)
+
+        Returns:
+            Tuple of (masked_arrays, years, array_names)
+        """
+        print(f"Aggregating annual {data_type} data...")
+        aggregated_data = gridded_data.aggregate_region_annual_data(r, data_type, years)
+
+        print("Creating masked arrays...")
+        arrays, years_array, array_names = gridded_data.create_annual_masked_arrays(aggregated_data, data_type)
+
+        if output_path and file_name:
+            print(f"Saving to NetCDF: {output_path / file_name}")
+            # TODO: Implement save_annual_netcdf method
+            # gridded_data.save_annual_netcdf(arrays, years_array, array_names, output_path, file_name)
+
+        return arrays, years_array, array_names
+
+    @staticmethod
     def save_netcdf(data: dict, output_path: Path, file_name: str):
         pass
 
@@ -320,10 +898,12 @@ class gridded_data:
 def calculate_cveg_and_ocp(cleaf, croot, cwood):
     """Numba-optimized function to calculate total vegetation carbon and area fraction.
 
+    Expects float64 arrays as input.
+
     Args:
-        cleaf: Numpy array of leaf carbon values
-        croot: Numpy array of root carbon values
-        cwood: Numpy array of wood carbon values
+        cleaf: Numpy array of leaf carbon values (float64)
+        croot: Numpy array of root carbon values (float64)
+        cwood: Numpy array of wood carbon values (float64)
 
     Returns:
         Tuple of (cveg, ocp) arrays
@@ -332,7 +912,6 @@ def calculate_cveg_and_ocp(cleaf, croot, cwood):
     cveg = cleaf + croot + cwood
 
     # Calculate area fraction using the existing function
-    # Note: pft_area_frac64 must be compatible with numba
     ocp = pft_area_frac64(cleaf, croot, cwood)
 
     return cveg, ocp
@@ -1345,3 +1924,268 @@ if __name__ == "__main__":
         profile_table_data_method('write_daily_data', reg, variables)
 
     print("\nDone.")
+
+
+##SANDBOX
+
+    # @staticmethod
+    # def aggregate_region_data(r: region,
+    #             variables: Union[str, Collection[str]],
+    #             spin_slice: Union[int, Tuple[int, int], None] = None
+    #             )-> Dict[str, NDArray]:
+    #     """_summary_
+
+    #     Args:
+    #         r (region): a region object
+
+    #         variables (Union[str, Collection[str]]): variable names to read
+
+    #         spin_slice (Union[int, Tuple[int, int], None], optional): which spin slice to read.
+    #         Defaults to None, read all available data. Consumes a lot of memory.
+
+    #     Returns:
+    #         dict: a dict with the following keys: time, coord, data holding data to be transformed
+    #         necessary to create masked arrays and subsequent netCDF files.
+    #     """
+
+    #     output = []
+    #     # nproc = min(len(r), 56)
+    #     nproc = config.multiprocessing.nprocs # type_ignore
+    #     nproc = max(1, 56) # Ensure at least one thread is used
+    #     with ThreadPoolExecutor(max_workers=nproc) as executor:
+    #         futures = [executor.submit(gridded_data.read_grd, grd, variables, spin_slice) for grd in r]
+    #         for future in futures:
+    #             output.append(future.result())
+
+    #     # Finalize the data object
+    #     raw_data = np.array(output, dtype=object)
+    #     # Reoeganize resources
+    #     time = raw_data[:,0][0] # We assume all slices have the same time, thus we get the first one
+    #     coord = raw_data[:,2:4][:].astype(np.int64) # 2D matrix of coordinates (y(lat), x(lon))}
+    #     data = raw_data[:,1][:]  # array of dicts, each dict has the variables as keys and the time series as values
+
+    #     if isinstance(variables, str):
+    #         dim_names = ["time", "coord", variables]
+    #     else:
+    #         dim_names = ["time", "coord", "data"]
+
+    #     return dict(zip(dim_names, (time, coord, data)))
+
+    # @staticmethod
+    # def aggregate_region_data(r: region,
+    #                           variables: Union[str, Collection[str]],
+    #                           spin_slice: Union[int, Tuple[int, int], None] = None,
+    #                           temp_dir: Path = None,
+    #                           batch_size: int = 58,
+    #                           max_workers: int = None
+    #                         ) -> Dict[str, NDArray]:
+    #     """Memory-mapped version with parallel reading for large regions
+
+    #     Args:
+    #         r (region): Region object with gridcells
+    #         variables: Variable names to read
+    #         spin_slice: Which spin slice to read
+    #         temp_dir: Directory for temporary memory-mapped files
+    #         batch_size: Number of gridcells to process per batch
+    #         max_workers: Maximum number of parallel workers
+
+    #     Returns:
+    #         Dictionary with aggregated data
+    #     """
+    #     import tempfile
+    #     from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    #     if temp_dir is None:
+    #         temp_dir = Path(tempfile.gettempdir()) / "caete_memmap"
+    #     temp_dir.mkdir(exist_ok=True)
+
+    #     n_gridcells = len(r)
+
+    #     # Pre-allocate memory-mapped arrays for coordinates
+    #     coord_memmap_file = temp_dir / f"coords_{os.getpid()}.dat"
+    #     coord_memmap = np.memmap(
+    #         coord_memmap_file,
+    #         dtype=np.int64,
+    #         mode='w+',
+    #         shape=(n_gridcells, 2)
+    #     )
+
+    #     # Storage for data - will be filled in parallel
+    #     all_data = [None] * n_gridcells
+    #     time_data = None
+    #     completed_count = 0
+
+    #     def read_batch_parallel(batch_indices, batch_gridcells):
+    #         """Read a batch of gridcells in parallel"""
+    #         nonlocal time_data, completed_count
+
+    #         batch_results = []
+    #         batch_coords = []
+
+    #         # Use ThreadPoolExecutor for this batch
+    #         with ThreadPoolExecutor(max_workers=config.multipricessing.nprocs) as batch_executor:
+    #             # Submit all gridcell reads for this batch
+    #             future_to_idx = {}
+    #             for local_idx, (global_idx, grd) in enumerate(zip(batch_indices, batch_gridcells)):
+    #                 future = batch_executor.submit(gridded_data.read_grd, grd, variables, spin_slice)
+    #                 future_to_idx[future] = (global_idx, local_idx, grd)
+
+    #             # Collect results as they complete
+    #             for future in as_completed(future_to_idx):
+    #                 global_idx, local_idx, grd = future_to_idx[future]
+    #                 try:
+    #                     time, data, y, x = future.result()
+
+    #                     # Store time data once
+    #                     if time_data is None:
+    #                         time_data = time
+
+    #                     # Store results
+    #                     batch_results.append((global_idx, data))
+    #                     batch_coords.append((global_idx, y, x))
+
+    #                 except Exception as e:
+    #                     print(f"Error reading gridcell {grd.y}-{grd.x}: {e}")
+
+    #         return batch_results, batch_coords
+
+    #     # Process gridcells in batches with parallel reading
+    #     # print(f"Processing {n_gridcells} gridcells in batches of {batch_size} with {max_workers} workers")
+
+    #     for batch_start in range(0, n_gridcells, batch_size):
+    #         batch_end = min(batch_start + batch_size, n_gridcells)
+    #         batch_indices = list(range(batch_start, batch_end))
+    #         batch_gridcells = [r[i] for i in batch_indices]
+
+    #         # print(f"Processing batch {batch_start//batch_size + 1}/{(n_gridcells-1)//batch_size + 1}")
+
+    #         # Read batch in parallel
+    #         batch_results, batch_coords = read_batch_parallel(batch_indices, batch_gridcells)
+
+    #         # Store results in memory-mapped arrays
+    #         for global_idx, data in batch_results:
+    #             all_data[global_idx] = data
+
+    #         for global_idx, y, x in batch_coords:
+    #             coord_memmap[global_idx] = [y, x]
+
+    #         completed_count += len(batch_results)
+    #         # print(f"Completed {completed_count}/{n_gridcells} gridcells")
+
+    #         # Periodic garbage collection
+    #         if batch_start % (batch_size * 4) == 0:
+    #             gc.collect()
+
+    #     # Convert memory-mapped coordinates to regular array
+    #     coord_array = np.array(coord_memmap)
+
+    #     # Filter out None values from failed reads
+    #     valid_data = [data for data in all_data if data is not None]
+
+    #     # Clean up memory-mapped files
+    #     try:
+    #         coord_memmap_file.unlink(missing_ok=True)
+    #     except:
+    #         pass
+
+    #     # Clean up temp directory if empty
+    #     try:
+    #         temp_dir.rmdir()
+    #     except:
+    #         pass
+
+        # # Return results
+        # if isinstance(variables, str):
+        #     return {
+        #         "time": time_data,
+        #         "coord": coord_array[:len(valid_data)],  # Trim to valid data size
+        #         variables: valid_data
+        #     }
+        # else:
+        #     return {
+        #         "time": time_data,
+        #         "coord": coord_array[:len(valid_data)],
+        #         "data": valid_data
+        #     }
+
+    # @staticmethod
+    # def aggregate_region_data_streaming(r: region,
+    #                                 variables: Union[str, Collection[str]],
+    #                                 spin_slice: Union[int, Tuple[int, int], None] = None,
+    #                                 output_file: Path = None
+    #                                 ) -> Path:
+    #     """Stream directly to disk without accumulating in memory"""
+
+    #     import h5py
+    #     import tempfile
+
+    #     if output_file is None:
+    #         output_file = Path(tempfile.gettempdir()) / f"region_data_{os.getpid()}.h5"
+
+    #     n_gridcells = len(r)
+
+    #     # Get sample data for structure
+    #     sample_data = gridded_data.read_grd(r[0], variables, 1)
+    #     time_data = sample_data[0]
+    #     sample_vars = sample_data[1]
+
+    #     with h5py.File(output_file, 'w') as f:
+    #         # Create datasets with known dimensions
+    #         coord_dset = f.create_dataset('coordinates', (n_gridcells, 2), dtype=np.int64)
+    #         time_dset = f.create_dataset('time', data=time_data)
+
+    #         # Create datasets for each variable
+    #         var_datasets = {}
+    #         if isinstance(variables, str):
+    #             var_list = [variables]
+    #         else:
+    #             var_list = list(variables)
+
+    #         for var_name in var_list:
+    #             var_data = sample_vars[var_name]
+    #             if len(var_data.shape) == 1:
+    #                 shape = (n_gridcells, var_data.shape[0])
+    #             elif len(var_data.shape) == 2:
+    #                 shape = (n_gridcells, var_data.shape[0], var_data.shape[1])
+
+    #             var_datasets[var_name] = f.create_dataset(
+    #                 var_name,
+    #                 shape,
+    #                 dtype=var_data.dtype,
+    #                 compression='gzip',
+    #                 compression_opts=6
+    #             )
+
+    #         # Process and stream data
+    #         batch_size = 50  # Smaller batches for streaming
+
+    #         for batch_start in range(0, n_gridcells, batch_size):
+    #             batch_end = min(batch_start + batch_size, n_gridcells)
+    #             batch_gridcells = r[batch_start:batch_end]
+
+    #             # Process batch
+    #             with ThreadPoolExecutor(max_workers=min(len(batch_gridcells), 4)) as executor:
+    #                 futures = [executor.submit(gridded_data.read_grd, grd, variables, spin_slice)
+    #                         for grd in batch_gridcells]
+
+    #                 for i, future in enumerate(futures):
+    #                     try:
+    #                         time, data, y, x = future.result()
+    #                         global_idx = batch_start + i
+
+    #                         # Write directly to HDF5 (no memory accumulation)
+    #                         coord_dset[global_idx] = [y, x]
+
+    #                         for var_name in var_list:
+    #                             var_datasets[var_name][global_idx] = data[var_name]
+
+    #                     except Exception as e:
+    #                         print(f"Error processing gridcell: {e}")
+
+    #             # Force write to disk
+    #             f.flush()
+
+    #             # Garbage collection
+    #             gc.collect()
+
+    #     return output_file

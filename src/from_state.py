@@ -9,6 +9,7 @@ if __name__ == "__main__":
 
     region = worker.load_state_zstd("./pan_amazon_hist_after_spinup_state_file.psz")
 
+    region.set_new_state()  # Set a new state and update inputs by copying the previous state.
     region.update_dump_directory("doing_something")
 
     run_breaks = worker.create_run_breaks(1901, 2014, 10)
@@ -26,6 +27,4 @@ if __name__ == "__main__":
 
     region_output = worker.load_state_zstd("./state.psz2")
     output_manager.generic_text_output_grd(region_output, variables_to_read)
-
-
 
