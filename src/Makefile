@@ -58,6 +58,7 @@ sources = $(src_lib) $(MAIN_SUB)
 src_obj = types.o photo_par.o global.o funcs.o evap.o soil_dec.o cc.o allocation.o productivity.o
 objects = $(src_obj) $(basename $(MAIN_SUB)).o debug_caete.o
 
+
 # Targets
 .PHONY: setup interface so so_parallel clean clean_so modules
 
@@ -104,7 +105,7 @@ so_parallel: $(sources) interface
 # Build the shared object (caete_module) from .F90 source
 # Serial version
 so: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) " --quiet
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS) " --quiet
 	@echo "Serial version of caete_module created using gfortran"
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace

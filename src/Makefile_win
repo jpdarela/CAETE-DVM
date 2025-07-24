@@ -76,7 +76,7 @@ interface: $(sources)
 	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 so: $(sources) interface
-	@$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)"
+	@$(F2PY) $(INTERFACES) -c $(sources) --backend distutils --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)"
 	@echo "Serial version of caete_module created using $(FC)"
 	@echo Bundle dlls from Intel Fortran Compiler and MSVC into the module directory
 	@$(PYEXEC) runtime_dlls.py
