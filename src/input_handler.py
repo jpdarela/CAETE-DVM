@@ -14,7 +14,14 @@ import pickle
 import sys
 
 import numpy as np
-import netCDF4 as nc
+
+# Suppress NumPy warnings that occurs during multiprocessing. 
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="numpy.ndarray size changed", category=RuntimeWarning)
+    warnings.filterwarnings("ignore", message="numpy.ufunc size changed", category=RuntimeWarning)
+    import netCDF4 as nc
+
 import polars as pl
 
 from caete import str_or_path, read_bz2_file
@@ -57,7 +64,7 @@ class base_handler(ABC):
 
         # Coordinate matching settings
         self.coord_tolerance=1e-5
-        self.fallback_tolerance=(cfg.crs.res / 2) - 0.001 # Subtract a small value to snap to grid
+        self.fallback_tolerance=(cfg.crs.res / 2) - 0.001 #type: ignore Subtract a small value to snap to grid
         self.allow_closest=True
 
 
@@ -347,7 +354,7 @@ class bz2_handler(base_handler):
         # But we implement this for consistency with the interface
         pass
 
-    def __enter__(self):
+    def __enter__(self): # type: ignore[override]
         """
         Support for context manager protocol.
         """
@@ -409,7 +416,7 @@ class netcdf_handler(base_handler):
             self.nc_data = nc.Dataset(self.nc_file, 'r')
             # Pre-load station indices and prepare for data loading
             self._station_indices = self._map_station_indices()
-            self.mpi = cfg.input_handler.mp
+            self.mpi = cfg.input_handler.mp #type: ignore[assignment]
         except Exception as e:
             # Ensure file is closed if initialization fails
             if self.nc_data is not None:
@@ -784,6 +791,10 @@ class netcdf_handler(base_handler):
         station_vars_data = {}
 
         if self.mpi:
+            if not nc.__has_parallel4_support__:
+                raise RuntimeError("NetCDF4 parallel support is not available. "
+                                   "Ensure you have compiled NetCDF with parallel I/O support."
+                                   "Or set mp [in the input_handler session] to false in the caete.toml file.")
             # Use parallel loading with MPI processes to read time-varying variables
             time_vars_data = self.load_data_parallel()
         else:
@@ -802,7 +813,7 @@ class netcdf_handler(base_handler):
                     # Store for later distribution
                     time_vars_data[var_name] = var_data
 
-        # Read non time-varying station-specific variables
+        # Read non time-varying station-specific variables. Always serially read these (small in size)
         for var_name in self.station_vars:
             if var_name in self.nc_data.variables:
                 # Read all station data at once
@@ -1326,7 +1337,7 @@ if __name__ == "__main__":
             print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
             print(f"Batch size: {batch['batch_size']}")
             # Process batch['data'] and batch['metadata']
-            print(batch['data'])  # Example processing step
-            print(batch['metadata'])  # Example processing step
+            # print(batch['data'])  # Example processing step
+            # print(batch['metadata'])  # Example processing step
         end = time.perf_counter() - start
         print(f"input_handler with bz2 took {end:.2f} seconds to process {len(handler.gridlist)} stations.")

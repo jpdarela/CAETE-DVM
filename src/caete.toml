@@ -7,8 +7,10 @@ doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 
 [input_handler]
 input_type = "netcdf" # Type of input data. THe other option is "bz2"
-mp = true # Use MPI for reading netcdf files.
-# If set to false, the model will read the netcdf files sequentially.
+
+# The netcdf files used are chunked in an optimal way for reading. THe sequentlial reading is faster than the parallel reading.
+mp = false # Use MPI for reading netcdf files.
+
 
 # Configs for parallelization
 [multiprocessing]
@@ -16,7 +18,7 @@ nprocs= 16 # Threads used to post process the output. Not used by the model itse
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of gridcells and not ideally not larger that the number of available CPUs.
-max_processes = 16
+max_processes = 64
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect.
@@ -58,7 +60,7 @@ rsds = 0.198
 n = 1 # Effects only in runtime, not in compile time.
 
 # Maximum number of PLS to be considered in each community.
-# Very large values will cause stack overflow errors.
+# Very large values CAN cause stack overflow errors.
 # The final number of slots for PLSs in the model is equal to n * npls_max.
 # Changes here and in ntraits will not be applied to the model (fortran extension module)
 # unless you recompile it.
