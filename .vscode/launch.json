@@ -6,13 +6,11 @@
     "configurations": [
         {
             "name": "(Windows) FORTRAN Launch",
-            "type": "cppvsdbg",
+            "type": "node",
             "request": "launch",
             "program": "${workspaceFolder}/src/run_debug.exe",
             "args": [],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}/src/",
-            "environment": [],
             "console": "integratedTerminal"
         },
         {
@@ -21,7 +19,8 @@
             "request": "launch",
             "cwd": "${workspaceFolder}/src/",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false,
         }
     ]
 }
