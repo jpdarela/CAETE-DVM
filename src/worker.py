@@ -267,7 +267,7 @@ class worker:
             None: None
         """
         with open(fname, 'wb') as fh:
-            compressor = zstd.ZstdCompressor(level=22, threads=12)
+            compressor = zstd.ZstdCompressor(level=3, threads=-1)
             with compressor.stream_writer(fh) as compressor_writer:
                 pkl.dump(region, compressor_writer)
 

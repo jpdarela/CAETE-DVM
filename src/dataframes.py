@@ -993,6 +993,9 @@ class table_data:
         Returns:
             None
         """
+        # Load all the gridcells in the region to accelerate processing. Consumes a lot of memory if the region is large.
+        if not r.gridcells:
+            r.load_gridcells()
         for grd in r:
             d = grd._get_daily_data(get_args(variables), spin_slice, return_time=True) #type: ignore
 
@@ -1037,6 +1040,11 @@ class table_data:
     @staticmethod
     def write_daily_data(r: region, variables: Union[str, Collection[str]]):
         """Writes the daily data to csv files"""
+        
+        # Load all the gridcells in the region to accelerate processing. Consumes a lot of memory if the region is large.
+        if not r.gridcells:
+            r.load_gridcells()
+        
         periods = r[0].print_available_periods() # assumes all gridcells have the same periods
         write_metadata_to_csv(variables, r.output_path)  # type: ignore
 
@@ -1100,6 +1108,9 @@ class table_data:
         """
         # Load state data
         reg:region = worker.load_state_zstd(str_or_path(result))
+        # Load all the gridcells in the region to accelerate processing. Consumes a lot of memory if the region is large.
+        if not reg.gridcells:
+            reg.load_gridcells()
 
         # Process daily data first
         table_data.write_daily_data(r=reg, variables=variables)

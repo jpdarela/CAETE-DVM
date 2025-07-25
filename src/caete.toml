@@ -18,7 +18,7 @@ nprocs= 16 # Threads used to post process the output. Not used by the model itse
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of gridcells and not ideally not larger that the number of available CPUs.
-max_processes = 64
+max_processes = 8
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect.
