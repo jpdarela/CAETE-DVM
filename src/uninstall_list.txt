@@ -1,0 +1,12 @@
+numpy
+joblib
+mpi4py
+netCDF4
+charset-normalizer
+numba
+zstandard
+pyproj
+pandas
+polars
+pyarrow
+h5py

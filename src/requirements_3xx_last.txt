@@ -1,20 +1,24 @@
+# Requirements for the model runtime environment.
 numpy
-netCDF4
 joblib
 zstandard
 charset-normalizer
 numba
 pyproj
-pandas
 polars
+netCDF4
+pydantic
+
+# Requirements for data handling and manipulation (pre and post processing).
 pyarrow
-meson
-ninja
+pandas
 h5py
 
-## Optional requirements
-## If you want to build netCDF4 with parallel I/O support, you need to install cython and mpi4py.
-## Uninstall the netCDF4 package first, then install the following packages.
-## THen you need to follow the instructions in the netCDF4 documentation to build it with parallel I/O support.
+# Caete module build system for python >= 3.12. Working in linux. Windows is not supported.
+meson
+ninja
+
+## Optional requirements - Cython will be used in the future to speed up some parts of the code.
+## See the makefiles
 # cython
-# mpi4py
+
