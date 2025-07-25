@@ -29,18 +29,41 @@ from config import fetch_config
 
 cfg = fetch_config()
 
-
 class base_handler(ABC):
     """
-    An abstract base class for input handlers.
-    This can be extended to create specific handlers for different file types.
+    An abstract base class for input handlers used by the CAETE model.
+    
+    This class provides a common interface for reading input data from different file formats
+    (NetCDF, BZ2, etc.). It defines the essential methods that all input handlers must implement
+    and provides common functionality for coordinate matching and gridlist validation.
+    
+    The class handles station-based data where each station has:
+    - Time-varying variables: ['hurs', 'tas', 'ps', 'pr', 'rsds', 'sfcwind', 'vpd']
+    - Station-specific variables: ['tn', 'tp', 'ap', 'ip', 'op']
+    
+    Attributes:
+        fpath (Path): Path to the input file or data source folder
+        isfile (bool): True if fpath points to a file, False if directory
+        isdir (bool): True if fpath points to a directory, False if file
+        time_vars (list): List of time-varying variable names expected in input data
+        station_vars (list): List of station-specific variable names expected in input data
+        gridlist (pl.DataFrame): Polars DataFrame containing station information
+        coord_tolerance (float): Strict coordinate matching tolerance in degrees
+        fallback_tolerance (float): Fallback tolerance for closest coordinate matching
+        allow_closest (bool): Whether to allow closest coordinate fallback matching
     """
     def __init__(self, fpath, gridlist_df):
         """
-        Initialize the base handler with a file/dir path.
+        Initialize the base handler with a file/directory path and gridlist DataFrame.
 
         Args:
-            fpath (str): Path to the input file or data source folder.
+            fpath (str or Path): Path to the input file or data source folder
+            gridlist_df (pl.DataFrame): Polars DataFrame containing station information
+                                      Must include columns: 'station_name', 'lat', 'lon'
+                                      
+        Raises:
+            ValueError: If fpath is empty or None
+            TypeError: If gridlist_df is not a Polars DataFrame
         """
         if not fpath:
             raise ValueError("fpath is required")
@@ -64,7 +87,7 @@ class base_handler(ABC):
 
         # Coordinate matching settings
         self.coord_tolerance=1e-5
-        self.fallback_tolerance=(cfg.crs.res / 2) - 0.001 #type: ignore Subtract a small value to snap to grid
+        self.fallback_tolerance=(cfg.crs.res / 2) - 0.001 # Subtract a small value to snap to grid
         self.allow_closest=True
 
 
@@ -139,19 +162,46 @@ class base_handler(ABC):
 
     # Common methods for all handlers
     def _find_closest_coordinate(self, target_lat, target_lon, nc_lats, nc_lons):
-        """Find the index of the closest coordinate in NetCDF arrays."""
+        """
+        Find the index of the closest coordinate in NetCDF arrays using Euclidean distance.
+        
+        Args:
+            target_lat (float): Target latitude coordinate to match
+            target_lon (float): Target longitude coordinate to match
+            nc_lats (np.ndarray): Array of NetCDF latitude values
+            nc_lons (np.ndarray): Array of NetCDF longitude values
+            
+        Returns:
+            int: Index of the closest coordinate in the NetCDF arrays
+        """
         distances = np.sqrt((nc_lats - target_lat)**2 + (nc_lons - target_lon)**2)
         return np.argmin(distances)
 
 
     def _calculate_min_distance(self, target_lat, target_lon, nc_lats, nc_lons):
-        """Calculate the minimum distance to any NetCDF coordinate."""
+        """
+        Calculate the minimum distance from target coordinates to any NetCDF coordinate.
+        
+        Args:
+            target_lat (float): Target latitude coordinate
+            target_lon (float): Target longitude coordinate
+            nc_lats (np.ndarray): Array of NetCDF latitude values
+            nc_lons (np.ndarray): Array of NetCDF longitude values
+            
+        Returns:
+            float: Minimum Euclidean distance in degrees
+        """
         distances = np.sqrt((nc_lats - target_lat)**2 + (nc_lons - target_lon)**2)
         return np.min(distances)
 
 
     def _validate_gridlist(self):
-        """Validate gridlist for duplicates and invalid data"""
+        """
+        Validate gridlist DataFrame for duplicate station names and data integrity.
+        
+        Raises:
+            ValueError: If duplicate station names are found in the gridlist
+        """
         station_names = self.gridlist.get_column('station_name').to_list()
         if len(station_names) != len(set(station_names)):
             duplicates = [name for name in set(station_names)
@@ -161,15 +211,32 @@ class base_handler(ABC):
 
 class bz2_handler(base_handler):
     """
-    A placeholder class for handling bz2 compressed files (Fastest option).
-    This class is intended to read bz2 files containing input data for the CAETE model.
+    A handler for reading bz2 compressed input files for the CAETE model.
+    
+    This class is designed to read input data from bz2 compressed files containing
+    pickled station data. It expects a directory structure where each station's
+    data is stored in a separate .pbz2 file, with a naming convention based on
+    global coordinates (input_data_{global_y}-{global_x}.pbz2).
+    
+    The handler supports multithreaded file reading for improved performance
+    and includes metadata handling through a separate METADATA.pbz2 file.
+    
+    Attributes:
+        b22_metadata_filename (str): Filename for the metadata file ("METADATA.pbz2")
+        input_files (list): List of Path objects for input data files
+        station_names (list): List of corresponding station names for input files
     """
     def __init__(self, fpath, gridlist_df):
         """
-        Initialize the bz2 handler with a file path.
+        Initialize the bz2 handler with a directory path and gridlist DataFrame.
 
         Args:
-            fpath (str): Path to the bz2 file.
+            fpath (str or Path): Path to the directory containing bz2 files
+            gridlist_df (pl.DataFrame): Polars DataFrame containing station information
+                                      Must include columns: 'global_y', 'global_x'
+                                      
+        Raises:
+            ValueError: If fpath is not a valid directory
         """
         super().__init__(fpath, gridlist_df)
 
@@ -187,13 +254,18 @@ class bz2_handler(base_handler):
 
     def _find_files(self, gridlist_df):
         """
-        Map station names from the gridlist DataFrame to their corresponding indices in the bz2 file.
-
+        Generate file paths based on gridlist coordinates and validate file existence.
+        
+        Creates file paths using the pattern: input_data_{global_y}-{global_x}.pbz2
+        where global_y and global_x are extracted from the gridlist DataFrame.
+        
         Args:
-            gridlist_df (polars.DataFrame): DataFrame containing station names and IDs.
-
-        Returns:
-            dict: Mapping of station names to their indices in the bz2 file.
+            gridlist_df (pl.DataFrame): DataFrame containing global coordinate columns
+                                      'global_y' and 'global_x'
+                                      
+        Note:
+            This method updates self.input_files with existing file paths and
+            self.station_names with corresponding station identifiers.
         """
         # This method is a placeholder and should be implemented when bz2 handling is added
         base_name = "input_data"
@@ -218,10 +290,17 @@ class bz2_handler(base_handler):
 
     def _filter_non_existent_files(self):
         """
-        Filter out files that do not exist in the input_files list.
-
+        Filter the input_files list to include only files that exist on the filesystem.
+        
+        Also generates corresponding station names based on the filtered file paths
+        using the pattern "station_{coordinate_suffix}" where coordinate_suffix
+        is extracted from the filename.
+        
         Returns:
-            list: List of existing bz2 files.
+            list: List of Path objects for files that exist on the filesystem
+            
+        Note:
+            Updates self.station_names with corresponding station identifiers
         """
         file_paths = [f for f in self.input_files if f.exists()]
         self.station_names = ["station_" + f.stem.split("_")[-1] for f in file_paths]
@@ -229,7 +308,20 @@ class bz2_handler(base_handler):
 
     def _read_metadata_file(self):
         """
-        Returns metadata from the bz2 file, filtered to match gridlist stations.
+        Read and process metadata from the METADATA.pbz2 file.
+        
+        Extracts time, latitude, and longitude metadata from the compressed metadata file
+        and filters it to match only the stations present in the current gridlist.
+        Converts masked arrays to regular numpy arrays for consistency.
+        
+        Returns:
+            tuple: A tuple containing three dictionaries:
+                - filtered_time_meta (dict): Time dimension metadata
+                - filtered_lat_meta (dict): Latitude metadata for gridlist stations
+                - filtered_lon_meta (dict): Longitude metadata for gridlist stations
+                
+        Raises:
+            FileNotFoundError: If the METADATA.pbz2 file does not exist
         """
         fpath = self.fpath / self.b22_metadata_filename
         if not fpath.exists():
@@ -275,7 +367,18 @@ class bz2_handler(base_handler):
     # Required methods by base_handler
     def load_data(self):
         """
-        Load data from bz2 files using multithreading with map().
+        Load data from multiple bz2 files using multithreaded file reading.
+        
+        Reads all bz2 files in parallel using ThreadPoolExecutor for improved performance.
+        Each file is expected to contain pickled station data that can be unpickled
+        using the read_bz2_file function.
+        
+        Returns:
+            dict: Dictionary with station names as keys and unpickled data as values.
+                 Returns empty dict if no input files are available.
+                 
+        Raises:
+            IOError: If any file cannot be read or unpickled
         """
         if not self.input_files:
             return {}
@@ -302,17 +405,34 @@ class bz2_handler(base_handler):
 
     def load_metadata(self):
         """
-        Load metadata from the bz2 file.
-        Currently not implemented, raises NotImplementedError.
+        Load and return metadata from the METADATA.pbz2 file.
+        
+        This is a wrapper method that calls _read_metadata_file() to extract
+        metadata information filtered for the current gridlist stations.
+        
+        Returns:
+            tuple: A tuple containing three dictionaries:
+                - time_meta (dict): Time dimension metadata
+                - lat_meta (dict): Latitude metadata for gridlist stations  
+                - lon_meta (dict): Longitude metadata for gridlist stations
         """
         return self._read_metadata_file()
 
     def update_fpath(self, fpath, gridlist_df=None):
         """
-        Update the file path for the bz2 handler.
+        Update the directory path for the bz2 handler and optionally update the gridlist.
+        
+        Changes the source directory for bz2 files and re-scans for available files
+        based on the current or new gridlist. Validates that the new path is a directory
+        and that matching files exist.
 
         Args:
-            fpath (str): New file path to set.
+            fpath (str or Path): New directory path containing bz2 files
+            gridlist_df (pl.DataFrame, optional): New gridlist DataFrame to use.
+                                                 If None, uses existing gridlist.
+                                                 
+        Raises:
+            ValueError: If fpath is empty, not a directory, or no matching files found
         """
         if gridlist_df is not None:
             self.update_gridlist(gridlist_df)
@@ -331,10 +451,19 @@ class bz2_handler(base_handler):
 
     def update_gridlist(self, gridlist_df):
         """
-        Update the gridlist DataFrame and re-map input files.
+        Update the gridlist DataFrame and re-map input files accordingly.
+        
+        Replaces the current gridlist with a new one and rescans the directory
+        for files matching the new stations. Validates the new gridlist and
+        ensures that matching files exist.
 
         Args:
-            gridlist_df (polars.DataFrame): New gridlist DataFrame.
+            gridlist_df (pl.DataFrame): New gridlist DataFrame containing station information.
+                                       Must include 'global_y' and 'global_x' columns.
+                                       
+        Raises:
+            TypeError: If gridlist_df is not a Polars DataFrame
+            ValueError: If no input files found for the new gridlist
         """
         if not isinstance(gridlist_df, pl.DataFrame):
             raise TypeError("gridlist_df must be a Polars DataFrame")
@@ -348,7 +477,10 @@ class bz2_handler(base_handler):
 
     def close(self):
         """
-        Close method for bz2_handler (no-op since bz2 files don't stay open).
+        Close any open resources for the bz2_handler.
+        
+        This is a no-op method since bz2_handler doesn't keep files persistently open.
+        Implemented to maintain consistency with the base_handler interface.
         """
         # bz2_handler doesn't keep files open, so nothing to close
         # But we implement this for consistency with the interface
@@ -356,19 +488,27 @@ class bz2_handler(base_handler):
 
     def __enter__(self): # type: ignore[override]
         """
-        Support for context manager protocol.
+        Enter the context manager for the bz2_handler.
+        
+        Returns:
+            bz2_handler: Returns self to enable context manager usage
         """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
-        Support for context manager protocol.
+        Exit the context manager for the bz2_handler.
+        
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred  
+            exc_tb: Exception traceback if an exception occurred
         """
         self.close()
 
     def __del__(self):
         """
-        Cleanup method (no-op for bz2_handler).
+        Destructor that ensures proper cleanup when the object is garbage collected.
         """
         self.close()
 
@@ -395,14 +535,16 @@ class netcdf_handler(base_handler):
 
     def __init__(self, nc_file_path, gridlist_df):
         """
-        Initialize the NetCDFHandler with the NetCDF file path and a pre-loaded gridlist DataFrame.
+        Initialize the NetCDF handler with file path and gridlist DataFrame.
 
         Args:
-            nc_file_path (str): Path to the NetCDF file
-            gridlist_df (polars.DataFrame): Pre-loaded gridlist as a Polars DataFrame
-            coord_tolerance (float): Strict coordinate matching tolerance in degrees (default: 1e-5)
-            fallback_tolerance (float): Fallback tolerance for closest matching in degrees (default: 0.01)
-            allow_closest (bool): Whether to allow closest coordinate fallback (default: False)
+            nc_file_path (str or Path): Path to the NetCDF file containing input data
+            gridlist_df (pl.DataFrame): Pre-loaded gridlist as a Polars DataFrame
+                                       Must include columns: 'station_name', 'lat', 'lon'
+                                       
+        Raises:
+            ValueError: If nc_file_path is not a valid file
+            IOError: If NetCDF file cannot be opened or handler initialization fails
         """
         super().__init__(nc_file_path, gridlist_df)
 
@@ -428,13 +570,23 @@ class netcdf_handler(base_handler):
 
     def _map_station_indices(self):
         """
-        Create a mapping between station names and their indices in the netCDF file.
-        Validates coordinates.
+        Create a mapping between station names and their indices in the NetCDF file.
+        
+        This method performs coordinate matching between the gridlist and NetCDF file,
+        supporting both exact matching and closest-coordinate fallback. It validates
+        that each station in the gridlist has a corresponding location in the NetCDF file.
+        
+        The method supports multiple coordinate matching strategies:
+        1. Exact coordinate matching within coord_tolerance
+        2. Closest coordinate fallback (if allow_closest=True)
+        3. Station name validation (if available in NetCDF)
+        
         Returns:
-            dict: Dictionary with station names as keys and netCDF indices as values
-
+            dict: Dictionary mapping station names to their NetCDF array indices
+            
         Raises:
-            ValueError: If coordinates don't match or required variables are missing
+            ValueError: If coordinates don't match, required variables are missing,
+                       or multiple stations map to the same NetCDF index
             KeyError: If required columns are missing from gridlist
         """
         # Validate required columns in gridlist
@@ -454,8 +606,8 @@ class netcdf_handler(base_handler):
         gridlist_lons = gridlist_data['lon'].values
 
         # Load NetCDF coordinates using the detected variable names
-        nc_lats = self.nc_data.variables[lat_var_name][:].astype(np.float64)
-        nc_lons = self.nc_data.variables[lon_var_name][:].astype(np.float64)
+        nc_lats = self.nc_data.variables[lat_var_name][:].astype(np.float64) # type: ignore[assignment]
+        nc_lons = self.nc_data.variables[lon_var_name][:].astype(np.float64) # type: ignore[assignment]
 
         # Handle masked arrays
         if isinstance(nc_lats, np.ma.MaskedArray):
@@ -599,17 +751,24 @@ class netcdf_handler(base_handler):
             )
 
         # Optional: Validate station names if available in NetCDF
-        if 'station_name' in self.nc_data.variables:
+        if 'station_name' in self.nc_data.variables: # type: ignore[union-attr]
             self._validate_station_names(station_indices)
 
         return station_indices
 
     def _validate_station_names(self, station_indices):
         """
-        Additional validation using station names if available in NetCDF.
+        Perform additional validation using station names if available in the NetCDF file.
+        
+        Cross-references station names between the gridlist and NetCDF file to identify
+        any mismatches that might indicate coordinate mapping errors.
 
         Args:
-            station_indices (dict): Mapping of station names to NetCDF indices
+            station_indices (dict): Mapping of station names to NetCDF array indices
+            
+        Note:
+            Emits warnings for station name mismatches but does not raise exceptions,
+            allowing the process to continue with coordinate-based matching.
         """
         try:
             nc_station_names = self._get_netcdf_station_names()
@@ -647,10 +806,16 @@ class netcdf_handler(base_handler):
 
     def _get_netcdf_station_names(self):
         """
-        Extract and convert station names from netCDF file to a list of strings.
+        Extract and convert station names from the NetCDF file to a list of strings.
+        
+        Reads the 'station_name' variable from the NetCDF file and converts each
+        entry to a properly formatted string with whitespace stripped.
 
         Returns:
-            list: List of station names from netCDF file
+            list: List of station names as strings extracted from the NetCDF file
+            
+        Note:
+            Assumes the NetCDF file has a 1D 'station_name' variable.
         """
 
         # Get the station_name variable
@@ -662,16 +827,20 @@ class netcdf_handler(base_handler):
 
     def _find_coordinate_variable(self, coord_type):
         """
-        Find coordinate variable name in NetCDF file, supporting multiple naming conventions.
+        Find coordinate variable name in NetCDF file using multiple naming conventions.
+        
+        Searches for latitude or longitude variables using various naming patterns
+        and CF conventions, including variable names, standard_name attributes,
+        axis attributes, and long_name attributes.
 
         Args:
-            coord_type (str): Either 'latitude' or 'longitude'
-
+            coord_type (str): Either 'latitude' or 'longitude' to specify coordinate type
+            
         Returns:
             str: The actual variable name found in the NetCDF file
-
+            
         Raises:
-            ValueError: If no coordinate variable is found
+            ValueError: If coord_type is invalid or no coordinate variable is found
         """
         if coord_type == 'latitude':
             # Check for latitude variable names in order of preference
@@ -726,7 +895,23 @@ class netcdf_handler(base_handler):
         )
 
     def load_data_parallel(self):
-        """Load data using MPI for parallel file reading."""
+        """
+        Load NetCDF data using MPI for parallel file reading of time-varying variables.
+        
+        Executes an external MPI script to read time-varying variables in parallel,
+        which can significantly improve performance for large NetCDF files. Each
+        time variable is read by a separate MPI process.
+        
+        Returns:
+            dict: Dictionary containing time-varying variable data for all stations
+            
+        Raises:
+            RuntimeError: If the MPI process fails or returns non-zero exit code
+            
+        Note:
+            Requires 'netcdf_reader.py' script and MPI installation.
+            Station variables are not read in parallel due to their small size.
+        """
         import subprocess
 
         indices = np.array(list(self._station_indices.values()))
@@ -767,15 +952,32 @@ class netcdf_handler(base_handler):
 
     def load_data(self):
         """
-        Load data from the NetCDF file into a dictionary.
+        Load data from the NetCDF file into a dictionary organized by station names.
+        
+        This method efficiently loads all required variables for the stations specified
+        in the gridlist. It supports both parallel (MPI) and sequential reading modes
+        depending on the configuration and NetCDF4 parallel support availability.
+        
+        The method performs bulk loading of data to minimize file I/O operations:
+        1. Loads all time-varying variables at once for all stations
+        2. Loads all station-specific variables at once for all stations  
+        3. Distributes the data into per-station dictionaries
+        
+        Variables loaded:
+        - Time-varying: ['hurs', 'tas', 'ps', 'pr', 'rsds', 'sfcwind', 'vpd']
+        - Station-specific: ['tn', 'tp', 'ap', 'ip', 'op']
 
         Returns:
-            dict: A dictionary with station names as keys and variable data as values
-
+            dict: Dictionary with station names as keys and variable data as values.
+                 Each station's data contains all available variables as numpy arrays.
+                 Returns empty dict if no stations are mapped.
+                 
+        Raises:
+            RuntimeError: If parallel NetCDF support is not available when MPI is enabled
+            
         Note:
-            This method optimizes performance by loading all data at once from the netCDF file
-            and then distributing it to individual station dictionaries. This avoids repeated
-            file access operations which are slow.
+            Masked arrays are automatically converted to regular numpy arrays with
+            mean-value filling for missing data.
         """
         data_dict = {}
         station_names = list(self._station_indices.keys())
@@ -849,11 +1051,25 @@ class netcdf_handler(base_handler):
 
     def load_metadata(self):
         """
-        Load metadata from the NetCDF file.
-        Now supports both short and long coordinate variable names.
+        Load metadata from the NetCDF file for time, latitude, and longitude dimensions.
+        
+        Extracts comprehensive metadata including attributes and coordinate values
+        for the time, latitude, and longitude dimensions. The metadata is filtered
+        to include only the stations present in the current gridlist.
+        
+        Uses flexible coordinate variable detection to handle different NetCDF
+        naming conventions (lat/latitude, lon/longitude, etc.).
 
         Returns:
-            tuple: A tuple with three dictionaries containing time, latitude, and longitude metadata
+            tuple: A tuple containing three dictionaries:
+                - time_meta (dict): Time dimension metadata with attributes and values
+                - lat_meta (dict): Latitude metadata with attributes and coordinate values
+                - lon_meta (dict): Longitude metadata with attributes and coordinate values
+                
+        Note:
+            - Masked arrays are converted to regular numpy arrays
+            - Metadata includes both variable attributes and coordinate index arrays
+            - Only stations matching the current gridlist are included in lat/lon metadata
         """
         # Extract time metadata
         time_meta = {}
@@ -918,7 +1134,22 @@ class netcdf_handler(base_handler):
         return time_meta, lat_meta, lon_meta
 
     def update_fpath(self, fpath, gridlist_df=None):
-        """Update the file path for the NetCDF handler, reopens the file and remaps station indices."""
+        """
+        Update the NetCDF file path and optionally the gridlist, reopening the file.
+        
+        Closes the current NetCDF file, opens the new file, and remaps station indices
+        based on the current or new gridlist. This allows switching between different
+        NetCDF files while maintaining the same handler instance.
+
+        Args:
+            fpath (str or Path): Path to the new NetCDF file
+            gridlist_df (pl.DataFrame, optional): New gridlist DataFrame to use.
+                                                 If None, uses existing gridlist.
+                                                 
+        Raises:
+            ValueError: If fpath is empty or not a valid NetCDF file
+            IOError: If the new NetCDF file cannot be opened
+        """
 
         if gridlist_df is not None:
             self.update_gridlist(gridlist_df)
@@ -947,10 +1178,19 @@ class netcdf_handler(base_handler):
 
     def update_gridlist(self, gridlist_df):
         """
-        Update the gridlist DataFrame and remap station indices.
+        Update the gridlist DataFrame and remap station indices for the NetCDF file.
+        
+        Replaces the current gridlist with a new one and recalculates the mapping
+        between station names and NetCDF array indices. This allows processing
+        different subsets of stations from the same NetCDF file.
 
         Args:
-            gridlist_df (polars.DataFrame): New gridlist DataFrame.
+            gridlist_df (pl.DataFrame): New gridlist DataFrame containing station information.
+                                       Must include 'station_name', 'lat', 'lon' columns.
+                                       
+        Raises:
+            TypeError: If gridlist_df is not a Polars DataFrame
+            ValueError: If station coordinate matching fails with the NetCDF file
         """
         if not isinstance(gridlist_df, pl.DataFrame):
             raise TypeError("gridlist_df must be a Polars DataFrame")
@@ -962,7 +1202,11 @@ class netcdf_handler(base_handler):
 
     def close(self):
         """
-        Close the NetCDF file safely.
+        Safely close the NetCDF file and clean up resources.
+        
+        Ensures the NetCDF dataset is properly closed and marks it as None
+        to prevent further access. Handles cases where the file might
+        already be closed or invalid.
         """
         if hasattr(self, 'nc_data') and self.nc_data is not None:
             try:
@@ -977,36 +1221,79 @@ class netcdf_handler(base_handler):
 
     def __enter__(self):
         """
-        Support for context manager protocol.
+        Enter the context manager for the NetCDF handler.
+        
+        Returns:
+            netcdf_handler: Returns self to enable context manager usage
         """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
-        Support for context manager protocol.
+        Exit the context manager and ensure proper cleanup.
+        
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
         """
         self.close()
 
     def __len__(self):
         """
-        Return the number of stations in the gridlist.
+        Return the number of stations in the current gridlist.
+        
+        Returns:
+            int: Number of stations in the gridlist DataFrame
         """
         return len(self.gridlist)
 
     def __del__(self):
         """
-        Ensure the NetCDF file is closed when the handler is deleted.
+        Destructor that ensures the NetCDF file is closed when the handler is deleted.
         """
         self.close()
 
 
 class input_handler:
-    """A unified input handler for CAETÊ input data."""
+    """
+    A unified input handler for CAETÊ input data supporting multiple file formats.
+    
+    This class provides a high-level interface for reading input data in batches,
+    abstracting away the differences between NetCDF and bz2 file formats. It supports
+    asynchronous batch processing with preloading for improved performance.
+    
+    The handler automatically selects the appropriate backend (netcdf_handler or 
+    bz2_handler) based on the configuration and provides a consistent interface
+    for batch processing of large datasets.
+    
+    Key features:
+    - Batch processing with configurable batch sizes
+    - Asynchronous preloading of next batch for improved performance  
+    - Support for updating file paths and gridlists during processing
+    - Context manager support for proper resource cleanup
+    
+    Attributes:
+        fpath (Path): Path to the input file or directory
+        gridlist (pl.DataFrame): Current gridlist DataFrame
+        batch_size (int): Number of stations per batch
+        input_type (str): Type of input handler ('netcdf' or 'bz2')
+        metadata (tuple): Metadata from the underlying handler
+        _current_batch (int): Index of current batch being processed
+        _total_batches (int): Total number of batches
+    """
 
     def __init__(self, fpath, gridlist_df, batch_size=128):
         """
-        Initialize the input handler.
-        This class can handle both bz2 and NetCDF files based on the provided file path.
+        Initialize the unified input handler with file path and processing parameters.
+        
+        Args:
+            fpath (str or Path): Path to the input file (NetCDF) or directory (bz2)
+            gridlist_df (pl.DataFrame): Polars DataFrame containing station information
+            batch_size (int, optional): Number of stations to process per batch. Defaults to 128.
+            
+        Raises:
+            ValueError: If unsupported input type is specified in configuration
         """
         self.fpath = str_or_path(fpath)
         self.gridlist = gridlist_df
@@ -1026,7 +1313,15 @@ class input_handler:
         self._calculate_batches()
 
     def _init_handler(self):
-        """Initialize the appropriate handler based on input type."""
+        """
+        Initialize the appropriate backend handler based on the configured input type.
+        
+        Creates either a netcdf_handler or bz2_handler instance depending on the
+        input_type configuration setting from the CAETE config file.
+        
+        Raises:
+            ValueError: If the input type is not 'netcdf' or 'bz2'
+        """
         if self.input_type == 'netcdf':
             self._handler = netcdf_handler(self.fpath, self.gridlist)
         elif self.input_type == 'bz2':
@@ -1035,23 +1330,53 @@ class input_handler:
             raise ValueError(f"Unsupported input type: {self.input_type}. Supported types: 'netcdf', 'bz2'")
 
     def _calculate_batches(self):
-        """Calculate total number of batches based on gridlist size and batch_size."""
+        """
+        Calculate the total number of batches needed based on gridlist size and batch size.
+        
+        Uses ceiling division to ensure all stations are included even if the last
+        batch is smaller than the specified batch_size.
+        """
         total_rows = len(self.gridlist)
         self._total_batches = (total_rows + self.batch_size - 1) // self.batch_size
         self._current_batch = 0
 
     def _get_batch_gridlist(self, batch_index):
-        """Get gridlist slice for a specific batch."""
+        """
+        Extract a slice of the gridlist for a specific batch.
+        
+        Args:
+            batch_index (int): Zero-based index of the batch to extract
+            
+        Returns:
+            pl.DataFrame: Polars DataFrame slice containing stations for the specified batch
+        """
         start_index = batch_index * self.batch_size
         chunk_size = min(self.batch_size, len(self.gridlist) - start_index)
         return self.gridlist.slice(start_index, chunk_size)
 
     def get_metadata(self):
-        """load metadata from the handler."""
+        """
+        Load and return metadata from the underlying handler.
+        
+        Returns:
+            tuple: Metadata tuple from the backend handler (format depends on handler type)
+        """
         return self.metadata
 
     def _load_batch_data(self, batch_index):
-        """Load data for a specific batch."""
+        """
+        Load data for a specific batch by updating the handler's gridlist and reading data.
+        
+        Args:
+            batch_index (int): Zero-based index of the batch to load
+            
+        Returns:
+            dict: Dictionary containing:
+                - 'batch_index': The batch index
+                - 'data': Station data dictionary from the handler
+                - 'gridlist': Gridlist DataFrame for this batch
+                - 'batch_size': Number of stations in this batch
+        """
         batch_gridlist = self._get_batch_gridlist(batch_index)
 
         # Update handler with batch gridlist
@@ -1068,7 +1393,16 @@ class input_handler:
         }
 
     def _preload_next_batch(self, batch_index):
-        """Asynchronously preload the next batch."""
+        """
+        Asynchronously preload the next batch using a ThreadPoolExecutor.
+        
+        Args:
+            batch_index (int): Index of the batch to preload
+            
+        Returns:
+            concurrent.futures.Future or None: Future object for the batch loading operation,
+                                              or None if batch_index is beyond total batches
+        """
         if batch_index < self._total_batches:
             if self._executor is None:
                 self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1,
@@ -1078,15 +1412,26 @@ class input_handler:
 
     def batch_generator(self):
         """
-        Generator that yields batches of data with asynchronous preloading.
+        Generator that yields batches of data with asynchronous preloading for optimal performance.
+        
+        This method implements an efficient batch processing strategy by preloading the next
+        batch asynchronously while the current batch is being processed. This overlaps I/O
+        operations with data processing for improved throughput.
+        
+        The generator handles cleanup automatically, including cancelling pending futures
+        and shutting down the thread pool executor when iteration completes or encounters
+        an exception.
 
         Yields:
             dict: Dictionary containing batch data with keys:
-                - 'batch_index': Current batch index
-                - 'data': Station data dictionary
-                - 'metadata': Metadata tuple (time_meta, lat_meta, lon_meta)
-                - 'gridlist': Gridlist for current batch
-                - 'batch_size': Number of stations in current batch
+                - 'batch_index': Current batch index (zero-based)
+                - 'data': Station data dictionary from the backend handler
+                - 'gridlist': Gridlist DataFrame for the current batch
+                - 'batch_size': Number of stations in the current batch
+                
+        Note:
+            If preloading fails or is cancelled, the method falls back to synchronous
+            loading with appropriate warning messages.
         """
         if self._total_batches == 0:
             return
@@ -1137,12 +1482,23 @@ class input_handler:
 
     def update(self, fpath, gridlist_df=None):
         """
-        Update the file path and optionally the gridlist, resetting the generator.
+        Update the file path and optionally the gridlist, reinitializing the handler.
+        
+        This method allows switching to a different input file or directory while
+        maintaining the same input_handler instance. It properly cleans up existing
+        resources and reinitializes with the new parameters.
+        
+        The method ensures thread-safe operation by properly shutting down any
+        running executors before making changes.
 
         Args:
-            fpath (str): Required. New file path to set.
-            gridlist_df (polars.DataFrame, optional): New gridlist DataFrame.
-                If not provided, uses existing gridlist.
+            fpath (str or Path): New file path (NetCDF file) or directory path (bz2 files)
+            gridlist_df (pl.DataFrame, optional): New gridlist DataFrame to use.
+                                                 If None, keeps the existing gridlist.
+                                                 
+        Raises:
+            ValueError: If fpath is empty
+            TypeError: If gridlist_df is provided but not a Polars DataFrame
         """
         if not fpath:
             raise ValueError("fpath is required")
@@ -1182,29 +1538,64 @@ class input_handler:
 
     @property
     def current_batch_index(self):
-        """Get the current batch index."""
+        """
+        Get the zero-based index of the current batch being processed.
+        
+        Returns:
+            int: Current batch index
+        """
         return self._current_batch
 
     @property
     def total_batches(self):
-        """Get the total number of batches."""
+        """
+        Get the total number of batches that will be processed.
+        
+        Returns:
+            int: Total number of batches
+        """
         return self._total_batches
 
     @property
     def progress(self):
-        """Get progress as a tuple (current_batch, total_batches)."""
+        """
+        Get the current processing progress as a tuple.
+        
+        Returns:
+            tuple: (current_batch_index, total_batches) for progress tracking
+        """
         return (self._current_batch, self._total_batches)
 
     def __len__(self):
-        """Return the total number of batches."""
+        """
+        Return the total number of batches that will be processed.
+        
+        Returns:
+            int: Total number of batches
+        """
         return self._total_batches
 
     def __enter__(self):
-        """Support for context manager protocol."""
+        """
+        Enter the context manager for the input handler.
+        
+        Returns:
+            input_handler: Returns self to enable context manager usage
+        """
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Clean up resources when exiting context manager."""
+        """
+        Exit the context manager and ensure proper cleanup of all resources.
+        
+        Cancels any pending batch preloading operations, shuts down thread pool
+        executors, and closes the underlying file handler.
+        
+        Args:
+            exc_type: Exception type if an exception occurred
+            exc_val: Exception value if an exception occurred
+            exc_tb: Exception traceback if an exception occurred
+        """
         # Cancel any pending futures first
         if self._next_batch_future is not None and not self._next_batch_future.done():
             self._next_batch_future.cancel()
