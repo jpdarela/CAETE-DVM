@@ -20,8 +20,11 @@ Copyright 2017- LabTerra
 
 
 from pathlib import Path
+from pydantic import BaseModel, Field, validator
+from pathlib import Path
+from typing import Union, Literal, List
+import tomllib
 from pprint import pformat
-from typing import Union, Dict, Any, Optional
 
 import os
 import sys
@@ -41,7 +44,7 @@ config_file = Path(__file__).parent / "caete.toml"
 
 # Path to the fortran runtime
 # This is used to import the caete_module in windows systems.
-fortran_runtime = None
+fortran_runtime: Path | None = None
 # IN windows systems, the fortran runtime is needed to import the caete_module.
 # Find path to the fortran compiler root, used in windows systems.
 if sys.platform == "win32":
@@ -96,10 +99,13 @@ if sys.platform == "win32":
         print(f"\n HINT: the fortran runtime path is set to a path like:\n {fortran_runtime}.\n Please check if this is correct.")
         sys.exit(1)
 
-def get_fortran_runtime() -> Path:
+def get_fortran_runtime() -> Path | None:
     """Get the path to the fortran compiler dlls."""
     if sys.platform == "win32":
-        return Path(fortran_runtime).resolve()
+        if fortran_runtime is not None:
+            return Path(fortran_runtime).resolve()
+        else:
+            raise ValueError("Fortran runtime path is not set.")
     else:
         return None
 
@@ -148,44 +154,274 @@ if sys.platform == "win32":
     update_sys_pathlib(get_fortran_runtime())
 
 
-class Config:
-    """
-    Class to store the parameters from a toml file.
-    Reads nested dictionaries as Config objects
-    All the parameters are stored as attributes of the object
-    Types are stored in the __annotations__ attribute
-    """
-    def __init__(self, d: Optional[Dict[str, Any]] = None) -> None:
-        self.__annotations__ = {}
-        if d is not None:
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    setattr(self, k, Config(v))
-                    self.__annotations__[k] = Config
-                else:
-                    setattr(self, k, v)
-                    self.__annotations__[k] = type(v)
+# class Config:
+#     """
+#     Class to store the parameters from a toml file.
+#     Reads nested dictionaries as Config objects
+#     All the parameters are stored as attributes of the object
+#     Types are stored in the __annotations__ attribute
+#     """
+#     def __init__(self, d: Optional[Dict[str, Any]] = None) -> None:
+#         self.__annotations__ = {}
+#         if d is not None:
+#             for k, v in d.items():
+#                 if isinstance(v, dict):
+#                     setattr(self, k, Config(v))
+#                     self.__annotations__[k] = Config
+#                 else:
+#                     setattr(self, k, v)
+#                     self.__annotations__[k] = type(v)
 
 
+#     def __repr__(self) -> str:
+#         return f"Config(\n{pformat(self.__dict__)})\n"
+
+
+# def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
+#     """ Get parameters from the a toml file rerturning a dictionary."""
+
+#     cfg = Path(config)
+#     assert cfg.exists(), f"File {cfg} does not exist."
+#     assert cfg.suffix == '.toml', f"File {cfg} is not a toml file."
+#     assert cfg.is_file(), f"{cfg} is not a file."
+
+#     with open(config, 'rb') as f:
+#         # Works only with python 3.11 and above
+#         data = tomllib.load(f)
+#     return data
+
+# # Can be used in the code to get the parameters any the toml file
+# def fetch_config(config: Union[str, Path] = config_file) -> Config:
+#     """ Get parameters from the  caete.toml file.
+#     Returns a Config object"""
+#     return Config(_fetch_config_parameters(config))
+
+class InputHandlerConfig(BaseModel):
+    """Configuration for input data handling."""
+    input_type: Literal["netcdf", "bz2"] = Field(
+        "netcdf", 
+        description="Type of input data. Options: 'netcdf' or 'bz2'"
+    )
+    mp: bool = Field(
+        False, 
+        description="Use MPI for reading netcdf files"
+    )
+
+class MultiprocessingConfig(BaseModel):
+    """Configuration for multiprocessing and parallelization."""
+    nprocs: int = Field(
+        16, 
+        gt=0, 
+        description="Threads used to post process the output. Not used by the model itself"
+    )
+    max_processes: int = Field(
+        64, 
+        gt=0, 
+        description="Number of python processes used to run the model"
+    )
+    omp_num_threads: int = Field(
+        1, 
+        ge=0, 
+        description="Number of threads used by OpenMP"
+    )
+
+class ConversionFactorsIsimipConfig(BaseModel):
+    """Unit conversion factors for ISIMIP input data."""
+    tas: float = Field(
+        273.15, 
+        description="K to degC (sub) [input(K) to model(°C)]"
+    )
+    pr: float = Field(
+        86400.0, 
+        description="kg m-2 s-1 to mm day-1 (mult) [input(kg m-2 s-1) to model(mm day-1)]"
+    )
+    ps: float = Field(
+        0.01, 
+        description="Pa to hPa (mult) [input(Pa) to model(hPa)]"
+    )
+    rhs: float = Field(
+        0.01, 
+        description="% to kg kg-1 (mult) [input(%) to model(kg kg-1)]"
+    )
+    rsds: float = Field(
+        0.198, 
+        description="W m-2 to mol(photons) m-2 day-1 conversion factor"
+    )
+
+class MetacommConfig(BaseModel):
+    """Metacommunity configuration parameters."""
+    n: int = Field(
+        1, 
+        ge=1, 
+        le=30, 
+        description="Number of communities in the metacommunity"
+    )
+    npls_max: int = Field(
+        50, 
+        gt=0, 
+        description="Maximum number of PLS per community"
+    )
+    ntraits: int = Field(
+        17, 
+        gt=0, 
+        description="Number of traits in a PLS"
+    )
+
+class CrsConfig(BaseModel):
+    """Coordinate Reference System configuration."""
+    res: float = Field(0.5, gt=0, description="Grid resolution")
+    xres: float = Field(0.5, gt=0, description="X resolution")
+    yres: float = Field(0.5, gt=0, description="Y resolution")
+    epsg_id: int = Field(4326, description="EPSG code")
+    datum: str = Field("WGS84", description="Geodetic datum")
+    proj4: str = Field(
+        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs", 
+        description="PROJ4 string"
+    )
+    epsg_long_name: str = Field(
+        "World Geodetic System 1984", 
+        description="Full EPSG name"
+    )
+    lat_units: str = Field("degrees_north", description="Latitude units")
+    lon_units: str = Field("degrees_east", description="Longitude units")
+    lat_zero: float = Field(90, description="Latitude zero point")
+    lon_zero: float = Field(-180, description="Longitude zero point")
+
+class FertilizationConfig(BaseModel):
+    """Fertilization experiment configuration."""
+    afex_mode: Literal["N", "P", "NP"] = Field(
+        "N", 
+        description="Fertilization mode: Nitrogen, Phosphorus, or both"
+    )
+    n: float = Field(
+        12.5, 
+        ge=0, 
+        description="Nitrogen fertilization rate (g m-2 y-1)"
+    )
+    p: float = Field(
+        5.0, 
+        ge=0, 
+        description="Phosphorus fertilization rate (g m-2 y-1)"
+    )
+
+class Config(BaseModel):
+    """
+    Main CAETE model configuration.
+    
+    This class replaces the original dynamic Config class with a typed Pydantic model
+    that provides compile-time type checking and runtime validation.
+    """
+    
+    # Day of year for first day of each month
+    doy_months: List[int] = Field(
+        [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335],
+        min_length=1,
+        max_length=12,
+        description="Day of year for first day of each month."
+    )
+    
+    # Nested configuration sections
+    input_handler: InputHandlerConfig = Field(
+        default_factory=InputHandlerConfig, # type: ignore
+        description="Input data handling configuration"
+    )
+    multiprocessing: MultiprocessingConfig = Field(
+        default_factory=MultiprocessingConfig, # type: ignore
+        description="Multiprocessing configuration"
+    )
+    conversion_factors_isimip: ConversionFactorsIsimipConfig = Field(
+        default_factory=ConversionFactorsIsimipConfig, # type: ignore
+        description="Unit conversion factors for ISIMIP data"
+    )
+    metacomm: MetacommConfig = Field(
+        default_factory=MetacommConfig, # type: ignore
+        description="Metacommunity configuration"
+    )
+    crs: CrsConfig = Field(
+        default_factory=CrsConfig, # type: ignore
+        description="Coordinate Reference System configuration"
+    )
+    fertilization: FertilizationConfig = Field(
+        default_factory=FertilizationConfig, # type: ignore
+        description="Fertilization experiment configuration"
+    )
+    
+    # @validator('doy_months')
+    # def validate_doy_months(cls, v):
+    #     """Validate day of year values are reasonable."""
+    #     if any(day < 1 or day > 366 for day in v):
+    #         raise ValueError("Day of year must be between 1 and 366")
+    #     if v != sorted(v):
+    #         raise ValueError("Day of year values must be in ascending order")
+    #     return v
+    
+    # @validator('multiprocessing')
+    # def validate_multiprocessing(cls, v):
+    #     """Validate multiprocessing configuration."""
+    #     if v.omp_num_threads > 1:
+    #         import warnings
+    #         warnings.warn(
+    #             "Setting omp_num_threads > 1 may degrade performance due to thread creation overhead",
+    #             UserWarning
+    #         )
+    #     return v
+    
     def __repr__(self) -> str:
-        return f"Config(\n{pformat(self.__dict__)})\n"
+        """Maintain compatibility with original Config.__repr__."""
+        return f"Config(\n{pformat(self.dict())})\n"
+    
+    class Config:
+        """Pydantic configuration."""
+        extra = 'forbid'  # Prevent unknown fields
+        validate_assignment = True  # Validate on assignment
+        use_enum_values = True  # Use enum values in serialization
 
 
-def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
-    """ Get parameters from the a toml file rerturning a dictionary."""
-
+def _fetch_config_parameters(config: Union[str, Path]) -> dict:
+    """Get parameters from a TOML file returning a dictionary."""
     cfg = Path(config)
     assert cfg.exists(), f"File {cfg} does not exist."
-    assert cfg.suffix == '.toml', f"File {cfg} is not a toml file."
+    assert cfg.suffix == '.toml', f"File {cfg} is not a TOML file."
     assert cfg.is_file(), f"{cfg} is not a file."
 
     with open(config, 'rb') as f:
-        # Works only with python 3.11 and above
         data = tomllib.load(f)
     return data
 
-# Can be used in the code to get the parameters any the toml file
+
 def fetch_config(config: Union[str, Path] = config_file) -> Config:
-    """ Get parameters from the  caete.toml file.
-    Returns a Config object"""
-    return Config(_fetch_config_parameters(config))
+    """
+    Get parameters from the caete.toml file.
+    
+    Returns a validated Config object with full type support.
+    
+    Args:
+        config: Path to the TOML configuration file
+        
+    Returns:
+        Config: Validated configuration object
+        
+    Raises:
+        ValidationError: If configuration is invalid
+        FileNotFoundError: If configuration file doesn't exist
+    """
+    data = _fetch_config_parameters(config)
+    return Config(**data)
+
+
+# Convenience functions for accessing nested config values
+def get_input_type(cfg: Config) -> str:
+    """Get the input data type from configuration."""
+    return cfg.input_handler.input_type
+
+def get_batch_size(cfg: Config, default: int = 128) -> int:
+    """Get batch size from configuration or return default."""
+    return getattr(cfg.input_handler, 'batch_size', default)
+
+def get_max_processes(cfg: Config) -> int:
+    """Get maximum number of processes from configuration."""
+    return cfg.multiprocessing.max_processes
+
+def get_conversion_factor(cfg: Config, variable: str) -> float:
+    """Get unit conversion factor for a specific variable."""
+    return getattr(cfg.conversion_factors_isimip, variable)
