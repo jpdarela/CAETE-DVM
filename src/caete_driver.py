@@ -101,7 +101,7 @@ if __name__ == "__main__":
     r.update_input(obsclim_files)
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2021, 30)
+    run_breaks = fn.create_run_breaks(1901, 2021, 61)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)

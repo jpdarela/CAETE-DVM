@@ -123,12 +123,14 @@ if __name__ == "__main__":
     # the previous state files.
     state_file = Path(f"./{region_name}.psz") # Historical state file
     r.save_state(state_file)  # type: ignore
+    
 
-    # Clean the model state, this state file is used to access model outputs
+    # Clean the model state, We create a new state folder structure to access model outputs
     # We are finished with this region object. No need to keep it in memory.
+    r.set_new_state()
     r.clean_model_state()
     output_file = Path(f"./{region_name}_output.psz")
-    # THe state file for ouputs does not need a new state.
+    # The state file for outputs does not need a new state.
     r.save_state(output_file)  # type: ignore
     # fn.save_state_zstd(r, Path(f"./{region_name}_output.psz"))
     del r
