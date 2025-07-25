@@ -809,7 +809,7 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
-            dump(data_obj, fh, compress=('zlib', 5), protocol=5)
+            dump(data_obj, fh, compress=('lzma', 8), protocol=5)
             fh.flush()
         gc.collect() # type: ignore
         self.flush_data = None
@@ -1616,29 +1616,24 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.ls[step] = living_pls
 
             # <- Out of the daily loop
+            # Save the spin data
             sv: Thread
             if save:
                 if s > 0:
-                    while True:
-                        if sv.is_alive(): # type: ignore
-                            sleep(0.1)
-                        else:
-                            self.flush_data = None
-                            break
+                    sv.join()  # Wait for the previous thread to finish
+                    self.flush_data = None
                 self.executed_iterations.append((start_date, end_date))
                 self.flush_data = self._flush_output(
                     'spin', (self.start_index, self.end_index))
                 sv = Thread(target=self._save_output, args=(self.flush_data,))
                 sv.start()
-        # Finish the last thread
         # <- Out of spin loop
+        # Manage the last thread
         if save:
-            while True:
-                if sv.is_alive():
-                    sleep(0.1)
-                else:
-                    self.flush_data = None
-                    break
+            sv.join()  # Wait for the last thread to finish
+            self.flush_data = None
+        
+        
         # Restablish new communities in the end, if applicable
         if kill_and_reset:
             assert not save, "Cannot save data when resetting communities"
