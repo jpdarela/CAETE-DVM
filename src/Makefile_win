@@ -80,11 +80,11 @@ so: $(sources) interface
 	@echo "Serial version of caete_module created using $(FC)"
 	@echo Bundle dlls from Intel Fortran Compiler and MSVC into the module directory
 	@$(PYEXEC) runtime_dlls.py
-#	$(CYTHON) -a community.py
+#  	$(CYTHON) -a community.pyx
 #	$(CYTHON) -a metacommunity.py
 #	$(CYTHON) -a hydro_caete.py
 #	$(CYTHON) -a output.py
-#	$(PYEXEC) setup.py build_ext --inplace --verbose
+# 	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 so_parallel: $(sources) interface
 	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp"

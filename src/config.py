@@ -20,7 +20,7 @@ Copyright 2017- LabTerra
 
 
 from pathlib import Path
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from pathlib import Path
 from typing import Union, Literal, List
 import tomllib
@@ -98,6 +98,7 @@ if sys.platform == "win32":
         print(f"Path to fortran runtime dll does not exist. Please set the environment variable FC_RUNTIME to the path of the fortran compiler dlls.")
         print(f"\n HINT: the fortran runtime path is set to a path like:\n {fortran_runtime}.\n Please check if this is correct.")
         sys.exit(1)
+
 
 def get_fortran_runtime() -> Path | None:
     """Get the path to the fortran compiler dlls."""
@@ -198,6 +199,11 @@ if sys.platform == "win32":
 
 class InputHandlerConfig(BaseModel):
     """Configuration for input data handling."""
+    input_method: Literal["legacy", "ih"] = Field(
+        "legacy",
+        description="Input method to use. Options: 'legacy' or 'ih'"
+    )
+
     input_type: Literal["netcdf", "bz2"] = Field(
         "netcdf", 
         description="Type of input data. Options: 'netcdf' or 'bz2'"
@@ -312,10 +318,16 @@ class Config(BaseModel):
     that provides compile-time type checking and runtime validation.
     """
     
+    model_config = ConfigDict(
+        extra='forbid',  # Prevent unknown fields
+        validate_assignment=True,  # Validate on assignment
+        use_enum_values=True  # Use enum values in serialization
+    )
+    
     # Day of year for first day of each month
     doy_months: List[int] = Field(
         [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335],
-        min_length=1,
+        min_length=0,
         max_length=12,
         description="Day of year for first day of each month."
     )
@@ -346,35 +358,33 @@ class Config(BaseModel):
         description="Fertilization experiment configuration"
     )
     
-    # @validator('doy_months')
-    # def validate_doy_months(cls, v):
-    #     """Validate day of year values are reasonable."""
-    #     if any(day < 1 or day > 366 for day in v):
-    #         raise ValueError("Day of year must be between 1 and 366")
-    #     if v != sorted(v):
-    #         raise ValueError("Day of year values must be in ascending order")
-    #     return v
+    @field_validator('doy_months')
+    @classmethod
+    def validate_doy_months(cls, v):
+        """Validate day of year values are reasonable."""
+        if not v:
+            return v  # Allow empty list
+        if any(day < 1 or day > 365 for day in v):
+            raise ValueError("Day of year must be between 1 and 365")
+        if v != sorted(v):
+            raise ValueError("Day of year values must be in ascending order")
+        return v
     
-    # @validator('multiprocessing')
-    # def validate_multiprocessing(cls, v):
-    #     """Validate multiprocessing configuration."""
-    #     if v.omp_num_threads > 1:
-    #         import warnings
-    #         warnings.warn(
-    #             "Setting omp_num_threads > 1 may degrade performance due to thread creation overhead",
-    #             UserWarning
-    #         )
-    #     return v
+    @field_validator('multiprocessing')
+    @classmethod
+    def validate_multiprocessing(cls, v):
+        """Validate multiprocessing configuration."""
+        if v.omp_num_threads > 1:
+            import warnings
+            warnings.warn(
+                "Setting omp_num_threads > 1 may degrade performance due to thread creation overhead",
+                UserWarning
+            )
+        return v
     
-    def __repr__(self) -> str:
-        """Maintain compatibility with original Config.__repr__."""
-        return f"Config(\n{pformat(self.dict())})\n"
-    
-    class Config:
-        """Pydantic configuration."""
-        extra = 'forbid'  # Prevent unknown fields
-        validate_assignment = True  # Validate on assignment
-        use_enum_values = True  # Use enum values in serialization
+    # def __repr__(self) -> str:
+    #     """Maintain compatibility with original Config.__repr__."""
+    #     return f"Config(\n{pformat(self.model_dump())})\n"
 
 
 def _fetch_config_parameters(config: Union[str, Path]) -> dict:

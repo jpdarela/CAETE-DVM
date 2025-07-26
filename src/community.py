@@ -24,7 +24,9 @@
 from typing import Any, Callable, List, Tuple
 import numpy as np
 from numpy.typing import NDArray
+from numba import njit
 
+@njit(cache=True)
 def carea_frac(cleaf1:NDArray[np.float64],
                   cfroot1:NDArray[np.float64],
                   cawood1:NDArray[np.float64]) -> NDArray[np.float64]:
@@ -32,7 +34,7 @@ def carea_frac(cleaf1:NDArray[np.float64],
     # Initialize variables
     npft = cleaf1.size
     ocp_coeffs = np.zeros(npft, dtype=np.float64)
-    total_biomass_pft = np.zeros(npft, dtype=np.float64)
+    total_biomass_pft = np.zeros(npft,dtype=np.float64)
     # Compute total biomass for each PFT
     total_biomass_pft = cleaf1 + cfroot1 + cawood1
     # Compute total biomass for all PFTs

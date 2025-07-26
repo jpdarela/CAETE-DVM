@@ -6,6 +6,8 @@ doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 
 
 [input_handler]
+input_method = "legacy" # "legacy" or "ih" LEgacy uses the old method of passing data to the model.
+# "ih" uses the new input handler which is more flexible and allows for different input formats
 input_type = "netcdf" # Type of input data. THe other option is "bz2"
 
 # The netcdf files used are chunked in an optimal way for reading. THe sequentlial reading is faster than the parallel reading.

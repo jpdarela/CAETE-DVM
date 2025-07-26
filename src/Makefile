@@ -26,7 +26,7 @@
 # If using python 3.12, use the ext_mod_meson target
 # If using python 3.11, use the ext_mod_legacy target
 
-PYEXEC = python # Edit this line to point to the python executable
+PYEXEC = python3 # Edit this line to point to the python executable
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
