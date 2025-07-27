@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # Create the region using the spinup climate files
 
     r = region(region_name,
-               spinclim_files,
+               spinclim_nc,
                soil_tuple,
                co2_path,
                main_table,

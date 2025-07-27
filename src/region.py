@@ -94,6 +94,7 @@ class region:
         self.input_type = self.config.input_handler.input_type
         self.input_method = self.config.input_handler.input_method
         self.nchunks = self.config.multiprocessing.max_processes
+
         if self.input_method == "ih":
             if gridlist is None:
                 raise ValueError("Gridlist must be provided when using input_handler")
@@ -120,7 +121,7 @@ class region:
         self.npls_main_table = self.pls_table.npls
         
         # Read the metadata from the climate files
-        if self.config.input_handler.input_method == "legacy":
+        if self.input_method == "legacy":
             # Legacy input method
             try:
                 metadata_file = list(self.input_data.glob("METADATA.pbz2"))[0]

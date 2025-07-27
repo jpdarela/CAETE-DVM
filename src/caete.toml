@@ -9,7 +9,7 @@ doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 # Input handler configuration. Used to read input data.
 
 # "ih" uses the new input handler which is more flexible and allows for different input formats
-input_method = "legacy" # "legacy" or "ih" Legacy uses the old method of passing filepaths to the gridcells.
+input_method = "ih" # "legacy" or "ih" Legacy uses the old method of passing filepaths to the gridcells.
 
 input_type = "netcdf" # Type of input data. The options are "netcdf" & "bz2"
 
