@@ -221,7 +221,7 @@ class MultiprocessingConfig(BaseModel):
         description="Threads used to post process the output. Not used by the model itself"
     )
     max_processes: int = Field(
-        64, 
+        128, 
         gt=0, 
         description="Number of python processes used to run the model"
     )

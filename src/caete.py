@@ -173,7 +173,7 @@ def rwarn(txt:str='RuntimeWarning'):
     """Raise a RuntimeWarning"""
     warnings.warn(f"{txt}", RuntimeWarning)
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30):
+def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30, nl='\r'):
     """FROM Stack Overflow/GIST, THANKS
     Call in a loop to create terminal progress bar
 
@@ -191,8 +191,8 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
     filled_length = int(round(bar_length * iteration / float(total)))
     bar = '█' * filled_length + '-' * (bar_length - filled_length)
 
-    sys.stdout.write('\r%s |%s| %s%s %s' %
-                     (prefix, bar, percents, '%', suffix)), # type: ignore
+    sys.stdout.write('%s%s |%s| %s%s %s' %
+                     (nl, prefix, bar, percents, '%', suffix)), # type: ignore
 
     if iteration == total:
         sys.stdout.write('\n')
@@ -401,7 +401,6 @@ class state_zero:
         # counts the execution of a time slice (a call of self.run_spinup)
         self.run_counter = 0
 
-
 class climate:
     """class with climate data"""
 
@@ -432,7 +431,6 @@ class climate:
         """_summary_"""
         self.co2_path = str_or_path(fpath, check_is_file=True)
         self.co2_data = get_co2_concentration(self.co2_path)
-
 
 class time:
     """_summary_
@@ -473,7 +471,6 @@ class time:
             self.time_index[0], self.time_unit, calendar=self.calendar)
         self.end_date = cftime.num2date(
             self.time_index[-1], self.time_unit, calendar=self.calendar)
-
 
 class soil:
     """_summary_
@@ -593,7 +590,6 @@ class soil:
 
         # will deal with irrigation experiments and possibly water table depth
         pass
-
 
 class gridcell_output:
     """Class to manage gridcell outputs
@@ -809,11 +805,10 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
-            dump(data_obj, fh, compress=('lzma', 8), protocol=5)
+            dump(data_obj, fh, compress=('lzma', 8), protocol=5) # type: ignore
             fh.flush()
         gc.collect() # type: ignore
         self.flush_data = None
-
 
 class grd_mt(state_zero, climate, time, soil, gridcell_output):
     """A gridcell object to run the model in the meta-community mode
@@ -931,45 +926,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         return None
 
 
-    def set_station(self,
-                      sdata:Dict[str, NDArray[np.float64]],
-                      stime_i: Dict,
-                      co2: Dict,
-                      tsoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
-                      ssoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
-                      hsoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]
-                      )->None:
-        """ PREPARE A GRIDCELL TO RUN in the station mode"""
-        # # Meta-community
-        # We want to run queues of gridcells in parallel. So each gridcell receives a copy of the PLS table object
-
-        # Number of communities in the metacommunity. Defined in the config file {caete.toml}
-        # Each gridcell has one metacommunity wuth ncomms communities
-        self.ncomms:int = self.config.metacomm.n  #type: ignore # Number of communities
-
-        # Metacommunity object
-        self.metacomm:mc.metacommunity = mc.metacommunity(self.ncomms, self.get_from_main_array)
-
-        self.data = sdata
-
-        # Read climate data
-        self._set_clim(self.data)
-
-        # get CO2 data
-        self.co2_data = copy.deepcopy(co2)
-
-        # SOIL: NUTRIENTS and WATER
-        self._init_soil_cnp(self.data)
-        self._init_soil_water(tsoil, ssoil, hsoil)
-
-        # TIME
-        self._set_time(stime_i)
-
-        return None
-
-
     def set_gridcell(self,
-                      input_fpath:Union[Path, str],
+                      climate_data_source:Union[Path, str, Dict[str, NDArray[np.float32]]],
                       stime_i: Dict,
                       co2: Dict,
                       tsoil: Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
@@ -979,8 +937,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         """ PREPARE A GRIDCELL TO RUN in the meta-community mode
 
         Args:
-            input_fpath (Union[Path, str]): path to the input file with climatic and soil data
-            stime_i (Dict): dictionary with the time index and units
+            climate_data_source (Union[Path, str]): path to the input file or dictionary with climatic and soil data
+            stime_i (Dict): dictionary with the time index metadata
             co2 (Dict): dictionary with the CO2 data
             pls_table (np.ndarray): np.array with the functional traits data
             tsoil (Tuple[np.ndarray]):
@@ -988,7 +946,14 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             hsoil (Tuple[np.ndarray]):
         """
         # Input data
-        self.input_fpath = str_or_path(input_fpath)
+        if isinstance(climate_data_source, dict):
+            # If input_fpath is a dict, it is expected to contain the data
+            # in the same format as the data read from the input file
+            self.data = climate_data_source
+            self.input_fpath = None
+        elif isinstance(climate_data_source, (str, Path)):
+            self.input_fpath = str_or_path(climate_data_source)
+            self.data = read_bz2_file(self.input_fpath)
 
         # # Meta-community
         # We want to run queues of gridcells in parallel. So each gridcell receives a copy of the PLS table object
@@ -999,12 +964,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
         # Metacommunity object
         self.metacomm:mc.metacommunity = mc.metacommunity(self.ncomms, self.get_from_main_array)
-
-
-        # Read climate drivers and soil characteristics, incl. nutrients, for this gridcell
-        # Having all data to one gridcell in a file enables to create/start the gricells in parallel (threading)
-        # TODO: implement this multithreading in the region class to start all gridcells in parallel
-        self.data = read_bz2_file(self.input_fpath)
 
         # Read climate data
         self._set_clim(self.data)

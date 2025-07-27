@@ -26,8 +26,12 @@ import polars as pl
 
 from caete import str_or_path, read_bz2_file
 from config import fetch_config
+from _geos import find_coordinates_xy, find_indices_xy 
 
 cfg = fetch_config()
+
+
+# Utility functions to create gridlists from input files
 
 class base_handler(ABC):
     """
@@ -108,6 +112,7 @@ class base_handler(ABC):
         """
         pass
 
+
     @abstractmethod
     def update_fpath(self, fpath):
         """
@@ -125,6 +130,7 @@ class base_handler(ABC):
         """
         pass
 
+
     @abstractmethod
     def close(self):
         """
@@ -132,6 +138,7 @@ class base_handler(ABC):
         Must be implemented by subclasses.
         """
         pass
+
 
     @abstractmethod
     def __enter__(self):
@@ -141,6 +148,7 @@ class base_handler(ABC):
         """
         pass
 
+
     @abstractmethod
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
@@ -149,7 +157,8 @@ class base_handler(ABC):
         """
         pass
 
-    # Optional: Add __del__ as abstract too
+
+    @abstractmethod
     def __del__(self):
         """
         Default cleanup method that calls close().
@@ -160,6 +169,7 @@ class base_handler(ABC):
         except:
             pass  # Ignore errors during cleanup
 
+    
     # Common methods for all handlers
     def _find_closest_coordinate(self, target_lat, target_lon, nc_lats, nc_lons):
         """
@@ -208,7 +218,6 @@ class base_handler(ABC):
                             if station_names.count(name) > 1]
             raise ValueError(f"Duplicate station names in gridlist: {duplicates}")
 
-
 class bz2_handler(base_handler):
     """
     A handler for reading bz2 compressed input files for the CAETE model.
@@ -247,10 +256,13 @@ class bz2_handler(base_handler):
         # Enforce that fpath is a directory
         if not self.isdir:
             raise ValueError(f"Provided path {self.fpath} is not a valid directory")
+        
+        self.original_gridlist = gridlist_df
 
         self.input_files = []
         self.station_names = []
         self._find_files(gridlist_df)
+
 
     def _find_files(self, gridlist_df):
         """
@@ -288,6 +300,7 @@ class bz2_handler(base_handler):
         # Filter out non-existent files
         self.input_files = self._filter_non_existent_files()
 
+
     def _filter_non_existent_files(self):
         """
         Filter the input_files list to include only files that exist on the filesystem.
@@ -305,6 +318,7 @@ class bz2_handler(base_handler):
         file_paths = [f for f in self.input_files if f.exists()]
         self.station_names = ["station_" + f.stem.split("_")[-1] for f in file_paths]
         return file_paths
+
 
     def _read_metadata_file(self):
         """
@@ -403,6 +417,7 @@ class bz2_handler(base_handler):
         # Convert results to dictionary
         return dict(results)
 
+
     def load_metadata(self):
         """
         Load and return metadata from the METADATA.pbz2 file.
@@ -417,6 +432,7 @@ class bz2_handler(base_handler):
                 - lon_meta (dict): Longitude metadata for gridlist stations
         """
         return self._read_metadata_file()
+
 
     def update_fpath(self, fpath, gridlist_df=None):
         """
@@ -448,6 +464,7 @@ class bz2_handler(base_handler):
         self._find_files(self.gridlist)
         if len(self.input_files) == 0:
             raise ValueError("No input files found for the given gridlist DataFrame")
+
 
     def update_gridlist(self, gridlist_df):
         """
@@ -486,6 +503,7 @@ class bz2_handler(base_handler):
         # But we implement this for consistency with the interface
         pass
 
+
     def __enter__(self): # type: ignore[override]
         """
         Enter the context manager for the bz2_handler.
@@ -494,6 +512,7 @@ class bz2_handler(base_handler):
             bz2_handler: Returns self to enable context manager usage
         """
         return self
+
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
@@ -506,12 +525,12 @@ class bz2_handler(base_handler):
         """
         self.close()
 
+
     def __del__(self):
         """
         Destructor that ensures proper cleanup when the object is garbage collected.
         """
         self.close()
-
 
 class netcdf_handler(base_handler):
     """
@@ -1254,135 +1273,125 @@ class netcdf_handler(base_handler):
         """
         self.close()
 
-
 class input_handler:
+    
     """
-    A unified input handler for CAETÊ input data supporting multiple file formats.
-    
-    This class provides a high-level interface for reading input data in batches,
-    abstracting away the differences between NetCDF and bz2 file formats. It supports
-    asynchronous batch processing with preloading for improved performance.
-    
-    The handler automatically selects the appropriate backend (netcdf_handler or 
-    bz2_handler) based on the configuration and provides a consistent interface
-    for batch processing of large datasets.
-    
-    Key features:
-    - Batch processing with configurable batch sizes
-    - Asynchronous preloading of next batch for improved performance  
-    - Support for updating file paths and gridlists during processing
-    - Context manager support for proper resource cleanup
-    
-    Attributes:
-        fpath (Path): Path to the input file or directory
-        gridlist (pl.DataFrame): Current gridlist DataFrame
-        batch_size (int): Number of stations per batch
-        input_type (str): Type of input handler ('netcdf' or 'bz2')
-        metadata (tuple): Metadata from the underlying handler
-        _current_batch (int): Index of current batch being processed
-        _total_batches (int): Total number of batches
+    A simplified input handler for CAETÊ input data
     """
-
-    def __init__(self, fpath, gridlist_df, batch_size=128):
+    
+    @staticmethod
+    def create_gridlist_from_files(finput, lat_var='lat', lon_var='lon', output_path=None):
         """
-        Initialize the unified input handler with file path and processing parameters.
-        
+        Create a gridlist DataFrame from a list of bz2 input files or a NetCDF file.
+
         Args:
-            fpath (str or Path): Path to the input file (NetCDF) or directory (bz2)
-            gridlist_df (pl.DataFrame): Polars DataFrame containing station information
-            batch_size (int, optional): Number of stations to process per batch. Defaults to 128.
-            
-        Raises:
-            ValueError: If unsupported input type is specified in configuration
+            input_files (list): List of input file paths
+            lat_var (str, optional), Default: 'lat': Name of the latitude variable in the NetCDF file
+            lon_var (str, optional), Default: 'lon': Name of the longitude variable in the NetCDF file
+            output_path (str or Path, optional): Path to save the gridlist CSV file
+
+        Returns:
+            pl.DataFrame: Polars DataFrame containing station information
         """
-        self.fpath = str_or_path(fpath)
-        self.gridlist = gridlist_df
-        self.batch_size = batch_size
-        self.input_type = cfg.input_handler.input_type.lower()
+        inp = str_or_path(finput)
+        
+        if inp.is_file():
+            # Manege the expected netCDF file structure
+            with nc.Dataset(inp, 'r') as ds:
+                # Extract latitude and longitude variables
+                lats = ds.variables[lat_var][:].data
+                lons = ds.variables[lon_var][:].data
+                station_names = ds.variables['station_name'][:]
+                station_ids = ds.variables['station'][:].data
+                global_y, global_x = np.array([find_indices_xy(ny, nx) for ny, nx in zip(lats, lons)]).T
+            
+            # Create a Polars DataFrame
+            gridlist = pl.DataFrame({
+                "station_id": station_ids,
+                "lat": lats,
+                "lon": lons,
+                "station_name": station_names,
+                "global_y": global_y,
+                "global_x": global_x
+            })
 
-        # Initialize the handler based on input type
-        self._handler = None
-        self._init_handler()
-        self.metadata = self._handler.load_metadata()
+        else:
+            # Handle directory input
+            files = list(inp.glob("input_data*"))
+            station_id = list(range(len(files)))
+            station_name = ["station_" + f.stem.split("_")[-1] for f in files]
+            y, x = np.array(list(map(lambda x: np.array(x.split("-")), [f.stem.split("_")[-1] for f in files])), dtype=int).T
+            lat, lon = np.array([find_coordinates_xy(ny, nx) for ny, nx in zip(y,x)]).T
 
-        # Generator state
-        self._current_batch = 0
-        self._total_batches = 0
-        self._next_batch_future = None
-        self._executor = None
-        self._calculate_batches()
+            gridlist = pl.DataFrame({
+                "station_id": station_id,
+                "lat": lat,
+                "lon": lon,
+                "station_name": station_name,
+                "global_y": y,
+                "global_x": x
+            })
+        
+        if output_path is not None:
+            gridlist.write_csv(output_path)
+
+        return gridlist
+
+
+    def __init__(self, fpath, gridlist_df, batch_size=1):
+            """
+            Initialize the simplified input handler.
+            
+            Args:
+                fpath (str or Path): Path to the input file (NetCDF) or directory (bz2)
+                gridlist_df (pl.DataFrame): Polars DataFrame containing station information
+                batch_size (int, optional): Number of stations to process per batch. Defaults to 1.
+            """
+            self.fpath = str_or_path(fpath)
+            self.gridlist = gridlist_df
+            self.batch_size = batch_size
+            self.input_type = cfg.input_handler.input_type.lower()
+    
+            # Initialize the handler based on input type
+            self._handler = None
+            self._init_handler()
+            self._metadata = self._handler.load_metadata()
+    
+            # Simple batch tracking
+            self._current_batch = 0
+            self._total_batches = (len(self.gridlist) + self.batch_size - 1) // self.batch_size
+
 
     def _init_handler(self):
-        """
-        Initialize the appropriate backend handler based on the configured input type.
-        
-        Creates either a netcdf_handler or bz2_handler instance depending on the
-        input_type configuration setting from the CAETE config file.
-        
-        Raises:
-            ValueError: If the input type is not 'netcdf' or 'bz2'
-        """
+        """Initialize the appropriate backend handler."""
         if self.input_type == 'netcdf':
             self._handler = netcdf_handler(self.fpath, self.gridlist)
         elif self.input_type == 'bz2':
             self._handler = bz2_handler(self.fpath, self.gridlist)
         else:
-            raise ValueError(f"Unsupported input type: {self.input_type}. Supported types: 'netcdf', 'bz2'")
+            raise ValueError(f"Unsupported input type: {self.input_type}")
 
-    def _calculate_batches(self):
-        """
-        Calculate the total number of batches needed based on gridlist size and batch size.
-        
-        Uses ceiling division to ensure all stations are included even if the last
-        batch is smaller than the specified batch_size.
-        """
-        total_rows = len(self.gridlist)
-        self._total_batches = (total_rows + self.batch_size - 1) // self.batch_size
-        self._current_batch = 0
 
-    def _get_batch_gridlist(self, batch_index):
+    def get_batch_data(self, batch_index):
         """
-        Extract a slice of the gridlist for a specific batch.
-        
-        Args:
-            batch_index (int): Zero-based index of the batch to extract
-            
-        Returns:
-            pl.DataFrame: Polars DataFrame slice containing stations for the specified batch
-        """
-        start_index = batch_index * self.batch_size
-        chunk_size = min(self.batch_size, len(self.gridlist) - start_index)
-        return self.gridlist.slice(start_index, chunk_size)
-
-    def get_metadata(self):
-        """
-        Load and return metadata from the underlying handler.
-        
-        Returns:
-            tuple: Metadata tuple from the backend handler (format depends on handler type)
-        """
-        return self.metadata
-
-    def _load_batch_data(self, batch_index):
-        """
-        Load data for a specific batch by updating the handler's gridlist and reading data.
+        Synchronously load data for a specific batch.
         
         Args:
             batch_index (int): Zero-based index of the batch to load
             
         Returns:
-            dict: Dictionary containing:
-                - 'batch_index': The batch index
-                - 'data': Station data dictionary from the handler
-                - 'gridlist': Gridlist DataFrame for this batch
-                - 'batch_size': Number of stations in this batch
+            dict: Dictionary containing batch data
         """
-        batch_gridlist = self._get_batch_gridlist(batch_index)
+        if batch_index < 0 or batch_index >= self._total_batches:
+            return None
+        start_index = batch_index * self.batch_size
+        chunk_size = min(self.batch_size, len(self.gridlist) - start_index)
+        batch_gridlist = self.gridlist.slice(start_index, chunk_size)
 
         # Update handler with batch gridlist
         self._handler.update_gridlist(batch_gridlist)
 
-        # Load data and metadata
+        # Load data synchronously
         data = self._handler.load_data()
 
         return {
@@ -1391,233 +1400,140 @@ class input_handler:
             'gridlist': batch_gridlist,
             'batch_size': len(batch_gridlist)
         }
+    
 
-    def _preload_next_batch(self, batch_index):
+    def update_fpath(self, fpath, gridlist_df=None):
         """
-        Asynchronously preload the next batch using a ThreadPoolExecutor.
+        Update the file path and optionally the gridlist for the input handler.
         
         Args:
-            batch_index (int): Index of the batch to preload
-            
-        Returns:
-            concurrent.futures.Future or None: Future object for the batch loading operation,
-                                              or None if batch_index is beyond total batches
-        """
-        if batch_index < self._total_batches:
-            if self._executor is None:
-                self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1,
-                                                                       thread_name_prefix='preloadInputDataBatchExecutor')
-            return self._executor.submit(self._load_batch_data, batch_index)
-        return None
-
-    def batch_generator(self):
-        """
-        Generator that yields batches of data with asynchronous preloading for optimal performance.
-        
-        This method implements an efficient batch processing strategy by preloading the next
-        batch asynchronously while the current batch is being processed. This overlaps I/O
-        operations with data processing for improved throughput.
-        
-        The generator handles cleanup automatically, including cancelling pending futures
-        and shutting down the thread pool executor when iteration completes or encounters
-        an exception.
-
-        Yields:
-            dict: Dictionary containing batch data with keys:
-                - 'batch_index': Current batch index (zero-based)
-                - 'data': Station data dictionary from the backend handler
-                - 'gridlist': Gridlist DataFrame for the current batch
-                - 'batch_size': Number of stations in the current batch
-                
-        Note:
-            If preloading fails or is cancelled, the method falls back to synchronous
-            loading with appropriate warning messages.
-        """
-        if self._total_batches == 0:
-            return
-
-        try:
-            # Reset any existing futures
-            self._next_batch_future = None
-
-            # Preload first batch
-            self._next_batch_future = self._preload_next_batch(0)
-
-            for batch_index in range(self._total_batches):
-                # Get current batch (either from future or load synchronously)
-                if self._next_batch_future is not None:
-                    try:
-                        current_batch = self._next_batch_future.result()
-                    except concurrent.futures.CancelledError:
-                        # Future was cancelled, load synchronously
-                        current_batch = self._load_batch_data(batch_index)
-                        print(f"[WARN] Batch {batch_index} was cancelled, loading synchronously")
-                    except Exception as e:
-                        # Other errors - re-raise
-                        raise e
-                else:
-                    current_batch = self._load_batch_data(batch_index)
-                    print(f"[WARN] No next batch future, loading batch {batch_index} synchronously")
-
-                # Start preloading next batch asynchronously
-                next_batch_index = batch_index + 1
-                self._next_batch_future = self._preload_next_batch(next_batch_index)
-
-                # Update current batch counter
-                self._current_batch = batch_index
-
-                yield current_batch
-
-        finally:
-            # Clean up executor
-            if self._executor is not None:
-                # Cancel any pending futures
-                if self._next_batch_future is not None and not self._next_batch_future.done():
-                    self._next_batch_future.cancel()
-
-                self._executor.shutdown(wait=True)
-                self._executor = None
-
-            self._next_batch_future = None
-
-    def update(self, fpath, gridlist_df=None):
-        """
-        Update the file path and optionally the gridlist, reinitializing the handler.
-        
-        This method allows switching to a different input file or directory while
-        maintaining the same input_handler instance. It properly cleans up existing
-        resources and reinitializes with the new parameters.
-        
-        The method ensures thread-safe operation by properly shutting down any
-        running executors before making changes.
-
-        Args:
-            fpath (str or Path): New file path (NetCDF file) or directory path (bz2 files)
+            fpath (str or Path): New path to the input file (NetCDF) or directory (bz2)
             gridlist_df (pl.DataFrame, optional): New gridlist DataFrame to use.
-                                                 If None, keeps the existing gridlist.
+                                                 If None, uses existing gridlist.
                                                  
         Raises:
-            ValueError: If fpath is empty
-            TypeError: If gridlist_df is provided but not a Polars DataFrame
+            ValueError: If fpath is empty or handler initialization fails
         """
+        if gridlist_df is not None:
+            self.update_gridlist(gridlist_df)
+        else:
+            print("[WARN] No gridlist_df provided, using existing gridlist")
+            
         if not fpath:
             raise ValueError("fpath is required")
 
-        # Clean up existing executor if running - WAIT for any pending operations
-        if self._executor is not None:
-            # Cancel any pending futures first
-            if self._next_batch_future is not None and not self._next_batch_future.done():
-                self._next_batch_future.cancel()
-
-            self._executor.shutdown(wait=True)
-            self._executor = None
-
-        # Reset futures
-        self._next_batch_future = None
-
-        # Update file path
+        # Close current handler
+        self.close()
+        
+        # Update path and reinitialize
         self.fpath = str_or_path(fpath)
-
-        # Update gridlist if provided
-        if gridlist_df is not None:
-            if not isinstance(gridlist_df, pl.DataFrame):
-                raise TypeError("gridlist_df must be a Polars DataFrame")
-            self.gridlist = gridlist_df
-
-        # Reinitialize handler with new path and gridlist
-        if self._handler is not None:
-            if hasattr(self._handler, 'close'):
-                self._handler.close()
-
         self._init_handler()
-        self.metadata = self._handler.load_metadata()
+        self._metadata = self._handler.load_metadata()
+        
+        # Recalculate total batches based on current gridlist
+        self._current_batch = 0
+        self._total_batches = (len(self.gridlist) + self.batch_size - 1) // self.batch_size
 
-        # Reset generator state
-        self._calculate_batches()
+
+    def update_gridlist(self, gridlist_df):
+        """
+        Update the gridlist DataFrame and remap data accordingly.
+        
+        Args:
+            gridlist_df (pl.DataFrame): New gridlist DataFrame containing station information.
+                                       Must include required columns for the handler type.
+                                       
+        Raises:
+            TypeError: If gridlist_df is not a Polars DataFrame
+            ValueError: If gridlist validation fails
+        """
+        if not isinstance(gridlist_df, pl.DataFrame):
+            raise TypeError("gridlist_df must be a Polars DataFrame")
+            
+        self.gridlist = gridlist_df
+        
+        # Update the underlying handler with the new gridlist
+        if self._handler is not None:
+            self._handler.update_gridlist(gridlist_df)
+            
+        # Recalculate total batches
+        self._current_batch = 0
+        self._total_batches = (len(self.gridlist) + self.batch_size - 1) // self.batch_size
+
+
+    def update(self, fpath, gridlist_df):
+        """
+        Convenience method to update both file path and gridlist at once.
+        
+        Args:
+            fpath (str or Path): New path to the input file (NetCDF) or directory (bz2)
+            gridlist_df (pl.DataFrame): New gridlist DataFrame to use
+        """
+        self.update_fpath(fpath, gridlist_df)
 
 
     @property
-    def current_batch_index(self):
+    def get_data(self):
         """
-        Get the zero-based index of the current batch being processed.
+        Load all data at once (no batching).
         
         Returns:
-            int: Current batch index
+            dict: Dictionary with station names as keys and data as values
         """
-        return self._current_batch
+        return self._handler.load_data()
+
+
+    @property
+    def get_metadata(self):
+        """Get metadata from the handler."""
+        return self._handler.load_metadata()
+
 
     @property
     def total_batches(self):
-        """
-        Get the total number of batches that will be processed.
-        
-        Returns:
-            int: Total number of batches
-        """
+        """Get total number of batches."""
         return self._total_batches
 
-    @property
-    def progress(self):
-        """
-        Get the current processing progress as a tuple.
-        
-        Returns:
-            tuple: (current_batch_index, total_batches) for progress tracking
-        """
-        return (self._current_batch, self._total_batches)
 
-    def __len__(self):
-        """
-        Return the total number of batches that will be processed.
-        
-        Returns:
-            int: Total number of batches
-        """
-        return self._total_batches
+    def close(self):
+        """Close the handler."""
+        if self._handler is not None:
+            if hasattr(self._handler, 'close'):
+                self._handler.close()
+            self._handler = None
+
 
     def __enter__(self):
-        """
-        Enter the context manager for the input handler.
-        
-        Returns:
-            input_handler: Returns self to enable context manager usage
-        """
         return self
 
+
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Exit the context manager and ensure proper cleanup of all resources.
-        
-        Cancels any pending batch preloading operations, shuts down thread pool
-        executors, and closes the underlying file handler.
-        
-        Args:
-            exc_type: Exception type if an exception occurred
-            exc_val: Exception value if an exception occurred
-            exc_tb: Exception traceback if an exception occurred
-        """
-        # Cancel any pending futures first
-        if self._next_batch_future is not None and not self._next_batch_future.done():
-            self._next_batch_future.cancel()
+        self.close()
 
-        if self._executor is not None:
-            self._executor.shutdown(wait=True)
-            self._executor = None
 
-        if self._handler is not None and hasattr(self._handler, 'close'):
-            self._handler.close()
+    def __del__(self):
+        try:
+            self.close()
+        except:
+            pass
 
 
 if __name__ == "__main__":
     import time
 
-    # Comman data
-    gridlist_path = '../input/20CRv3-ERA5/obsclim/gridlist_caete.csv'
-    gridlist_df = pl.read_csv(gridlist_path)
-    nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
-    input_dir = '../input/20CRv3-ERA5/obsclim'
 
-    df = gridlist_df.slice(0, 128)  # Use a slice for testing
+    # df = gridlist_df.slice(0, 128)  # Use a slice for testing
+    cfg.input_handler.input_type = 'bz2' 
+    input_dir = '../input/20CRv3-ERA5/obsclim_test'
+    gridlist_path = '../grd/gridlist_test.csv'
+    gridlist_df = pl.read_csv(gridlist_path)
+    ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
+    
+    cfg.input_handler.input_type = 'netcdf'  # Set input type to netcdf for testing
+    nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
+    gridlist_path = '../grd/gridlist_test.csv'
+    gridlist_df = pl.read_csv(gridlist_path)
+    ih2 = input_handler(nc_file_path, gridlist_df, batch_size=cfg.multiprocessing.max_processes) 
 
     # # Example usage of netcdf_handler
     # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
@@ -1676,59 +1592,59 @@ if __name__ == "__main__":
 
 
 
-# ## TEST input_handler class
-    if cfg.input_handler.input_type == 'netcdf':
-        start = time.perf_counter()
+# # ## TEST input_handler class
+#     if cfg.input_handler.input_type == 'netcdf':
+#         start = time.perf_counter()
 
-        with input_handler(nc_file_path, gridlist_df, batch_size=128) as handler:
-            # handler = input_handler(nc_file_path, gridlist_df, batch_size=128)
+#         with input_handler(nc_file_path, gridlist_df, batch_size=128) as handler:
+#             # handler = input_handler(nc_file_path, gridlist_df, batch_size=128)
 
-            mtdt_nc = handler.get_metadata()
-            # Process all batches
-            for batch in handler.batch_generator():
-                print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
-                print(f"Batch size: {batch['batch_size']}")
-                # Process batch['data'] and batch['metadata']
-                # print(batch['data'])  # Example processing step
-                # print(batch['metadata'])  # Example processing step
+#             mtdt_nc = handler.get_metadata()
+#             # Process all batches
+#             for batch in handler.batch_generator():
+#                 print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
+#                 print(f"Batch size: {batch['batch_size']}")
+#                 # Process batch['data'] and batch['metadata']
+#                 # print(batch['data'])  # Example processing step
+#                 # print(batch['metadata'])  # Example processing step
 
-            print("All batches processed.")
-            print(f"Total batches: {handler.total_batches}")
-            print("Changing file path and updating gridlist...")
-            handler.update(nc_file_path, df)
-            mtdt_nc_updated = handler.get_metadata()
-            for batch in handler.batch_generator():
-                print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
-                print(f"Batch size: {batch['batch_size']}")
-                # Process batch['data'] and batch['metadata']
-                # print(batch['data'])  # Example processing
+#             print("All batches processed.")
+#             print(f"Total batches: {handler.total_batches}")
+#             print("Changing file path and updating gridlist...")
+#             handler.update(nc_file_path, df)
+#             mtdt_nc_updated = handler.get_metadata()
+#             for batch in handler.batch_generator():
+#                 print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
+#                 print(f"Batch size: {batch['batch_size']}")
+#                 # Process batch['data'] and batch['metadata']
+#                 # print(batch['data'])  # Example processing
 
-            end = time.perf_counter() - start
-            print(f"input_handler with NetCDF took {end:.2f} seconds to process {len(handler.gridlist)} stations.")
+#             end = time.perf_counter() - start
+#             print(f"input_handler with NetCDF took {end:.2f} seconds to process {len(handler.gridlist)} stations.")
 
-    elif cfg.input_handler.input_type == 'bz2':
-        start = time.perf_counter()
-        handler = input_handler(input_dir, gridlist_df, batch_size=128)
+#     elif cfg.input_handler.input_type == 'bz2':
+#         start = time.perf_counter()
+#         handler = input_handler(input_dir, gridlist_df, batch_size=128)
 
-        # Process all batches
-        mtdt_bz = handler.get_metadata()
-        for batch in handler.batch_generator():
-            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-            print(f"Batch size: {batch['batch_size']}")
-            # Process batch['data'] and batch['metadata']
-            # print(batch['data'])  # Example processing step
-            # print(batch['metadata'])  # Example processing step
+#         # Process all batches
+#         mtdt_bz = handler.get_metadata()
+#         for batch in handler.batch_generator():
+#             print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
+#             print(f"Batch size: {batch['batch_size']}")
+#             # Process batch['data'] and batch['metadata']
+#             # print(batch['data'])  # Example processing step
+#             # print(batch['metadata'])  # Example processing step
 
-        print("All batches processed.")
-        print(f"Total batches: {handler.total_batches}")
-        print("Changing file path and updating gridlist...")
-        handler.update(input_dir, df)
-        mtdt_bz = handler.get_metadata()
-        for batch in handler.batch_generator():
-            print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-            print(f"Batch size: {batch['batch_size']}")
-            # Process batch['data'] and batch['metadata']
-            # print(batch['data'])  # Example processing step
-            # print(batch['metadata'])  # Example processing step
-        end = time.perf_counter() - start
-        print(f"input_handler with bz2 took {end:.2f} seconds to process {len(handler.gridlist)} stations.")
+#         print("All batches processed.")
+#         print(f"Total batches: {handler.total_batches}")
+#         print("Changing file path and updating gridlist...")
+#         handler.update(input_dir, df)
+#         mtdt_bz = handler.get_metadata()
+#         for batch in handler.batch_generator():
+#             print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
+#             print(f"Batch size: {batch['batch_size']}")
+#             # Process batch['data'] and batch['metadata']
+#             # print(batch['data'])  # Example processing step
+#             # print(batch['metadata'])  # Example processing step
+#         end = time.perf_counter() - start
+#         print(f"input_handler with bz2 took {end:.2f} seconds to process {len(handler.gridlist)} stations.")

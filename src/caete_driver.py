@@ -21,6 +21,7 @@ Copyright 2017- LabTerra
 
 from pathlib import Path
 import multiprocessing as mp
+from polars import read_csv
 
 
 # This is a script that exemplify the usage of the new implementation of the CAETÊ model.
@@ -34,7 +35,6 @@ if __name__ == "__main__":
 
     import time
     time_start = time.time()
-
     from metacommunity import pls_table
     from parameters import tsoil, ssoil, hsoil
     from region import region
@@ -51,14 +51,23 @@ if __name__ == "__main__":
 
     # # Input files. The model will look for the input files in these folders.
     obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
+    obsclim_nc = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
+    
     spinclim_files = "../input/20CRv3-ERA5/spinclim_test/"
+    spinclim_nc = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
+    
     transclim_files = "../input/20CRv3-ERA5/transclim_test/"
+    transclim_nc = "../input/20CRv3-ERA5/transclim/caete_input_20CRv3-ERA5_transclim.nc"
+
     counterclim_files = "../input/20CRv3-ERA5/counterclim_test/"
+    counterclim_nc = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
+
+    gridlist = read_csv("../grd/gridlist_test.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
 
-    # Read CO2 atmospheric data. The model expects a formated table in a text file with
+    #CO2 atmospheric data. The model expects a formated table in a text file with
     # exactly 2 columns (year, co2 concentration) separetd by a space, a coma, a semicolon etc.
     # A header is optional. The model also expects annual records in ppm (parts per million).
     co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
@@ -71,48 +80,53 @@ if __name__ == "__main__":
     main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # Create the region using the spinup climate files
+
     r = region(region_name,
                spinclim_files,
                soil_tuple,
                co2_path,
-               main_table)
+               main_table,
+               gridlist=gridlist)
 
-    # # Spinup and run
+    # Spinup and run
     print("START soil pools spinup")
+    s1 = time.perf_counter()
     r.run_region_map(fn.spinup)
+    e1 = time.perf_counter()
+    print(f"Spinup time: {e1 - s1:.2f} seconds")
 
-    # # Change input source to transclim files 1851-1900
-    print("\nSTART transclim run")
-    r.update_input(transclim_files)
+    # # # Change input source to transclim files 1851-1900
+    # print("\nSTART transclim run")
+    # r.update_input(transclim_files)
 
-    # # Run the model
-    r.run_region_map(fn.transclim_run)
+    # # # Run the model
+    # r.run_region_map(fn.transclim_run)
 
-    # # # Save state after spinup.
-    # # This state file can be used to restart the model from this point.
-    state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
-    print(f"\n\nSaving state file as {state_file}")
+    # # # # Save state after spinup.
+    # # # This state file can be used to restart the model from this point.
+    # state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
+    # print(f"\n\nSaving state file as {state_file}")
+    # # r.save_state(state_file)
     # r.save_state(state_file)
-    r.save_state(state_file)
-    r.set_new_state()
+    # r.set_new_state()
 
-    # # Update the input source to the transient run - obsclim files
-    # print("\nUpdate input and run obsclim")
-    r.update_input(obsclim_files)
+    # # # Update the input source to the transient run - obsclim files
+    # # print("\nUpdate input and run obsclim")
+    # r.update_input(obsclim_files)
 
-    print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2021, 61)
-    for period in run_breaks:
-        print(f"Running period {period[0]} - {period[1]}")
-        r.run_region_starmap(fn.transient_run_brk, period)
+    # print("\n\nSTART transient run")
+    # run_breaks = fn.create_run_breaks(1901, 2021, 61)
+    # for period in run_breaks:
+    #     print(f"Running period {period[0]} - {period[1]}")
+    #     r.run_region_starmap(fn.transient_run_brk, period)
 
-    # final_state:
-    # We clean the state of the gridcells to save the final state of the region
-    # THis final state is not useful to restart the model, but it is useful to
-    # access the model outputs and export it to other formats.
-    r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
-    r.set_new_state()
-    r.clean_model_state()
-    r.save_state(Path(f"./{region_name}_result.psz"))
+    # # final_state:
+    # # We clean the state of the gridcells to save the final state of the region
+    # # THis final state is not useful to restart the model, but it is useful to
+    # # access the model outputs and export it to other formats.
+    # r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
+    # r.set_new_state()
+    # r.clean_model_state()
+    # r.save_state(Path(f"./{region_name}_result.psz"))
 
-    print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
+    # print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")

@@ -6,11 +6,15 @@ doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 
 
 [input_handler]
-input_method = "legacy" # "legacy" or "ih" LEgacy uses the old method of passing data to the model.
-# "ih" uses the new input handler which is more flexible and allows for different input formats
-input_type = "netcdf" # Type of input data. THe other option is "bz2"
+# Input handler configuration. Used to read input data.
 
-# The netcdf files used are chunked in an optimal way for reading. THe sequentlial reading is faster than the parallel reading.
+# "ih" uses the new input handler which is more flexible and allows for different input formats
+input_method = "legacy" # "legacy" or "ih" Legacy uses the old method of passing filepaths to the gridcells.
+
+input_type = "netcdf" # Type of input data. The options are "netcdf" & "bz2"
+
+# The netcdf files used are chunked in an optimal way for reading. 
+# The sequential reading is faster than the parallel reading. Only have an effect if input_type is "netcdf".
 mp = false # Use MPI for reading netcdf files.
 
 
@@ -20,7 +24,7 @@ nprocs= 16 # Threads used to post process the output. Not used by the model itse
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of gridcells and not ideally not larger that the number of available CPUs.
-max_processes = 8
+max_processes = 10 # Number of python processes used to run the model.0
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect.

@@ -30,14 +30,17 @@ import os
 from shutil import copy2
 import sys
 import time
+import warnings
 
 from pathlib import Path
-from typing import Callable, Dict, List,Tuple, Union
+from typing import Callable, Dict, List,Tuple, Union, Optional
 from uuid import uuid4
 
 import numpy as np
+import polars as pl
 from numpy.typing import NDArray
 from joblib import dump, load
+
 
 
 from config import Config, fetch_config
@@ -66,7 +69,8 @@ class region:
                                 Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
                                 Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]],
                 co2:Union[str, Path],
-                pls_table:NDArray)->None:
+                pls_table:NDArray,
+                gridlist:Optional[pl.DataFrame] = None)->None:
         """_summary_
 
         Args:
@@ -77,8 +81,8 @@ class region:
             co2 (Union[str, Path]): _description_
             pls_table (np.ndarray): _description_
         """
-        self.config: Config = fetch_config(os.path.join(os.path.dirname(__file__), 'caete.toml'))
-
+        self.config: Config = fetch_config()
+        self.gridlist = gridlist
         # self.nproc = self.config.multiprocessing.nprocs # type: ignore
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
@@ -87,6 +91,16 @@ class region:
         # IO
         self.climate_files = [] # Climate files for the region. Used only during the set_gridcells method.
         self.input_data = str_or_path(clim_data)
+        self.input_type = self.config.input_handler.input_type
+        self.input_method = self.config.input_handler.input_method
+        self.nchunks = self.config.multiprocessing.max_processes
+        if self.input_method == "ih":
+            if gridlist is None:
+                raise ValueError("Gridlist must be provided when using input_handler")
+            self.input_handler = input_handler(self.input_data,
+                                               self.gridlist,
+                                               batch_size=self.nchunks)
+           
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
         self.file_objects = []
@@ -104,26 +118,39 @@ class region:
 
         # Number of PLS in the main table (global table)
         self.npls_main_table = self.pls_table.npls
+        
+        # Read the metadata from the climate files
+        if self.config.input_handler.input_method == "legacy":
+            # Legacy input method
+            try:
+                metadata_file = list(self.input_data.glob("METADATA.pbz2"))[0]
+            except:
+                raise FileNotFoundError("Metadata file not found in the input data folder")
 
-        try:
-            metadata_file = list(self.input_data.glob("METADATA.pbz2"))[0]
-        except:
-            raise FileNotFoundError("Metadata file not found in the input data folder")
+            try:
+                mtd = str_or_path(metadata_file, check_is_file=True)
+            except:
+                raise AssertionError("Metadata file path could not be resolved. Cannot proceed without metadata")
 
-        try:
-            mtd = str_or_path(metadata_file, check_is_file=True)
-        except:
-            raise AssertionError("Metadata file path could not be resolved. Cannot proceed without metadata")
+            # Read metadata from climate files
+            self.metadata = read_bz2_file(mtd)
+            self.stime = copy.deepcopy(self.metadata[0])
 
-        # Read metadata from climate files
-        self.metadata = read_bz2_file(mtd)
-        self.stime = copy.deepcopy(self.metadata[0])
-
-        # These paths are only used at construction time (this method) and
-        # at gridcell creation time (self.set_gridcell). After that,
-        # the path to the climate files is update at the gridcell level when needed.
-        for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
-            self.climate_files.append(file_path)
+        elif self.config.input_handler.input_method == "ih":
+            self.metadata = self.input_handler.get_metadata
+            self.stime = copy.deepcopy(self.metadata[0])
+        else:
+            raise ValueError(f"Unknown input method: {self.config.input_handler.input_method}. "
+                             "Please use 'legacy' or 'ih' as input method.")
+        
+        if self.config.input_handler.input_method == "legacy":
+            for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
+                self.climate_files.append(file_path)
+        elif self.config.input_handler.input_method == "ih" and self.input_handler.input_type == "bz2":
+            self.climate_files = self.input_handler._handler.input_files
+        elif self.config.input_handler.input_method == "ih" and self.input_handler.input_type == "netcdf":
+            st_names = self.input_handler._handler.gridlist.get_column("station_name").to_list()
+            self.climate_files = list(map(Path, st_names))
 
         # Define grid structure
         self.yx_indices = []
@@ -149,7 +176,7 @@ class region:
         self.output_path = self.output_root / self.name
 
         # Path to the state files for this region
-        self.state_path = self.output_root / f"state_files_{uuid4().hex}"
+        self.state_path:Path | None = self.output_root / f"state_files_{uuid4().hex}"
         # Mapping of gridcells to their file objects
         self.gridcell_address_file_objects = {}
 
@@ -223,7 +250,7 @@ class region:
         for f, chunk in zip(self.file_objects, chunks):
             # Save the gridcells to the intermediate files
             with open(f, 'wb') as fh:
-                dump(chunk, fh, compress=("lzma", 9))
+                dump(chunk, fh, compress=("lzma", 9)) # type: ignore
         self._build_gridcell_address_mapping()
 
 
@@ -320,7 +347,7 @@ class region:
                 os.makedirs(gridcell.out_dir, exist_ok=True)
 
             with open(f, 'wb') as fh:
-                dump(gridcells, fh, compress=("zlib", 2))
+                dump(gridcells, fh, compress=("zlib", 2)) # type: ignore
                 fh.flush()  # Explicitly flush before closing
             gc.collect()
 
@@ -413,6 +440,7 @@ class region:
     def set_gridcells(self):
         """_summary_
         """
+        warnings.warn("This method is deprecated and will be removed in the future.", DeprecationWarning)
         print("Starting gridcells")
         i = 0
         print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
@@ -420,7 +448,6 @@ class region:
             y, x = pos
             gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}") # The gridcell folder
             grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
-            # grd_cell = grd_mt(y, x, grd_cell.grid_filename, self.get_from_main_table)
             grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
                                     tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
             self.gridcells.append(grd_cell)
@@ -446,7 +473,6 @@ class region:
             
             print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
             self.gridcell_address_file_objects = {}
-            
             # Create a dedicated executor for I/O operations
             with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
                 
@@ -476,7 +502,7 @@ class region:
                     def write_chunk_to_file(filename, data):
                         """Write chunk data to file with compression."""
                         with open(filename, 'wb') as fh:
-                            dump(data, fh, compress=("lzma", 9))
+                            dump(data, fh, compress=("lzma", 9)) # type: ignore
                             fh.flush()
                         gc.collect()
                         return filename
@@ -509,6 +535,7 @@ class region:
     
         else:
             # First run -> no file objects
+            is_netcdf_input = self.input_type == "netcdf" and self.input_method == "ih"
             jobs = list(zip(self.climate_files, self.yx_indices))
             self.region_size = len(jobs)
             cpu_count = self.config.multiprocessing.max_processes
@@ -520,10 +547,22 @@ class region:
             
             print_progress(j, len(chunks), prefix='Progress:', suffix='Complete')
             
-            # Create executor for first run as well
+            # Create executor for first run
             with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
-                
+                current_batch = 0
                 for chunk in chunks:
+                    if is_netcdf_input:
+                        self.input_handler = input_handler(self.input_data,
+                                                           self.gridlist,
+                                                           batch_size=self.nchunks)
+                    if self.input_method == "ih":
+                        print(100 * "  ", end="\r", flush=True)  # Clear previous output
+                        print(self.input_handler.get_batch_data(current_batch)['gridlist'])
+                        print_progress(j, len(chunks), prefix='Progress:', suffix='Complete', nl="\n")
+
+                    if self.state_path is None:
+                        raise ValueError("State path is not set. Cannot write gridcells to files")
+
                     fname = self.state_path / Path(f"region_file_{uuid4()}.z")
                     k = 0
                     result = []
@@ -532,18 +571,26 @@ class region:
                         y, x = pos
                         gridcell_dump_directory = self.output_path / Path(f"grd_{y}-{x}")
                         grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
-                        grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
-                                            tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+                        if self.input_method == "ih":
+                            batch_data = self.input_handler.get_batch_data(current_batch)
+                            input_data = batch_data['data'][grd_cell.station_name]
+                            grd_cell.set_gridcell(input_data, stime_i=self.stime, co2=self.co2_data,
+                                                tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+                        else:
+                            grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
+                                                tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
                         result.append(grd_cell)
                         self.lats[i] = grd_cell.lat
                         self.lons[i] = grd_cell.lon
                         self.gridcell_address_file_objects[i] = (k, fname)
                         i += 1
                         k += 1
-                    
+                    current_batch += 1
                     self.file_objects.append(fname)
                     
                     # Process with multiprocessing
+                    if is_netcdf_input:
+                        self.input_handler = None  # Set to none because netCDF4 Dataset is not pickable 
                     num_workers = min(self.config.multiprocessing.max_processes, len(result))
                     with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
                         try:
@@ -560,7 +607,7 @@ class region:
                     def write_chunk_to_file(filename, data):
                         """Write chunk data to file with compression."""
                         with open(filename, 'wb') as f:
-                            dump(data, f, compress=("lzma", 9))
+                            dump(data, f, compress=("lzma", 9)) # type: ignore
                             f.flush()
                         gc.collect()
                         return filename
@@ -632,7 +679,7 @@ class region:
                 def write_chunk_to_file(filename, data):
                     """Write chunk data to file with compression."""
                     with open(filename, 'wb') as fh:
-                        dump(data, fh, compress=("lzma", 9))
+                        dump(data, fh, compress=("lzma", 9)) # type: ignore
                         fh.flush()
                     gc.collect()
                     return filename
