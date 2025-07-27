@@ -24,6 +24,9 @@ import multiprocessing as mp
 from typing import Tuple
 import time
 
+import polars as pl
+
+
 from metacommunity import pls_table
 from parameters import tsoil, ssoil, hsoil
 
@@ -58,7 +61,7 @@ if __name__ == "__main__":
     hist_files = input_path / "MPI-ESM1-2-HR/historical_cities/"
     ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370_cities/"
     ssp585_files = input_path / "MPI-ESM1-2-HR/ssp585_cities/"
-
+    gridlist = pl.read_csv("../grd/gridlist_cities.csv")
 
     # Read CO2 atmospheric data. The model expects a formated table in a text file with
     # exactly 2 columns (year, co2 concentration) separetd by a space, a coma, a semicolon etc.
@@ -86,7 +89,8 @@ if __name__ == "__main__":
                piControl_files,
                soil_tuple,
                co2_path_hist,
-               main_table)
+               main_table,
+               gridlist=gridlist)
 
     # Start gridcells
     # r.set_gridcells()

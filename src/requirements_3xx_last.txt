@@ -14,7 +14,7 @@ pyarrow
 pandas
 h5py
 
-# Caete module build system for python >= 3.12. Working in linux. Windows is not supported.
+# Meson build system for python >= 3.12. Working in linux. Windows is not supported.
 meson
 ninja
 

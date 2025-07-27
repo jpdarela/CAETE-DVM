@@ -33,9 +33,9 @@ for the CAETE model. It creates station-based timeseries similar to LPJ-GUESS
 format but with CAETE-specific unit conversions and variable requirements.
 
 Output format:
-- Single NetCDF file with station-based timeseries format
+- Single NetCDF file with station-based timeseries format.
 - Variables: tas, pr, ps, hurs, rsds, sfcwind, vpd + soil variables
-- Dimensions: (station, time) for climate; (station) for soil
+- Dimensions: (station, time) for climate [Optimal chunking for extration of timeseries]; (station) for soil 
 - Includes gridlist for station coordinate mapping
 """
 

@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # Create the region using the spinup climate files
 
     r = region(region_name,
-               spinclim_nc,
+               spinclim_files,
                soil_tuple,
                co2_path,
                main_table,
@@ -96,37 +96,37 @@ if __name__ == "__main__":
     print(f"Spinup time: {e1 - s1:.2f} seconds")
 
     # # # Change input source to transclim files 1851-1900
-    # print("\nSTART transclim run")
-    # r.update_input(transclim_files)
+    print("\nSTART transclim run")
+    r.update_input(transclim_files)
 
-    # # # Run the model
-    # r.run_region_map(fn.transclim_run)
+    # Run the model
+    r.run_region_map(fn.transclim_run)
 
-    # # # # Save state after spinup.
-    # # # This state file can be used to restart the model from this point.
-    # state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
-    # print(f"\n\nSaving state file as {state_file}")
-    # # r.save_state(state_file)
+    # # # Save state after spinup.
+    # # This state file can be used to restart the model from this point.
+    state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
+    print(f"\n\nSaving state file as {state_file}")
     # r.save_state(state_file)
-    # r.set_new_state()
+    r.save_state(state_file)
+    r.set_new_state()
 
-    # # # Update the input source to the transient run - obsclim files
-    # # print("\nUpdate input and run obsclim")
-    # r.update_input(obsclim_files)
+    # # Update the input source to the transient run - obsclim files
+    # print("\nUpdate input and run obsclim")
+    r.update_input(obsclim_files)
 
-    # print("\n\nSTART transient run")
-    # run_breaks = fn.create_run_breaks(1901, 2021, 61)
-    # for period in run_breaks:
-    #     print(f"Running period {period[0]} - {period[1]}")
-    #     r.run_region_starmap(fn.transient_run_brk, period)
+    print("\n\nSTART transient run")
+    run_breaks = fn.create_run_breaks(1901, 2021, 61)
+    for period in run_breaks:
+        print(f"Running period {period[0]} - {period[1]}")
+        r.run_region_starmap(fn.transient_run_brk, period)
 
-    # # final_state:
-    # # We clean the state of the gridcells to save the final state of the region
-    # # THis final state is not useful to restart the model, but it is useful to
-    # # access the model outputs and export it to other formats.
-    # r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
-    # r.set_new_state()
-    # r.clean_model_state()
-    # r.save_state(Path(f"./{region_name}_result.psz"))
+    # final_state:
+    # We clean the state of the gridcells to save the final state of the region
+    # THis final state is not useful to restart the model, but it is useful to
+    # access the model outputs and export it to other formats.
+    r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
+    r.set_new_state()
+    r.clean_model_state()
+    r.save_state(Path(f"./{region_name}_result.psz"))
 
-    # print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
+    print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")

@@ -891,7 +891,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
 
     def change_input(self,
-                    input_fpath:Union[Path, str, None]=None,
+                    input_data:Union[Path, str, dict, None]=None,
                     stime_i:Union[Dict, None]=None,
                     co2:Union[Dict, str, Path, None]=None)->None:
         """modify the input data for the gridcell
@@ -904,13 +904,19 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         Returns:
             None: Changes the input data for the gridcell
         """
-        if input_fpath is not None:
-            #TODO prevent errors here
-            self.input_fpath = Path(os.path.join(input_fpath, self.input_fname))
-            assert self.input_fpath.exists()
+        if input_data is not None:
+            if self.config.input_handler.input_method == 'legacy':
+                assert isinstance(input_data, (Path, str)), "Input path must be a Path or string for legacy input mode"
+                self.input_fpath = Path(os.path.join(input_data, self.input_fname))
+                assert self.input_fpath.exists()
 
-            with bz2.BZ2File(self.input_fpath, mode='r') as fh:
-                self.data = pkl.load(fh)
+                with bz2.BZ2File(self.input_fpath, mode='r') as fh:
+                    self.data = pkl.load(fh)
+            else: 
+                assert self.config.input_handler.input_method == 'ih', "Improper input method" 
+                assert isinstance(input_data, dict), "Input_fpath should be a dict for non-legacy input mode"
+                self.input_fpath = None
+                self.data = input_data
 
             self._set_clim(self.data)
 
@@ -1073,11 +1079,20 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # Slice&Catch climatic input and make conversions
         cv = self.config.conversion_factors_isimip # type: ignore
 
-        temp: NDArray[np.float32] = self.tas[lower_bound: upper_bound + 1] - cv.tas    # Air temp: model uses °C
-        prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1] * cv.pr      # Precipitation: model uses  mm/day
-        p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1] * cv.ps     # Atmospheric pressure: model uses hPa
-        ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds  # PAR: model uses  mol(photons) m-2 s-1
-        ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] * cv.rhs      # Relative humidity: model uses 0-1
+
+        if self.config.input_handler.input_method == "ih" and self.config.input_handler.input_type == "netcdf":
+            # Variables in Netcdf files are already in proprer units
+            temp: NDArray[np.float32] = self.tas[lower_bound: upper_bound + 1]   # Air temp: model uses °C
+            prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1]    # Precipitation: model uses  mm/day
+            p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1]   # Atmospheric pressure: model uses hPa
+            ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1]  # PAR: model uses  mol(photons) m-2 s-1
+            ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1]     # Relative humidity: model uses 0-1
+        else:
+            temp: NDArray[np.float32] = self.tas[lower_bound: upper_bound + 1] - cv.tas    # Air temp: model uses °C
+            prec: NDArray[np.float32] = self.pr[lower_bound: upper_bound + 1] * cv.pr      # Precipitation: model uses  mm/day
+            p_atm: NDArray[np.float32] = self.ps[lower_bound: upper_bound + 1] * cv.ps     # Atmospheric pressure: model uses hPa
+            ipar: NDArray[np.float32] = self.rsds[lower_bound: upper_bound + 1] * cv.rsds  # PAR: model uses  mol(photons) m-2 s-1
+            ru: NDArray[np.float32] = self.rhs[lower_bound: upper_bound + 1] * cv.rhs      # Relative humidity: model uses 0-1
 
         # Define the daily values for co2 concentrations
         co2_daily_values = np.zeros(steps.size, dtype=np.float32)
