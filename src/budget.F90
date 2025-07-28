@@ -320,7 +320,8 @@ contains
       !$OMP PARALLEL DO &
       !$OMP SCHEDULE(AUTO) &
       !$OMP DEFAULT(SHARED) &
-      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc, ar_aux, total_c, c_def_amount, cl_def, ca_def, cf_def)
+      !$OMP PRIVATE(p, ri, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc,&
+      !$OMP         ar_aux, total_c, c_def_amount, cl_def, ca_def, cf_def)
       do p = 1,nlen
          carbon_in_storage = 0.0D0
          testcdef = 0.0D0

@@ -1519,132 +1519,42 @@ class input_handler:
 
 
 if __name__ == "__main__":
-    import time
 
+    # Example usage of the input_handler to create a gridlist from files
+    # Create a gridlist from a folder containing model input data in the 
+    # .pbz2 format (see ../input/input/20CRv3-ERA5/counterclim_cities, for examples)
+    # It works also with CAETÊ input data in the NetCDF format (see ../input/input/20CRv3-ERA5/obsclim)
+    # You can optionally provide a path to save the gridlist CSV file
+    gridlist = input_handler.create_gridlist_from_files("../input/20CRv3-ERA5/counterclim_cities", "./sandbox/my_gridlist.csv")
 
-    # df = gridlist_df.slice(0, 128)  # Use a slice for testing
-    cfg.input_handler.input_type = 'bz2' 
+    # Handers can also be used with the context manager:
+    # with input_handler('../input/20CRv3-ERA5/counterclim_cities', gridlist) as ih:
+    #     # Load all data at once
+    #     data = ih.get_data()
+
+    # Creating input handlers for bz2 files
+    cfg.input_handler.input_type = 'bz2'  
     input_dir = '../input/20CRv3-ERA5/obsclim_test'
     gridlist_path = '../grd/gridlist_test.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
-    
+    ih.get_data  # Load all data at once, returns a dictionary with station names as keys and data as values
+    ih.get_metadata  # Load metadata from the handler
+    ih.update_fpath('../input/20CRv3-ERA5/obsclim_test', gridlist_df)  # Update input path and gridlist
+    print("Total batches: ",ih.total_batches)  # Get total number of batches based on the gridlist
+    for i in range(ih.total_batches):
+        batch_data = ih.get_batch_data(i)
+        print(f"Batch {i}: {batch_data['batch_size']} stations loaded.")
+        print(f"Batch {i}: {batch_data['data'].keys()}")  # Access the data for this batch
+        print()
+    ih.close()  # Close the input handler
+
+    # Creating input handlers for NetCDF files
     cfg.input_handler.input_type = 'netcdf'  # Set input type to netcdf for testing
     nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
     gridlist_path = '../grd/gridlist_test.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     ih2 = input_handler(nc_file_path, gridlist_df, batch_size=cfg.multiprocessing.max_processes) 
+    ih2.close()  # Close the input handler
 
-    # # Example usage of netcdf_handler
-    # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
-    # s1 = time.perf_counter()
-    # handler = netcdf_handler(nc_file_path, df)
-    #     # Get data for all stations
-    # data_nc = handler.load_data()
-    # metadata_nc = handler.load_metadata()
-    # s2 = time.perf_counter() - s1
-    # print(f"netcdf_handler read data in {s2:.2f} seconds with {len(data_nc)} stations")
-
-    # # Example usage of bz2_handler
-    # input_dir = '../input/20CRv3-ERA5/obsclim'
-    # s1 = time.perf_counter()
-    # bz = bz2_handler(input_dir, df)
-    # data_bz = bz.load_data()
-    # metadata_bz = bz.load_metadata()
-    # s2 = time.perf_counter() - s1
-    # print(f"bz2_handler read data in {s2:.2f} seconds with {len(data_bz)} stations")
-
-    # # Example usage of netcdf_handler
-    # nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
-    # s1 = time.perf_counter()
-    # with netcdf_handler(nc_file_path, df) as handler:
-    #     # Get data for all stations
-    #     data_nc = handler.load_data()
-    #     metadata_nc = handler.load_metadata()
-    # s2 = time.perf_counter() - s1
-    # print(f"netcdf_handler read data in {s2:.2f} seconds with {len(data_nc)} stations")
-
-    # Example usage of netcdf_handler with chunking
-    # inc = 128
-    # total_rows = len(gridlist_df)
-
-    # # Calculate how many chunks we need
-    # num_chunks = (total_rows + inc - 1) // inc  # This is equivalent to math.ceil(total_rows / inc)
-
-    # for x in range(1): # Change range(1) to range(num_chunks) to process all chunks
-    #     start_index = x * inc
-    #     # For the last chunk, make sure we don't go beyond the total rows
-    #     chunk_size = min(inc, total_rows - start_index)
-
-    #     df = gridlist_df.slice(start_index, chunk_size)
-
-    #     print(f"Processing chunk {x}: rows {start_index} to {start_index + chunk_size - 1}")
-    #     print(f"Chunk size: {len(df)}")
-
-    #     with netcdf_handler(nc_file_path, df) as handler:
-    #         # Get data for all stations
-    #         data = handler.load_data()
-    #         metadata = handler.load_metadata()
-
-    #         print("Data loaded successfully.")
-    #         print(f"Loaded {len(data)} stations.")
-    #         print("Time Metadata:", metadata)
-
-
-
-# # ## TEST input_handler class
-#     if cfg.input_handler.input_type == 'netcdf':
-#         start = time.perf_counter()
-
-#         with input_handler(nc_file_path, gridlist_df, batch_size=128) as handler:
-#             # handler = input_handler(nc_file_path, gridlist_df, batch_size=128)
-
-#             mtdt_nc = handler.get_metadata()
-#             # Process all batches
-#             for batch in handler.batch_generator():
-#                 print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
-#                 print(f"Batch size: {batch['batch_size']}")
-#                 # Process batch['data'] and batch['metadata']
-#                 # print(batch['data'])  # Example processing step
-#                 # print(batch['metadata'])  # Example processing step
-
-#             print("All batches processed.")
-#             print(f"Total batches: {handler.total_batches}")
-#             print("Changing file path and updating gridlist...")
-#             handler.update(nc_file_path, df)
-#             mtdt_nc_updated = handler.get_metadata()
-#             for batch in handler.batch_generator():
-#                 print(f"Processing batch {batch['batch_index'] + 1}/{handler.total_batches}")
-#                 print(f"Batch size: {batch['batch_size']}")
-#                 # Process batch['data'] and batch['metadata']
-#                 # print(batch['data'])  # Example processing
-
-#             end = time.perf_counter() - start
-#             print(f"input_handler with NetCDF took {end:.2f} seconds to process {len(handler.gridlist)} stations.")
-
-#     elif cfg.input_handler.input_type == 'bz2':
-#         start = time.perf_counter()
-#         handler = input_handler(input_dir, gridlist_df, batch_size=128)
-
-#         # Process all batches
-#         mtdt_bz = handler.get_metadata()
-#         for batch in handler.batch_generator():
-#             print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-#             print(f"Batch size: {batch['batch_size']}")
-#             # Process batch['data'] and batch['metadata']
-#             # print(batch['data'])  # Example processing step
-#             # print(batch['metadata'])  # Example processing step
-
-#         print("All batches processed.")
-#         print(f"Total batches: {handler.total_batches}")
-#         print("Changing file path and updating gridlist...")
-#         handler.update(input_dir, df)
-#         mtdt_bz = handler.get_metadata()
-#         for batch in handler.batch_generator():
-#             print(f"Processing batch {batch['batch_index']}/{handler.total_batches}")
-#             print(f"Batch size: {batch['batch_size']}")
-#             # Process batch['data'] and batch['metadata']
-#             # print(batch['data'])  # Example processing step
-#             # print(batch['metadata'])  # Example processing step
-#         end = time.perf_counter() - start
-#         print(f"input_handler with bz2 took {end:.2f} seconds to process {len(handler.gridlist)} stations.")
+    # ... Same usage as above

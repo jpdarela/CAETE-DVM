@@ -30,7 +30,7 @@ max_processes = 8 # Number of python processes used to run the model.0
 # Must compile the extension module with OpenMP support to have any effect.
 # If you set this to 0, OpenMP will not be used. Even if the extension module is compiled with OpenMP support.
 # Currently setting more than 1 degrades performance (overhead of creating new threads).
-omp_num_threads = 1
+omp_num_threads = 2
 
 # COnversion factors used to convert units of input data
 [conversion_factors_isimip]
@@ -66,11 +66,18 @@ rsds = 0.198
 n = 1 # Effects only in runtime, not in compile time.
 
 # Maximum number of PLS to be considered in each community.
-# Very large values CAN cause stack overflow errors.
+# Very large values CAN cause (>3000) stack overflow errors.
+# If you wish to use more than 3000 PLS, you should exchange the 
+# budget_fixed.F90 (it allocates arrays in the stack) in 
+# the Makefile_win by budget.F90 (heap allocation).
+# The budget.F90 is slower than budget_fixed.F90, but it 
+# allows for larger number of PLS. 
 # The final number of slots for PLSs in the model is equal to n * npls_max.
 # Changes here and in ntraits will not be applied to the model (fortran extension module)
-# unless you recompile it.
-npls_max = 50
+# unless you recompile it. THe model will not run if you compile 
+# it with a value and then run it with a different value.
+
+npls_max = 1000
  # number of traits in a PLS
 ntraits = 17
 

@@ -15,11 +15,12 @@
 
 # ! AUTHOR: JP Darela
 
-# Makefile for Windows to be used with nmake + MSVC + ifx (Intel Fortran Compiler) + f2py
+# Makefile for Windows to be used with nmake + MSVC + ifx (Intel Fortran Compiler) + f2py 
+# In windows, only python <= 3.11 is supported due to distutils backend that was excluded in python 3.12.
 
 # Variables
 # Python executable, package manager and f2py
-PYEXEC = python
+PYEXEC = python 
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 CYTHON = $(PYEXEC) -m cython
@@ -46,14 +47,17 @@ HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
 
-# Intel Fortran Compiler (ifx) FLAGS for debugging
+# Intel Fortran Compiler (ifx) FLAGS for debugging (do not affect the extension module)
 FCFLAGS = -fpp -Od -debug:full -warn:all -nologo
 FLFLAGS = -fpp -c -Od -debug:full -nologo
 
+# Use budget_fixed.F90 for stack allocation (faster)
 MAIN_SUB = budget_fixed.F90
 
+# Use budget.F90 for heap allocation (slower, but allows larger number of PLS)
+# MAIN_SUB = budget.F90
 
-# Intel Fortran Compiler (ifx) FLAGS for release (caete_module)
+# Intel Fortran Compiler (ifx) FLAGS for release (caete_module extension module)
 IFX_FLAGS = /fpp /QxHost /warn:all /nologo /I$(MOD_DIR) /DPREPEND_FORTRAN /DNO_APPEND_FORTRAN /DUPPERCASE_FORTRAN /DUNDERSCORE_G77
 
 # Sources
@@ -66,46 +70,43 @@ objects = $(src_obj) $(basename $(MAIN_SUB)).obj
 
 all: caete_lib
 
+# Targets
+caete_lib: clean_py clean_so modules so_parallel
+
+# python setup
 setup:
 	@echo "Installing dependencies..."
-	$(PIP) install -r requirements_311_windows.txt
+	$(PIP) install -r requirements_3xx_last.txt
 
+# pyf interfaces
 interface: $(sources)
 	@echo "Creating Fortran interfaces for the caete_module using f2py..."
 	@$(PYEXEC) precompilation_data.py
 	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
+# In windows we force the use of the deprecated distutils backend. Meson backend does not work with ifx compiler.
+# Serial version of the extension module. Without OpenMP
 so: $(sources) interface
 	@$(F2PY) $(INTERFACES) -c $(sources) --backend distutils --f90exec="$(FC)" --f90flags="$(IFX_FLAGS)"
 	@echo "Serial version of caete_module created using $(FC)"
 	@echo Bundle dlls from Intel Fortran Compiler and MSVC into the module directory
 	@$(PYEXEC) runtime_dlls.py
-#  	$(CYTHON) -a community.pyx
-#	$(CYTHON) -a metacommunity.py
-#	$(CYTHON) -a hydro_caete.py
-#	$(CYTHON) -a output.py
 # 	$(PYEXEC) setup.py build_ext --inplace --verbose
 
+
+# Parallel version of the extension module. With OpenMP
 so_parallel: $(sources) interface
-	$(F2PY) $(INTERFACES) -c $(sources) --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp"
+	$(F2PY) $(INTERFACES) -c $(sources) --backend distutils --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
-#	$(CYTHON) -a community.py
-#	$(CYTHON) -a metacommunity.py
-#	$(CYTHON) -a hydro_caete.py
-#	$(CYTHON) -a output.py
+	@$(PYEXEC) runtime_dlls.py
 #	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 modules: $(sources)
 	$(FC) -fpp -c -O3 $(sources)
 
-caete_lib: clean modules so
-
-reinstall: clean_so so modules
-
 debug: $(objects)
 	$(PYEXEC) create_plsbin.py
 	$(FC) -o $(DEBUG_PROGRAM) $(FCFLAGS) $(objects) debug_caete.f90
-
 
 global.obj: global.f90
 	$(FC) $(FLFLAGS) global.f90
@@ -171,14 +172,12 @@ clean_py:
 	del /s /q __pycache__
 	del /s /q build
 
-
 clean_so:
 	del /s *.pyd
 	del /s *.pyf
 	del /s *.c
 	del /s *.log
 	del /s *.psz
-
 
 clean: clean_py clean_so
 	del /s *.mod
@@ -200,8 +199,5 @@ clean_outputs:
 	del /s /q ..\outputs
 	cls
 
-clean_all: clean clean_py clean_so clean_outputs
+clean_all: clean clean_outputs
 	@echo "All files cleaned."
-
-
-# .PHONY: setup interface so so_parallel clean_py clean clean_so modules reinstall debug

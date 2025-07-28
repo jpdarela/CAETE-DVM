@@ -348,7 +348,7 @@ class region:
                 os.makedirs(gridcell.out_dir, exist_ok=True)
 
             with open(f, 'wb') as fh:
-                dump(gridcells, fh, compress=("zlib", 2)) # type: ignore
+                dump(gridcells, fh, compress=("lzma", 6)) # type: ignore
                 fh.flush()  # Explicitly flush before closing
             gc.collect()
 
@@ -431,7 +431,7 @@ class region:
                          else:
                             gridcell.change_input(self.input_data, self.stime, self.co2_data)
                 with open(f, 'wb') as file:
-                    dump(gridcells, file)
+                    dump(gridcells, file, compress=("lzma", 3)) # type: ignore
                     file.flush()
                 gc.collect()
             except Exception as e:
@@ -594,6 +594,7 @@ class region:
                                                            batch_size=self.nchunks)
                     if self.input_method == "ih":
                         print(self.input_handler.get_batch_data(current_batch)['gridlist'])
+                        print_progress(j, len(chunks), prefix='Progress:', suffix='Complete', nl="\n")
 
                     if self.state_path is None:
                         raise ValueError("State path is not set. Cannot write gridcells to files")
@@ -745,7 +746,6 @@ class region:
                     raise
 
 
-
     def clean_model_state(self):
         """
         Clean state of the region by removing unnecessary attributes from gridcells.
@@ -795,7 +795,7 @@ class region:
                 gc.collect()
             # Save the cleaned gridcells back to the file this renders the current model state unusable for model run
             with open(f, 'wb') as file:
-                dump(gridcells, file)
+                dump(gridcells, file, compress=("lzma", 6)) # type: ignore
                 file.flush()
 
         # Process files in parallel for better performance

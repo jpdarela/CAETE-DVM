@@ -48,7 +48,13 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
+# Use budget_fixed.F90 for stack allocation (faster)
 MAIN_SUB = budget_fixed.F90
+
+# Use budget.F90 for heap allocation (slower, but allows larger number of PLS)
+# MAIN_SUB = budget.F90
+
+
 # Sources for extension module creation (F2PY)
 src_lib = types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90
 sources = $(src_lib) $(MAIN_SUB)

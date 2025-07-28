@@ -374,7 +374,7 @@ class Config(BaseModel):
     @classmethod
     def validate_multiprocessing(cls, v):
         """Validate multiprocessing configuration."""
-        if v.omp_num_threads > 1:
+        if v.omp_num_threads > 3:
             import warnings
             warnings.warn(
                 "Setting omp_num_threads > 1 may degrade performance due to thread creation overhead",

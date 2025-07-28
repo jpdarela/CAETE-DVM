@@ -64,9 +64,9 @@ class community:
         self.shape: Tuple[int, ...] = self.pls_array.shape
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
-        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(0.3,0.4,self.npls).astype(np.float64)
-        self.vp_croot: NDArray[np.float64] = np.random.uniform(0.3,0.4,self.npls).astype(np.float64)
-        self.vp_cwood: NDArray[np.float64] = np.random.uniform(5.0,6.0,self.npls).astype(np.float64)
+        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(0.1,0.2,self.npls).astype(np.float64)
+        self.vp_croot: NDArray[np.float64] = np.random.uniform(0.1,0.2,self.npls).astype(np.float64)
+        self.vp_cwood: NDArray[np.float64] = np.random.uniform(2.0,3.0,self.npls).astype(np.float64)
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
         self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
         self.vp_sto[1,:] = np.random.uniform(0.0, 0.01, self.npls)

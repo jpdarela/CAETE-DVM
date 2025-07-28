@@ -1669,7 +1669,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         for v in vnames:
             assert v in aggregated_variables, f"Variable {v} not available"
 
-
         years = self._get_years()
         fetched_data = []
         for y in years:
