@@ -101,6 +101,8 @@ class region:
             self.input_handler = input_handler(self.input_data,
                                                self.gridlist,
                                                batch_size=self.nchunks)
+        else:
+            self.input_handler = None
            
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
@@ -158,9 +160,6 @@ class region:
         self.lats = np.zeros(len(self.climate_files), dtype=np.float32)
         self.lons = np.zeros(len(self.climate_files), dtype=np.float32)
         for f in self.climate_files:
-            # Warning: This is a very specific way to extract the gridcell indices from the file name
-            # Thus, the file name must be in the format input_data_y-x.pbz2
-            # Look at the ../input/pre_processing.py file to see how the files are created
             y, x = f.stem.split("_")[-1].split("-")
             self.yx_indices.append((int(y), int(x)))
             # Update the grid mask
@@ -333,12 +332,31 @@ class region:
         self.output_path = output_path / self.name # Update region output folder path
         os.makedirs(self.output_path, exist_ok=True)
 
-        if not self.file_objects:
-            raise ValueError("No file objects found. Cannot read intermediate files")
+        if not self.file_objects and not self.gridcells:
+            raise ValueError("No file objects found. Cannot read intermediate files. No gridcells found. Cannot update output directory")
+        
+        if self.file_objects:
+            def process_file(f):
+                gridcells = load(f)
+                for gridcell in gridcells:
+                    # Update the output folder for each gridcell
+                    gridcell.run_counter = 0
+                    gridcell.outputs = {}
+                    gridcell.metacomm_output = {}
+                    gridcell.executed_iterations = []
+                    gridcell.out_dir = self.output_path / Path(f"grd_{gridcell.xyname}")
+                    os.makedirs(gridcell.out_dir, exist_ok=True)
 
-        def process_file(f):
-            gridcells = load(f)
-            for gridcell in gridcells:
+                with open(f, 'wb') as fh:
+                    dump(gridcells, fh, compress=("lzma", 6)) # type: ignore
+                    fh.flush()  # Explicitly flush before closing
+                gc.collect()
+
+            with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
+                executor.map(process_file, self.file_objects)
+        
+        elif self.gridcells:
+            for gridcell in self.gridcells:
                 # Update the output folder for each gridcell
                 gridcell.run_counter = 0
                 gridcell.outputs = {}
@@ -346,14 +364,6 @@ class region:
                 gridcell.executed_iterations = []
                 gridcell.out_dir = self.output_path / Path(f"grd_{gridcell.xyname}")
                 os.makedirs(gridcell.out_dir, exist_ok=True)
-
-            with open(f, 'wb') as fh:
-                dump(gridcells, fh, compress=("lzma", 6)) # type: ignore
-                fh.flush()  # Explicitly flush before closing
-            gc.collect()
-
-        with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
-            executor.map(process_file, self.file_objects)
 
 
     def update_input(self, input_data=None, co2=None):
@@ -395,60 +405,73 @@ class region:
                 self.input_handler = input_handler(self.input_data,
                                                     self.gridlist,
                                                     batch_size=self.nchunks)
-                assert self.input_handler is not None
                 self.metadata = self.input_handler.get_metadata
+            
             self.stime = copy.deepcopy(self.metadata[0])
         else:
             if co2 is None:
                 raise ValueError("Input data must be provided to update the region input")
         
-
-        if not self.file_objects:
-            raise ValueError("No file objects found. Cannot read intermediate files")
-        
+        if not self.file_objects and not self.gridcells:
+            raise ValueError("No file objects found. Cannot read intermediate files. No gridcells found. Cannot update input data")
         if self.input_method == "ih":
             all_data = self.input_handler.get_data
         if is_netcdf_input:
             self.input_handler.close()
             self.input_handler = None
-            
-        def process_file(f):
-            try:
-                with open(f, 'rb') as file:
-                    gridcells:List[grd_mt] = load(file)
-                if co2 is not None:
-                    for gridcell in gridcells:
-                         if self.input_method == "ih":
-                             cell_data = all_data[gridcell.station_name]
-                             gridcell.change_input(cell_data, self.stime, self.co2_data)
-                         else:
-                            gridcell.change_input(self.input_data, self.stime, self.co2_data)
-                else:
-                    for gridcell in gridcells:
-                         if self.input_method == "ih":
-                             cell_data = all_data[gridcell.station_name]
-                             gridcell.change_input(cell_data, self.stime, self.co2_data)
-                         else:
-                            gridcell.change_input(self.input_data, self.stime, self.co2_data)
-                with open(f, 'wb') as file:
-                    dump(gridcells, file, compress=("lzma", 3)) # type: ignore
-                    file.flush()
-                gc.collect()
-            except Exception as e:
-                raise e
-
-
-        with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
-            # Submit all tasks
-            futures = [executor.submit(process_file, f) for f in self.file_objects]
-            
-            # Process results and update progress
-            for future in futures:
+        # Update the input data for each gridcell
+        if self.file_objects:
+            def process_file(f):
                 try:
-                    future.result()
+                    with open(f, 'rb') as file:
+                        gridcells:List[grd_mt] = load(file)
+                    if co2 is not None:
+                        for gridcell in gridcells:
+                            if self.input_method == "ih":
+                                cell_data = all_data[gridcell.station_name]
+                                gridcell.change_input(cell_data, self.stime, self.co2_data)
+                            else:
+                                gridcell.change_input(self.input_data, self.stime, self.co2_data)
+                    else:
+                        for gridcell in gridcells:
+                            if self.input_method == "ih":
+                                cell_data = all_data[gridcell.station_name]
+                                gridcell.change_input(cell_data, self.stime, None)
+                            else:
+                                gridcell.change_input(self.input_data, self.stime, None)
+                    with open(f, 'wb') as file:
+                        dump(gridcells, file, compress=("lzma", 3)) # type: ignore
+                        file.flush()
+                    gc.collect()
                 except Exception as e:
-                    raise
-            
+                    raise e
+
+
+            with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
+                # Submit all tasks
+                futures = [executor.submit(process_file, f) for f in self.file_objects]
+                
+                # Process results and update progress
+                for future in futures:
+                    try:
+                        future.result()
+                    except Exception as e:
+                        raise
+
+        elif self.gridcells:
+            for gridcell in self.gridcells:
+                if co2 is not None:
+                    if self.input_method == "ih":
+                        cell_data = all_data[gridcell.station_name]
+                        gridcell.change_input(cell_data, self.stime, self.co2_data)
+                    else:
+                        gridcell.change_input(self.input_data, self.stime, self.co2_data)
+                else:
+                    if self.input_method == "ih":
+                        cell_data = all_data[gridcell.station_name]
+                        gridcell.change_input(cell_data, self.stime, None)
+                    else:
+                        gridcell.change_input(self.input_data, self.stime, None)
 
 
     def get_from_main_table(self, comm_npls) -> Tuple[Union[int, NDArray[np.intp]], NDArray[np.float32]]:
@@ -473,28 +496,35 @@ class region:
         return idx, self.pls_table.table[:, idx]
 
 
-    # def set_gridcells(self):
-    #     """_summary_
-    #     """
-    #     warnings.warn("This method is deprecated and will be removed in the future.", DeprecationWarning)
-    #     print("Starting gridcells")
-    #     i = 0
-    #     print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
-    #     for f,pos in zip(self.climate_files, self.yx_indices):
-    #         y, x = pos
-    #         gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}") # The gridcell folder
-    #         grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
-    #         grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
-    #                                 tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
-    #         self.gridcells.append(grd_cell)
-    #         self.lats[i] = grd_cell.lat
-    #         self.lons[i] = grd_cell.lon
-    #         print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
-    #         i += 1
-    #         # Print data about the model execution: number of metacommunities, number of gridcells, etc.
-    #     print(f"Number of gridcells: {len(self.gridcells)}")
-    #     print(f"Number of metacommunities: {self.config.metacomm.n}") # type: ignore
-    #     print(f"Maximum number of PLS per community: {self.config.metacomm.npls_max}") # type: ignore
+    # TODO: Adapt this method to the new input_handler
+    def set_gridcells(self):
+        """Method to set gridcells for a region. Only used in testing contexts.
+        The constructions of gridcells for parallel runs is managed by the run_region_map method.
+        """
+        print("Starting gridcells")
+        if input_handler is not None:
+            all_data = self.input_handler.get_data
+        i = 0
+        print_progress(i, len(self.yx_indices), prefix='Progress:', suffix='Complete')
+        for f,pos in zip(self.climate_files, self.yx_indices):
+            y, x = pos
+            gridcell_dump_directory = self.output_path/Path(f"grd_{y}-{x}") # The gridcell folder
+            grd_cell = grd_mt(y, x, gridcell_dump_directory, self.get_from_main_table)
+            if self.input_method == "ih":
+                grd_cell.set_gridcell(all_data[grd_cell.station_name], stime_i=self.stime, co2=self.co2_data,
+                                    tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+            else:
+                grd_cell.set_gridcell(f, stime_i=self.stime, co2=self.co2_data,
+                                        tsoil=tsoil, ssoil=ssoil, hsoil=hsoil)
+            self.gridcells.append(grd_cell)
+            self.lats[i] = grd_cell.lat
+            self.lons[i] = grd_cell.lon
+            print_progress(i+1, len(self.yx_indices), prefix='Progress:', suffix='Complete')
+            i += 1
+            # Print data about the model execution: number of metacommunities, number of gridcells, etc.
+        print(f"Number of gridcells: {len(self.gridcells)}")
+        print(f"Number of metacommunities: {self.config.metacomm.n}") # type: ignore
+        print(f"Maximum number of PLS per community: {self.config.metacomm.npls_max}") # type: ignore
 
 
 

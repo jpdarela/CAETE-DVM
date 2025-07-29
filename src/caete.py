@@ -928,7 +928,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 self._set_co2(co2)
             elif isinstance(co2, dict):
                 self.co2_data = copy.deepcopy(co2)
-
         return None
 
 
@@ -1915,18 +1914,21 @@ if __name__ == '__main__':
         from metacommunity import pls_table
         from parameters import *
         from region import region
+        import polars as pl
 
         # # Read CO2 data
         co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
         co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
         main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
+        gridlist = pl.read_csv("../grd/gridlist_test.csv")
 
 
         r = region("region_test",
                     "../input/MPI-ESM1-2-HR/historical_test",
                     (tsoil, ssoil, hsoil),
                     co2_path,
-                    main_table)
+                    main_table,
+                    gridlist)
 
         c = r.set_gridcells()
 
@@ -1952,10 +1954,10 @@ if __name__ == '__main__':
                                     save=True, nutri_cycle=True)
 
             # test directory update
-            r.update_dump_directory("test_new_region", in_memory=True)
+            r.update_dump_directory("test_new_region")
 
             # test change input
-            r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370, in_memory=True)
+            r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370)
 
             gridcell = r[0]
             gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,
