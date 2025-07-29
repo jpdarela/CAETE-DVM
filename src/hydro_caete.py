@@ -17,7 +17,7 @@
 
 import warnings
 from math import log as ln
-# from numba import jit
+from numba import njit
 # import caete_module as caete_mod
 
 
@@ -53,7 +53,7 @@ def ksat_func(ThS, Th33, lbd):
     ksat = 1930 * (ThS - Th33) ** (3 - lbd)
     return ksat
 
-# @jit(nopython=True)
+@njit(cache=True)
 def kth_func(Th, ThS, lbd, ksat):
     """soil conductivity in unsaturated condition. Output in mm/h"""
     if Th < 0.0:
@@ -62,6 +62,73 @@ def kth_func(Th, ThS, lbd, ksat):
     kth = ksat * (Th / ThS) ** (3 + (2 / lbd))
 
     return kth
+
+@njit(cache=True)
+def _calc_awc(w1, w2, fc1_amt, wp1_amt, fc2_amt, wp2_amt):
+    """Numba-optimized AWC calculation"""
+    awc1 = max(0.0, min(w1, fc1_amt) - wp1_amt)
+    awc2 = max(0.0, min(w2, fc2_amt) - wp2_amt)
+    return awc1, awc2
+
+
+@njit(cache=True, fastmath=True)
+def _update(w1, w2, w1_max, w2_max, p1_vol, p2_vol,
+            ws1, ws2, lbd_1, lbd_2, ksat_1, ksat_2,
+            fc1_amt, wp1_amt, fc2_amt, wp2_amt,
+            prain, evapo):
+    """Complete optimized update including AWC calculation"""
+    # Evaporation split
+    ev1 = evapo * 0.3
+    ev2 = evapo * 0.7
+    
+    runoff1 = 0.0
+    runoff2 = 0.0
+    
+    # POOL 1
+    w1 += prain
+    
+    if w1 > w1_max:
+        runoff1 = w1 - w1_max
+        w1 = w1_max
+        flux1_mm = ksat_1 * 24.0
+    else:
+        w1_vol = w1 / p1_vol
+        flux1_mm = ksat_1 * (w1_vol / ws1) ** (3 + (2 / lbd_1)) * 24.0
+    
+    w1 -= (ev1 + flux1_mm)
+    w1 = max(0.0, w1)
+    
+    # POOL 2
+    w2 += flux1_mm
+    
+    if w2 > w2_max:
+        ret1 = w2 - w2_max
+        w1 += ret1
+        
+        if w1 > w1_max:
+            runoff1 += (w1 - w1_max)
+            w1 = w1_max
+        
+        w2 = w2_max
+        runoff2 = ksat_2 * 24.0
+    else:
+        w2_vol = w2 / p2_vol
+        runoff2 = ksat_2 * (w2_vol / ws2) ** (3 + (2 / lbd_2)) * 24.0
+    
+    w2 -= (runoff2 + ev2)
+    w2 = max(0.0, w2)
+    
+    # Clean runoff values
+    if runoff1 < 1e-17:
+        runoff1 = 0.0
+    if runoff2 < 1e-17:
+        runoff2 = 0.0
+    
+    # Calculate AWC inline
+    awc1 = max(0.0, min(w1, fc1_amt) - wp1_amt)
+    awc2 = max(0.0, min(w2, fc2_amt) - wp2_amt)
+    
+    return w1, w2, awc1, awc2, runoff1 + runoff2
 
 
 class soil_water:
@@ -106,6 +173,11 @@ class soil_water:
         self.w1_max = self.p1_vol * self.ws1
         self.w2_max = self.p2_vol * self.ws2
 
+        self.fc1_amt = self.fc1 * self.p1_vol
+        self.wp1_amt = self.wp1 * self.p1_vol
+        self.fc2_amt = self.fc2 * self.p2_vol
+        self.wp2_amt = self.wp2 * self.p2_vol
+
         self.wmax = self.w1_max + self.w2_max
 
         self.lbd_1 = B_func(self.fc1, self.wp1)
@@ -116,88 +188,109 @@ class soil_water:
 
         self.ksat_2 = ksat_func(self.ws2, self.fc2, self.lbd_2)
 
+
     def calc_awc(self):
-        """Calculates the available water capacity for the grid cell"""
-        # self.awc1 = max(0.0, self.w1 - (self.wp1 * self.w1))
-        # self.awc2 = max(0.0, self.w2 - (self.wp2 * self.w2))
-        # Layer 1
-        fc1_amt = self.fc1 * self.p1_vol
-        wp1_amt = self.wp1 * self.p1_vol
-        self.awc1 = max(0.0, min(self.w1, fc1_amt) - wp1_amt)
-        # Layer 2
-        fc2_amt = self.fc2 * self.p2_vol
-        wp2_amt = self.wp2 * self.p2_vol
-        self.awc2 = max(0.0, min(self.w2, fc2_amt) - wp2_amt)
+        """Optimized AWC calculation using pre-computed constants and numba"""
+        self.awc1, self.awc2 = _calc_awc(
+            self.w1, self.w2, 
+            self.fc1_amt, self.wp1_amt, 
+            self.fc2_amt, self.wp2_amt
+    )
+    # def calc_awc(self):
+    #     """Calculates the available water capacity for the grid cell"""
+    #     # self.awc1 = max(0.0, self.w1 - (self.wp1 * self.w1))
+    #     # self.awc2 = max(0.0, self.w2 - (self.wp2 * self.w2))
+    #     # Layer 1
+    #     fc1_amt = self.fc1 * self.p1_vol
+    #     wp1_amt = self.wp1 * self.p1_vol
+    #     self.awc1 = max(0.0, min(self.w1, fc1_amt) - wp1_amt)
+    #     # Layer 2
+    #     fc2_amt = self.fc2 * self.p2_vol
+    #     wp2_amt = self.wp2 * self.p2_vol
+    #     self.awc2 = max(0.0, min(self.w2, fc2_amt) - wp2_amt)
 
     def calc_total_water(self):
         """Returns the total water content in the soil (kg m-2)."""
         return self.w1 + self.w2
 
     def _update_pool(self, prain, evapo):
-        """Calculates upper and lower soil water pools for the grid cell,
-        as well as the grid runoff and the water fluxes between layers"""
+        """Complete optimized version"""
+        result = _update(
+            self.w1, self.w2, self.w1_max, self.w2_max,
+            self.p1_vol, self.p2_vol, self.ws1, self.ws2,
+            self.lbd_1, self.lbd_2, self.ksat_1, self.ksat_2,
+            self.fc1_amt, self.wp1_amt, self.fc2_amt, self.wp2_amt,
+            prain, evapo
+        )
+        
+        self.w1, self.w2, self.awc1, self.awc2, total_runoff = result
+        return total_runoff
 
-        # evapo adaptation to use in both layers
-        ev1 = evapo * 0.3  # Kg m-2
-        ev2 = evapo - ev1  # Kg m-2
+    # def _update_pool(self, prain, evapo):
+    #     """Calculates upper and lower soil water pools for the grid cell,
+    #     as well as the grid runoff and the water fluxes between layers"""
 
-        # runoff initial values
-        runoff1 = 0.0  # Kg m-2
-        runoff2 = 0.0  # Kg m-2
-        ret1 = 0.0  # Kg m-2
+    #     # evapo adaptation to use in both layers
+    #     ev1 = evapo * 0.3  # Kg m-2
+    #     ev2 = evapo - ev1  # Kg m-2
 
-        # POOL 1 - 0-30 cm
-        # rainfall addition to upper water content
-        self.w1 += prain  # kg m-2
+    #     # runoff initial values
+    #     runoff1 = 0.0  # Kg m-2
+    #     runoff2 = 0.0  # Kg m-2
+    #     ret1 = 0.0  # Kg m-2
 
-        if self.w1 > self.w1_max:
-            # saturated condition (runoff and flux)
-            runoff1 += (self.w1 - self.w1_max)
-            self.w1 = self.w1_max
-            flux1_mm = self.ksat_1 * 24.0  # Kg m-2 day-1
-        else:
-            # unsaturated condition (no runoff)
-            w1_vol = self.w1 / self.p1_vol
-            flux1_mm = kth_func(w1_vol, self.ws1, self.lbd_1,
-                                self.ksat_1) * 24.0  # Kg m-2 day-1
+    #     # POOL 1 - 0-30 cm
+    #     # rainfall addition to upper water content
+    #     self.w1 += prain  # kg m-2
 
-        # Update pool 1
+    #     if self.w1 > self.w1_max:
+    #         # saturated condition (runoff and flux)
+    #         runoff1 += (self.w1 - self.w1_max)
+    #         self.w1 = self.w1_max
+    #         flux1_mm = self.ksat_1 * 24.0  # Kg m-2 day-1
+    #     else:
+    #         # unsaturated condition (no runoff)
+    #         w1_vol = self.w1 / self.p1_vol
+    #         flux1_mm = kth_func(w1_vol, self.ws1, self.lbd_1,
+    #                             self.ksat_1) * 24.0  # Kg m-2 day-1
 
-        self.w1 -= (ev1 + flux1_mm)
+    #     # Update pool 1
 
-        # POOL 2 30-100 cm
-        # Flux comming from w1
-        self.w2 += flux1_mm  # Kg m-2 day-1
-        if self.w2 < 0.0:
-            self.w2 = 0.0
+    #     self.w1 -= (ev1 + flux1_mm)
 
-        if self.w2 > self.w2_max:
-            # saturated condition
-            ret1 = self.w2 - self.w2_max
-            # The surplus remains in w1
-            self.w1 += ret1
-            # Check w1 runoff by return
-            if self.w1 > self.w1_max:
-                runoff1 += (self.w1 - self.w1_max)
-                self.w1 = self.w1_max
-            self.w2 = self.w2_max
-            runoff2 += self.ksat_2 * 24.0
-        else:
-            w2_vol = self.w2 / self.p2_vol
-            # unsaturated condition (runoff)
-            runoff2 += kth_func(w2_vol, self.ws2,
-                                self.lbd_2, self.ksat_2) * 24.0
+    #     # POOL 2 30-100 cm
+    #     # Flux comming from w1
+    #     self.w2 += flux1_mm  # Kg m-2 day-1
+    #     if self.w2 < 0.0:
+    #         self.w2 = 0.0
 
-        self.w2 -= (runoff2 + ev2)
-        if runoff1 < 1e-17:
-            runoff1 = 0.0
-        if runoff2 < 1e-17:
-            runoff2 = 0.0
+    #     if self.w2 > self.w2_max:
+    #         # saturated condition
+    #         ret1 = self.w2 - self.w2_max
+    #         # The surplus remains in w1
+    #         self.w1 += ret1
+    #         # Check w1 runoff by return
+    #         if self.w1 > self.w1_max:
+    #             runoff1 += (self.w1 - self.w1_max)
+    #             self.w1 = self.w1_max
+    #         self.w2 = self.w2_max
+    #         runoff2 += self.ksat_2 * 24.0
+    #     else:
+    #         w2_vol = self.w2 / self.p2_vol
+    #         # unsaturated condition (runoff)
+    #         runoff2 += kth_func(w2_vol, self.ws2,
+    #                             self.lbd_2, self.ksat_2) * 24.0
 
-        # Update available water capacity
-        self.calc_awc()
+    #     self.w2 -= (runoff2 + ev2)
+    #     if runoff1 < 1e-17:
+    #         runoff1 = 0.0
+    #     if runoff2 < 1e-17:
+    #         runoff2 = 0.0
 
-        return runoff1 + runoff2
+    #     # Update available water capacity
+    #     self.calc_awc()
+
+    #     return runoff1 + runoff2
 
 
 def test_water_balance():

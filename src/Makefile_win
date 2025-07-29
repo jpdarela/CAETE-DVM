@@ -99,7 +99,7 @@ so_parallel: $(sources) interface
 	$(F2PY) $(INTERFACES) -c $(sources) --backend distutils --f90exec="$(FC)" --f90flags="$(IFX_FLAGS) /Qopenmp"
 	@echo "Parallel version of caete_module created using $(FC)"
 	@$(PYEXEC) runtime_dlls.py
-#	$(PYEXEC) setup.py build_ext --inplace --verbose
+# 	$(PYEXEC) setup.py build_ext --inplace --verbose
 
 modules: $(sources)
 	$(FC) -fpp -c -O3 $(sources)

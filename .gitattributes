@@ -1,0 +1,28 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Preserve existing line endings for all files
+* -text
+
+# Source code files - preserve existing line endings
+*.py -text
+*.f90 -text
+*.F90 -text
+*.toml -text
+
+
+# Configuration files - preserve existing line endings
+Makefile* -text
+
+# Documentation files - preserve existing line endings
+*.md -text
+*.txt -text
+
+# Data files - preserve existing line endings
+*.csv -text
+*.tsv -text
+*.dat -text
+
+# Git files
+.gitignore -text
+.gitattributes -text

@@ -26,6 +26,16 @@ import numpy as np
 from numpy.typing import NDArray
 from numba import njit
 
+
+@njit(cache=True)
+def _update_living_status(occupation: NDArray[np.float64], 
+                         threshold: float = 0.0) -> Tuple[NDArray[np.intp], np.int8]:
+    """Fast numba function to find living PLSs and determine if community is masked."""
+    living_indices = np.flatnonzero(occupation > threshold)
+    is_masked = np.int8(len(living_indices) == 0)
+    return living_indices, is_masked
+
+
 @njit(cache=True)
 def carea_frac(cleaf1:NDArray[np.float64],
                   cfroot1:NDArray[np.float64],
@@ -156,14 +166,18 @@ class community:
 
 
     def update_lsid(self, occupation: NDArray[np.float64]) -> None:
-        """Updates the internal community ids of the living PLSs.
+        """Optimized version using numba and flatnonzero."""
+        self.vp_lsid, self.masked = _update_living_status(occupation)
 
-        Args:
-            occupation (np.ndarray):
-        """
-        self.vp_lsid = np.where(occupation > 0.0)[0]
-        if len(self.vp_lsid) == 0:
-            self.masked = np.int8(1)
+    # def update_lsid(self, occupation: NDArray[np.float64]) -> None:
+    #     """Updates the internal community ids of the living PLSs.
+
+    #     Args:
+    #         occupation (np.ndarray):
+    #     """
+    #     self.vp_lsid = np.where(occupation > 0.0)[0]
+    #     if len(self.vp_lsid) == 0:
+    #         self.masked = np.int8(1)
 
 
     def restore_from_main_table(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:

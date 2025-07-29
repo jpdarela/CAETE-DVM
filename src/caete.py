@@ -131,7 +131,7 @@ import metacommunity as mc
 from _geos import calculate_area, find_coordinates_xy, find_indices_xy
 from config import Config, fetch_config
 from hydro_caete import soil_water
-from output import budget_output
+from output import DailyBudget
 from caete_jit import inflate_array, masked_mean, masked_mean_2D, cw_mean
 from caete_jit import shannon_entropy, shannon_evenness, shannon_diversity
 from caete_jit import pft_area_frac64
@@ -197,17 +197,6 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
     if iteration == total:
         sys.stdout.write('\n')
     sys.stdout.flush()
-
-def budget_daily_result(out: Tuple[Union[NDArray, str, List, int, float]]) -> budget_output:
-    """_summary_
-
-    Args:
-        out (Tuple[Union[NDArray, str, List, int, float]]): _description_
-
-    Returns:
-        budget_output: _description_
-    """
-    return budget_output(*out)
 
 def catch_out_carbon3(out: Tuple[Union[NDArray, str, List, int, float]]) -> Dict:
     """_summary_
@@ -1133,12 +1122,15 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # Define the time step
         time_step = timedelta(days=1)
 
+        # Define the object to store the outputs
+        daily_output = DailyBudget()
+        
         # Start loops
         # THis outer loop is used to run the model for a number
         # of times defined by the spinup argument. THe model is
         # executed repeatedly between the start and end dates
         # provided in the arguments
-
+        
         for s in range(spin):
 
             self._allocate_output(steps.size, self.metacomm.comm_npls, len(self.metacomm), save)
@@ -1248,7 +1240,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                                             rnpp_in)
 
                     # get daily budget results
-                    daily_output = budget_daily_result(out)
+                    daily_output.update(out)
 
                     # Update the community status
                     community.update_lsid(daily_output.ocpavg)
@@ -1616,8 +1608,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 community.restore_from_main_table(new_life_strategies)
             # Here we update the metacomm mask to ensure that all communities are active again
             self.metacomm.update_mask()
+        
         return None
-
 
     def __fetch_spin_data(self, spin) -> dict:
         """Get the data from a spin file"""
@@ -1916,7 +1908,7 @@ if __name__ == '__main__':
         from region import region
         import polars as pl
 
-        # # Read CO2 data
+        ## Working with gridcells in memory. In the parallel runs of the region, the gridcells are stored in files.
         co2_path = Path("../input/co2/historical_CO2_annual_1765-2024.csv")
         co2_path_ssp370 = Path("../input/co2/ssp370_CO2_annual_2015-2100.csv")
         main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
@@ -1929,8 +1921,9 @@ if __name__ == '__main__':
                     co2_path,
                     main_table,
                     gridlist)
-
-        c = r.set_gridcells()
+        
+        # Set gridcell in RAM
+        r.set_gridcells()
 
         gridcell = r[0]
 
@@ -1944,6 +1937,7 @@ if __name__ == '__main__':
             command = "gridcell.run_gridcell('1901-01-01', '1950-12-31', spinup=2, fixed_co2_atm_conc=1901, save=False, nutri_cycle=True, reset_community=True)"
             cProfile.run(command, sort="cumulative", filename="profile.prof")
         else:
+        # Run the model for one gridcell to test the functionality
             start = tm.time()
             # test model functionality
             gridcell.run_gridcell("1901-01-01", "1950-12-31", spinup=1, fixed_co2_atm_conc=None,
@@ -1960,7 +1954,8 @@ if __name__ == '__main__':
             r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370)
 
             gridcell = r[0]
-            gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,
+            n =gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,
                                                 save=True, nutri_cycle=True)
+            print("collcted objects:", n)
             end = tm.time()
             print(f"Run time: {end - start:.2f} seconds")

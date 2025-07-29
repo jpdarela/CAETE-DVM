@@ -23,6 +23,50 @@
 
 from numpy.typing import NDArray
 import numpy as np
+from typing import Tuple, Union, List
+
+
+class DailyBudget:
+    """Efficient class using __slots__ to store daily budget outputs.
+    
+    This class is optimized for memory usage and performance by using __slots__
+    to prevent dynamic attribute creation and reduce memory overhead.
+    """
+    
+    __slots__ = [
+        'evavg', 'epavg', 'phavg', 'aravg', 'nppavg', 'laiavg', 'rcavg', 
+        'f5avg', 'rmavg', 'rgavg', 'cleafavg_pft', 'cawoodavg_pft', 
+        'cfrootavg_pft', 'stodbg', 'ocpavg', 'wueavg', 'cueavg', 'c_defavg',
+        'vcmax', 'specific_la', 'nupt', 'pupt', 'litter_l', 'cwd', 
+        'litter_fr', 'npp2pay', 'lnc', 'limitation_status', 'uptk_strat', 
+        'cp', 'c_cost_cwm', 'rnpp_out'
+    ]
+    
+    def __init__(self):
+        """Initialize DailyBudget with None values - will be set on first update."""
+        for slot in self.__slots__:
+            setattr(self, slot, None)
+    
+    
+    def update(self, out: Tuple[Union[NDArray, str, List, int, float]]) -> None:
+        """Update all slots with values from tuple.
+        
+        Args:
+            out: Tuple containing values in the same order as defined in budget_output class
+                 Expected order: [evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, 
+                 f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft,
+                 stodbg, ocpavg, wueavg, cueavg, c_defavg, vcmax, specific_la, 
+                 nupt, pupt, litter_l, cwd, litter_fr, npp2pay, lnc, 
+                 limitation_status, uptk_strat, cp, c_cost_cwm, rnpp_out]
+        """
+        (self.evavg, self.epavg, self.phavg, self.aravg, self.nppavg,
+         self.laiavg, self.rcavg, self.f5avg, self.rmavg, self.rgavg,
+         self.cleafavg_pft, self.cawoodavg_pft, self.cfrootavg_pft,
+         self.stodbg, self.ocpavg, self.wueavg, self.cueavg, self.c_defavg,
+         self.vcmax, self.specific_la, self.nupt, self.pupt, self.litter_l,
+         self.cwd, self.litter_fr, self.npp2pay, self.lnc, self.limitation_status,
+         self.uptk_strat, self.cp, self.c_cost_cwm, self.rnpp_out) = out
+
 
 class budget_output:
     """ Helper class to store the output of the daily_budget function.
