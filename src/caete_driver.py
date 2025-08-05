@@ -18,11 +18,11 @@ Copyright 2017- LabTerra
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
-from pathlib import Path
 import multiprocessing as mp
-from polars import read_csv
+import os
+from pathlib import Path
 
+from polars import read_csv
 
 # This is a script that exemplify the usage of the new implementation of the CAETÊ model.
 # Please, refer to the summary section in caete.py for more information.
@@ -31,15 +31,32 @@ from polars import read_csv
 # This avoids the duplication of data placed before it when using multiprocessing in Python with the spawn method.
 # Please refer to the Python multiprocessing library documentation for more information.
 
+# Profiling is enabled by default if the environment variable CAETE_PROFILING is set to True.
+PROFILING = False or os.environ.get("CAETE_PROFILING", "False").lower() in ("true", "1", "yes")
+
+if PROFILING:   
+    import cProfile
+    import io
+    import pstats
+
 if __name__ == "__main__":
 
+    if PROFILING:
+        # Create a profile object
+        print("Profiling is enabled. This will slow down the execution of the model.")
+        pr = cProfile.Profile()
+        pr.enable()
+
     import time
-    time_start = time.time()
+
     from metacommunity import pls_table
-    from parameters import tsoil, ssoil, hsoil
+    from parameters import hsoil, ssoil, tsoil
     from region import region
     from worker import worker
+    from dataframes import output_manager
 
+    
+    time_start = time.time()
     # Force spawn method to avoid issues with multiprocessing use with threading in Linux
     # This statement is awways necessary when running the model. Specifically, it needs to be
     # always after the if __name__ == "__main__": statement. This is a Python requirement.
@@ -50,19 +67,19 @@ if __name__ == "__main__":
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
     # # Input files. The model will look for the input files in these folders.
-    obsclim_files = "../input/20CRv3-ERA5/obsclim_test/"
-    obsclim_nc = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
+    obsclim_files = "../input/20CRv3-ERA5/obsclim_random/"
+    #  obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
     
-    spinclim_files = "../input/20CRv3-ERA5/spinclim_test/"
-    spinclim_nc = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
+    spinclim_files = "../input/20CRv3-ERA5/spinclim_random/"
+    # spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
     
-    transclim_files = "../input/20CRv3-ERA5/transclim_test/"
-    transclim_nc = "../input/20CRv3-ERA5/transclim/caete_input_20CRv3-ERA5_transclim.nc"
+    transclim_files = "../input/20CRv3-ERA5/transclim_random/"
+    # transclim_files = "../input/20CRv3-ERA5/transclim/caete_input_20CRv3-ERA5_transclim.nc"
 
-    counterclim_files = "../input/20CRv3-ERA5/counterclim_test/"
-    counterclim_nc = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
+    counterclim_files = "../input/20CRv3-ERA5/counterclim_random/"
+    # counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
 
-    gridlist = read_csv("../grd/gridlist_test.csv")
+    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -77,7 +94,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
 
     # Create the region using the spinup climate files
 
@@ -130,3 +147,22 @@ if __name__ == "__main__":
     r.save_state(Path(f"./{region_name}_result.psz"))
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
+    output_manager.test_output()
+
+    if PROFILING:
+        # Disable profiling
+        pr.disable()
+        
+        # Save profiling results to file with region name
+        profile_filename = f"{region_name}_profile.prof"
+        pr.dump_stats(profile_filename)
+        print(f"\nProfiling results saved to: {profile_filename}")
+        print("Analyze with: python -m pstats pan_amazon_hist_profile.prof")
+        print("Or visualize with: snakeviz pan_amazon_hist_profile.prof")
+        
+        # Quick summary to console
+        s = io.StringIO()
+        ps = pstats.Stats(pr, stream=s)
+        ps.sort_stats('cumulative').print_stats(10)
+        print("\nQuick Summary - Top 10 functions by cumulative time:")
+        print(s.getvalue())
