@@ -74,13 +74,13 @@ class community:
         self.shape: Tuple[int, ...] = self.pls_array.shape
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
-        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(0.1,0.2,self.npls).astype(np.float64)
-        self.vp_croot: NDArray[np.float64] = np.random.uniform(0.1,0.2,self.npls).astype(np.float64)
-        self.vp_cwood: NDArray[np.float64] = np.random.uniform(2.0,3.0,self.npls).astype(np.float64)
+        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(0.015,0.02,self.npls).astype(np.float64)
+        self.vp_croot: NDArray[np.float64] = np.random.uniform(0.015,0.02,self.npls).astype(np.float64)
+        self.vp_cwood: NDArray[np.float64] = np.random.uniform(0.2,0.5,self.npls).astype(np.float64)
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
-        self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
-        self.vp_sto[1,:] = np.random.uniform(0.0, 0.01, self.npls)
-        self.vp_sto[2,:] = np.random.uniform(0.0, 0.001, self.npls)
+        self.vp_sto[0,:] = np.random.uniform(0.0, 0.01, self.npls)
+        self.vp_sto[1,:] = np.random.uniform(0.0, 0.0001, self.npls)
+        self.vp_sto[2,:] = np.random.uniform(0.0, 0.00001, self.npls)
 
         # Set the wood biomass of the plants that are not woody to zero
         self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0

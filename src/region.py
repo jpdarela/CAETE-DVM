@@ -29,8 +29,6 @@ import multiprocessing as mp
 import os
 from shutil import copy2
 import sys
-import time
-import warnings
 
 from pathlib import Path
 from typing import Callable, Dict, List,Tuple, Union, Optional
@@ -40,8 +38,6 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 from joblib import dump, load
-
-
 
 from config import Config, fetch_config
 from parameters import hsoil, ssoil, tsoil
@@ -54,9 +50,8 @@ if sys.platform == "win32":
 from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progress, grd_mt
 
 # Standard output path for the model
-from parameters import output_path
+# from parameters import output_path
 from input_handler import input_handler
-
 
 class region:
     """Region class containing the gridcells for a given region
@@ -82,8 +77,8 @@ class region:
             pls_table (np.ndarray): _description_
         """
         self.config: Config = fetch_config()
+        self.compression = tuple(self.config.compression.model_dump().values()) # type: ignore
         self.gridlist = gridlist
-        # self.nproc = self.config.multiprocessing.nprocs # type: ignore
         self.name = Path(name)
         self.co2_path = str_or_path(co2)
         self.co2_data = get_co2_concentration(self.co2_path)
@@ -169,14 +164,14 @@ class region:
         # This is the output path for the regions, Create it if it does not exist
         # output_path is a global defined in parameters.py. The region object will
         # create the internal output folder structure into this directory
-        os.makedirs(output_path, exist_ok=True)
+        os.makedirs(self.config.output.output_dir, exist_ok=True)
 
         # This is the output path for this region
-        self.output_root = output_path
+        self.output_root = self.config.output.output_dir
         self.output_path = self.output_root / self.name
 
         # Path to the state files for this region
-        self.state_path:Path | None = self.output_root / f"state_files_{uuid4().hex}"
+        self.state_path:Path | None = self.output_path / f"state_files_{uuid4().hex}"
         # Mapping of gridcells to their file objects
         self.gridcell_address_file_objects = {}
 
@@ -250,18 +245,18 @@ class region:
         for f, chunk in zip(self.file_objects, chunks):
             # Save the gridcells to the intermediate files
             with open(f, 'wb') as fh:
-                dump(chunk, fh, compress=("lzma", 9)) # type: ignore
+                dump(chunk, fh, compress=self.compression) # type: ignore
         self._build_gridcell_address_mapping()
 
 
     def set_new_state(self):
         # print("Creating a copy of the state files in a new folder")
         new_id = uuid4().hex
-        new_state_folder = self.output_root / f"state_files_{new_id}"
+        new_state_folder = self.output_path / f"state_files_{new_id}"
         os.makedirs(new_state_folder, exist_ok=True)
 
         # Use ThreadPoolExecutor for I/O-bound operations like file copying
-        with ThreadPoolExecutor(max_workers=min(32, len(self.file_objects))) as executor:
+        with ThreadPoolExecutor(max_workers=min(64, len(self.file_objects))) as executor:
             # Create a list to store the new file paths
             new_file_objects = []
 
@@ -317,7 +312,7 @@ class region:
             state_file (Union[str, Path]): Path to the file where the state will be saved
         """
         from worker import worker 
-        worker.save_state_zstd(self, state_file)
+        worker.save_state_zstd(self, self.output_root / state_file)
         if new_state:
             self.set_new_state()
 
@@ -329,7 +324,8 @@ class region:
             new_name (Union[str, Path]): name of the new folder where outputs of the region should be saved. Defaults to "copy"
         """
         self.name = Path(f"{new_name}")
-        self.output_path = output_path / self.name # Update region output folder path
+        self.output_path = self.output_root / self.name # Update region output folder path
+        
         os.makedirs(self.output_path, exist_ok=True)
 
         if not self.file_objects and not self.gridcells:
@@ -348,7 +344,7 @@ class region:
                     os.makedirs(gridcell.out_dir, exist_ok=True)
 
                 with open(f, 'wb') as fh:
-                    dump(gridcells, fh, compress=("lzma", 6)) # type: ignore
+                    dump(gridcells, fh, compress=self.compression) # type: ignore
                     fh.flush()  # Explicitly flush before closing
                 gc.collect()
 
@@ -440,7 +436,7 @@ class region:
                             else:
                                 gridcell.change_input(self.input_data, self.stime, None)
                     with open(f, 'wb') as file:
-                        dump(gridcells, file, compress=("lzma", 3)) # type: ignore
+                        dump(gridcells, file, compress=self.compression) # type: ignore
                         file.flush()
                     gc.collect()
                 except Exception as e:
@@ -456,7 +452,7 @@ class region:
                     try:
                         future.result()
                     except Exception as e:
-                        raise
+                        raise e
 
         elif self.gridcells:
             for gridcell in self.gridcells:
@@ -496,7 +492,6 @@ class region:
         return idx, self.pls_table.table[:, idx]
 
 
-    # TODO: Adapt this method to the new input_handler
     def set_gridcells(self):
         """Method to set gridcells for a region. Only used in testing contexts.
         The constructions of gridcells for parallel runs is managed by the run_region_map method.
@@ -527,7 +522,6 @@ class region:
         print(f"Maximum number of PLS per community: {self.config.metacomm.npls_max}") # type: ignore
 
 
-
     def run_region_map(self, func: Callable):
         """Run a function across all gridcells using multiprocessing.Pool with async I/O"""
         
@@ -541,7 +535,7 @@ class region:
             print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
             self.gridcell_address_file_objects = {}
             # Create a dedicated executor for I/O operations
-            with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
+            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="FileWriter") as io_executor:
                 
                 for f in self.file_objects:
                     # Load and process current chunk
@@ -569,7 +563,7 @@ class region:
                     def write_chunk_to_file(filename, data):
                         """Write chunk data to file with compression."""
                         with open(filename, 'wb') as fh:
-                            dump(data, fh, compress=("lzma", 9)) # type: ignore
+                            dump(data, fh, compress=self.compression) # type: ignore
                             fh.flush()
                         gc.collect()
                         return filename
@@ -615,16 +609,16 @@ class region:
             print_progress(j, len(chunks), prefix='Progress:', suffix='Complete')
             
             # Create executor for first run
-            with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
+            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="FileWriter") as io_executor:
                 current_batch = 0
                 for chunk in chunks:
                     if is_netcdf_input:
                         self.input_handler = input_handler(self.input_data,
                                                            self.gridlist,
                                                            batch_size=self.nchunks)
-                    if self.input_method == "ih":
-                        print(self.input_handler.get_batch_data(current_batch)['gridlist'])
-                        print_progress(j, len(chunks), prefix='Progress:', suffix='Complete', nl="\n")
+                    # if self.input_method == "ih":
+                    #     print(self.input_handler.get_batch_data(current_batch)['gridlist'])
+                    #     print_progress(j, len(chunks), prefix='Progress:', suffix='Complete', nl="\n")
 
                     if self.state_path is None:
                         raise ValueError("State path is not set. Cannot write gridcells to files")
@@ -673,7 +667,7 @@ class region:
                     def write_chunk_to_file(filename, data):
                         """Write chunk data to file with compression."""
                         with open(filename, 'wb') as f:
-                            dump(data, f, compress=("lzma", 9)) # type: ignore
+                            dump(data, f, compress=self.compression) # type: ignore
                             f.flush()
                         gc.collect()
                         return filename
@@ -717,7 +711,7 @@ class region:
         self.gridcell_address_file_objects = {}
         
         # Create a dedicated executor for I/O operations
-        with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="FileWriter") as io_executor:
             
             for f in self.file_objects:
                 # Load current chunk
@@ -745,7 +739,7 @@ class region:
                 def write_chunk_to_file(filename, data):
                     """Write chunk data to file with compression."""
                     with open(filename, 'wb') as fh:
-                        dump(data, fh, compress=("lzma", 9)) # type: ignore
+                        dump(data, fh, compress=self.compression) # type: ignore
                         fh.flush()
                     gc.collect()
                     return filename
@@ -825,10 +819,9 @@ class region:
                 gc.collect()
             # Save the cleaned gridcells back to the file this renders the current model state unusable for model run
             with open(f, 'wb') as file:
-                dump(gridcells, file, compress=("lzma", 6)) # type: ignore
+                dump(gridcells, file, compress=self.compression) # type: ignore
                 file.flush()
 
-        # Process files in parallel for better performance
         with ThreadPoolExecutor(max_workers=min(32, len(self.file_objects))) as executor:
             list(executor.map(process_file, self.file_objects))
 

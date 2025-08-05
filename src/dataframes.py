@@ -24,32 +24,30 @@
 # and create gridded and table outputs.
 # Author: Joao Paulo Darela Filho
 import argparse
-import os
 import gc
+import os
 import sys
-from concurrent.futures import ProcessPoolExecutor
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
-from typing import Union, Collection, Tuple, Dict, List
+from typing import Collection, Dict, List, Tuple, Union
 
 import numpy as np
 import polars as pl
-from numpy.typing import NDArray
 from joblib import Parallel, delayed
 from numba import jit
+from numpy.typing import NDArray
 
+from _geos import find_coordinates_xy, get_region, pan_amazon_region
 from caete_jit import pft_area_frac64
 from config import fetch_config
-from _geos import pan_amazon_region, get_region, find_coordinates_xy
 
 if sys.platform == "win32":
     from config import fortran_runtime, update_sys_pathlib
     update_sys_pathlib(fortran_runtime)
 
-from caete import grd_mt, get_args, str_or_path
-from worker import worker
+from caete import get_args, grd_mt, str_or_path
 from region import region
-
+from worker import worker
 
 #TODO: implement region configuration
 if pan_amazon_region is None:
@@ -284,7 +282,7 @@ class gridded_data:
         def read_batch_parallel(batch_indices, batch_gridcells):
             """Read batch and return structured results"""
             batch_results = []
-
+            
             with ThreadPoolExecutor(max_workers=config.multiprocessing.nprocs) as batch_executor:
                 future_to_idx = {}
                 for local_idx, (global_idx, grd) in enumerate(zip(batch_indices, batch_gridcells)):
@@ -1125,7 +1123,7 @@ class table_data:
 
         # Use joblib's Parallel for efficient multiprocessing
         # Set verbose=1 to show progress during longer operations
-        Parallel(n_jobs=nprocs, verbose=1)(delayed(process_gridcell)(grd) for grd in reg)
+        Parallel(n_jobs=nprocs, verbose=1, prefer="threads")(delayed(process_gridcell)(grd) for grd in reg)
 
     @staticmethod
     def _process_year_data(grd:grd_mt, year):
@@ -1700,10 +1698,10 @@ class output_manager:
         Returns:
             None
         """
-        results = (Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
-                   Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),
-                   Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"),
-                   Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"))
+        results = (config.output.output_dir / Path("./cities_MPI-ESM1-2-HR_hist_output.psz"),
+                   config.output.output_dir / Path("./cities_MPI-ESM1-2-HR-ssp370_output.psz"),
+                   config.output.output_dir / Path("./cities_MPI-ESM1-2-HR-ssp585_output.psz"),
+                   config.output.output_dir / Path("./cities_MPI-ESM1-2-HR-piControl_output.psz"))
 
         variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
                     "photo", "npp", "evapm", "lai", "f5", "wsoil",
@@ -1716,16 +1714,16 @@ class output_manager:
 
         # Process with progress reporting
         print(f"Processing {len(results)} scenario outputs using {max_jobs} parallel jobs")
-        Parallel(n_jobs=max_jobs, verbose=3)(
+        Parallel(n_jobs=max_jobs, backend="loky", verbose=3)(
             delayed(table_data.table_output_per_grd)(r, variables) for r in results
         )
         print("All scenarios processed successfully")
 
         print("Consolidating daily outputs for cities scenarios...")
-        experiments = ["../outputs/cities_MPI-ESM1-2-HR_hist",
-                       "../outputs/cities_MPI-ESM1-2-HR-ssp370",
-                       "../outputs/cities_MPI-ESM1-2-HR-ssp585",
-                       "../outputs/cities_MPI-ESM1-2-HR-piControl"]
+        experiments = [config.output.output_dir / "cities_MPI-ESM1-2-HR_hist",
+                       config.output.output_dir / "cities_MPI-ESM1-2-HR-ssp370",
+                       config.output.output_dir / "cities_MPI-ESM1-2-HR-ssp585",
+                       config.output.output_dir / "cities_MPI-ESM1-2-HR-piControl"]
 
         for experiment_dir in experiments:
             res = Path(experiment_dir).resolve()
@@ -1747,6 +1745,57 @@ class output_manager:
 
         return None
 
+    @staticmethod
+    def test_output():
+        """
+        Process and save outputs for predefined city scenarios.
+
+        This method processes outputs for historical, ssp370, and ssp585 scenarios
+        and saves the results as CSV files and the consolidated outputs to feather format.
+
+        Returns:
+            None
+        """
+        results = (Path(config.output.output_dir / "pan_amazon_hist_result.psz"),)
+
+        variables = ("cue", "wue", "csoil", "hresp", "aresp", "rnpp",
+                    "photo", "npp", "evapm", "lai", "f5", "wsoil",
+                    "pupt", "nupt", "ls", "c_cost", "rcm", "storage_pool","inorg_n",
+                    "inorg_p", "snc", "vcmax", 'specific_la',"cdef")
+
+        # Determine optimal number of processes based on system resources
+        available_cpus = os.cpu_count() or 4
+        max_jobs = min(len(results), available_cpus)
+
+        # Process with progress reporting
+        print(f"Processing {len(results)} scenario outputs using {max_jobs} parallel jobs")
+        Parallel(n_jobs=max_jobs, backend="loky", verbose=3)(
+            delayed(table_data.table_output_per_grd)(r, variables) for r in results
+        )
+        print("All scenarios processed successfully")
+
+        print("Consolidating daily outputs for cities scenarios...")
+        experiments = [config.output.output_dir / "pan_amazon_hist"]
+
+        for experiment_dir in experiments:
+            res = Path(experiment_dir).resolve()
+            if not res.exists():
+                print(f"Warning: Experiment directory {res} does not exist")
+                continue
+
+            table_data.consolidate_daily_outputs(
+                res,
+                output_format="feather",
+                chunk_size=500
+            )
+
+            table_data.consolidate_all_annual_outputs(
+                res,
+                output_types=['biomass'],
+                output_format="feather"
+            )
+
+        return None
 
 if __name__ == "__main__":
     """

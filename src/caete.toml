@@ -4,6 +4,20 @@
 doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 # doy_months = [32, 91, 152, 213, 274, 335]
 
+[output]
+output_dir = "../outputs" # Directory where the output files will be saved.
+
+# Compression parameters for the intermediate files of a region.
+# The intermediate files are used to store the gridcells during the model run,
+# avoiding the need to keep all gridcells in memory. The intermediate files are used
+# by the state files to start new runs from a previous state.
+# State files based on Intermediate files with cleaned gridcells
+# are used to manage post processing of output data 
+[compression]
+# Compressor to use for joblib.dump. 
+# Note that "lz4" requires the lz4 package installed (Faster/low compression).
+compressor = "lz4" # compressors for joblib.dump ["lzma", "bz2", "lz4", "gzip", "xz"] 
+rate = 4 # compression rate for joblib.dump. 0-9, where 0 is no compression and 9 is maximum compression.
 
 [input_handler]
 # Input handler configuration. Used to read input data.
@@ -24,7 +38,7 @@ nprocs= 16 # Threads used to post process the output. Not used by the model itse
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of gridcells and not ideally not larger that the number of available CPUs.
-max_processes = 8 # Number of python processes used to run the model.0
+max_processes = 16 # Number of python processes used to run the model.0
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect.
