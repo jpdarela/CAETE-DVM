@@ -109,7 +109,7 @@ def neighbours_index(pos: Union[List, NDArray], matrix: NDArray) -> List:
     return neighbours
 
 @numba.njit(cache=True)
-def inflate_array(nsize: int, partial:NDArray[np.float32], id_living:NDArray[np.intp]):
+def inflate_array(nsize: int, partial:NDArray[Union[np.float32, np.float64]], id_living:NDArray[np.intp]):
     """_summary_
 
     Args:

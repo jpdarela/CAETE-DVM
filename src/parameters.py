@@ -28,16 +28,6 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import Tuple
 
-local_input: Path = Path("../input").resolve()
-#masks
-# Pan-Amazon mask. Only forest dominated gridcells are considered. MAPBIOMAS 2000
-mask_am: NDArray = np.load("../input/mask/pan_amazon_05d_FORESTS_MAPBIOMASS_2000.npy")
-# Pan-Amazon mask.
-mask_pan_am: NDArray = np.load("../input/mask/mask_raisg-360-720.npy")
-
-
-output_path: Path = Path(f"../outputs").resolve()
-
 
 # Soil Parameters
 # Water saturation, field capacity & wilting point
@@ -59,7 +49,7 @@ ssoil:Tuple[NDArray[np.float64],
             NDArray[np.float64],
             NDArray[np.float64]] = (map_subws, map_subfc, map_subwp)
 
-# Hydraulics
+# Soil Hydraulics // Not used in the model. Needs to pull Gabriela's modifications.
 theta_sat: NDArray[np.float64] = np.load("../input/hydra/theta_sat.npy")
 psi_sat: NDArray[np.float64]  = np.load("../input/hydra/psi_sat.npy")
 soil_texture: NDArray[np.float64] = np.load("../input/hydra/soil_text.npy")

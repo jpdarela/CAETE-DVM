@@ -154,51 +154,52 @@ if sys.platform == "win32":
     # This is needed to import the caete_module in windows systems
     update_sys_pathlib(get_fortran_runtime())
 
+class OutputConfig(BaseModel):
+    """Configuration for output settings."""
+    output_dir: Path = Field(
+        "../outputs",
+        description="Directory where the output files will be saved."
+    )
 
-# class Config:
-#     """
-#     Class to store the parameters from a toml file.
-#     Reads nested dictionaries as Config objects
-#     All the parameters are stored as attributes of the object
-#     Types are stored in the __annotations__ attribute
-#     """
-#     def __init__(self, d: Optional[Dict[str, Any]] = None) -> None:
-#         self.__annotations__ = {}
-#         if d is not None:
-#             for k, v in d.items():
-#                 if isinstance(v, dict):
-#                     setattr(self, k, Config(v))
-#                     self.__annotations__[k] = Config
-#                 else:
-#                     setattr(self, k, v)
-#                     self.__annotations__[k] = type(v)
+    @field_validator('output_dir')
+    @classmethod
+    def validate_output_dir(cls, v: Path) -> Path:
+        """Ensure the output directory exists."""
+        if not v.exists():
+            v.mkdir(parents=True, exist_ok=True)
+        return v.resolve()
 
 
-#     def __repr__(self) -> str:
-#         return f"Config(\n{pformat(self.__dict__)})\n"
+class CompressionConfig(BaseModel):
+    """Configuration for compression settings."""
+    compressor: Literal["lzma", "bz2", "lz4", "gzip", "xz"] = Field(
+        "lzma",
+        description="Compressor to use for joblib.dump"
+    )
+    rate: int = Field(
+        9,
+        ge=0,
+        le=9,
+        description="Compression rate for joblib.dump. 0-9, where 0 is no compression and 9 is maximum compression."
+    )
 
-
-# def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
-#     """ Get parameters from the a toml file rerturning a dictionary."""
-
-#     cfg = Path(config)
-#     assert cfg.exists(), f"File {cfg} does not exist."
-#     assert cfg.suffix == '.toml', f"File {cfg} is not a toml file."
-#     assert cfg.is_file(), f"{cfg} is not a file."
-
-#     with open(config, 'rb') as f:
-#         # Works only with python 3.11 and above
-#         data = tomllib.load(f)
-#     return data
-
-# # Can be used in the code to get the parameters any the toml file
-# def fetch_config(config: Union[str, Path] = config_file) -> Config:
-#     """ Get parameters from the  caete.toml file.
-#     Returns a Config object"""
-#     return Config(_fetch_config_parameters(config))
+    @field_validator('compressor')
+    @classmethod
+    def validate_compressor(cls, v: str) -> str:
+        """Validate the compressor type."""
+        valid_compressors = ["lzma", "bz2", "lz4", "gzip", "xz"]
+        if v not in valid_compressors:
+            raise ValueError(f"Invalid compressor: {v}. Must be one of {valid_compressors}.")
+        if v == "lz4":
+            try:
+                import lz4
+            except ImportError:
+                raise ImportError("lz4 compression is not available. Install lz4 package to use it with joblib.")
+        return v
 
 class InputHandlerConfig(BaseModel):
     """Configuration for input data handling."""
+
     input_method: Literal["legacy", "ih"] = Field(
         "legacy",
         description="Input method to use. Options: 'legacy' or 'ih'"
@@ -331,8 +332,16 @@ class Config(BaseModel):
         max_length=12,
         description="Day of year for first day of each month."
     )
-    
-    # Nested configuration sections
+
+    output: OutputConfig = Field(
+        default_factory=OutputConfig,  # type: ignore
+        description="Output configuration for the model"
+    )
+
+    compression: CompressionConfig = Field(
+        default_factory=CompressionConfig,  # type: ignore
+        description="Compression settings for joblib.dump"
+    )
     input_handler: InputHandlerConfig = Field(
         default_factory=InputHandlerConfig, # type: ignore
         description="Input data handling configuration"
@@ -420,13 +429,14 @@ def fetch_config(config: Union[str, Path] = config_file) -> Config:
 
 
 # Convenience functions for accessing nested config values
+# NOT used in the code yet. Just examples for now.
 def get_input_type(cfg: Config) -> str:
     """Get the input data type from configuration."""
     return cfg.input_handler.input_type
 
-def get_batch_size(cfg: Config, default: int = 128) -> int:
-    """Get batch size from configuration or return default."""
-    return getattr(cfg.input_handler, 'batch_size', default)
+def get_batch_size(cfg: Config) -> int:
+    """Get batch size from configuration or return default. Batch size must match max processes."""
+    return get_max_processes(cfg)
 
 def get_max_processes(cfg: Config) -> int:
     """Get maximum number of processes from configuration."""
@@ -435,3 +445,48 @@ def get_max_processes(cfg: Config) -> int:
 def get_conversion_factor(cfg: Config, variable: str) -> float:
     """Get unit conversion factor for a specific variable."""
     return getattr(cfg.conversion_factors_isimip, variable)
+
+
+
+## OLD config class and functions
+# class Config:
+#     """
+#     Class to store the parameters from a toml file.
+#     Reads nested dictionaries as Config objects
+#     All the parameters are stored as attributes of the object
+#     Types are stored in the __annotations__ attribute
+#     """
+#     def __init__(self, d: Optional[Dict[str, Any]] = None) -> None:
+#         self.__annotations__ = {}
+#         if d is not None:
+#             for k, v in d.items():
+#                 if isinstance(v, dict):
+#                     setattr(self, k, Config(v))
+#                     self.__annotations__[k] = Config
+#                 else:
+#                     setattr(self, k, v)
+#                     self.__annotations__[k] = type(v)
+
+
+#     def __repr__(self) -> str:
+#         return f"Config(\n{pformat(self.__dict__)})\n"
+
+
+# def _fetch_config_parameters(config: Union[str, Path]) -> Dict[str, Any]:
+#     """ Get parameters from the a toml file rerturning a dictionary."""
+
+#     cfg = Path(config)
+#     assert cfg.exists(), f"File {cfg} does not exist."
+#     assert cfg.suffix == '.toml', f"File {cfg} is not a toml file."
+#     assert cfg.is_file(), f"{cfg} is not a file."
+
+#     with open(config, 'rb') as f:
+#         # Works only with python 3.11 and above
+#         data = tomllib.load(f)
+#     return data
+
+# # Can be used in the code to get the parameters any the toml file
+# def fetch_config(config: Union[str, Path] = config_file) -> Config:
+#     """ Get parameters from the  caete.toml file.
+#     Returns a Config object"""
+#     return Config(_fetch_config_parameters(config))

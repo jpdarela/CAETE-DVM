@@ -117,96 +117,14 @@ class worker:
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True, verbose=verb)
         # Glacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=190.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc=190.0,
                               save=False, nutri_cycle=True, reset_community=False, env_filter=False, verbose=verb)
         # Interglacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=280.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=True, reset_community=False, env_filter=False, verbose=verb)
         # Final phase without resetting the community and without adding new PLS
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc="1901",
-                              save=False, nutri_cycle=True, process_limitation=True)
-
-        return gridcell
-
-
-
-    @staticmethod
-    def soil_pools_spinup(gridcell:grd_mt):
-        """Spin to attain equilibrium in soil pools, In this phase the communities are reset if there are no PLS
-
-        This method uses spinclim data to run the model.
-        Check the init and end dates to match input data.
-        Spinup time: 200 years
-
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1765",
-                              save=False, nutri_cycle=False, reset_community=True)
-        """
-        gridcell.run_gridcell("1891-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc="1765",
-                              save=False, nutri_cycle=False, reset_community=True)
-
-        return gridcell
-
-    @staticmethod
-    def soil_pools_spinup_glacial(gridcell:grd_mt):
-        """Spin to attain equilibrium in soil pools, In this phase the communities are reset if there are no PLS
-
-        This method uses spinclim data to run the model.
-        Check the init and end dates to match input data.
-        Spinup time: 500 years
-
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
-                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
-        """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=190.0,
-                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
-
-        return gridcell
-
-    @staticmethod
-    def soil_pools_spinup_interglacial(gridcell:grd_mt):
-        """Spin to attain equilibrium in soil pools, In this phase the communities are reset if there are no PLS
-
-        This method uses spinclim data to run the model.
-        Check the init and end dates to match input data.
-        Spinup time: 500 years
-
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
-        """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=True, reset_community=True, env_filter=True)
-
-        return gridcell
-
-
-    @staticmethod
-    def quit_spinup(gridcell:grd_mt):
-        """spin to attain equilibrium in the community without adding new PLS
-
-        Spinup time: 500 years
-
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc="1801",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True)
-
-        """
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=5, fixed_co2_atm_conc="1801",
-                              save=False, nutri_cycle=True)
-
-        return gridcell
-
-
-    @staticmethod
-    def run_spinup_transer(gridcell: grd_mt):
-        """Run the model in the first half of spinclim.
-        THe result from here will be tranfered to translcim run
-
-        run length: 50  years
-
-        gridcell.run_gridcell("1801-01-01", "1850-12-31", fixed_co2_atm_conc="1801",
-                              save=False, nutri_cycle=True)
-        """
-
-        gridcell.run_gridcell("1801-01-01", "1850-12-31", fixed_co2_atm_conc=None, save=False, nutri_cycle=True)
 
         return gridcell
 
@@ -238,7 +156,7 @@ class worker:
         """
         start_date, end_date = interval
         gridcell.run_gridcell(start_date, end_date, spinup=0, fixed_co2_atm_conc=None,
-                              save=True, nutri_cycle=True)
+                              save=True, nutri_cycle=True, process_limitation=True)
 
         return gridcell
 
@@ -255,7 +173,7 @@ class worker:
         """
         start_date, end_date = interval
         gridcell.run_gridcell(start_date, end_date, spinup=0, fixed_co2_atm_conc="1901",
-                              save=True, nutri_cycle=True)
+                              save=True, nutri_cycle=True, process_limitation=True)
 
         return gridcell
 
@@ -263,7 +181,7 @@ class worker:
 
     @staticmethod
     def save_state_zstd(region: Any, fname: Union[str, Path]):
-        """Save apython serializable object using zstd compression with 12 threads
+        """Save a python serializable object using zstd compression with available threads
 
         Args:
             region (Any): python object to be compressed and saved. Must be serializable
@@ -280,13 +198,26 @@ class worker:
 
     @staticmethod
     def load_state_zstd(fname:Union[str, Path]):
-        """Used to load a region object from a zstd compressed file
+        """Used to load a region object from a zstd compressed file.
+        This method is used to load the state of the region from a compressed file.
+        It uses the zstd library to decompress the file and then loads the object using pickle.
+        If the file is not found in the current directory, it will look for it in the output directory.
 
         Args:
             fname (Union[str, Path]): filename of the compressed object
         """
-        with open(fname, 'rb') as fh:
-            decompressor = zstd.ZstdDecompressor()
-            with decompressor.stream_reader(fh) as decompressor_reader:
-                region = pkl.load(decompressor_reader)
+        try:
+            with open(fname, 'rb') as fh:
+                decompressor = zstd.ZstdDecompressor()
+                with decompressor.stream_reader(fh) as decompressor_reader:
+                    region = pkl.load(decompressor_reader)
+        except FileNotFoundError:
+            with open(config.output.output_dir / fname, 'rb') as fh:
+                decompressor = zstd.ZstdDecompressor()
+                with decompressor.stream_reader(fh) as decompressor_reader:
+                    region = pkl.load(decompressor_reader)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"File {fname} not found in the current directory or output directory.")
+        except Exception as e:
+            raise Exception(f"Error loading state from {fname}: {e}")
         return region

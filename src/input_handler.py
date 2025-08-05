@@ -7,16 +7,16 @@ Functionality to read input files for CAETE model.
 
 """
 
-from abc import ABC, abstractmethod
-from pathlib import Path
 import concurrent.futures
 import pickle
 import sys
+import warnings
+from abc import ABC, abstractmethod
+from pathlib import Path
 
 import numpy as np
 
-# Suppress NumPy warnings that occurs during multiprocessing. 
-import warnings
+# Suppress NumPy warnings that occurs during multiprocessing.
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="numpy.ndarray size changed", category=RuntimeWarning)
     warnings.filterwarnings("ignore", message="numpy.ufunc size changed", category=RuntimeWarning)
@@ -24,9 +24,9 @@ with warnings.catch_warnings():
 
 import polars as pl
 
-from caete import str_or_path, read_bz2_file
+from _geos import find_coordinates_xy, find_indices_xy
+from caete import read_bz2_file, str_or_path
 from config import fetch_config
-from _geos import find_coordinates_xy, find_indices_xy 
 
 cfg = fetch_config()
 
@@ -217,6 +217,7 @@ class base_handler(ABC):
             duplicates = [name for name in set(station_names)
                             if station_names.count(name) > 1]
             raise ValueError(f"Duplicate station names in gridlist: {duplicates}")
+
 
 class bz2_handler(base_handler):
     """
@@ -531,6 +532,7 @@ class bz2_handler(base_handler):
         Destructor that ensures proper cleanup when the object is garbage collected.
         """
         self.close()
+
 
 class netcdf_handler(base_handler):
     """
@@ -973,7 +975,7 @@ class netcdf_handler(base_handler):
         """
         Load data from the NetCDF file into a dictionary organized by station names.
         
-        This method efficiently loads all required variables for the stations specified
+        This method loads all required variables for the stations specified
         in the gridlist. It supports both parallel (MPI) and sequential reading modes
         depending on the configuration and NetCDF4 parallel support availability.
         
@@ -1535,7 +1537,7 @@ if __name__ == "__main__":
     # Creating input handlers for bz2 files
     cfg.input_handler.input_type = 'bz2'  
     input_dir = '../input/20CRv3-ERA5/obsclim_test'
-    gridlist_path = '../grd/gridlist_test.csv'
+    gridlist_path = '../grd/gridlist_random_cells_pa.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
     ih.get_data  # Load all data at once, returns a dictionary with station names as keys and data as values

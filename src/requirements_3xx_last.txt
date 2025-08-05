@@ -9,6 +9,10 @@ polars
 netCDF4
 pydantic
 
+# Compressors for joblib. Needed if you choose lz4 or zstd as the compressor with joblib.
+# See the section [compression] in the config file (src/caete.toml).
+lz4
+
 # Requirements for data handling and manipulation (pre and post processing).
 pyarrow
 pandas

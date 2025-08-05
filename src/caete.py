@@ -118,7 +118,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from threading import Thread
-from time import sleep
 
 from typing import Callable, Dict, List, Optional, Tuple, Union, Any, Collection, Set, TypeVar
 
@@ -162,7 +161,7 @@ warnings.simplefilter("default")
 T = TypeVar('T')
 
 # Define some util functions #
-def get_args(variable: Union[T, Collection[T]]) -> Collection[Union[T, str, int, float]]:
+def get_args(variable: Union[T, Collection[T]]) -> Collection[Union[T,Any]]:
     """Ensure the input is returned as a collection."""
     if isinstance(variable, Collection) and not isinstance(variable, str):
         return variable
@@ -173,7 +172,7 @@ def rwarn(txt:str='RuntimeWarning'):
     """Raise a RuntimeWarning"""
     warnings.warn(f"{txt}", RuntimeWarning)
 
-def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30, nl='\r'):
+def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_length=30, nl='\r'): # type: ignore
     """FROM Stack Overflow/GIST, THANKS
     Call in a loop to create terminal progress bar
 
@@ -187,8 +186,8 @@ def print_progress(iteration, total, prefix='', suffix='', decimals=2, bar_lengt
     """
     bar_utf = b'\xe2\x96\x88'  # bar -> unicode symbol = u'\u2588'
     str_format = "{0:." + str(decimals) + "f}"
-    percents = str_format.format(100 * (iteration / float(total)))
-    filled_length = int(round(bar_length * iteration / float(total)))
+    percents = str_format.format(100 * (iteration / float(total))) # type: ignore
+    filled_length = int(round(bar_length * iteration / float(total))) # type: ignore
     bar = '█' * filled_length + '-' * (bar_length - filled_length)
 
     sys.stdout.write('%s%s |%s| %s%s %s' %
@@ -426,7 +425,7 @@ class time:
     """
     def __init__(self):
         """Time attributes"""
-        self.time_index:np.ndarray
+        self.time_index:NDArray[Union[np.float64, np.float32, np.int64, np.int32, np.int16, np.int8]]
         self.calendar:str
         self.time_unit:str
         self.start_date:str
@@ -435,7 +434,7 @@ class time:
         self.eind: int
 
 
-    def _set_time(self, stime_i:Dict):
+    def _set_time(self, stime_i:Dict[str, Any]):
         """_summary_
 
         Args:

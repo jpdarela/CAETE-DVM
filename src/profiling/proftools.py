@@ -7,7 +7,7 @@ from pstats import SortKey
 from functools import wraps
 
 
-# Create a function profiler decorator to use on specific methods
+# Profiler decorator to use on specific methods
 def profile_function(output_file=None):
     """Decorator for profiling individual functions"""
     def decorator(func):
@@ -65,7 +65,7 @@ def profile_function(output_file=None):
         return wrapper
     return decorator
 
-# Create a class profiler to use on entire class or module
+# Class profiler to use on entire class or module
 class ProfilerManager:
     def __init__(self, name="caete_profiler"):
         self.name = name
