@@ -45,7 +45,7 @@ def get_location_data(filename: Union[Path, str]) -> List[Dict[str, Union[float,
         reader = csv.DictReader(file, dialect=dialect)
 
         # Ensure the file has the required headers
-        if not {'lon', 'lat', 'name'}.issubset(reader.fieldnames):
+        if not {'lon', 'lat', 'station_name'}.issubset(reader.fieldnames):
             raise ValueError("File must contain 'lon', 'lat', and 'name' columns")
 
         data = []
@@ -53,7 +53,7 @@ def get_location_data(filename: Union[Path, str]) -> List[Dict[str, Union[float,
             data.append({
                 'lon': float(row['lon']),
                 'lat': float(row['lat']),
-                'name': row['name']
+                'name': row['station_name']
             })
 
     return data
@@ -161,6 +161,11 @@ if __name__ == '__main__':
     # _append = '_pan_amazon_forest'
     # _gridlist = "gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv"
     # write_gridlist_with_indices = True
+
+    _append = '_random'
+    _gridlist = '../grd/gridlist_random_cells_pa.csv'
+    write_gridlist_with_indices = False
+
 
     # Define source and destination folders
     # order is important here. The source folders must be in the same order as the destination folders

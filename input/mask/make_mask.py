@@ -17,14 +17,13 @@ parser.add_argument('-m', '--mask_netcdf', type=str, help='Must be a valid filen
 parser.add_argument('-o', '--output_mask', type=str, required=True, help='Output mask file, must be a valid filename or path')
 #parse the argument -v --variable of type string with default value of "mask"
 parser.add_argument('-v', '--variable', type=str, default='mask', help='Variable name in the netCDF file, defaults to "mask"')
+parser.add_argument('-f', '--flip', action='store_true', help='If set, the mask will be flipped in the 0 axis (up/down). This is useful for some netCDF files that have the y-axis inverted.')
 
 # parse the arguments
 args = parser.parse_args()
 
 with Dataset(args.mask_netcdf, 'r') as mask_nc:
     mask = mask_nc.variables[args.variable][:].mask
-
+if args.flip:
+    mask = np.flipud(mask)  # Flip the mask vertically if the flip argument is set
 np.save(args.output_mask, mask)
-
-
-

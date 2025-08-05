@@ -22,13 +22,14 @@ def create_gridlist_from_mask(mask, output_file, res_x=0.5, res_y=0.5):
 
     with open(output_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['lon', 'lat', 'name'])
-
+        writer.writerow(['station_id','lat', 'lon', 'station_name', 'global_y', 'global_x'])
+        k = 0
         for y in range(rows):
             for x in range(cols):
                 if mask[y, x] == False:  # Valid grid cell mask is False
                     lat, lon = find_coordinates_xy(y, x, res_y, res_x)
-                    writer.writerow([lon, lat, f"Station_{y}_{x}"])
+                    writer.writerow([k, lat, lon, f"station_{y}-{x}", y, x])
+                    k += 1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate a gridlist file from a mask.")
