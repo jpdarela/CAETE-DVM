@@ -1,5 +1,5 @@
-# This script orchestrates the execution of a region simulation.
-# No functions or classes are defined, so no docstrings are added.
+# Example script to run a region from a saved state file.
+# Outdated: THe region and worker modules have been updated, and this script is no longer compatible with the latest version.
 
 from typing import Tuple
 from worker import worker
@@ -7,7 +7,7 @@ from dataframes import output_manager
 
 if __name__ == "__main__":
 
-    region = worker.load_state_zstd("./pan_amazon_hist_after_spinup_state_file.psz")
+    region = worker.load_state_zstd("../outputs/cities_MPI-ESM1-2-HR_hist.psz")  # Load the region from a saved state file.
 
     region.set_new_state()  # Set a new state and update inputs by copying the previous state.
     region.update_dump_directory("doing_something")
@@ -26,5 +26,5 @@ if __name__ == "__main__":
                                     "specific_la", "rcm")
 
     region_output = worker.load_state_zstd("./state.psz2")
-    output_manager.generic_text_output_grd(region_output, variables_to_read)
+    # output_manager.generic_text_output_grd(region_output, variables_to_read)
 
