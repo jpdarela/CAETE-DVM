@@ -30,3 +30,17 @@ module types
    integer,parameter,public :: r_8 = 8  ! 64 bits float
 
 end module types
+
+
+! module types
+!    use iso_fortran_env, only : int16
+!    implicit none
+!    private
+
+!    integer,parameter,public :: l_1 = kind(.true.)  ! standard Logical type
+!    integer,parameter,public :: i_2 = int16         ! 16 bits integer
+!    integer,parameter,public :: i_4 = kind(0)       ! 32 bits integer
+!    integer,parameter,public :: r_4 = kind(0.0)     ! 32 bits float
+!    integer,parameter,public :: r_8 = kind(0.0D0)   ! 64 bits float
+
+! end module types

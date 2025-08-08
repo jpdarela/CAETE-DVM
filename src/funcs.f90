@@ -31,7 +31,7 @@ module photo
         f_four                      ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
         spec_leaf_area              ,& ! (f), specific leaf area (m2 g-1)
         sla_reich                   ,& ! (f), specific leaf area (m2 g-1)
-        leaf_nitrogen_concetration  ,& ! (f), leaf nitrogen concentration (gN gC-1)
+        leaf_nitrogen_concentration  ,& ! (f), leaf nitrogen concentration (gN gC-1)
         water_stress_modifier       ,& ! (f), F5 - water stress modifier (dimensionless)
         photosynthesis_rate         ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
         vcmax_a                     ,& ! (f), VCmax from domingues et al. 2010 (eq.1)
@@ -168,7 +168,7 @@ contains
       tl0 = tau_leaf * 12.0D0
 
       sla = 278.0D0 * (tl0 ** (-0.49)) ! Intercept 278 extracted from the figure in Reich et al. 1997
-      ! sla = 96.68 * (tl0 ** (-0.49))
+      !sla = 96.68 * (tl0 ** (-0.49))
       ! sla = 85.0D0 * (tl0 ** (-0.49)) ! cm2 gC-1 Dry mass
 
 
@@ -181,7 +181,7 @@ contains
    !> @param tau_leaf Leaf turnover time in years
    !> @return Leaf nitrogen concentration in gN gC-1
    !=================================================================
-   function leaf_nitrogen_concetration(tau_leaf) result(nleaf)
+   function leaf_nitrogen_concentration(tau_leaf) result(nleaf)
       ! based on Reich et al. 1997
       !implicit none
       real(r_8),intent(in) :: tau_leaf  !years
@@ -195,7 +195,7 @@ contains
       call random_number(r)
       delta = (r - 0.5D0) * 0.01D0
       nleaf = nleaf + delta
-   end function leaf_nitrogen_concetration
+   end function leaf_nitrogen_concentration
 
    !=================================================================
    !=================================================================
@@ -316,7 +316,7 @@ contains
 
       f5 = f5_64
       if (f5 .lt. wa) f5 = wa
-      if (f5 .gt. 0.6D0) f5 = 1.0D0
+      if (f5 .gt. 0.8D0) f5 = 1.0D0
    end function water_stress_modifier
 
    ! =============================================================
