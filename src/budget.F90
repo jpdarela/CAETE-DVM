@@ -420,6 +420,9 @@ contains
             ! Calculate the total carbon available
             total_c = cl2(p) + ca2(p) + cf2(p)
             c_def_amount = c_def(p) * 1e-3
+            ca_def = 0.0D0
+            cf_def = 0.0D0
+            cl_def = 0.0D0
 
             ! Check if the total carbon is less than c_def
             if (total_c .lt. c_def_amount) then
@@ -429,7 +432,7 @@ contains
             else
                ! Calculate the proportional amounts to subtract
                cl_def = c_def_amount * (cl2(p) / total_c)
-               ca_def = c_def_amount * (ca2(p) / total_c)
+               if (dt1(7) .gt. 0.0D0) ca_def = c_def_amount * (ca2(p) / total_c)
                cf_def = c_def_amount * (cf2(p) / total_c)
 
                ! Subtract carbon from each pool ensuring no negative values
@@ -453,28 +456,6 @@ contains
          if (cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
          if (ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
          if (cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
-
-         if(c_def(p) .gt. 0.0) then
-            cl1_int(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-            ca1_int(p) = ca2(p)
-            cf1_int(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
-
-            ! No cdef
-         else
-            if(dt1(7) .gt. 0.0D0) then
-               cl1_int(p) = cl2(p)
-               ca1_int(p) = ca2(p)
-               cf1_int(p) = cf2(p)
-            else
-               cl1_int(p) = cl2(p)
-               ca1_int(p) = 0.0D0
-               cf1_int(p) = cf2(p)
-            endif
-         endif
-
-         if(cl1_int(p) .lt. 0.0D0) cl1_int(p) = 0.0D0
-         if(ca1_int(p) .lt. 0.0D0) ca1_int(p) = 0.0D0
-         if(cf1_int(p) .lt. 0.0D0) cf1_int(p) = 0.0D0
 
       enddo ! end pls_loop (p)
       !$OMP END PARALLEL DO
