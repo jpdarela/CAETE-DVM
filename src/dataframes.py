@@ -38,7 +38,7 @@ from numba import jit
 from numpy.typing import NDArray
 
 from _geos import find_coordinates_xy, get_region, pan_amazon_region
-from caete_jit import pft_area_frac64
+from caete_jit import pft_area_frac64, pft_area_frac
 from config import fetch_config
 
 if sys.platform == "win32":
@@ -1159,19 +1159,19 @@ class table_data:
         # Select needed columns
         df = df.select(["pls_id", "vp_cleaf", "vp_croot", "vp_cwood", "count"])
 
-        # Convert to numpy arrays for the pft_area_frac64 calculation
         # Make copies of arrays to ensure they're writeable (not readonly)
         pls_id_values = df.get_column("pls_id").to_numpy().copy()
         cleaf = df.get_column("vp_cleaf").to_numpy().copy()
         croot = df.get_column("vp_croot").to_numpy().copy()
         cwood = df.get_column("vp_cwood").to_numpy().copy()
 
-        # Use the numba optimized function to calculate cveg and ocp
+        # Use the numba optimized functions to calculate cveg and ocp
         try:
             cveg, ocp = calculate_cveg_and_ocp(cleaf, croot, cwood)
         except Exception:
-            # Fallback to non-numba calculation if there's an error
-            ocp = pft_area_frac64(cleaf, croot, cwood)
+            # Fallback to 32bit calculation if there's an error
+            # print("FALLING_BACK TO 32BIT OCP CALCULATION")
+            ocp = pft_area_frac(cleaf, croot, cwood)
             cveg = cleaf + croot + cwood
 
         # Create new DataFrame with all columns
@@ -1798,192 +1798,196 @@ class output_manager:
         return None
 
 if __name__ == "__main__":
-    """
-    Usage examples:
+    pass
+    # """
+    # Usage examples:
 
-    # Basic daily output consolidation
-    python dataframes.py --consolidate /path/to/experiment --format parquet
+    # # Basic daily output consolidation
+    # python dataframes.py --consolidate /path/to/experiment --format parquet
 
-    # Consolidate with partitioning
-    python dataframes.py --consolidate /path/to/experiment --format parquet --partition time
+    # # Consolidate with partitioning
+    # python dataframes.py --consolidate /path/to/experiment --format parquet --partition time
 
-    # Profile cities output
-    python dataframes.py --profile cities
+    # # Profile cities output
+    # python dataframes.py --profile cities
 
-    # Dedicated profiling script
-    python profile_dataframes.py --test write_daily_data --size medium --visualize
+    # # Dedicated profiling script
+    # python profile_dataframes.py --test write_daily_data --size medium --visualize
 
-    Using the decorator:
+    # Using the decorator:
 
-    from dataframes import profile_function
+    # from dataframes import profile_function
 
-    @profile_function("my_optimization_test")
-    def my_test_function():
-        # Your code here
-        pass
+    # @profile_function("my_optimization_test")
+    # def my_test_function():
+    #     # Your code here
+    #     pass
 
-    """
+    # """
 
-    # Define profiling options with argparse
-    parser = argparse.ArgumentParser(description='Run CAETE-DVM with profiling options')
-    parser.add_argument('--profile', choices=['none', 'cities', 'table', 'both'],
-                      default='none', help='Profiling mode')
-    parser.add_argument('--method', choices=['table_output', 'metacomm_output', 'make_daily_df'],
-                      default=None, help='Specific method to profile')
-    parser.add_argument('--trace-memory', action='store_true',
-                      help='Enable memory tracing')
+    # # Define profiling options with argparse
+    # parser = argparse.ArgumentParser(description='Run CAETE-DVM with profiling options')
+    # parser.add_argument('--profile', choices=['none', 'cities', 'table', 'both'],
+    #                   default='none', help='Profiling mode')
+    # parser.add_argument('--method', choices=['table_output', 'metacomm_output', 'make_daily_df'],
+    #                   default=None, help='Specific method to profile')
+    # parser.add_argument('--trace-memory', action='store_true',
+    #                   help='Enable memory tracing')
 
-    # Add consolidation options
-    parser.add_argument('--consolidate', type=str, metavar='EXPERIMENT_DIR',
-                      help='Path to experiment directory to consolidate daily outputs')
-    parser.add_argument('--consolidate-annual', type=str, metavar='EXPERIMENT_DIR',
-                      help='Path to experiment directory to consolidate annual outputs')
-    parser.add_argument('--format', choices=['parquet', 'feather', 'hdf5', 'csv'],
-                      default='parquet', help='Output format for consolidated data')
-    parser.add_argument('--partition', choices=['time', 'space'],
-                      help='Partitioning strategy (parquet only)')
-    parser.add_argument('--chunk-size', type=int, default=500,
-                      help='Number of CSV files to process per chunk')
-    parser.add_argument('--annual-types', nargs='+', choices=['biomass'],
-                      default=['biomass'], help='Types of annual outputs to consolidate')
+    # # Add consolidation options
+    # parser.add_argument('--consolidate', type=str, metavar='EXPERIMENT_DIR',
+    #                   help='Path to experiment directory to consolidate daily outputs')
+    # parser.add_argument('--consolidate-annual', type=str, metavar='EXPERIMENT_DIR',
+    #                   help='Path to experiment directory to consolidate annual outputs')
+    # parser.add_argument('--format', choices=['parquet', 'feather', 'hdf5', 'csv'],
+    #                   default='parquet', help='Output format for consolidated data')
+    # parser.add_argument('--partition', choices=['time', 'space'],
+    #                   help='Partitioning strategy (parquet only)')
+    # parser.add_argument('--chunk-size', type=int, default=500,
+    #                   help='Number of CSV files to process per chunk')
+    # parser.add_argument('--annual-types', nargs='+', choices=['biomass'],
+    #                   default=['biomass'], help='Types of annual outputs to consolidate')
 
-    # Parse command line arguments when run directly
-    if Path(__file__).name in sys.argv[0]:
-        args = parser.parse_args()
-    else:
-        # Default values for module import
-        class DefaultArgs:
-            def __init__(self):
-                self.profile = 'none'
-                self.method = None
-                self.trace_memory = False
-                self.consolidate = None
-                self.format = 'parquet'
-                self.partition = None
-                self.chunk_size = 500
-        args = DefaultArgs()
+    # # Parse command line arguments when run directly
+    # if Path(__file__).name in sys.argv[0]:
+    #     args = parser.parse_args()
+    # else:
+    #     # Default values for module import
+    #     class DefaultArgs:
+    #         def __init__(self):
+    #             self.profile = 'none'
+    #             self.method = None
+    #             self.trace_memory = False
+    #             self.consolidate = None
+    #             self.format = 'parquet'
+    #             self.partition = None
+    #             self.chunk_size = 500
+    #     args = DefaultArgs()
 
-    # Handle consolidation requests
-    if args.consolidate:
-        experiment_dir = Path(args.consolidate)
-        if not experiment_dir.exists():
-            print(f"Error: Experiment directory {experiment_dir} does not exist")
-            sys.exit(1)
+    # # Handle consolidation requests
+    # if args.consolidate:
+    #     experiment_dir = Path(args.consolidate)
+    #     if not experiment_dir.exists():
+    #         print(f"Error: Experiment directory {experiment_dir} does not exist")
+    #         sys.exit(1)
 
-        print(f"Consolidating daily outputs from {experiment_dir}")
+    #     print(f"Consolidating daily outputs from {experiment_dir}")
 
-        if args.partition:
-            # Use partitioned consolidation
-            table_data.consolidate_daily_outputs_partitioned(
-                experiment_dir,
-                output_format=args.format,
-                partition_by=args.partition
-            )
-        else:
-            # Use regular consolidation
-            table_data.consolidate_daily_outputs(
-                experiment_dir,
-                output_format=args.format,
-                chunk_size=args.chunk_size
-            )
+    #     if args.partition:
+    #         # Use partitioned consolidation
+    #         table_data.consolidate_daily_outputs_partitioned(
+    #             experiment_dir,
+    #             output_format=args.format,
+    #             partition_by=args.partition
+    #         )
+    #     else:
+    #         # Use regular consolidation
+    #         table_data.consolidate_daily_outputs(
+    #             experiment_dir,
+    #             output_format=args.format,
+    #             chunk_size=args.chunk_size
+    #         )
 
-        print("Consolidation completed!")
-        sys.exit(0)
+    #     print("Consolidation completed!")
+    #     sys.exit(0)
 
-    # Handle annual consolidation requests
-    if args.consolidate_annual:
-        experiment_dir = Path(args.consolidate_annual)
-        if not experiment_dir.exists():
-            print(f"Error: Experiment directory {experiment_dir} does not exist")
-            sys.exit(1)
+    # # Handle annual consolidation requests
+    # if args.consolidate_annual:
+    #     experiment_dir = Path(args.consolidate_annual)
+    #     if not experiment_dir.exists():
+    #         print(f"Error: Experiment directory {experiment_dir} does not exist")
+    #         sys.exit(1)
 
-        print(f"Consolidating annual outputs from {experiment_dir}")
-        table_data.consolidate_all_annual_outputs(
-            experiment_dir,
-            output_types=args.annual_types,
-            output_format=args.format
-        )
+    #     print(f"Consolidating annual outputs from {experiment_dir}")
+    #     table_data.consolidate_all_annual_outputs(
+    #         experiment_dir,
+    #         output_types=args.annual_types,
+    #         output_format=args.format
+    #     )
 
-        print("Annual consolidation completed!")
-        sys.exit(0)
+    #     print("Annual consolidation completed!")
+    #     sys.exit(0)
 
-    # Profiling imports and setup
-    from profiling import proftools
-    ProfilerManager = proftools.ProfilerManager
-    profile_function = proftools.profile_function
+    # # Profiling imports and setup
+    # from profiling import proftools
+    # ProfilerManager = proftools.ProfilerManager
+    # profile_function = proftools.profile_function
 
-    # Profiling test cases
-    def profile_cities_output():
-        """Profile the cities_output method"""
-        profiler = ProfilerManager("cities_output_profile")
-        profiler.start()
-        output_manager.cities_output()
-        profiler.stop()
+    # # Profiling test cases
+    # def profile_cities_output():
+    #     """Profile the cities_output method"""
+    #     profiler = ProfilerManager("cities_output_profile")
+    #     profiler.start()
+    #     output_manager.cities_output()
+    #     profiler.stop()
 
-    def profile_table_data_method(method_name, *args, **kwargs):
-        """Profile a specific method in table_data class"""
-        method = getattr(table_data, method_name, None)
-        if method is None:
-            print(f"Method {method_name} not found in table_data class")
-            return
+    # def profile_table_data_method(method_name, *args, **kwargs):
+    #     """Profile a specific method in table_data class"""
+    #     method = getattr(table_data, method_name, None)
+    #     if method is None:
+    #         print(f"Method {method_name} not found in table_data class")
+    #         return
 
-        decorated = profile_function(f"table_data_{method_name}_profile")(method)
-        return decorated(*args, **kwargs)
+    #     decorated = profile_function(f"table_data_{method_name}_profile")(method)
+    #     return decorated(*args, **kwargs)
 
-    # Execute based on arguments
+    # # Execute based on arguments
 
-    ## We dont have profiling for the gridded data tools yet
-    if args.profile == 'none':
-        # Regular execution without profiling
-        output_file = Path("./pan_amazon_hist_result.psz")
-        reg:region = worker.load_state_zstd(output_file)
-        variables_to_read = ("npp","photo")
-        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
+    # ## We dont have profiling for the gridded data tools yet
+    # if args.profile == 'none':
+    #     # Regular execution without profiling
+    #     output_file = Path("./pan_amazon_hist_result.psz")
+    #     reg:region = worker.load_state_zstd(output_file)
+    #     variables_to_read = ("npp","photo")
+    #     a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (1,2)))
 
-    elif args.profile == 'cities':
-        # Pro        from pathlib import Path
-        from dataframes import table_data
+    # elif args.profile == 'cities':
+    #     # Pro        from pathlib import Path
+    #     from dataframes import table_data
 
-        # Consolidate daily outputs from an experiment
-        experiment_dir = Path("outputs/cities_MPI-ESM1-2-HR_hist")
-        table_data.consolidate_daily_outputs(
-            experiment_dir,
-            output_format="parquet",
-            chunk_size=500
-        )
-        profile_cities_output()
+    #     # Consolidate daily outputs from an experiment
+    #     experiment_dir = Path("outputs/cities_MPI-ESM1-2-HR_hist")
+    #     table_data.consolidate_daily_outputs(
+    #         experiment_dir,
+    #         output_format="parquet",
+    #         chunk_size=500
+    #     )
+    #     profile_cities_output()
 
-    elif args.profile == 'table' and args.method:
-        # Profile specific table_data method
-        if args.method == 'table_output':
-            results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
-            variables = ("cue", "wue", "csoil", "hresp")
-            profile_table_data_method('write_daily_data',
-                                     worker.load_state_zstd(results), variables)
+    # elif args.profile == 'table' and args.method:
+    #     # Profile specific table_data method
+    #     if args.method == 'table_output':
+    #         results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+    #         variables = ("cue", "wue", "csoil", "hresp")
+    #         profile_table_data_method('write_daily_data',
+    #                                  worker.load_state_zstd(results), variables)
 
-        elif args.method == 'metacomm_output':
-            results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
-            reg = worker.load_state_zstd(results)
-            profile_table_data_method('write_metacomm_output', reg[0])
+    #     elif args.method == 'metacomm_output':
+    #         results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+    #         reg = worker.load_state_zstd(results)
+    #         profile_table_data_method('write_metacomm_output', reg[0])
 
-        elif args.method == 'make_daily_df':
-            results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
-            reg = worker.load_state_zstd(results)
-            variables = ("cue", "wue", "csoil", "hresp")
-            profile_table_data_method('make_daily_dataframe', reg, variables, None)
+    #     elif args.method == 'make_daily_df':
+    #         results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+    #         reg = worker.load_state_zstd(results)
+    #         variables = ("cue", "wue", "csoil", "hresp")
+    #         profile_table_data_method('make_daily_dataframe', reg, variables, None)
 
-    elif args.profile == 'both':
-        # Profile both cities_output and table_data
-        print("Profiling cities_output...")
-        profile_cities_output()
+    # elif args.profile == 'both':
+    #     # Profile both cities_output and table_data
+    #     print("Profiling cities_output...")
+    #     profile_cities_output()
 
-        print("\nProfilering table_data.write_daily_data...")
-        results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
-        reg = worker.load_state_zstd(results)
-        variables = ("cue", "wue", "csoil", "hresp")
-        profile_table_data_method('write_daily_data', reg, variables)
+    #     print("\nProfilering table_data.write_daily_data...")
+    #     results = Path("./cities_MPI-ESM1-2-HR_hist_output.psz")
+    #     reg = worker.load_state_zstd(results)
+    #     variables = ("cue", "wue", "csoil", "hresp")
+    #     profile_table_data_method('write_daily_data', reg, variables)
 
-    print("\nDone.")
+    # print("\nDone.")
+
+
+
 
 
 ##SANDBOX
