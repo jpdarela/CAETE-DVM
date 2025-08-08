@@ -67,17 +67,17 @@ if __name__ == "__main__":
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
 
     # # Input files. The model will look for the input files in these folders.
-    obsclim_files = "../input/20CRv3-ERA5/obsclim_random/"
-    #  obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
+    #obsclim_files = "../input/20CRv3-ERA5/obsclim_random/"
+    obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
     
-    spinclim_files = "../input/20CRv3-ERA5/spinclim_random/"
-    # spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
+    #spinclim_files = "../input/20CRv3-ERA5/spinclim_random/"
+    spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
     
-    transclim_files = "../input/20CRv3-ERA5/transclim_random/"
-    # transclim_files = "../input/20CRv3-ERA5/transclim/caete_input_20CRv3-ERA5_transclim.nc"
+    #transclim_files = "../input/20CRv3-ERA5/transclim_random/"
+    transclim_files = "../input/20CRv3-ERA5/transclim/caete_input_20CRv3-ERA5_transclim.nc"
 
-    counterclim_files = "../input/20CRv3-ERA5/counterclim_random/"
-    # counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
+    #counterclim_files = "../input/20CRv3-ERA5/counterclim_random/"
+    counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
 
     gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # Create the region using the spinup climate files
 
@@ -141,8 +141,8 @@ if __name__ == "__main__":
     # We clean the state of the gridcells to save the final state of the region
     # THis final state is not useful to restart the model, but it is useful to
     # access the model outputs and export it to other formats.
-    r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
-    r.set_new_state()
+    # r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
+    # r.set_new_state()
     r.clean_model_state()
     r.save_state(Path(f"./{region_name}_result.psz"))
 

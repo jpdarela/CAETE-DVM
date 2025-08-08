@@ -1282,8 +1282,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                             lim_status_y_leaf[i, :, julian_day - 1] = daily_output.limitation_status[0,:]# type: ignore
                             lim_status_y_stem[i, :, julian_day - 1] = daily_output.limitation_status[1,:]# type: ignore
                             lim_status_y_root[i, :, julian_day - 1] = daily_output.limitation_status[2,:]# type: ignore
-                            uptake_strategy_n[i, :, julian_day - 1] =  daily_output.uptk_strat[0,:]# type: ignore
-                            uptake_strategy_p[i, :, julian_day - 1] =  daily_output.uptk_strat[1,:]# type: ignore
+                            uptake_strategy_n[i, :, julian_day - 1] = daily_output.uptk_strat[0,:]# type: ignore
+                            uptake_strategy_p[i, :, julian_day - 1] = daily_output.uptk_strat[1,:]# type: ignore
 
                         community.anpp += cw_mean(community.vp_ocp, community.construction_npp.astype(np.float32))
                         community.uptake_costs += cw_mean(community.vp_ocp, community.sp_uptk_costs.astype(np.float32))
@@ -1915,7 +1915,7 @@ if __name__ == '__main__':
 
 
         r = region("region_test",
-                    "../input/MPI-ESM1-2-HR/historical_test",
+                    "../input/MPI-ESM1-2-HR/historical/caete_input_MPI-ESM1-2-HR_historical.nc",
                     (tsoil, ssoil, hsoil),
                     co2_path,
                     main_table,
@@ -1950,7 +1950,7 @@ if __name__ == '__main__':
             r.update_dump_directory("test_new_region")
 
             # test change input
-            r.update_input("../input/MPI-ESM1-2-HR/ssp370_test/", co2 = co2_path_ssp370)
+            r.update_input("../input/MPI-ESM1-2-HR/ssp370/caete_input_MPI-ESM1-2-HR_ssp370.nc", co2 = co2_path_ssp370)
 
             gridcell = r[0]
             n =gridcell.run_gridcell("2015-01-01", "2030-12-31", spinup=1, fixed_co2_atm_conc=None,

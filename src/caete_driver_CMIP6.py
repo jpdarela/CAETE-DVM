@@ -57,10 +57,16 @@ if __name__ == "__main__":
     input_path = Path("../input/").resolve()
 
     # Input files. The model will look for the input files in these folders.
-    piControl_files = input_path / "MPI-ESM1-2-HR/piControl_cities/"
-    hist_files = input_path / "MPI-ESM1-2-HR/historical_cities/"
-    ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370_cities/"
-    ssp585_files = input_path / "MPI-ESM1-2-HR/ssp585_cities/"
+    # piControl_files = input_path / "MPI-ESM1-2-HR/piControl_cities/"
+    # hist_files = input_path / "MPI-ESM1-2-HR/historical_cities/"
+    # ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370_cities/"
+    # ssp585_files = input_path / "MPI-ESM1-2-HR/ssp585_cities/"
+
+    piControl_files = input_path / "MPI-ESM1-2-HR/piControl/caete_input_MPI-ESM1-2-HR_piControl.nc"
+    hist_files = input_path / "MPI-ESM1-2-HR/historical/caete_input_MPI-ESM1-2-HR_historical.nc"
+    ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370/caete_input_MPI-ESM1-2-HR_ssp370.nc"
+    ssp585_files = input_path / "MPI-ESM1-2-HR/ssp585/caete_input_MPI-ESM1-2-HR_ssp585.nc"
+
     gridlist = pl.read_csv("../grd/gridlist_cities.csv")
 
     # Read CO2 atmospheric data. The model expects a formated table in a text file with
@@ -79,7 +85,7 @@ if __name__ == "__main__":
     # this table as main table. This table represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-99999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # Create the region using the piControl climate files and historical CO2 data
     region_name = "cities_MPI-ESM1-2-HR_hist" # Name of the run (the outputs of this region will be saved in this folder).
