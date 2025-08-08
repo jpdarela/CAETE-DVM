@@ -26,7 +26,7 @@
 # If using python 3.12, use the ext_mod_meson target
 # If using python 3.11, use the ext_mod_legacy target
 
-PYEXEC = python3 # Edit this line to point to the python executable
+PYEXEC = python3.11 # Edit this line to point to the python executable
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
@@ -39,12 +39,24 @@ MFLAG = -m
 HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
-FC = gfortran
+
+
+# # gfortran compiler - libgomp
+# FC = gfortran
+# OMP_LIB = -lgomp
+
+# # flang compiler - libomp
+FC = flang
+OMP_LIB = -lomp
+
+# f2py debugging flag: --debug
+# Add this flag to the f2py command to enable debugging information in the extension module.
+DEBUG = 
+
 
 # gfrotran FLAGS for debugging
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
-
 # gfrotran FLAGS for f2py
 EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
@@ -79,21 +91,22 @@ modules: $(sources)
 	$(FC) -c $(sources)
 
 # Build the extension module (caete_module) from .F90 source
-# To be used when python == 3.12
+# To be used when python >= 3.12
 ext_mod_meson: $(sources) modules
 	@$(PYEXEC) precompilation_data.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
-	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --build-dir build --backend meson --f90flags="-Wall $(EXT_FLAGS)"
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --build-dir build --backend meson --f90flags="-Wall $(EXT_FLAGS)" $(DEBUG)
 
 # Build the extension module (caete_module) from .F90 source
 # To be used when python == 3.11
 ext_mod_legacy: $(sources) modules
 	@$(PYEXEC) precompilation_data.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
-	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS)"
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f77exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS)" --backend distutils $(DEBUG)
 
-### OLD build targets ==============================================================================
-# TO BE REMOVED
+### numpy.distutils build targets ===========================
+# deprecated targets for building the extension module using numpy.distutils
+# This will not work with python >= 3.12
 # pyf interface
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
@@ -103,16 +116,16 @@ interface: $(sources)
 # Build the shared object (caete_module) from .F90 source
 # Enable OpenMP
 so_parallel: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90flags="-Wall $(EXT_FLAGS) -fopenmp " -lgomp --quiet
-	@echo "Parallel version of caete_module created using gfortran"
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f77exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS) -fopenmp " $(OMP_LIB)  --quiet --backend distutils $(DEBUG) --no-freethreading-compatible
+	@echo "Parallel version of caete_module created using $(FC)"
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace
 
 # Build the shared object (caete_module) from .F90 source
 # Serial version
 so: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS) " --quiet
-	@echo "Serial version of caete_module created using gfortran"
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f77exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS) " --quiet $(DEBUG)
+	@echo "Serial version of caete_module created using $(FC)"
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace
 # =================================================================================================
