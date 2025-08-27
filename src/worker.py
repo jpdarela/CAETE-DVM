@@ -144,6 +144,19 @@ class worker:
 
         return gridcell
 
+    @staticmethod
+    def test_run(gridcell:grd_mt):
+        """transfer from spinup to transient run. Run along transclim
+
+        Args:
+            gridcell (grd_mt): Gridcell object
+            interval (Tuple[str, str]): Tuple with the start and end date of the interval: Date format "YYYYMMDD"
+
+        """
+        start_date, end_date = "18910101", "19001231"
+        gridcell.run_gridcell(start_date, end_date, fixed_co2_atm_conc=None, save=True, nutri_cycle=True)
+
+        return gridcell
 
     @staticmethod
     def transient_run_brk(gridcell:grd_mt, interval:Tuple[str, str]):

@@ -48,7 +48,7 @@ contains
 
       ! POOLS OF LITTER AND SOIL
 
-      integer(i_4) :: index
+      integer(i_4) :: idx
 
       !     Inputs
       !     ------
@@ -150,8 +150,8 @@ contains
 
       ! CARBON DECAY
       water_modifier = water_effect(water_sat)
-      do index = 1,4
-            cdec(index) = carbon_decay(q10,tsoil,cs(index),tr_c(index)) * water_modifier
+      do idx = 1,4
+            cdec(idx) = carbon_decay(q10,tsoil,cs(idx),tr_c(idx)) * water_modifier
       enddo
 
       !LITTER I

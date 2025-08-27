@@ -24,7 +24,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import copy
-import gc
+# import gc
 import multiprocessing as mp
 import os
 from shutil import copy2
@@ -38,6 +38,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 from joblib import dump, load
+from joblib import Parallel, delayed
 
 from config import Config, fetch_config
 from parameters import hsoil, ssoil, tsoil
@@ -56,6 +57,7 @@ from input_handler import input_handler
 class region:
     """Region class containing the gridcells for a given region
     """
+
 
     def __init__(self,
                 name:str,
@@ -102,7 +104,6 @@ class region:
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
         self.file_objects = []
-        self.region_size = 0
 
         # calculate_matrix size from grid resolution
         self.nx = len(np.arange(0, 180, self.config.crs.xres/2)) # type: ignore
@@ -149,6 +150,8 @@ class region:
         elif self.config.input_handler.input_method == "ih" and self.input_handler.input_type == "netcdf":
             st_names = self.input_handler._handler.gridlist.get_column("station_name").to_list()
             self.climate_files = list(map(Path, st_names))
+        
+        self.region_size = len(self.climate_files)
 
         # Define grid structure
         self.yx_indices = []
@@ -346,7 +349,7 @@ class region:
                 with open(f, 'wb') as fh:
                     dump(gridcells, fh, compress=self.compression) # type: ignore
                     fh.flush()  # Explicitly flush before closing
-                gc.collect()
+                # gc.collect()
 
             with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
                 executor.map(process_file, self.file_objects)
@@ -438,7 +441,7 @@ class region:
                     with open(f, 'wb') as file:
                         dump(gridcells, file, compress=self.compression) # type: ignore
                         file.flush()
-                    gc.collect()
+                    # gc.collect()
                 except Exception as e:
                     raise e
 
@@ -453,6 +456,108 @@ class region:
                         future.result()
                     except Exception as e:
                         raise e
+
+        elif self.gridcells:
+            for gridcell in self.gridcells:
+                if co2 is not None:
+                    if self.input_method == "ih":
+                        cell_data = all_data[gridcell.station_name]
+                        gridcell.change_input(cell_data, self.stime, self.co2_data)
+                    else:
+                        gridcell.change_input(self.input_data, self.stime, self.co2_data)
+                else:
+                    if self.input_method == "ih":
+                        cell_data = all_data[gridcell.station_name]
+                        gridcell.change_input(cell_data, self.stime, None)
+                    else:
+                        gridcell.change_input(self.input_data, self.stime, None)
+
+
+    def update_input_mp(self, input_data=None, co2=None):
+        """Update the input data for the region
+
+        Args:
+            input_file (str | Path, optional): Folder with input data to be used. Defaults to None.
+            co2 (str | Path, optional): Text file (tsv/csv) with annual co2 concentration. Defaults to None.
+            Attributes are updated if valid values are provided
+
+        Raises:
+            FileNotFoundError: _description_
+            AssertionError: _description_
+        """
+
+        is_netcdf_input = self.input_type == "netcdf" and self.input_method == "ih"
+
+        if co2 is not None:
+            self.co2_path = str_or_path(co2)
+            self.co2_data = get_co2_concentration(self.co2_path)
+
+        if input_data is not None:
+            # Read the climate data
+            self.input_data = str_or_path(input_data)
+            if self.input_method == "legacy":
+                try:
+                    metadata_file = list(self.input_data.glob("METADATA.pbz2"))[0]
+                except:
+                    raise FileNotFoundError("Metadata file not found in the input data folder")
+
+                try:
+                    mtd = str_or_path(metadata_file, check_is_file=True)
+                except:
+                    raise AssertionError("Metadata file path could not be resolved. Cannot proceed without metadata")
+
+                # Read metadata from climate files
+                self.metadata = read_bz2_file(mtd)
+            else:
+                self.input_handler = input_handler(self.input_data,
+                                                    self.gridlist,
+                                                    batch_size=self.nchunks)
+                self.metadata = self.input_handler.get_metadata
+            
+            self.stime = copy.deepcopy(self.metadata[0])
+        else:
+            if co2 is None:
+                raise ValueError("Input data must be provided to update the region input")
+        
+        if not self.file_objects and not self.gridcells:
+            raise ValueError("No file objects found. Cannot read intermediate files. No gridcells found. Cannot update input data")
+        if self.input_method == "ih":
+            all_data = self.input_handler.get_data
+        if is_netcdf_input:
+            self.input_handler.close()
+            self.input_handler = None
+         # Update the input data for each gridcell
+        if self.file_objects:
+            def process_file(f):
+                try:
+                    with open(f, 'rb') as file:
+                        gridcells:List[grd_mt] = load(file)
+                    if co2 is not None:
+                        for gridcell in gridcells:
+                            if self.input_method == "ih":
+                                cell_data = all_data[gridcell.station_name]
+                                gridcell.change_input(cell_data, self.stime, self.co2_data)
+                            else:
+                                gridcell.change_input(self.input_data, self.stime, self.co2_data)
+                    else:
+                        for gridcell in gridcells:
+                            if self.input_method == "ih":
+                                cell_data = all_data[gridcell.station_name]
+                                gridcell.change_input(cell_data, self.stime, None)
+                            else:
+                                gridcell.change_input(self.input_data, self.stime, None)
+                    with open(f, 'wb') as file:
+                        dump(gridcells, file, compress=self.compression)
+                        file.flush()
+                    # gc.collect()
+                except Exception as e:
+                    raise e
+
+            # Replace ThreadPoolExecutor with joblib.Parallel
+            Parallel(n_jobs=min(len(self.file_objects), self.config.multiprocessing.max_processes), 
+                    backend='multiprocessing', 
+                    verbose=1)(delayed(process_file)(f) for f in self.file_objects)
+
 
         elif self.gridcells:
             for gridcell in self.gridcells:
@@ -535,7 +640,7 @@ class region:
             print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
             self.gridcell_address_file_objects = {}
             # Create a dedicated executor for I/O operations
-            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="FileWriter") as io_executor:
+            with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
                 
                 for f in self.file_objects:
                     # Load and process current chunk
@@ -565,14 +670,14 @@ class region:
                         with open(filename, 'wb') as fh:
                             dump(data, fh, compress=self.compression) # type: ignore
                             fh.flush()
-                        gc.collect()
+                        # gc.collect()
                         return filename
                     
                     # Submit write task to I/O executor (non-blocking)
                     write_future = io_executor.submit(write_chunk_to_file, f, result)
                     pending_writes.append(write_future)
                     
-                    # Optional: limit concurrent writes to prevent memory buildup
+                    # Limit concurrent writes to prevent memory buildup
                     if len(pending_writes) > 3:  # Keep max 3 pending writes
                         oldest_write = pending_writes.pop(0)
                         try:
@@ -589,7 +694,7 @@ class region:
                 for future in pending_writes:
                     try:
                         result_file = future.result()
-                        # Optionally log completion: print(f"Write completed: {result_file}")
+                        print(f"Write completed: {result_file}")
                     except Exception as e:
                         print(f"Error during final async write: {e}")
                         raise
@@ -609,7 +714,7 @@ class region:
             print_progress(j, len(chunks), prefix='Progress:', suffix='Complete')
             
             # Create executor for first run
-            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="FileWriter") as io_executor:
+            with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
                 current_batch = 0
                 for chunk in chunks:
                     if is_netcdf_input:
@@ -669,7 +774,7 @@ class region:
                         with open(filename, 'wb') as f:
                             dump(data, f, compress=self.compression) # type: ignore
                             f.flush()
-                        gc.collect()
+                        # gc.collect()
                         return filename
                     
                     write_future = io_executor.submit(write_chunk_to_file, fname, processed_result)
@@ -711,7 +816,7 @@ class region:
         self.gridcell_address_file_objects = {}
         
         # Create a dedicated executor for I/O operations
-        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="FileWriter") as io_executor:
+        with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
             
             for f in self.file_objects:
                 # Load current chunk
@@ -741,7 +846,7 @@ class region:
                     with open(filename, 'wb') as fh:
                         dump(data, fh, compress=self.compression) # type: ignore
                         fh.flush()
-                    gc.collect()
+                    # gc.collect()
                     return filename
                 
                 # Submit write task to I/O executor (non-blocking)
@@ -816,7 +921,7 @@ class region:
                 # Delete attributes that are not in the subset
                 for attr in all_attributes - attributes_to_keep:
                     delattr(gridcell, attr)
-                gc.collect()
+                # gc.collect()
             # Save the cleaned gridcells back to the file this renders the current model state unusable for model run
             with open(f, 'wb') as file:
                 dump(gridcells, file, compress=self.compression) # type: ignore
@@ -824,6 +929,43 @@ class region:
 
         with ThreadPoolExecutor(max_workers=min(32, len(self.file_objects))) as executor:
             list(executor.map(process_file, self.file_objects))
+
+
+    def clean_model_state_fast(self):
+        """
+        Clean state of the region by removing unnecessary attributes from gridcells.
+        Optimized version with better parallelization and memory management.
+        """
+
+
+        if not self.file_objects:
+            raise ValueError("No file objects found. Cannot clean model state.")
+
+        def process_file_mp(f):
+            """Process file - clean gridcells sequentially within each file"""
+            attributes_to_keep = {'calendar', 'time_unit', 'cell_area', 'config',
+                                  'executed_iterations', 'lat', 'lon', 'ncomms',
+                                  'out_dir', 'outputs', 'metacomm_output', 'run_counter',
+                                  'x', 'xres', 'xyname', 'y', 'yres', 'grid_filename'}
+            # Load gridcells
+            with open(f, 'rb') as file:
+                gridcells = load(file)
+
+            for gridcell in gridcells:
+                all_attributes = set(gridcell.__dict__.keys())
+                for attr in all_attributes - attributes_to_keep:
+                    delattr(gridcell, attr)
+            
+            # Save cleaned gridcells
+            with open(f, 'wb') as file:
+                dump(gridcells, file, compress=self.compression)
+                file.flush()
+
+        # Process files in parallel using joblib
+        # Use multiprocessing backend for CPU-bound attribute deletion
+        Parallel(n_jobs=min(len(self.file_objects), mp.cpu_count()), 
+                backend='loky',
+                verbose=10)(delayed(process_file_mp)(f) for f in self.file_objects)
 
 
     def get_mask(self)->np.ndarray:

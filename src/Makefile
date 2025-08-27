@@ -26,7 +26,7 @@
 # If using python 3.12, use the ext_mod_meson target
 # If using python 3.11, use the ext_mod_legacy target
 
-PYEXEC = python3.11 # Edit this line to point to the python executable
+PYEXEC = python # Edit this line to point to the python executable
 PIP = $(PYEXEC) -m pip
 F2PY = $(PYEXEC) -m numpy.f2py
 MODNAME = caete_module
@@ -40,14 +40,16 @@ HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
 
-
 # # gfortran compiler - libgomp
 # FC = gfortran
 # OMP_LIB = -lgomp
+# EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
 
-# # flang compiler - libomp
+# AMD Optimizing C/C++ and Fortran Compilers. We use flang here. Not tested with other versions of flang. 
+# flang compiler uses libomp 
 FC = flang
 OMP_LIB = -lomp
+EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN
 
 # f2py debugging flag: --debug
 # Add this flag to the f2py command to enable debugging information in the extension module.
@@ -58,7 +60,7 @@ DEBUG =
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 # gfrotran FLAGS for f2py
-EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+
 
 # Use budget_fixed.F90 for stack allocation (faster)
 MAIN_SUB = budget_fixed.F90
@@ -95,7 +97,16 @@ modules: $(sources)
 ext_mod_meson: $(sources) modules
 	@$(PYEXEC) precompilation_data.py
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
+	@export FC=$(FC) && \
 	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --build-dir build --backend meson --f90flags="-Wall $(EXT_FLAGS)" $(DEBUG)
+
+
+ext_mod_meson_parallel: $(sources) modules
+	@$(PYEXEC) precompilation_data.py
+	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) -m $(MODNAME) $(OVRTFLAG) --quiet
+	@export FC=$(FC) && \
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources) --build-dir build --backend meson --f90flags="-Wall $(EXT_FLAGS) -fopenmp" $(OMP_LIB) $(DEBUG) --no-freethreading-compatible
+
 
 # Build the extension module (caete_module) from .F90 source
 # To be used when python == 3.11
@@ -116,7 +127,8 @@ interface: $(sources)
 # Build the shared object (caete_module) from .F90 source
 # Enable OpenMP
 so_parallel: $(sources) interface
-	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f77exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS) -fopenmp " $(OMP_LIB)  --quiet --backend distutils $(DEBUG) --no-freethreading-compatible
+	$(F2PY)  $(INTERFACES) $(CFLAG) $(sources) --f90exec="$(FC)" --f77exec="$(FC)" --f90flags="-Wall $(EXT_FLAGS) \
+	                                      -fopenmp " $(OMP_LIB) $(DEBUG) --backend distutils --no-freethreading-compatible
 	@echo "Parallel version of caete_module created using $(FC)"
 #	@echo "Compiling community module..."
 #	$(PYEXEC) setup.py build_ext --inplace
@@ -198,7 +210,7 @@ clean:
 	rm -rf *.s *.o pls_ex.txt __pycache__ run_debug execution.log
 
 clean_so: clean
-	rm -rf *.so *.pyf *.mod
+	rm -rf *.so *.pyf *.mod *.psz 
 	rm -rf build
 	clear
 

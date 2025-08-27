@@ -28,16 +28,20 @@ src/tests/*.csv
 src/tests/*.txt
 src/.vscode
 
-outputs/*
+outputs/
 
+
+input/20CRv3-ERA5/*.nc
 input/20CRv3-ERA5/*clim
 input/20CRv3-ERA5/*clim_random
 # input/MPI-ESM1-2-HR/
 input/MPI-ESM1-2-HR/historical/**
-input/MPI-ESM1-2-HR/piCOntrol/**
+input/MPI-ESM1-2-HR/piControl/**
 input/MPI-ESM1-2-HR/ssp370/**
 input/MPI-ESM1-2-HR/ssp585/**
 
+
+input/MPI-ESM1-2-HR/*.nc
 input/MPI-ESM1-2-HR/historical_random/**
 input/MPI-ESM1-2-HR/piCOntrol_random/**
 input/MPI-ESM1-2-HR/ssp370_random/**

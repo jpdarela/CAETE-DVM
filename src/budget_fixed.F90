@@ -109,7 +109,7 @@ contains
       real(r_8),dimension(4),intent(out) :: cp ! Aux cp(1:3) CVEG C POOLS cp(4) Auxiliary to HR
       real(r_8),intent(out) :: c_cost_cwm
       !     -----------------------Internal Variables------------------------
-      integer(i_4) :: p, counter, nlen, i, j
+      integer(i_4) :: p, counter, nliving, i, j
       real(r_8),dimension(ntraits) :: dt1 ! Store one PLS attributes array (1D)
       real(r_8) :: carbon_in_storage ! Carbon stored in the storage pool
       real(r_8) :: testcdef ! Test if the carbon deficit can be compensated by stored carbon
@@ -193,7 +193,7 @@ contains
       call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, awood_aux,&
       &                  ocpavg, ocp_wood, run, ocp_mm)
 
-      nlen = sum(run)    ! New length for the arrays in the main loop
+      nliving = sum(run)    ! New length for the arrays in the main loop
 
 
       idx_grasses(:) = 1.0D0
@@ -210,11 +210,11 @@ contains
       enddo
 
       ! Identify grasses
-      do p = 1, nlen
+      do p = 1, nliving
          if (awood_aux(lp(p)) .le. 0.0D0) idx_grasses(p) = 0.0D0
       enddo
       ! Identify Nfixers
-      do p = 1, nlen
+      do p = 1, nliving
          if (pdia_aux(lp(p)) .le. 0.0D0) idx_pdia(p) = 0.0D0
       enddo
 
@@ -279,7 +279,7 @@ contains
       !$OMP DEFAULT(SHARED) &
       !$OMP PRIVATE(p, carbon_in_storage, testcdef, sr, dt1, mr_sto, growth_stoc,&
       !$OMP         ar_aux, total_c, c_def_amount, cl_def, ca_def, cf_def)
-      do p = 1,nlen
+      do p = 1,nliving
          carbon_in_storage = 0.0D0
          testcdef = 0.0D0
          sr = 0.0D0
@@ -442,7 +442,7 @@ contains
       rnpp_out(:) = 0.0D0
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES.
-      do p = 1, nlen
+      do p = 1, nliving
          if(ieee_is_nan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
       enddo
 
@@ -482,7 +482,7 @@ contains
       enddo
 
       ! Copy the results to the output variables
-      do p = 1, nlen
+      do p = 1, nliving
          cleafavg_pft(lp(p))  = cl1_int(p)
          cawoodavg_pft(lp(p)) = ca1_int(p)
          cfrootavg_pft(lp(p)) = cf1_int(p)

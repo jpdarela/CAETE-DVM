@@ -409,7 +409,7 @@ class bz2_handler(base_handler):
 
         # Prepare input data
         file_station_pairs = list(zip(self.input_files, self.station_names))
-        max_workers = min(len(file_station_pairs), 8)
+        max_workers = min(len(file_station_pairs), 32)
 
         # REad files
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -1026,7 +1026,7 @@ class netcdf_handler(base_handler):
                 if var_name in self.nc_data.variables:
                     # Read all station data at once using fancy indexing
                     # This is much faster than reading each station individually
-                    var_data = self.nc_data.variables[var_name][:, indices].astype(np.float32)
+                    var_data = self.nc_data.variables[var_name][:, indices]
 
                     # Convert masked arrays to regular arrays if needed
                     if isinstance(var_data, np.ma.MaskedArray):
@@ -1040,7 +1040,7 @@ class netcdf_handler(base_handler):
         for var_name in self.station_vars:
             if var_name in self.nc_data.variables:
                 # Read all station data at once
-                var_data = self.nc_data.variables[var_name][indices].astype(np.float32)
+                var_data = self.nc_data.variables[var_name][indices]
 
                 # Convert masked arrays to regular arrays if needed
                 if isinstance(var_data, np.ma.MaskedArray):
@@ -1274,6 +1274,7 @@ class netcdf_handler(base_handler):
         Destructor that ensures the NetCDF file is closed when the handler is deleted.
         """
         self.close()
+
 
 class input_handler:
     
@@ -1533,16 +1534,14 @@ if __name__ == "__main__":
     # with input_handler('../input/20CRv3-ERA5/counterclim_cities', gridlist) as ih:
     #     # Load all data at once
     #     data = ih.get_data()
-
+    import time
+    t0 = time.perf_counter()
     # Creating input handlers for bz2 files
     cfg.input_handler.input_type = 'bz2'  
-    input_dir = '../input/20CRv3-ERA5/obsclim_test'
-    gridlist_path = '../grd/gridlist_random_cells_pa.csv'
+    input_dir = '../input/20CRv3-ERA5/spinclim'
+    gridlist_path = '../grd/gridlist_pa.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
-    ih.get_data  # Load all data at once, returns a dictionary with station names as keys and data as values
-    ih.get_metadata  # Load metadata from the handler
-    ih.update_fpath('../input/20CRv3-ERA5/obsclim_test', gridlist_df)  # Update input path and gridlist
     print("Total batches: ",ih.total_batches)  # Get total number of batches based on the gridlist
     for i in range(ih.total_batches):
         batch_data = ih.get_batch_data(i)
@@ -1550,13 +1549,26 @@ if __name__ == "__main__":
         print(f"Batch {i}: {batch_data['data'].keys()}")  # Access the data for this batch
         print()
     ih.close()  # Close the input handler
+    t1 = time.perf_counter()
+    t_bz2 = t1 - t0
 
     # Creating input handlers for NetCDF files
     cfg.input_handler.input_type = 'netcdf'  # Set input type to netcdf for testing
-    nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
-    gridlist_path = '../grd/gridlist_test.csv'
+    cfg.input_handler.mp = True  # Disable MPI for testing, set to True if you want to use MPI
+    nc_file_path = '../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc'
+    gridlist_path = '../grd/gridlist_pa.csv'
     gridlist_df = pl.read_csv(gridlist_path)
+    t2 = time.perf_counter()
     ih2 = input_handler(nc_file_path, gridlist_df, batch_size=cfg.multiprocessing.max_processes) 
+    print("Total batches: ",ih2.total_batches)  # Get total number of batches based on the gridlist
+    for i in range(ih2.total_batches):
+        batch_data = ih2.get_batch_data(i)
+        print(f"Batch {i}: {batch_data['batch_size']} stations loaded.")
+        print(f"Batch {i}: {batch_data['data'].keys()}")  # Access the data for this batch
+        print()
+    # ih.close()  # Close the input handler
     ih2.close()  # Close the input handler
-
-    # ... Same usage as above
+    t3 = time.perf_counter()
+    t_nc = t3 - t2
+    print(f"Time taken for bz2 input handler: {t_bz2:.2f} seconds")
+    print(f"Time taken for netcdf input handler: {t_nc:.2f}")

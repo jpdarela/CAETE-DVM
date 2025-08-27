@@ -53,33 +53,29 @@ if __name__ == "__main__":
     from parameters import hsoil, ssoil, tsoil
     from region import region
     from worker import worker
-    from dataframes import output_manager
+    # from dataframes import output_manager
 
     
     time_start = time.time()
     # Force spawn method to avoid issues with multiprocessing use with threading in Linux
-    # This statement is awways necessary when running the model. Specifically, it needs to be
+    # This statement is always necessary when running the model. Specifically, it needs to be
     # always after the if __name__ == "__main__": statement. This is a Python requirement.
     mp.set_start_method('spawn', force=True)
     fn: worker = worker()
 
     # Name of the region. This name will be used to create the output folder.
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
-
+    # region_name = "test"
     # # Input files. The model will look for the input files in these folders.
-    #obsclim_files = "../input/20CRv3-ERA5/obsclim_random/"
+    #obsclim_files = "../input/20CRv3-ERA5/obsclim/"
     obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
     
-    #spinclim_files = "../input/20CRv3-ERA5/spinclim_random/"
+    #spinclim_files = "../input/20CRv3-ERA5/spinclim/"
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
     
-    #transclim_files = "../input/20CRv3-ERA5/transclim_random/"
-    transclim_files = "../input/20CRv3-ERA5/transclim/caete_input_20CRv3-ERA5_transclim.nc"
 
-    #counterclim_files = "../input/20CRv3-ERA5/counterclim_random/"
-    counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
-
-    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
+    gridlist = read_csv("../input/20CRv3-ERA5/obsclim/gridlist_caete.csv")
+    # gridlist = read_csv("../grd/gridlist_test.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -94,42 +90,64 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-30000.csv"))
 
     # Create the region using the spinup climate files
-
+    print("creating region with spinclim files")
     r = region(region_name,
                spinclim_files,
                soil_tuple,
                co2_path,
                main_table,
                gridlist=gridlist)
+    
+    # print(f"Region {region_name} created with {len(r.gridcells)} gridcells")
+    # r.set_gridcells()
 
     # Spinup and run
     print("START soil pools spinup")
     s1 = time.perf_counter()
     r.run_region_map(fn.spinup)
     e1 = time.perf_counter()
-    print(f"Spinup time: {e1 - s1:.2f} seconds")
+    print(f"Spinup time: {(e1 - s1) // 60 :.0f}:{(e1 - s1) % 60:.0f}")
 
-    # # # Change input source to transclim files 1851-1900
-    print("\nSTART transclim run")
-    r.update_input(transclim_files)
+    # # # # Change input source to transclim files 1851-1900
+    # ## tr4anclim is identical to the last 50 years of the spinclim files. No need to update the input source.
+    # print("\nSTART transclim run, updating input")
+    # s2 = time.perf_counter()
+    # r.update_input(transclim_files)
+    # e2 = time.perf_counter()
+    # print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
+    
 
     # Run the model
+    s3 = time.perf_counter()
     r.run_region_map(fn.transclim_run)
+    e3 = time.perf_counter()
+    print(f"Transclim run: {(e3 - s3) // 60 :.0f}:{(e3 - s3) % 60:.0f}")
 
     # # # Save state after spinup.
     # # This state file can be used to restart the model from this point.
     state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
     print(f"\n\nSaving state file as {state_file}")
-    # r.save_state(state_file)
+    s4 = time.perf_counter()
     r.save_state(state_file)
+    e4 = time.perf_counter()
+    print(f"State file save time: {(e4 - s4) // 60 :.0f}:{(e4 - s4) % 60 :.0f}")
+
+    print(f"\n\nExecution time so far: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
+    print("setting new state")
+    s5 = time.perf_counter()
     r.set_new_state()
+    e5 = time.perf_counter()
+    print(f"Set new state time: {(e5 - s5) // 60 :.0f}:{(e5 - s5) % 60 :.0f}")
 
     # # Update the input source to the transient run - obsclim files
-    # print("\nUpdate input and run obsclim")
+    print("Uodating input to obsclim files")
+    s2 = time.perf_counter()
     r.update_input(obsclim_files)
+    e2 = time.perf_counter()
+    print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
 
     print("\n\nSTART transient run")
     run_breaks = fn.create_run_breaks(1901, 2021, 61)
@@ -143,11 +161,22 @@ if __name__ == "__main__":
     # access the model outputs and export it to other formats.
     # r.save_state(Path(f"./{region_name}_{period[1]}_final_state.psz"))
     # r.set_new_state()
-    r.clean_model_state()
+    print("\nCleaning model state and saving final state file")
+    s6 = time.perf_counter()
+    r.clean_model_state_fast()
+    # r.clean_model_state()
+    e6 = time.perf_counter()
+    print("Time in seconds: " + str(e6 - s6))
+    print(f"Clean model state time: {(e6 - s6) // 60 :.0f}:{(e6 - s6) % 60 :.4f}")
+
+    print(f"\n\nSaving final state file as ./{region_name}_result.psz")
+    s7 = time.perf_counter()
     r.save_state(Path(f"./{region_name}_result.psz"))
+    e7 = time.perf_counter()
+    print(f"Final state file save time: {(e7 - s7) // 60 :.0f}:{(e7 - s7) % 60 :.0f}")
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
-    output_manager.test_output()
+    # output_manager.test_output()
 
     if PROFILING:
         # Disable profiling

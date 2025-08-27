@@ -793,9 +793,9 @@ class gridcell_output:
         else:
             fpath = "spin{}{}".format(self.run_counter, out_ext) # type: ignore
         with open(self.outputs[fpath], 'wb') as fh: # type: ignore
-            dump(data_obj, fh, compress=('lzma', 8), protocol=5) # type: ignore
+            dump(data_obj, fh, compress=('lz4', 5), protocol=5) # type: ignore
             fh.flush()
-        gc.collect() # type: ignore
+        # gc.collect() # type: ignore
         self.flush_data = None
 
 class grd_mt(state_zero, climate, time, soil, gridcell_output):
@@ -1609,6 +1609,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             self.metacomm.update_mask()
         
         return None
+
 
     def __fetch_spin_data(self, spin) -> dict:
         """Get the data from a spin file"""
