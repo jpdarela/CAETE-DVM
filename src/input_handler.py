@@ -1538,8 +1538,8 @@ if __name__ == "__main__":
     t0 = time.perf_counter()
     # Creating input handlers for bz2 files
     cfg.input_handler.input_type = 'bz2'  
-    input_dir = '../input/20CRv3-ERA5/spinclim'
-    gridlist_path = '../grd/gridlist_pa.csv'
+    input_dir = '../input/20CRv3-ERA5/spinclim_test'
+    gridlist_path = '../grd/gridlist_test.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
     print("Total batches: ",ih.total_batches)  # Get total number of batches based on the gridlist
@@ -1556,7 +1556,7 @@ if __name__ == "__main__":
     cfg.input_handler.input_type = 'netcdf'  # Set input type to netcdf for testing
     cfg.input_handler.mp = True  # Disable MPI for testing, set to True if you want to use MPI
     nc_file_path = '../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc'
-    gridlist_path = '../grd/gridlist_pa.csv'
+    gridlist_path = '../grd/gridlist_test.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     t2 = time.perf_counter()
     ih2 = input_handler(nc_file_path, gridlist_df, batch_size=cfg.multiprocessing.max_processes) 

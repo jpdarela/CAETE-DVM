@@ -145,8 +145,8 @@ contains
       real(r_8):: sla   !m2 gC-1 Dry mass
       real(r_8), parameter :: fc = 0.47D0  ! carbon fraction of dry mass
 
-      sla = sla_reich(tau_leaf) / fc * 0.0001 ! 1e-4 convert units  from cm2 gC-1 to m2 gC-1 and fc converts from dry mass to carbon mass
-
+      sla = sla_reich(tau_leaf) / fc * 0.0001 ! Projected leaf area per carbon mass. 1e-4 convert units  from cm2 gC-1 to m2 gC-1 and fc converts from dry mass to carbon mass
+      ! sla = sla_reich(tau_leaf) * 0.0001 ! Withouth fc # Projected leaf area per dry mass (m2 g-1)
    end function spec_leaf_area
 
    !=================================================================
