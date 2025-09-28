@@ -900,8 +900,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                 with bz2.BZ2File(self.input_fpath, mode='r') as fh:
                     self.data = pkl.load(fh)
-            else: 
-                assert self.config.input_handler.input_method == 'ih', "Improper input method" 
+            else:
+                assert self.config.input_handler.input_method == 'ih', "Improper input method"
                 assert isinstance(input_data, dict), "Input_fpath should be a dict for non-legacy input mode"
                 self.input_fpath = None
                 self.data = input_data
@@ -1123,13 +1123,13 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
         # Define the object to store the outputs
         daily_output = DailyBudget()
-        
+
         # Start loops
         # THis outer loop is used to run the model for a number
         # of times defined by the spinup argument. THe model is
         # executed repeatedly between the start and end dates
         # provided in the arguments
-        
+
         for s in range(spin):
 
             self._allocate_output(steps.size, self.metacomm.comm_npls, len(self.metacomm), save)
@@ -1149,7 +1149,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             rnpp_in =    np.zeros(self.metacomm.comm_npls, order='F')
 
             # There are two modes of operation: save and not save.
-            # In the save mode, the arrays are used to store the values that are
+            # In the save == False mode, the arrays are used to store the values that are
             # needed for model iteration, i.e., the values that are used in the next
             # time step. In the save mode, an extra number arrays is created to be used
             # to store the outputs.
@@ -1159,17 +1159,16 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             rnpp_mt: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
 
             # We keep track of these to input in SOM dynamics later. They are used for output also
-
             leaf_litter: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             cwd: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             root_litter: NDArray[np.float32] = np.zeros(xsize, dtype=np.float32)
             lnc: NDArray[np.float32] = np.zeros(shape=(6, xsize), dtype=np.float32)
-            # THis is added to leaf litter pool (that is basicaly a fast SOM pool)
+            # This is added to leaf litter pool (that is basicaly a fast SOM pool)
             c_to_nfixers: NDArray[np.float32]= np.zeros(xsize, dtype=np.float32)
             nupt = np.zeros(shape=(2, xsize), dtype=np.float32)
             pupt = np.zeros(shape=(3, xsize), dtype=np.float32)
-            if save:
 
+            if save:
                 cc = np.zeros(xsize, dtype=np.float32)
                 photo = np.zeros(xsize, dtype=np.float32)
                 aresp = np.zeros(xsize, dtype=np.float32)
@@ -1194,7 +1193,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     uptake_strategy_p = np.ma.masked_all((xsize, self.metacomm.comm_npls, 366), dtype=np.int8)
 
             # <- Daily loop
-
             for step in range(steps.size):
                 today += time_step
                 julian_day = today.timetuple().tm_yday
@@ -1209,7 +1207,6 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.add_soil_nutrients(afex_mode)
 
                 # Loop over communities
-                # Create these arrays outside and just reuse it
                 living_pls = 0 # Sum of living PLS in the communities
                 for i, community in enumerate(self.metacomm):
                     # if i >= len(self.metacomm):
@@ -1596,8 +1593,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         if save:
             sv.join()  # Wait for the last thread to finish
             self.flush_data = None
-        
-        
+
+
         # Restablish new communities in the end, if applicable
         if kill_and_reset:
             assert not save, "Cannot save data when resetting communities"
@@ -1607,7 +1604,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 community.restore_from_main_table(new_life_strategies)
             # Here we update the metacomm mask to ensure that all communities are active again
             self.metacomm.update_mask()
-        
+
         return None
 
 
@@ -1921,7 +1918,7 @@ if __name__ == '__main__':
                     co2_path,
                     main_table,
                     gridlist)
-        
+
         # Set gridcell in RAM
         r.set_gridcells()
 

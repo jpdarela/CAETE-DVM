@@ -34,7 +34,7 @@ from polars import read_csv
 # Profiling is enabled by default if the environment variable CAETE_PROFILING is set to True.
 PROFILING = False or os.environ.get("CAETE_PROFILING", "False").lower() in ("true", "1", "yes")
 
-if PROFILING:   
+if PROFILING:
     import cProfile
     import io
     import pstats
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     from worker import worker
     # from dataframes import output_manager
 
-    
+
     time_start = time.time()
     # Force spawn method to avoid issues with multiprocessing use with threading in Linux
     # This statement is always necessary when running the model. Specifically, it needs to be
@@ -69,10 +69,10 @@ if __name__ == "__main__":
     # # Input files. The model will look for the input files in these folders.
     #obsclim_files = "../input/20CRv3-ERA5/obsclim/"
     obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
-    
+
     #spinclim_files = "../input/20CRv3-ERA5/spinclim/"
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
-    
+
 
     gridlist = read_csv("../input/20CRv3-ERA5/obsclim/gridlist_caete.csv")
     # gridlist = read_csv("../grd/gridlist_test.csv")
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-30000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
 
     # Create the region using the spinup climate files
     print("creating region with spinclim files")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
                co2_path,
                main_table,
                gridlist=gridlist)
-    
+
     # print(f"Region {region_name} created with {len(r.gridcells)} gridcells")
     # r.set_gridcells()
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     # r.update_input(transclim_files)
     # e2 = time.perf_counter()
     # print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
-    
+
 
     # Run the model
     s3 = time.perf_counter()
@@ -181,14 +181,14 @@ if __name__ == "__main__":
     if PROFILING:
         # Disable profiling
         pr.disable()
-        
+
         # Save profiling results to file with region name
         profile_filename = f"{region_name}_profile.prof"
         pr.dump_stats(profile_filename)
         print(f"\nProfiling results saved to: {profile_filename}")
         print("Analyze with: python -m pstats pan_amazon_hist_profile.prof")
         print("Or visualize with: snakeviz pan_amazon_hist_profile.prof")
-        
+
         # Quick summary to console
         s = io.StringIO()
         ps = pstats.Stats(pr, stream=s)
