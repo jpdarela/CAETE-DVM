@@ -220,7 +220,7 @@ class gridded_data:
                               variables: Union[str, Collection[str]],
                               spin_slice: Union[int, Tuple[int, int], None] = None,
                               temp_dir: Path = None,
-                              batch_size: int = 58,
+                              batch_size: int = 580,
                             ) -> Dict[str, NDArray]:
         """Fully memory-mapped version for large regions"""
 
@@ -477,7 +477,7 @@ class gridded_data:
                                     data_type: str = "biomass",
                                     years: Union[int, List[int], None] = None,
                                     temp_dir: Path = None,
-                                    batch_size: int = 58
+                                    batch_size: int = 580
                                     ) -> Dict[str, NDArray]:
         """Aggregate annual data across a region for gridded output"""
         import tempfile
@@ -585,9 +585,18 @@ class gridded_data:
                     if var_name in var_memmaps:
                         # Handle different dimensionalities
                         if len(var_data.shape) == 1:
-                            var_memmaps[var_name][global_idx, :var_data.shape[0]] = var_data
+                            # Handle 1D arrays by only copying what fits
+                            dest_length = var_memmaps[var_name][global_idx].shape[0]
+                            # Copy only up to the minimum length
+                            length_to_copy = min(var_data.shape[0], dest_length)
+                            var_memmaps[var_name][global_idx, :length_to_copy] = var_data[:length_to_copy]
                         elif len(var_data.shape) == 2:
-                            var_memmaps[var_name][global_idx, :var_data.shape[0], :var_data.shape[1]] = var_data
+                            # Handle varying PFT counts by only copying what fits
+                            dest_shape = var_memmaps[var_name][global_idx].shape
+                            # Copy only up to the minimum size in each dimension
+                            rows_to_copy = min(var_data.shape[0], dest_shape[0])
+                            cols_to_copy = min(var_data.shape[1], dest_shape[1])
+                            var_memmaps[var_name][global_idx, :rows_to_copy, :cols_to_copy] = var_data[:rows_to_copy, :cols_to_copy]
 
             processed_count += len(batch_results)
 
@@ -1924,10 +1933,15 @@ class output_manager:
 
 if __name__ == "__main__":
     pass
+    # from time import perf_counter
+    # start = perf_counter()
     # output_file = Path("/home/amazonfaceme/joaofilho/CAETE-DVM/outputs/pan_amazon_hist_result.psz")
     # reg:region = worker.load_state_zstd(output_file)
     # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
     # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, 2))
+    # gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
+    # end = perf_counter()
+    # print(f"Elapsed time: {end - start:.2f} seconds")
 
     # """
     # Usage examples:
