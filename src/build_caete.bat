@@ -1,0 +1,2 @@
+@REM Building CAETE using gfortran and MSVC in Windows
+python -m numpy.f2py -m caete_module -c types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 .\budget_fixed.F90 -IC:\Users\darel\opt\Python-3.13.5\PCbuild\amd64

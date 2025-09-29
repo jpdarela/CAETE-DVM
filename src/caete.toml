@@ -12,11 +12,11 @@ output_dir = "../outputs" # Directory where the output files will be saved.
 # avoiding the need to keep all gridcells in memory. The intermediate files are used
 # by the state files to start new runs from a previous state.
 # State files based on Intermediate files with cleaned gridcells
-# are used to manage post processing of output data 
+# are used to manage post processing of output data
 [compression]
-# Compressor to use for joblib.dump. 
+# Compressor to use for joblib.dump.
 # Note that "lz4" requires the lz4 package installed (Faster/low compression).
-compressor = "lz4" # compressors for joblib.dump ["lzma", "bz2", "lz4", "gzip", "xz"] 
+compressor = "lz4" # compressors for joblib.dump ["lzma", "bz2", "lz4", "gzip", "xz"]
 rate = 2 # compression rate for joblib.dump. 0-9, where 0 is no compression and 9 is maximum compression.
 
 [input_handler]
@@ -27,29 +27,29 @@ input_method = "ih" # "legacy" or "ih". Legacy uses the old method of passing fi
 
 input_type = "netcdf" # Type of input data. The options are "netcdf" & "bz2"
 
-# The netcdf files used are chunked in an optimal way for reading. 
+# The netcdf files used are chunked in an optimal way for reading.
 # The sequential reading is faster than the parallel reading. Only have effect if input_type is "netcdf" and input_method is "ih".
-mp = true # Use MPI for reading netcdf files.
+mp = false # Use MPI for reading netcdf files.
 
 
 # Configs for parallelization
 [multiprocessing]
-nprocs= 16 # Threads used to post process the output. Not used by the model itself.
+nprocs= 128 # Threads used to post process the output. Not used by the model itself.
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of available logical cores.
-max_processes = 128 # Number of python processes used to run the model.
+max_processes = 16 # Number of python processes used to run the model.
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect.
-# If you set this to 0, OpenMP will not be used. Even if the extension 
+# If you set this to 0, OpenMP will not be used. Even if the extension
 # module is compiled with OpenMP support.
-# If the value is more than 1, make sure that max_processes is not larger 
+# If the value is more than 1, make sure that max_processes is not larger
 # than the number of logical cores available in your machine.
 # E.g., if you have 8 logical cores, you can set omp_num_threads to 2 and max_processes to 4.
 # This will use 2 threads per process, resulting in a total of 8 threads.
-# Currently setting multithreading degrades performance (overhead of creating new threads), i.e., 
-# the model runs faster if you set max_processes to the number of logical 
+# Currently setting multithreading degrades performance (overhead of creating new threads), i.e.,
+# the model runs faster if you set max_processes to the number of logical
 # cores available in your machine and compile the extension module without OpenMP support.
 # If you are running a number of gridcells smaller than the number of logical cores,
 # you can set max_processes to the number of gridcells and omp_num_threads to >1.
@@ -91,14 +91,14 @@ n = 1 # Effects only in runtime, recompilatio not needed.
 
 # Maximum number of PLS to be considered in each community.
 # Very large values CAN cause (>3000) stack overflow errors.
-# If you wish to use more than 3000 PLS, you should exchange the 
-# budget_fixed.F90 (it allocates arrays in the stack) in 
+# If you wish to use more than 3000 PLS, you should exchange the
+# budget_fixed.F90 (it allocates arrays in the stack) in
 # the Makefile_win by budget.F90 (heap allocation).
-# The budget.F90 is slower than budget_fixed.F90, but it 
-# allows for larger number of PLS. 
+# The budget.F90 is slower than budget_fixed.F90, but it
+# allows for larger number of PLS.
 # The final number of slots for PLSs in the model is equal to n * npls_max.
 # Changes here and in ntraits will not be applied to the model (fortran extension module)
-# unless you recompile it. THe model will not run if you compile 
+# unless you recompile it. THe model will not run if you compile
 # it with a value and then run it with a different value.
 
 npls_max = 1000
@@ -109,8 +109,8 @@ ntraits = 17
 res = 0.5
 xres = 0.5
 yres = 0.5
-epsg_id = 4326
 datum = "WGS84"
+epsg_id = 4326
 proj4 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 epsg_long_name = "World Geodetic System 1984"
 lat_units = "degrees_north"

@@ -33,7 +33,11 @@ from typing import Collection, Dict, List, Tuple, Union
 
 import numpy as np
 import polars as pl
+import pyproj
+
+from datetime import datetime
 from joblib import Parallel, delayed
+from netCDF4 import Dataset
 from numba import jit
 from numpy.typing import NDArray
 
@@ -78,71 +82,75 @@ def get_var_metadata(var):
               (e.g., long name, units, and standard name). If a variable is not found, its metadata
               defaults to ['unknown', 'unknown', 'unknown'].
     """
-    vunits = {'header': ['long_name', 'units', 'standart_name'],
-            'rsds': ['Short_wav_rad_down', 'W m-2', 'rsds'],
-            'wind': ['Wind_velocity', 'm s-1', 'wind'],
-            'ps': ['Sur_pressure', 'Pa', 'ps'],
-            'tas': ['Sur_temperature_2m', 'celcius', 'tas'],
-            'tsoil': ['Soil_temperature', 'celcius', 'soil_temp'],
-            'pr': ['Precipitation', 'Kg m-2 month-1', 'pr'],
-            'litter_l': ['Litter C flux - leaf', 'g m-2 day-1', 'll'],
-            'cwd': ['Litter C flux - wood', 'g m-2 day-1', 'cwd'],
-            'litter_fr': ['Litter C flux fine root', 'g m-2 day-1', 'lr'],
-            'litter_n': ['Litter Nitrogen Flux', 'g m-2 day-1', 'ln'],
-            'litter_p': ['Litter phosphorus flux', 'g m-2 day-1', 'lp'],
-            'sto_c': ['PLant Reserve Carbon', 'g m-2', 'sto_c'],
-            'sto_n': ['Pant Reserve Nitrogen', 'g m-2', 'sto_n'],
-            'sto_p': ['Plant Reserve Phosphorus', 'g m-2', 'sto_p'],
-            'c_cost': ['Carbon costs of Nutrients Uptake', 'g m-2 day-1', 'cc'],
-            'wsoil': ['Soil_water_content-wsoil', 'kg m-2', 'mrso'],
-            'evapm': ['Evapotranspiration', 'kg m-2 day-1', 'et'],
-            'emaxm': ['Potent. evapotrasnpiration', 'kg m-2 day-1', 'etpot'],
-            'runom': ['Total_runoff', 'kg m-2 day-1', 'mrro'],
+    vunits = {'header': ['long_name', 'units', 'standart_name', 'significant_digits'],
+            'rsds': ['Short_wav_rad_down', 'W m-2', 'rsds', '2'],
+            'wind': ['Wind_velocity', 'm s-1', 'wind', '2'],
+            'ps': ['Sur_pressure', 'Pa', 'ps', '2'],
+            'tas': ['Sur_temperature_2m', 'celcius', 'tas', '2'],
+            'tsoil': ['Soil_temperature', 'celcius', 'soil_temp', '2'],
+            'pr': ['Precipitation', 'Kg m-2 month-1', 'pr', '2'],
+            'litter_l': ['Litter C flux - leaf', 'g m-2 day-1', 'll', '5'],
+            'cwd': ['Litter C flux - wood', 'g m-2 day-1', 'cwd', '5'],
+            'litter_fr': ['Litter C flux fine root', 'g m-2 day-1', 'lr', '5'],
+            'litter_n': ['Litter Nitrogen Flux', 'g m-2 day-1', 'ln', '6'],
+            'litter_p': ['Litter phosphorus flux', 'g m-2 day-1', 'lp', '6'],
+            'sto_c': ['PLant Reserve Carbon', 'g m-2', 'sto_c', '4'],
+            'sto_n': ['Pant Reserve Nitrogen', 'g m-2', 'sto_n', '4'],
+            'sto_p': ['Plant Reserve Phosphorus', 'g m-2', 'sto_p', '6'],
+            'c_cost': ['Carbon costs of Nutrients Uptake', 'g m-2 day-1', 'cc', '4'],
+            'wsoil': ['Soil_water_content-wsoil', 'kg m-2', 'mrso', '2'],
+            'evapm': ['Evapotranspiration', 'kg m-2 day-1', 'et', '2'],
+            'emaxm': ['Potent. evapotrasnpiration', 'kg m-2 day-1', 'etpot', '2'],
+            'runom': ['Total_runoff', 'kg m-2 day-1', 'mrro', '4'],
             'aresp': ['Autothrophic respiration', 'kg m-2 year-1', 'ar'],
-            'photo': ['Gross primary productivity', 'kg m-2 year-1', 'gpp'],
-            'npp': ['Net primary productivity = GPP - AR', 'kg m-2 year-1', 'npp'],
-            'rnpp': ['Net primary productivity, C allocation', 'g m-2 day-1', 'npp'],
-            'lai': ['Leaf Area Index - LAI', 'm2 m-2', 'lai'],
-            'rcm': ['Stomatal resistence', 's m-1', 'rcm'],
-            'hresp': ['Soil heterotrophic respiration', 'g m-2 day-1', 'hr'],
-            'nupt': ['Nitrogen uptake', 'g m-2 day-1', 'nupt'],
-            'pupt': ['Phosphorus uptake', 'g m-2 day-1', 'pupt'],
-            'csoil': ['Soil Organic Carbon', 'g m-2', 'csoil'],
-            'org_n': ['Soil Organic Nitrogen', 'g m-2', 'org_n'],
-            'org_p': ['Soil Organic Phosphorus', 'g m-2', 'org_p'],
-            'inorg_n': ['Soil Inorganic Nitrogen', 'g m-2', 'inorg_n'],
-            'inorg_p': ['Soil Inorganic Phosphorus', 'g m-2', 'inorg_p'],
-            'sorbed_p': ['Soil Sorbed Phosphorus', 'g m-2', 'sorbed_p'],
-            'nmin': ['Soil Inorganic Nitrogen (solution)', 'g m-2', 'nmin'],
-            'pmin': ['Soil Inorganic Phosphorus (solution)', 'g m-2', 'pmin'],
-            'rm': ['Maintenance respiration', 'kg m-2 year-1', 'rm'],
-            'rg': ['Growth respiration', 'kg m-2 year-1', 'rg'],
-            'wue': ['Water use efficiency', '1', 'wue'],
-            'vcmax': ['Maximum RuBisCo activity', 'mol m-2 s-1', 'vcmax'],
-            'specific_la': ['Specfic leaf area', 'm2 g-1', 'sla'],
-            'cue': ['Carbon use efficiency', '1', 'cue'],
-            'cawood': ['C in woody tissues', 'kg m-2', 'cawood'],
-            'cfroot': ['C in fine roots', 'kg m-2', 'cfroot'],
-            'cleaf': ['C in leaves', 'kg m-2', 'cleaf'],
-            'cmass': ['Total Carbon -Biomass', 'kg m-2', 'cmass'],
-            'g1': ['G1 param - Stomatal Resistence model', 'hPA', 'g1'],
-            'resopfrac': ['Leaf resorpton fraction N & P', '%', 'resopfrac'],
-            'tleaf': ['Leaf C residence time', 'years', 'tleaf'],
-            'twood': ['Wood C residence time', 'years', 'twood'],
-            'troot': ['Fine root C residence time', 'years', 'troot'],
-            'aleaf': ['Allocation coefficients for leaf', '1', 'aleaf'],
-            'awood': ['Allocation coefficients for wood', '1', 'awood'],
-            'aroot': ['Allocation coefficients for root', '1', 'aroot'],
-            'c4': ['C4 photosynthesis pathway', '1', 'c4'],
-            'leaf_n2c': ['Leaf N:C', 'g g-1', 'leaf_n2c'],
-            'awood_n2c': ['Wood tissues N:C', 'g g-1', 'awood_n2c'],
-            'froot_n2c': ['Fine root N:C', 'g g-1', 'froot_n2c'],
-            'leaf_p2c': ['Leaf P:C', 'g g-1', 'leaf_p2c'],
-            'awood_p2c': ['Wood tissues P:C', 'g g-1', 'awood_p2c'],
-            'froot_p2c': ['Fine root P:C', 'g g-1', 'froot_p2c'],
-            'amp': ['Percentage of fine root colonized by AM', '%', 'amp'],
-            'pdia': ['NPP alocated to N fixers', 'fraction_of_npp', 'pdia'],
-            'ls': ['Living Plant Life Strategies', '1', 'ls']
+            'photo': ['Gross primary productivity', 'kg m-2 year-1', 'gpp', '3'],
+            'npp': ['Net primary productivity = GPP - AR', 'kg m-2 year-1', 'npp', '3'],
+            'rnpp': ['Net primary productivity, C allocation', 'g m-2 day-1', 'npp', '3'],
+            'lai': ['Leaf Area Index - LAI', 'm2 m-2', 'lai', '2'],
+            'rcm': ['Stomatal resistence', 's m-1', 'rcm', '2'],
+            'hresp': ['Soil heterotrophic respiration', 'g m-2 day-1', 'hr', '2'],
+            'nupt': ['Nitrogen uptake', 'g m-2 day-1', 'nupt', '6'],
+            'pupt': ['Phosphorus uptake', 'g m-2 day-1', 'pupt', '6'],
+            'csoil': ['Soil Organic Carbon', 'g m-2', 'csoil', '2'],
+            'csoil_1': ['Soil Organic Carbon - Litter 1', 'g m-2', 'csoil', '2'],
+            'csoil_2': ['Soil Organic Carbon - Litter 2', 'g m-2', 'csoil', '2'],
+            'csoil_3': ['Soil Organic Carbon - Soil 1', 'g m-2', 'csoil', '2'],
+            'csoil_4': ['Soil Organic Carbon - Soil 2', 'g m-2', 'csoil', '2'],
+            'org_n': ['Soil Organic Nitrogen', 'g m-2', 'org_n', '2'],
+            'org_p': ['Soil Organic Phosphorus', 'g m-2', 'org_p', '2'],
+            'inorg_n': ['Soil Inorganic Nitrogen', 'g m-2', 'inorg_n', '2'],
+            'inorg_p': ['Soil Inorganic Phosphorus', 'g m-2', 'inorg_p', '2'],
+            'sorbed_p': ['Soil Sorbed Phosphorus', 'g m-2', 'sorbed_p', '2'],
+            'nmin': ['Soil Inorganic Nitrogen (solution)', 'g m-2', 'nmin', '2'],
+            'pmin': ['Soil Inorganic Phosphorus (solution)', 'g m-2', 'pmin', '2'],
+            'rm': ['Maintenance respiration', 'kg m-2 year-1', 'rm', '3'],
+            'rg': ['Growth respiration', 'kg m-2 year-1', 'rg', '3'],
+            'wue': ['Water use efficiency', '1', 'wue', '6'],
+            'vcmax': ['Maximum RuBisCo activity', 'mol m-2 s-1', 'vcmax','6'],
+            'specific_la': ['Specfic leaf area', 'm2 g-1', 'sla', '7'],
+            'cue': ['Carbon use efficiency', '1', 'cue', '4'],
+            'cawood': ['C in woody tissues', 'kg m-2', 'cawood', '2'],
+            'cfroot': ['C in fine roots', 'kg m-2', 'cfroot', '2'],
+            'cleaf': ['C in leaves', 'kg m-2', 'cleaf', '2'],
+            'cmass': ['Total Carbon -Biomass', 'kg m-2', 'cmass', '2'],
+            'g1': ['G1 param - Stomatal Resistence model', 'hPA', 'g1', '2'],
+            'resopfrac': ['Leaf resorpton fraction N & P', '%', 'resopfrac', '2'],
+            'tleaf': ['Leaf C residence time', 'years', 'tleaf', '3'],
+            'twood': ['Wood C residence time', 'years', 'twood', '3'],
+            'troot': ['Fine root C residence time', 'years', 'troot', '3'],
+            'aleaf': ['Allocation coefficients for leaf', '1', 'aleaf', '3'],
+            'awood': ['Allocation coefficients for wood', '1', 'awood', '3'],
+            'aroot': ['Allocation coefficients for root', '1', 'aroot', '3'],
+            'c4': ['C4 photosynthesis pathway', '1', 'c4', '0'],
+            'leaf_n2c': ['Leaf N:C', 'g g-1', 'leaf_n2c', '6'],
+            'awood_n2c': ['Wood tissues N:C', 'g g-1', 'awood_n2c', '6'],
+            'froot_n2c': ['Fine root N:C', 'g g-1', 'froot_n2c', '6'],
+            'leaf_p2c': ['Leaf P:C', 'g g-1', 'leaf_p2c', '6'],
+            'awood_p2c': ['Wood tissues P:C', 'g g-1', 'awood_p2c', '6'],
+            'froot_p2c': ['Fine root P:C', 'g g-1', 'froot_p2c', '6'],
+            'amp': ['Percentage of fine root colonized by AM', '%', 'amp', '2'],
+            'pdia': ['NPP alocated to N fixers', 'fraction_of_npp', 'pdia', '4'],
+            'ls': ['Living Plant Life Strategies', '1', 'ls', '0']
         }
     out = {}
     for v in var:
@@ -212,7 +220,7 @@ class gridded_data:
                               variables: Union[str, Collection[str]],
                               spin_slice: Union[int, Tuple[int, int], None] = None,
                               temp_dir: Path = None,
-                              batch_size: int = 58,
+                              batch_size: int = 580,
                             ) -> Dict[str, NDArray]:
         """Fully memory-mapped version for large regions"""
 
@@ -282,7 +290,7 @@ class gridded_data:
         def read_batch_parallel(batch_indices, batch_gridcells):
             """Read batch and return structured results"""
             batch_results = []
-            
+
             with ThreadPoolExecutor(max_workers=config.multiprocessing.nprocs) as batch_executor:
                 future_to_idx = {}
                 for local_idx, (global_idx, grd) in enumerate(zip(batch_indices, batch_gridcells)):
@@ -469,7 +477,7 @@ class gridded_data:
                                     data_type: str = "biomass",
                                     years: Union[int, List[int], None] = None,
                                     temp_dir: Path = None,
-                                    batch_size: int = 58
+                                    batch_size: int = 580
                                     ) -> Dict[str, NDArray]:
         """Aggregate annual data across a region for gridded output"""
         import tempfile
@@ -577,9 +585,18 @@ class gridded_data:
                     if var_name in var_memmaps:
                         # Handle different dimensionalities
                         if len(var_data.shape) == 1:
-                            var_memmaps[var_name][global_idx, :var_data.shape[0]] = var_data
+                            # Handle 1D arrays by only copying what fits
+                            dest_length = var_memmaps[var_name][global_idx].shape[0]
+                            # Copy only up to the minimum length
+                            length_to_copy = min(var_data.shape[0], dest_length)
+                            var_memmaps[var_name][global_idx, :length_to_copy] = var_data[:length_to_copy]
                         elif len(var_data.shape) == 2:
-                            var_memmaps[var_name][global_idx, :var_data.shape[0], :var_data.shape[1]] = var_data
+                            # Handle varying PFT counts by only copying what fits
+                            dest_shape = var_memmaps[var_name][global_idx].shape
+                            # Copy only up to the minimum size in each dimension
+                            rows_to_copy = min(var_data.shape[0], dest_shape[0])
+                            cols_to_copy = min(var_data.shape[1], dest_shape[1])
+                            var_memmaps[var_name][global_idx, :rows_to_copy, :cols_to_copy] = var_data[:rows_to_copy, :cols_to_copy]
 
             processed_count += len(batch_results)
 
@@ -883,10 +900,127 @@ class gridded_data:
 
         return arrays, years_array, array_names
 
-    @staticmethod
-    def save_netcdf(data: dict, output_path: Path, file_name: str):
-        pass
 
+    @staticmethod
+    def save_netcdf_daily(data: List, run_name="caete_run"):
+        """Saves gridded data to a NetCDF file.
+
+        Args:
+            data (List): List of masked arrays to save.
+            output_path (Path | None): Path to save the NetCDF file.
+
+        Returns:
+            None
+        """
+        vnames = data[-1]
+        arr = data[0]
+        time = data[1]
+        output_path = Path(config.output.output_dir)
+
+        var_metadata = get_var_metadata(vnames)
+
+        # Time metadata
+        calendar = time[0].calendar
+        time_units = f"days since {time[0].isoformat()}"
+        time_vals = np.arange(len(time), dtype=np.float64)
+
+        # Geographic coordinates
+        lat_south, lon_west = find_coordinates_xy(ymax, xmax)
+        lat_north, lon_east = find_coordinates_xy(ymin, xmin)
+        lats = np.arange(lat_north, lat_south, config.crs.res * (-1) , dtype=np.float32)
+        lons = np.arange(lon_west, lon_east, config.crs.res * (-1), dtype=np.float32)
+
+        # CRS information
+        crs_metadata = pyproj.CRS(config.crs.datum).to_cf()
+
+
+        # Loop through variables and save each to its own NetCDF file
+        for i, var in enumerate(vnames):
+            print(f"Variable {i+1}/{len(vnames)}: {var}", end=' -> ')
+            var_data = arr[i]
+            fill_value = var_data.get_fill_value()
+            var_dtype = var_data.dtype
+            
+            # Update mask to include NaN values
+            var_data.mask = np.logical_or(var_data.mask, np.isnan(var_data))
+            
+            # Ensure all masked values use the correct fill_value
+            np.ma.set_fill_value(var_data, fill_value)
+
+            nc_filename = output_path / f"{var}_{run_name}_{time[0].strftime("%Y%m%d")}_{time[-1].strftime("%Y%m%d")}.nc"
+            print(nc_filename)
+
+            rootgrp = Dataset(nc_filename, "w", format="NETCDF4")
+
+            sig_dig = int(var_metadata[var][3])
+
+            # Create dimensions
+            rootgrp.createDimension("time", None)
+            rootgrp.createDimension("lat", len(lats))
+            rootgrp.createDimension("lon", len(lons))
+
+            # Create variables
+            times = rootgrp.createVariable("time", "f8", ("time",))
+            latitudes = rootgrp.createVariable("lat", "f4", ("lat",))
+            longitudes = rootgrp.createVariable("lon", "f4", ("lon",))
+            crs = rootgrp.createVariable("crs", "i4")
+            var_nc = rootgrp.createVariable(var,
+                                            var_dtype,
+                                            ("time", "lat", "lon"),
+                                            fill_value=fill_value,
+                                            significant_digits=sig_dig,
+                                            compression="zlib",
+                                            complevel=9,
+                                            fletcher32=True)
+
+            # Assign data to variables
+            # TIme
+            times[:] = time_vals
+            times.units = time_units
+            times.calendar = calendar
+            times.axis = "T"
+            times.standard_name = "time"
+            times.long_name = "Time"
+
+            # Spatial coordinates
+            #Lat
+            latitudes[:] = lats
+            latitudes.units = "degrees_north"
+            latitudes.axis = "Y"
+            latitudes.standard_name = "latitude"
+            latitudes.long_name = "Latitude"
+            latitudes.valid_min = lats.min()
+            latitudes.valid_max = lats.max()
+            latitudes.delta = config.crs.res * (-1)  # Latitude decreases as index increases
+            latitudes.spacing = config.crs.res * (-1) # Latitude decreases as index increases
+            
+            #Lon
+            longitudes[:] = lons
+            longitudes.units = "degrees_east"
+            longitudes.axis = "X"
+            longitudes.standard_name = "longitude"
+            longitudes.long_name = "Longitude"
+            longitudes.valid_min = lons.min()
+            longitudes.valid_max = lons.max()
+            longitudes.delta = config.crs.res
+            longitudes.spacing = config.crs.res
+
+            # CRS
+            for k, v in crs_metadata.items():
+                setattr(crs, k, v)
+        
+
+            # Variable
+            var_nc[:, :, :] = var_data
+            var_nc.units = var_metadata[var][1]
+            var_nc.standard_name = var_metadata[var][2]
+            var_nc.long_name = var_metadata[var][0]
+            var_nc.description = f"{var_metadata[var][0]} from CAETE model run {run_name}"
+            var_nc.history = f"Created: {datetime.now().isoformat()}"
+            var_nc.source = "CAETE model"
+            var_nc.references = ""
+            var_nc.comment = ""
+            rootgrp.close()
 
 # ======================================
 # Functions dealing with table outputs
@@ -1038,11 +1172,11 @@ class table_data:
     @staticmethod
     def write_daily_data(r: region, variables: Union[str, Collection[str]]):
         """Writes the daily data to csv files"""
-        
+
         # Load all the gridcells in the region to accelerate processing. Consumes a lot of memory if the region is large.
         if not r.gridcells:
             r.load_gridcells()
-        
+
         periods = r[0].print_available_periods() # assumes all gridcells have the same periods
         write_metadata_to_csv(variables, r.output_path)  # type: ignore
 
@@ -1799,6 +1933,16 @@ class output_manager:
 
 if __name__ == "__main__":
     pass
+    # from time import perf_counter
+    # start = perf_counter()
+    # output_file = Path("/home/amazonfaceme/joaofilho/CAETE-DVM/outputs/pan_amazon_hist_result.psz")
+    # reg:region = worker.load_state_zstd(output_file)
+    # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+    # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, 2))
+    # gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
+    # end = perf_counter()
+    # print(f"Elapsed time: {end - start:.2f} seconds")
+
     # """
     # Usage examples:
 
