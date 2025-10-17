@@ -291,6 +291,17 @@ def process_climate_variable(var: str):
         tsize = get_dataset_size(dataset)
         variable_obj = dataset.variables[var]
 
+        # Check the actual lat/lon values in the file
+        if 'lat' in dataset.variables and 'lon' in dataset.variables:
+            file_lats = dataset.variables['lat'][:]
+            file_lons = dataset.variables['lon'][:]
+            print(f"  File lat range: [{file_lats.min():.2f}, {file_lats.max():.2f}]")
+            print(f"  File lon range: [{file_lons.min():.2f}, {file_lons.max():.2f}]")
+            print(f"  Extracting region indices y[{cc.ymin}:{cc.ymax+1}], x[{cc.xmin}:{cc.xmax+1}]")
+            print(f"  Which corresponds to:")
+            print(f"    Lat: [{file_lats[cc.ymin]:.2f}, {file_lats[cc.ymax]:.2f}]")
+            print(f"    Lon: [{file_lons[cc.xmin]:.2f}, {file_lons[cc.xmax]:.2f}]")
+
         # VECTORIZED DATA EXTRACTION
         # Read all regional data at once
         print(f"  Reading all {tsize} time steps for region...")
@@ -370,7 +381,7 @@ def create_station_coordinates():
 
     # Convert to lat/lon (vectorized) !! Assuming 0.5 degree resolution
     lats = 90.0 - (global_y + 0.5) * 0.5
-    lons = -180.0 + (global_x + 0.5) * 0.5
+    lons = (global_x + 0.5) * 0.5 - 180.0
 
     # Create station names (vectorized)
     station_names = np.array([f"station_{y}-{x}" for y, x in zip(global_y, global_x)], dtype='<U15')

@@ -1535,28 +1535,28 @@ if __name__ == "__main__":
     #     # Load all data at once
     #     data = ih.get_data()
     import time
-    t0 = time.perf_counter()
-    # Creating input handlers for bz2 files
-    cfg.input_handler.input_type = 'bz2'  
-    input_dir = '../input/20CRv3-ERA5/spinclim_test'
-    gridlist_path = '../grd/gridlist_test.csv'
-    gridlist_df = pl.read_csv(gridlist_path)
-    ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
-    print("Total batches: ",ih.total_batches)  # Get total number of batches based on the gridlist
-    for i in range(ih.total_batches):
-        batch_data = ih.get_batch_data(i)
-        print(f"Batch {i}: {batch_data['batch_size']} stations loaded.")
-        print(f"Batch {i}: {batch_data['data'].keys()}")  # Access the data for this batch
-        print()
-    ih.close()  # Close the input handler
-    t1 = time.perf_counter()
-    t_bz2 = t1 - t0
+    # # t0 = time.perf_counter()
+    # # Creating input handlers for bz2 files
+    # cfg.input_handler.input_type = 'bz2'  
+    # input_dir = '../input/20CRv3-ERA5/spinclim'
+    # gridlist_path = '../grd/gridlist_dry.csv'
+    # gridlist_df = pl.read_csv(gridlist_path)
+    # ih = input_handler(input_dir, gridlist_df, batch_size=cfg.multiprocessing.max_processes)
+    # print("Total batches: ",ih.total_batches)  # Get total number of batches based on the gridlist
+    # for i in range(ih.total_batches):
+    #     batch_data = ih.get_batch_data(i)
+    #     print(f"Batch {i}: {batch_data['batch_size']} stations loaded.")
+    #     print(f"Batch {i}: {batch_data['data'].keys()}")  # Access the data for this batch
+    #     print()
+    # ih.close()  # Close the input handler
+    # t1 = time.perf_counter()
+    # t_bz2 = t1 - t0
 
     # Creating input handlers for NetCDF files
     cfg.input_handler.input_type = 'netcdf'  # Set input type to netcdf for testing
-    cfg.input_handler.mp = True  # Disable MPI for testing, set to True if you want to use MPI
-    nc_file_path = '../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc'
-    gridlist_path = '../grd/gridlist_test.csv'
+    cfg.input_handler.mp = True 
+    nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
+    gridlist_path = '../grd/gridlist_dry.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     t2 = time.perf_counter()
     ih2 = input_handler(nc_file_path, gridlist_df, batch_size=cfg.multiprocessing.max_processes) 
@@ -1570,5 +1570,5 @@ if __name__ == "__main__":
     ih2.close()  # Close the input handler
     t3 = time.perf_counter()
     t_nc = t3 - t2
-    print(f"Time taken for bz2 input handler: {t_bz2:.2f} seconds")
-    print(f"Time taken for netcdf input handler: {t_nc:.2f}")
+    # print(f"Time taken for bz2 input handler: {t_bz2:.2f} seconds")
+    # print(f"Time taken for netcdf input handler: {t_nc:.2f}")

@@ -277,8 +277,8 @@ module alloc
 
       ! Only a  small amount of total nutrients are available in fact
       ! This is used to testing purposes only
-      mult_factor_n = 1.0D0!0.03D0
-      mult_factor_p = 1.0D0!0.002D0
+      mult_factor_n = 0.03D0!1.0D0!0.03D0
+      mult_factor_p = 0.002D0!1.0D0!0.002D0
       ! Partitioning Nutrients for cveg pools (weight by allocation coeffs)
       ! FIND AVAILABLE NUTRIENTS:
 

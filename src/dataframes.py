@@ -931,10 +931,16 @@ class gridded_data:
         time_vals = np.arange(len(time), dtype=np.float64)
 
         # Geographic coordinates
-        lat_south, lon_west = find_coordinates_xy(ymax, xmax)
-        lat_north, lon_east = find_coordinates_xy(ymin, xmin)
-        lats = np.arange(lat_north, lat_south, config.crs.res * (-1) , dtype=np.float32)
-        lons = np.arange(lon_west, lon_east, config.crs.res * (-1), dtype=np.float32)
+        lat_south, lon_east = find_coordinates_xy(ymax, xmax)
+        lat_north, lon_west = find_coordinates_xy(ymin, xmin)
+        # lats = np.arange(lat_north, lat_south, config.crs.res * (-1) , dtype=np.float32)
+        # lons = np.arange(lon_west, lon_east, config.crs.res * (-1), dtype=np.float32)
+        # FIXED: Latitude decreases from north to south (positive to negative)
+        lats = np.arange(lat_north, lat_south - config.crs.res/2, -config.crs.res, dtype=np.float32)
+    
+        # FIXED: Longitude INCREASES from west to east (negative to positive for Americas)
+        lons = np.arange(lon_west, lon_east + config.crs.res/2, config.crs.res, dtype=np.float32)
+
 
         # CRS information
         crs_metadata = pyproj.CRS(config.crs.datum).to_cf()
@@ -997,8 +1003,8 @@ class gridded_data:
             latitudes.long_name = "Latitude"
             latitudes.valid_min = lats.min()
             latitudes.valid_max = lats.max()
-            latitudes.delta = config.crs.res * (-1)  # Latitude decreases as index increases
-            latitudes.spacing = config.crs.res * (-1) # Latitude decreases as index increases
+            latitudes.delta = -config.crs.res  # Latitude decreases as index increases
+            latitudes.spacing = -config.crs.res # Latitude decreases as index increases
 
             #Lon
             longitudes[:] = lons

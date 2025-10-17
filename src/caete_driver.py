@@ -74,7 +74,7 @@ if __name__ == "__main__":
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
 
 
-    gridlist = read_csv("../input/20CRv3-ERA5/obsclim/gridlist_caete.csv")
+    gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv")
     # gridlist = read_csv("../grd/gridlist_test.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)

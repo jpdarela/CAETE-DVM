@@ -29,7 +29,7 @@ input_type = "netcdf" # Type of input data. The options are "netcdf" & "bz2"
 
 # The netcdf files used are chunked in an optimal way for reading.
 # The sequential reading is faster than the parallel reading. Only have effect if input_type is "netcdf" and input_method is "ih".
-mp = false # Use MPI for reading netcdf files.
+mp = true # Use MPI for reading netcdf files.
 
 
 # Configs for parallelization
