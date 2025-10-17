@@ -64,7 +64,7 @@ class pls_table:
         self.shape = self.table.shape
         self.id = np.arange(self.npls, dtype=np.int32)
 
-        assert self.npls > npls, "The number of PLSs in the main table should be greater than the number of PLSs in a community."
+        assert self.npls >= npls, "The number of PLSs in the main table should be greater than the number of PLSs in a community."
         assert self.ntraits == ntraits, "The number of traits in the main table should be equal to the number of traits in a community."
 
 

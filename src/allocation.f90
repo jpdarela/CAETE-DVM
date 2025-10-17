@@ -181,7 +181,7 @@ module alloc
       real(r_8), dimension(6) :: ccn ! Carbon Costs of  N uptake by strategy :
       real(r_8), dimension(8) :: ccp ! CC of P uptake by strategy
       real(r_8) :: active_nupt_cost, active_pupt_cost
-      integer(i_4) :: nacquis_strat, pacquis_strat
+      integer(i_4) :: nacquis_strat, pacquis_strat, i
       real(r_8) :: p_cost_resorpt, n_cost_resorpt
       real(r_8) :: negative_one
       real(r_8) :: aux_on, aux_sop, aux_op
@@ -773,6 +773,23 @@ module alloc
          p_uptake(root) = 0.0D0
          p_to_storage(root) = max(0.0D0, (internal_p_root - rp_uptake(root)))
       endif
+
+      ! Check and clean n_to_storage and p_to_storage arrays for invalid values
+      do i = 1, 3
+         ! Check n_to_storage
+         if (ieee_is_nan(n_to_storage(i)) .or. .not. ieee_is_normal(n_to_storage(i))) then
+            n_to_storage(i) = 0.0D0
+         else if (n_to_storage(i) .gt. 1.0D3) then  ! Check for unreasonably large values
+            n_to_storage(i) = 0.0D0
+         endif
+
+         ! Check p_to_storage
+         if (ieee_is_nan(p_to_storage(i)) .or. .not. ieee_is_normal(p_to_storage(i))) then
+            p_to_storage(i) = 0.0D0
+         else if (p_to_storage(i) .gt. 1.0D3) then  ! Check for unreasonably large values
+            p_to_storage(i) = 0.0D0
+         endif
+      end do
 
       storage_out_alloc(2) = add_pool(storage_out_alloc(2), sum(n_to_storage), "L777")
       storage_out_alloc(3) = add_pool(storage_out_alloc(3), sum(p_to_storage), "L778")

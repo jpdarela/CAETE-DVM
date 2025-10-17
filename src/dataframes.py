@@ -99,6 +99,7 @@ def get_var_metadata(var):
             'sto_p': ['Plant Reserve Phosphorus', 'g m-2', 'sto_p', '6'],
             'c_cost': ['Carbon costs of Nutrients Uptake', 'g m-2 day-1', 'cc', '4'],
             'wsoil': ['Soil_water_content-wsoil', 'kg m-2', 'mrso', '2'],
+            'f5': ['empirical factor of GPP penalization by soil water', '1', 'f5', '6'],
             'evapm': ['Evapotranspiration', 'kg m-2 day-1', 'et', '2'],
             'emaxm': ['Potent. evapotrasnpiration', 'kg m-2 day-1', 'etpot', '2'],
             'runom': ['Total_runoff', 'kg m-2 day-1', 'mrro', '4'],
@@ -123,6 +124,7 @@ def get_var_metadata(var):
             'sorbed_p': ['Soil Sorbed Phosphorus', 'g m-2', 'sorbed_p', '2'],
             'nmin': ['Soil Inorganic Nitrogen (solution)', 'g m-2', 'nmin', '2'],
             'pmin': ['Soil Inorganic Phosphorus (solution)', 'g m-2', 'pmin', '2'],
+            'aresp': ['Autotrophic respiration', 'kg m-2 year-1', 'aresp', '3'],
             'rm': ['Maintenance respiration', 'kg m-2 year-1', 'rm', '3'],
             'rg': ['Growth respiration', 'kg m-2 year-1', 'rg', '3'],
             'wue': ['Water use efficiency', '1', 'wue', '6'],
@@ -154,10 +156,14 @@ def get_var_metadata(var):
         }
     out = {}
     for v in var:
-        out[v] = vunits.get(v, ['unknown', 'unknown', 'unknown'])
+        out[v] = vunits.get(v, ['unknown', 'unknown', 'unknown', '5'])
     return out
 
-def write_metadata_to_csv(variable_names:Tuple[str,...], output_path:Path):
+def write_metadata_to_csv(variable_names:Tuple[str,...], output_path:Path | str) -> pl.DataFrame:
+    """Writes metadata for given variable names to a CSV file."""
+
+    if isinstance(variable_names, list):
+        variable_names = tuple(variable_names)
     metadata = get_var_metadata(("header", ) + variable_names)
     header = metadata.pop("header")
 
@@ -168,7 +174,7 @@ def write_metadata_to_csv(variable_names:Tuple[str,...], output_path:Path):
 
     # Use orient="row" to avoid the warning
     df = pl.DataFrame(data, schema=["variable_name"] + header, orient="row")
-    df.write_csv(output_path / "output_metadata.csv")
+    df.write_csv(str_or_path(output_path) / "output_metadata.csv")
     return df
 
 
@@ -940,14 +946,14 @@ class gridded_data:
             var_data = arr[i]
             fill_value = var_data.get_fill_value()
             var_dtype = var_data.dtype
-            
+
             # Update mask to include NaN values
             var_data.mask = np.logical_or(var_data.mask, np.isnan(var_data))
-            
+
             # Ensure all masked values use the correct fill_value
             np.ma.set_fill_value(var_data, fill_value)
 
-            nc_filename = output_path / f"{var}_{run_name}_{time[0].strftime("%Y%m%d")}_{time[-1].strftime("%Y%m%d")}.nc"
+            nc_filename = output_path / f"{var}_{run_name}_{time[0].strftime('%Y%m%d')}_{time[-1].strftime('%Y%m%d')}.nc"
             print(nc_filename)
 
             rootgrp = Dataset(nc_filename, "w", format="NETCDF4")
@@ -993,7 +999,7 @@ class gridded_data:
             latitudes.valid_max = lats.max()
             latitudes.delta = config.crs.res * (-1)  # Latitude decreases as index increases
             latitudes.spacing = config.crs.res * (-1) # Latitude decreases as index increases
-            
+
             #Lon
             longitudes[:] = lons
             longitudes.units = "degrees_east"
@@ -1008,7 +1014,7 @@ class gridded_data:
             # CRS
             for k, v in crs_metadata.items():
                 setattr(crs, k, v)
-        
+
 
             # Variable
             var_nc[:, :, :] = var_data

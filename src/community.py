@@ -28,7 +28,7 @@ from numba import njit
 
 
 @njit(cache=True)
-def _update_living_status(occupation: NDArray[np.float64], 
+def _update_living_status(occupation: NDArray[np.float64],
                          threshold: float = 0.0) -> Tuple[NDArray[np.intp], np.int8]:
     """Fast numba function to find living PLSs and determine if community is masked."""
     living_indices = np.flatnonzero(occupation > threshold)
@@ -74,9 +74,9 @@ class community:
         self.shape: Tuple[int, ...] = self.pls_array.shape
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
-        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(0.011,0.012,self.npls).astype(np.float64)
-        self.vp_croot: NDArray[np.float64] = np.random.uniform(0.011,0.012,self.npls).astype(np.float64)
-        self.vp_cwood: NDArray[np.float64] = np.random.uniform(0.02,0.04,self.npls).astype(np.float64)
+        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
+        self.vp_croot: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
+        self.vp_cwood: NDArray[np.float64] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, self.npls).astype(np.float64)
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
         self.vp_sto[0,:] = np.random.uniform(0.0, 0.01, self.npls)
         self.vp_sto[1,:] = np.random.uniform(0.0, 0.0001, self.npls)
@@ -123,6 +123,9 @@ class community:
 
 
     def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
+        self.bm_lr0 = 0.1
+        self.bm_w0 = 0.2
+
         self._reset(pls_data)
         return None
 
@@ -234,9 +237,9 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        cleaf[pos] = np.random.uniform(0.3,0.4, None)
-        croot[pos] = np.random.uniform(0.3,0.4, None)
-        cwood[pos] = np.random.uniform(5.0,6.0, None)
+        cleaf[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, None)
+        croot[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, None)
+        cwood[pos] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, None)
         if pls[3] == 0.0:
             cwood[pos] = 0.0
 

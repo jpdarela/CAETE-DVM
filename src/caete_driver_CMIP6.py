@@ -51,7 +51,7 @@ if __name__ == "__main__":
     from region import region
     from worker import worker
     from dataframes import output_manager
-    
+
     fn: worker = worker()
 
     input_path = Path("../input/").resolve()
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # the previous state files.
     state_file = Path(f"./{region_name}.psz") # Historical state file
     r.save_state(state_file)  # type: ignore
-    
+
 
     # Clean the model state, We create a new state folder structure to access model outputs
     # We are finished with this region object. No need to keep it in memory.
