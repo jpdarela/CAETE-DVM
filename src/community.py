@@ -123,8 +123,8 @@ class community:
 
 
     def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
-        self.bm_lr0 = 0.1
-        self.bm_w0 = 0.2
+        self.bm_lr0 = 0.5
+        self.bm_w0 = 0.5
 
         self._reset(pls_data)
         return None

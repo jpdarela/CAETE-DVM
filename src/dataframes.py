@@ -2,6 +2,7 @@
 # "CAETÊ"
 
 # _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# Author: Joao Paulo Darela Filho
 
 # """
 # Copyright 2017- LabTerra
@@ -22,7 +23,7 @@
 
 # This script contains functions to read binary output
 # and create gridded and table outputs.
-# Author: Joao Paulo Darela Filho
+
 import argparse
 import gc
 import os
@@ -486,7 +487,6 @@ class gridded_data:
                                     batch_size: int = 580
                                     ) -> Dict[str, NDArray]:
         """Aggregate annual data across a region for gridded output"""
-        import tempfile
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
         if temp_dir is None:
@@ -936,10 +936,10 @@ class gridded_data:
         # lats = np.arange(lat_north, lat_south, config.crs.res * (-1) , dtype=np.float32)
         # lons = np.arange(lon_west, lon_east, config.crs.res * (-1), dtype=np.float32)
         # FIXED: Latitude decreases from north to south (positive to negative)
-        lats = np.arange(lat_north, lat_south - config.crs.res/2, -config.crs.res, dtype=np.float32)
+        lats = np.arange(lat_north, lat_south, -config.crs.res, dtype=np.float32)
     
         # FIXED: Longitude INCREASES from west to east (negative to positive for Americas)
-        lons = np.arange(lon_west, lon_east + config.crs.res/2, config.crs.res, dtype=np.float32)
+        lons = np.arange(lon_west, lon_east, config.crs.res, dtype=np.float32)
 
 
         # CRS information
@@ -1942,12 +1942,70 @@ class output_manager:
             )
 
         return None
+    
+    @staticmethod
+    def pan_amazon_output():
+        
+        from time import perf_counter
+        start = perf_counter()
+        
+        output_file = Path("../outputs/pan_amazon_hist_result.psz")
+        
+        reg:region = worker.load_state_zstd(output_file)
+        
+        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+        
+        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (10,13)))
+        
+        gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
+        
+        end = perf_counter()
+        
+        print(f"Elapsed time: {end - start:.2f} seconds")
+        output_manager.table_ouptuts(output_file)
+
+
+
+    @staticmethod
+    def table_ouptuts(filename:Union[Path, str]):
+        """
+        Process biomass files and output them as a parquet table.
+
+        Args:
+            result (Union[Path, str]): Path to the state file with model results.
+        """
+        results = get_args(filename) 
+        available_cpus = os.cpu_count() or 4
+        
+
+        # Define grid cell processing function
+        def process_gridcell(grd):
+            table_data.write_metacomm_output(grd)
+
+        # Use joblib's Parallel for efficient multiprocessing
+        # Set verbose=1 to show progress during longer operations
+
+        for fname in results:
+            reg = worker.load_state_zstd(fname)
+            nprocs = min(len(reg), available_cpus)
+            Parallel(n_jobs=nprocs, verbose=1, prefer="processes")(delayed(process_gridcell)(grd) for grd in reg)
+
+            res = reg.output_path
+            table_data.consolidate_all_annual_outputs(
+                res,
+                output_types=['biomass'],
+                output_format="parquet"
+            )
+
+
+
 
 if __name__ == "__main__":
     pass
     # from time import perf_counter
     # start = perf_counter()
-    # output_file = Path("/home/amazonfaceme/joaofilho/CAETE-DVM/outputs/pan_amazon_hist_result.psz")
+    # # output_file = Path("/home/amazonfaceme/joaofilho/CAETE-DVM/outputs/pan_amazon_hist_result.psz")
+    # output_file = ("../outputs/pan_amazon_hist_after_spinup_state_file.psz")
     # reg:region = worker.load_state_zstd(output_file)
     # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
     # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, 2))

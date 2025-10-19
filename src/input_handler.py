@@ -1,5 +1,26 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# -*-coding:utf-8-*-
+# "CAETÊ"
+
+# _ = """ CAETE-DVM-CNP - Carbon and Ecosystem Trait-based Evaluation Model"""
+# Author: Joao Paulo Darela Filho
+
+# """
+# Copyright 2017- LabTerra
+
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# """
+
 """
 Input Handler
 -------------
@@ -30,8 +51,6 @@ from config import fetch_config
 
 cfg = fetch_config()
 
-
-# Utility functions to create gridlists from input files
 
 class base_handler(ABC):
     """
@@ -941,7 +960,7 @@ class netcdf_handler(base_handler):
         # Call MPI script for time variables
         nprocs = len(self.time_vars)
         cmd_time = [
-            'mpiexec', '-n', f'{nprocs}',  # Use 4 processes
+            'mpiexec', '-n', f'{nprocs}',
             sys.executable, 'netcdf_reader.py',
             str(self.nc_file),
             indices_str,
@@ -1295,8 +1314,16 @@ class input_handler:
 
         Returns:
             pl.DataFrame: Polars DataFrame containing station information
+        
+        Raises:
+            FileNotFoundError: If the input path does not exist
         """
         inp = str_or_path(finput)
+
+        if not inp.exists():
+            raise FileNotFoundError(f"Input path {inp} does not exist")
+        
+        #TODO: Add checks for lat_var and lon_var existence in netCDF file
         
         if inp.is_file():
             # Manege the expected netCDF file structure
@@ -1527,8 +1554,9 @@ if __name__ == "__main__":
     # Create a gridlist from a folder containing model input data in the 
     # .pbz2 format (see ../input/input/20CRv3-ERA5/counterclim_cities, for examples)
     # It works also with CAETÊ input data in the NetCDF format (see ../input/input/20CRv3-ERA5/obsclim)
-    # You can optionally provide a path to save the gridlist CSV file
-    gridlist = input_handler.create_gridlist_from_files("../input/20CRv3-ERA5/counterclim_cities", "./sandbox/my_gridlist.csv")
+    # You can optionally provide a path to save the gridlist CSV file:
+    
+    # gridlist = input_handler.create_gridlist_from_files("../input/20CRv3-ERA5/counterclim_cities", "./sandbox/my_gridlist.csv")
 
     # Handers can also be used with the context manager:
     # with input_handler('../input/20CRv3-ERA5/counterclim_cities', gridlist) as ih:
@@ -1571,4 +1599,4 @@ if __name__ == "__main__":
     t3 = time.perf_counter()
     t_nc = t3 - t2
     # print(f"Time taken for bz2 input handler: {t_bz2:.2f} seconds")
-    # print(f"Time taken for netcdf input handler: {t_nc:.2f}")
+    print(f"Time taken for netcdf input handler: {t_nc:.2f}")

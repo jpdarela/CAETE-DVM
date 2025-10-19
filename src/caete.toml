@@ -29,7 +29,7 @@ input_type = "netcdf" # Type of input data. The options are "netcdf" & "bz2"
 
 # The netcdf files used are chunked in an optimal way for reading.
 # The sequential reading is faster than the parallel reading. Only have effect if input_type is "netcdf" and input_method is "ih".
-mp = true # Use MPI for reading netcdf files.
+mp = false # Use MPI for reading netcdf files.
 
 
 # Configs for parallelization
@@ -101,7 +101,7 @@ n = 1 # Effects only in runtime, recompilatio not needed.
 # unless you recompile it. THe model will not run if you compile
 # it with a value and then run it with a different value.
 
-npls_max = 1000
+npls_max = 2000
  # number of traits in a PLS
 ntraits = 17
 

@@ -74,7 +74,7 @@ if __name__ == "__main__":
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
 
 
-    gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv")
+    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
     # gridlist = read_csv("../grd/gridlist_test.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-60000.csv"))
 
     # Create the region using the spinup climate files
     print("creating region with spinclim files")
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2021, 61)
+    run_breaks = fn.create_run_breaks(1901, 2021, 10)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)
@@ -176,7 +176,10 @@ if __name__ == "__main__":
     print(f"Final state file save time: {(e7 - s7) // 60 :.0f}:{(e7 - s7) % 60 :.0f}")
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
-    # output_manager.test_output()
+    
+    # Generate outputs
+    from dataframes import output_manager
+    output_manager.pan_amazon_outputs()
 
     if PROFILING:
         # Disable profiling

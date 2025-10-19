@@ -27,6 +27,7 @@ src/tests/__pycache__
 src/tests/*.csv
 src/tests/*.txt
 src/.vscode
+src/temp_*
 
 outputs/
 
