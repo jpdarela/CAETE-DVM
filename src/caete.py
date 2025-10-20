@@ -106,7 +106,6 @@
 import bz2
 import copy
 import csv
-import gc
 import os
 import pickle as pkl
 import sys

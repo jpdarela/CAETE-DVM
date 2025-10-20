@@ -35,7 +35,7 @@ format but with CAETE-specific unit conversions and variable requirements.
 Output format:
 - Single NetCDF file with station-based timeseries format.
 - Variables: tas, pr, ps, hurs, rsds, sfcwind, vpd + soil variables
-- Dimensions: (station, time) for climate [Optimal chunking for extration of timeseries]; (station) for soil 
+- Dimensions: (station, time) for climate [Optimal chunking for extration of timeseries]; (station) for soil
 - Includes gridlist for station coordinate mapping
 """
 
@@ -223,7 +223,7 @@ def get_metadata_from_dataset(variables: str):
         else:
             raise TypeError("Dataset must be either MFDataset or Dataset")
 
-    # Check if all time variables are equal
+    # Check time metadata consistency
     for x in range(1, len(times)):
         assert np.all(times[0][:] == times[x][:]), "Time values are not equal across datasets"
         assert times[0].calendar == times[x].calendar, "Calendars are not equal across datasets"

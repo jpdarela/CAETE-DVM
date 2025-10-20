@@ -937,7 +937,7 @@ class gridded_data:
         # lons = np.arange(lon_west, lon_east, config.crs.res * (-1), dtype=np.float32)
         # FIXED: Latitude decreases from north to south (positive to negative)
         lats = np.arange(lat_north, lat_south, -config.crs.res, dtype=np.float32)
-    
+
         # FIXED: Longitude INCREASES from west to east (negative to positive for Americas)
         lons = np.arange(lon_west, lon_east, config.crs.res, dtype=np.float32)
 
@@ -1942,28 +1942,6 @@ class output_manager:
             )
 
         return None
-    
-    @staticmethod
-    def pan_amazon_output():
-        
-        from time import perf_counter
-        start = perf_counter()
-        
-        output_file = Path("../outputs/pan_amazon_hist_result.psz")
-        
-        reg:region = worker.load_state_zstd(output_file)
-        
-        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
-        
-        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (10,13)))
-        
-        gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
-        
-        end = perf_counter()
-        
-        print(f"Elapsed time: {end - start:.2f} seconds")
-        output_manager.table_ouptuts(output_file)
-
 
 
     @staticmethod
@@ -1974,9 +1952,9 @@ class output_manager:
         Args:
             result (Union[Path, str]): Path to the state file with model results.
         """
-        results = get_args(filename) 
+        results = get_args(filename)
         available_cpus = os.cpu_count() or 4
-        
+
 
         # Define grid cell processing function
         def process_gridcell(grd):
@@ -1996,6 +1974,28 @@ class output_manager:
                 output_types=['biomass'],
                 output_format="parquet"
             )
+
+
+    @staticmethod
+    def pan_amazon_output():
+
+        from time import perf_counter
+        start = perf_counter()
+
+        output_file = Path("../outputs/pan_amazon_hist_result.psz")
+
+        reg:region = worker.load_state_zstd(output_file)
+
+        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+
+        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (10,13)))
+
+        gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
+
+        end = perf_counter()
+
+        print(f"Elapsed time: {end - start:.2f} seconds")
+        output_manager.table_ouptuts(output_file)
 
 
 
