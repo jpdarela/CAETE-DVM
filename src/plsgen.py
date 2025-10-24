@@ -70,7 +70,7 @@ args = parser.parse_args()
 
 CONFIG_FILE = (Path(__file__).parent / "plsgen.toml").resolve()
 
-NUM_SAMPLES = 1_000_000  # Number of samples for Dirichlet distribution and residence times
+NUM_SAMPLES = 5_000_000  # Number of samples for Dirichlet distribution and residence times
 
 with open(CONFIG_FILE, 'rb') as f:
     data = tl.load(f)
@@ -143,8 +143,8 @@ def allocation_combinations():
     grass_comb[:, 1] = 0.0
     grass_comb[:, 2] = grass_tmp[:, 1]
 
-    grass_final = np.array([combo for combo in grass_comb if (combo[0] > ma or combo[2] > ma)])
-    woody_final = np.array([combo for combo in woody_comb if (combo[0] > ma or combo[1] > ma or combo[2] > ma)])
+    grass_final = np.array([combo for combo in grass_comb if (combo[0] > ma and combo[2] > ma)])
+    woody_final = np.array([combo for combo in woody_comb if (combo[0] > ma and combo[1] > ma and combo[2] > ma)])
 
     return woody_final, grass_final
 
@@ -240,13 +240,13 @@ def nutrient_ratios_combinations_reich(NPLS, alloc):
     # 1. Leaf N from Reich et al. (1997)
     leaf_longevity_months = alloc[:, 0] * 12.0  # tleaf (years) to months
     N_leaf_mg_g = 42.7 * (leaf_longevity_months ** -0.32)
-    N_leaf_g_g = N_leaf_mg_g / 1000.0 + np.random.normal(0, 0.002, NPLS)  # Convert to g/g and add noise
-    # N_leaf_g_g = np.clip(N_leaf_g_g, nr["leaf_n2c"]["min"], nr["leaf_n2c"]["max"])
+    N_leaf_g_g = N_leaf_mg_g / 1000.0 + np.random.normal(0, 0.005, NPLS)  # Convert to g/g and add noise
+    N_leaf_g_g = np.clip(N_leaf_g_g, nr["leaf_n2c"]["min"], nr["leaf_n2c"]["max"])
 
     # 2. Leaf P from fixed N:P ratio (Reich & Oleksyn 2004)
     ntop = np.random.uniform(8,20, NPLS)  # N:P ratio
     P_leaf_g_g = N_leaf_g_g / ntop  # P:N ratio
-    # P_leaf_g_g = np.clip(P_leaf_g_g, nr["leaf_p2c"]["min"], nr["leaf_p2c"]["max"])
+    P_leaf_g_g = np.clip(P_leaf_g_g, nr["leaf_p2c"]["min"], nr["leaf_p2c"]["max"])
 
     # 3. Wood and root pools (unchanged from original)
     # Wood nutrients (zero for grasses)

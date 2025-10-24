@@ -75,25 +75,19 @@ class worker:
     def spinup(gridcell:grd_mt):
         """Spin up
         """
-        # Spin up the model to attain equilibrium in the community and soil pools.
+        # PHASE 1 - Initial Spinup - equilibrium with pre-industrial conditions. No nutrient cycling,
+        # pre-industrial CO2, and PLS sampling 
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1765",
-                              save=False, nutri_cycle=False, reset_community=True, env_filter=True,
-                              kill_and_reset=True)
+                              save=False, nutri_cycle=False, reset_community=True, env_filter=True)
         # Glacial cycle CO2
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=190.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc=190.0,
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True)
         # Interglacial cycle CO2
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=280.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=4, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True)
-
-        # Glacial cycle CO2
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=190.0,
-                              save=False, nutri_cycle=True, reset_community=False, env_filter=False)
-        # Interglacial cycle CO2
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=280.0,
-                              save=False, nutri_cycle=True, reset_community=False, env_filter=False)
 
         # Final phase without resetting the community and without adding new PLS
+        # pre-industrial CO2
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1801",
                               save=False, nutri_cycle=True)
         # Transfer to the first half of spinclim
@@ -109,22 +103,21 @@ class worker:
         verb = False
         # Spin up the model to attain equilibrium in the community and soil pools.
         gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc="1765",
-                              save=False, nutri_cycle=False, reset_community=True,
-                              kill_and_reset=True, verbose=verb)
-        # Glacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=190.0,
-                              save=False, nutri_cycle=False, reset_community=True, env_filter=True, verbose=verb)
+                              save=False, nutri_cycle=False, reset_community=True, verbose=verb)
+        # # Glacial cycle
+        # gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=3, fixed_co2_atm_conc=190.0,
+        #                       save=False, nutri_cycle=False, reset_community=True, env_filter=True, verbose=verb)
         # Interglacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc=280.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=6, fixed_co2_atm_conc=280.0,
                               save=False, nutri_cycle=False, reset_community=True, env_filter=True, verbose=verb)
-        # Glacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=3, fixed_co2_atm_conc=190.0,
-                              save=False, nutri_cycle=True, reset_community=False, env_filter=False, verbose=verb)
+        # # Glacial cycle
+        # gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc=190.0,
+        #                       save=False, nutri_cycle=True, reset_community=False, env_filter=False, verbose=verb)
         # Interglacial cycle
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=3, fixed_co2_atm_conc=280.0,
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=2, fixed_co2_atm_conc="1850",
                               save=False, nutri_cycle=True, reset_community=False, env_filter=False, verbose=verb)
         # Final phase without resetting the community and without adding new PLS
-        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=3, fixed_co2_atm_conc="1901",
+        gridcell.run_gridcell("1801-01-01", "1900-12-31", spinup=1, fixed_co2_atm_conc="1901",
                               save=False, nutri_cycle=True)
 
         return gridcell

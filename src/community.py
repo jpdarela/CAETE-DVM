@@ -123,8 +123,8 @@ class community:
 
 
     def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
-        self.bm_lr0 = 0.5
-        self.bm_w0 = 0.5
+        self.bm_lr0 = 0.08
+        self.bm_w0 = 0.7
 
         self._reset(pls_data)
         return None
@@ -237,9 +237,9 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        cleaf[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, None)
-        croot[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, None)
-        cwood[pos] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, None)
+        cleaf[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.01, None)
+        croot[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.01, None)
+        cwood[pos] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.01, None)
         if pls[3] == 0.0:
             cwood[pos] = 0.0
 

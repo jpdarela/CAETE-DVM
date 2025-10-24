@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 
 # Define the path to the CSV file
-file_path = os.path.join(os.path.dirname(__file__), '../outputs/cities_MPI-ESM1-2-HR-ssp585/grd_182-263/metacomunity_biomass_182-263.csv')
+file_path = os.path.join(os.path.dirname(__file__), '../outputs/cities_MPI-ESM1-2-HR_hist/grd_182-263/metacomunity_biomass_182-263.csv')
 
 # Read the CSV file and compute weighted mean
 
@@ -29,7 +29,8 @@ def read_and_compute_weighted_mean():# -> Series | None:
         return None
 
 def read_co2_data():
-    co2_file_path = os.path.join(os.path.dirname(__file__), '../input/co2/ssp585_CO2_annual_2015-2100.csv')
+    # co2_file_path = os.path.join(os.path.dirname(__file__), '../input/co2/ssp585_CO2_annual_2015-2100.csv')
+    co2_file_path = os.path.join(os.path.dirname(__file__), '../input/co2/historical_CO2_annual_1765-2024.csv')
     try:
         co2_data = pd.read_csv(co2_file_path)
         return co2_data

@@ -24,7 +24,6 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 from pathlib import Path
 from typing import Union, Literal, List
 import tomllib
-from pprint import pformat
 
 import os
 import sys
@@ -274,6 +273,8 @@ class MetacommConfig(BaseModel):
         description="Number of traits in a PLS"
     )
 
+
+
 class CrsConfig(BaseModel):
     """Coordinate Reference System configuration."""
     res: float = Field(0.5, gt=0, description="Grid resolution")
@@ -325,12 +326,12 @@ class Config(BaseModel):
         use_enum_values=True  # Use enum values in serialization
     )
     
-    # Day of year for first day of each month
+    # Day of year for pls sampling
     doy_months: List[int] = Field(
         [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335],
         min_length=0,
-        max_length=12,
-        description="Day of year for first day of each month."
+        max_length=36,
+        description="Day of year for pls sampling"
     )
 
     output: OutputConfig = Field(

@@ -1,16 +1,16 @@
 title = "Parameters to create Plant life strategies"
 author = "João Paulo Darela Filho"
 
-dirichlet_alpha = 3.0
+dirichlet_alpha = 1.0
 
 [parameters]
 grass_pls_fraction = 0.07
-minimum_allocation = 0.07
-base_npp = 0.01 # Base NPP in kg C m-2 yr-1
+minimum_allocation = 0.0
+base_npp = 0.005 # Base NPP in kg C m-2 yr-1
 
 [residence_time]
-woody = {leaf_min = 0.083333, leaf_max = 8.33, wood_min = 0.20, wood_max = 100.0, root_min = 0.083333, root_max = 2.0}
-grass = {leaf_min = 0.083333, leaf_max = 1.0, wood_min = 0.0, wood_max = 0.0, root_min = 0.083333, root_max = 1.0}
+woody = {leaf_min = 0.083333, leaf_max = 8.33, wood_min = 0.08338, wood_max = 100.0, root_min = 0.083333, root_max = 8.33}
+grass = {leaf_min = 0.083333, leaf_max = 1.0, wood_min = 0.0, wood_max = 0.0, root_min = 0.083333, root_max = 2.0}
 
 [nutrient_carbon_ratios]
 leaf_n2c = {min = 0.005, max = 0.05}
@@ -19,5 +19,5 @@ leaf_p2c = {min = 0.0005, max = 0.005}
 wood_n2c = {min = 0.0013, max = 0.0058}
 wood_p2c = {min = 1.9e-5, max =  0.000668}
 
-root_n2c = {min = 0.0021186440677966106, max = 0.09283766326970001}
-root_p2c = {min = 6.762295081967214e-5, max = 0.06929919782697837}
+root_n2c = {min = 0.0021186440677966106, max = 0.05}#max = 0.09283766326970001}
+root_p2c = {min = 6.762295081967214e-5,  max = 0.005}#max = 0.06929919782697837}

@@ -65,17 +65,11 @@ if __name__ == "__main__":
 
     # Name of the region. This name will be used to create the output folder.
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
-    # region_name = "test"
-    # # Input files. The model will look for the input files in these folders.
-    #obsclim_files = "../input/20CRv3-ERA5/obsclim/"
+    
+    counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
     obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
-
-    #spinclim_files = "../input/20CRv3-ERA5/spinclim/"
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
-
-
     gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
-    # gridlist = read_csv("../grd/gridlist_test.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -90,7 +84,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-60000.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-120000.csv"))
 
     # Create the region using the spinup climate files
     print("creating region with spinclim files")
@@ -127,7 +121,7 @@ if __name__ == "__main__":
     print(f"Transclim run: {(e3 - s3) // 60 :.0f}:{(e3 - s3) % 60:.0f}")
 
     # # # Save state after spinup.
-    # # This state file can be used to restart the model from this point.
+    # # This state file can be used to restart the model from this point. 1900-12-31
     state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
     print(f"\n\nSaving state file as {state_file}")
     s4 = time.perf_counter()
@@ -179,7 +173,7 @@ if __name__ == "__main__":
     
     # Generate outputs
     from dataframes import output_manager
-    output_manager.pan_amazon_outputs()
+    output_manager.pan_amazon_output()
 
     if PROFILING:
         # Disable profiling
