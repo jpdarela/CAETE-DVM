@@ -31,6 +31,10 @@ src/temp_*
 
 outputs/
 
+.Rhistory
+*.Rproj
+.Rproj.user
+
 input/20CRv3-ERA5/*.nc
 input/20CRv3-ERA5/*clim
 input/20CRv3-ERA5/*clim_random

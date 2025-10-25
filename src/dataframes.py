@@ -101,10 +101,9 @@ def get_var_metadata(var):
             'c_cost': ['Carbon costs of Nutrients Uptake', 'g m-2 day-1', 'cc', '4'],
             'wsoil': ['Soil_water_content-wsoil', 'kg m-2', 'mrso', '2'],
             'f5': ['empirical factor of GPP penalization by soil water', '1', 'f5', '6'],
-            'evapm': ['Evapotranspiration', 'kg m-2 day-1', 'et', '2'],
+            'evapm': ['Evapotranspiration', 'kg m-2 day-1', 'et', '3'],
             'emaxm': ['Potent. evapotrasnpiration', 'kg m-2 day-1', 'etpot', '2'],
             'runom': ['Total_runoff', 'kg m-2 day-1', 'mrro', '4'],
-            'aresp': ['Autothrophic respiration', 'kg m-2 year-1', 'ar'],
             'photo': ['Gross primary productivity', 'kg m-2 year-1', 'gpp', '3'],
             'npp': ['Net primary productivity = GPP - AR', 'kg m-2 year-1', 'npp', '3'],
             'rnpp': ['Net primary productivity, C allocation', 'g m-2 day-1', 'npp', '3'],
@@ -657,6 +656,7 @@ class gridded_data:
         """
         time = data["time"]
         coords = data["coord"]
+        NODATA = 1.0e20
 
         assert "data" in data.keys(), "The input dict must contain the 'data' keyword"
         assert isinstance(data["data"][0], dict), "Data must be a dict"
@@ -680,12 +680,16 @@ class gridded_data:
         for i, var in enumerate(variables):
             dim = arrays_dict[0][var].shape
             if len(dim) == 1:
-                arrays.append(np.ma.masked_all(shape=(dim[0], region_height, region_width), dtype=dtypes[i]))
+                new_array = np.ma.masked_all(shape=(dim[0], region_height, region_width), dtype=dtypes[i])
+                # np.ma.set_fill_value(new_array, NODATA)
+                arrays.append(new_array)
                 array_names.append(var)
             elif len(dim) == 2:
                 ny, nx = dim
                 for k in range(ny):
-                    arrays.append(np.ma.masked_all(shape=(nx, region_height, region_width), dtype=dtypes[i]))
+                    new_array = np.ma.masked_all(shape=(nx, region_height, region_width), dtype=dtypes[i])
+                    # np.ma.set_fill_value(new_array, NODATA)
+                    arrays.append(new_array)
                     array_names.append(f"{var}_{k + 1}")
 
         # Fill the arrays - adjust coordinates to be relative to the region
@@ -950,14 +954,19 @@ class gridded_data:
         for i, var in enumerate(vnames):
             print(f"Variable {i+1}/{len(vnames)}: {var}", end=' -> ')
             var_data = arr[i]
+
+
             fill_value = var_data.get_fill_value()
             var_dtype = var_data.dtype
 
-            # Update mask to include NaN values
+            # # Update mask to include NaN values
             var_data.mask = np.logical_or(var_data.mask, np.isnan(var_data))
 
             # Ensure all masked values use the correct fill_value
             np.ma.set_fill_value(var_data, fill_value)
+            # large_value_mask = var_data.data > 1e17
+            # var_data.data[large_value_mask] = fill_value
+            # var_data.mask = np.logical_or(var_data.mask, large_value_mask)
 
             nc_filename = output_path / f"{var}_{run_name}_{time[0].strftime('%Y%m%d')}_{time[-1].strftime('%Y%m%d')}.nc"
             print(nc_filename)
@@ -1986,7 +1995,9 @@ class output_manager:
 
         reg:region = worker.load_state_zstd(output_file)
 
-        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+        # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+
+        variables_to_read = "evapm"
 
         a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (10,13)))
 

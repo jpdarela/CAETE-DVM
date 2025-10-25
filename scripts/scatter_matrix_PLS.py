@@ -40,10 +40,9 @@ def create_colored_scatter_matrix(data, columns, plant_type_col, title, filename
     colors = [color_map[pt] for pt in data[plant_type_col]]
     
     # Create scatter matrix
-    fig = plt.figure(figsize=(12, 10))
     pd.plotting.scatter_matrix(data[columns], 
                               c=colors, 
-                              figsize=(12, 10), 
+                              figsize=(16, 14), 
                               alpha=0.6,
                               s=20)
     
@@ -56,8 +55,8 @@ def create_colored_scatter_matrix(data, columns, plant_type_col, title, filename
     
     plt.suptitle(title, fontsize=14, y=0.95)
     plt.tight_layout()
-    plt.savefig(filename, dpi=300, bbox_inches='tight')
-    plt.show()
+    plt.savefig(filename, dpi=300)
+
 
 # Read and process data
 table_cturn = pd.read_csv("../src/PLS_MAIN/pls_attrs-5000.csv")

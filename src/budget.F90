@@ -19,7 +19,7 @@
 
 module budget
    use types
-   use global_par, only: ntraits, npls
+   use global_par, only: ntraits, npls, omp_nthreads
    use alloc
    use productivity
    implicit none
