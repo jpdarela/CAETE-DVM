@@ -108,8 +108,8 @@ for day in range(days):
     out = ncycle.step(orgN=12.0, demand_n=0.1, drainage=0.1, n_dep=0.0005)
     for k in results:
         results[k].append(out[k])
-    if day % 30 == 0 or day == 0:
-        print(f"Day {day}: {out}")
+    # if day % 30 == 0 or day == 0:
+        # print(f"Day {day}: {out}")
 
 t = np.arange(1, days + 1)
 fig, axs = plt.subplots(3, 2, figsize=(12, 10))

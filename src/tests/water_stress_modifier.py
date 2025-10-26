@@ -2,15 +2,16 @@ import sys
 import numpy as np
 import os
 
-sys.path.append("../")
-from parameters import fortran_runtime
+sys.path.append("../src/")
+import config
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
-if sys.platform == "win32":
-    try:
-        os.add_dll_directory(fortran_runtime)
-    except:
-        raise ImportError("Could not add the DLL directory to the PATH")
+sys.path.append("../")
+sys.path.append(current_dir)
+# if sys.platform == "win32":
+#     try:
+#         os.add_dll_directory(fortran_runtime)
+#     except:
+#         raise ImportError("Could not add the DLL directory to the PATH")
 
 from caete_module import photo as model
 
@@ -21,22 +22,26 @@ def test_water_stress_modifier():
     # Common arguments: soil moisture, wilting point, field capacity, etc.
 
     # Example input values (adjust as needed)
-    soil_moisture = np.linspace(0, 1, 11)  # 0.0 to 1.0 in steps of 0.1
+    # soil_moisture =
+    soil_moisture = np.linspace(1, 500, 100)  # 0.0 to 1.0 in steps of 0.1
     wilting_point = 0.1
     field_capacity = 0.4
 
     print("Soil Moisture | Water Stress Modifier")
+    f5 = []
     for sm in soil_moisture:
         # Try common function names; adjust as needed
         try:
             # If your function is named differently, change here
-            wsm = model.water_stress_modifier(sm, wilting_point, field_capacity)
+            wsm = model.water_stress_modifier(sm, 0.0007, 180, 3, 500)
+            f5.append(wsm)
         except AttributeError:
             try:
                 wsm = model.wstress_mod(sm, wilting_point, field_capacity)
             except AttributeError:
                 raise RuntimeError("Could not find water stress modifier function in caete_module.")
         print(f"{sm:.2f}          | {wsm:.4f}")
+    return soil_moisture, f5
 
 if __name__ == "__main__":
-    test_water_stress_modifier()
+    xy=test_water_stress_modifier()
