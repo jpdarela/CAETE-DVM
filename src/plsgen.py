@@ -97,21 +97,23 @@ def check_viability(trait_values, awood=False):
         wood: bool  Is this a woody PLS?
         output:bool True if the PLS is viable, False otherwise
     """
+    #TODO: the model is sensitive to the biomass values used to set (initial condition) the PLSs in the community class. 
+    # The leaf pool is particularly sensitive. We need to find a better way to set these initial biomass values.
     data = get_parameters()
-    lim = gp.cmin  # Minimum carbon (kg m⁻²)
+    lim = gp.cmin * 10  # 1e-3 Minimum carbon (kg m⁻²)
     npp = data["parameters"]["base_npp"]
 
     if awood:
         rtur = np.array(model.spinup3(npp, trait_values))
-        if rtur[0] < lim or rtur[1] < lim or rtur[2] < lim:
-            return False
-        return True
+        if rtur[0] >= lim and rtur[1] >= lim and rtur[2] >= lim:
+            return True
+        return False
 
     # Grasses
     rtur = np.array(model.spinup3(npp, trait_values))
-    if rtur[0] < lim or rtur[1] < lim:
-        return False
-    return True
+    if rtur[0] >= lim and rtur[1] >= lim:
+        return True
+    return False
 
 def assert_data_size(dsize):
     """ Assertion of datasets sizes """
