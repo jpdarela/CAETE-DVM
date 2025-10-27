@@ -30,10 +30,10 @@ module global_par
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)
    real(r_4),parameter,public :: rcmax = 2000.0                  ! ResistÊncia estomática máxima s/m
    real(r_4),parameter,public :: rcmin = 100.0                   ! ResistÊncia estomática mínima s/m
-   real(r_8),parameter,public :: cmin = 0.5D-3                   ! Minimum to survive kg m-2
+   real(r_8),parameter,public :: cmin = 0.1D-4                   ! Minimum to survive kg m-2
    ! real(r_4),parameter,public :: wmax = 500.0                  ! Maximum water soil capacity (Kg m-2)
 
-   real(r_8),parameter,public :: csru = 0.5D0                    ! Root attribute
+   real(r_8),parameter,public :: csru = 0.3D0                    ! Root attribute
    real(r_8),parameter,public :: alfm = 1.391D0                  ! Root attribute
    real(r_8),parameter,public :: gm = 3.0D0                      ! mm s-1
    real(r_8),parameter,public :: sapwood = 0.05D0                ! Fraction of wood tissues that are sapwood

@@ -55,7 +55,7 @@ from caete import str_or_path, get_co2_concentration, read_bz2_file, print_progr
 from input_handler import input_handler
 
 class region:
-    """Region class containing the gridcells for a given region
+    """Region class containing the gridcells for a given region and methods to manage them.
     """
 
 
@@ -68,7 +68,7 @@ class region:
                 co2:Union[str, Path],
                 pls_table:NDArray,
                 gridlist:Optional[pl.DataFrame] = None)->None:
-        """_summary_
+        """ Region class constructor
 
         Args:
             name (str): this will be the name of the region and the name of the output folder

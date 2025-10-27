@@ -113,7 +113,7 @@ module water
       real(r_4),intent(in) :: temp                 !Temperature (°C)
       real(r_4),intent(in) :: ur                   !Relative humidity (0-1)
       real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
-      real(r_4),intent(in) :: rc2                  !Canopy resistence (s/m)
+      real(r_4),intent(in) :: rc2                  !Canopy resistance (s/m)
 
       real(r_4) :: evap                            !Evapotranspiration (mm/day)
       !     Parameters
@@ -226,13 +226,13 @@ module water
       t2 = temp - 1.
       es1 = wtt(t1)
       es2 = wtt(t2)
-      delta = (es1-es2)/(t1-t2) !mb/oC
+      delta = (es1-es2)/(t1-t2) !mb/oC (slope of the vpc)
 
       !     Delta_e
       !     -------
 
       es = wtt (temp)
-      delta_e = es*(1. - ur)    !mb
+      delta_e = es*(1. - ur)    !mb VPD
 
       !     Stomatal Conductance
       !     --------------------
@@ -242,8 +242,8 @@ module water
       !     Gama and gama2
       !     --------------
 
-      gama  = spre*(1004.)/(2.45e6*0.622)
-      gama2 = gama*(ra + rc)/ra
+      gama  = spre*(1004.)/(2.45e6*0.622) ! Psycometric constant
+      gama2 = gama*(ra + rc)/ra ! Incorporate resistance
 
       !     Potencial evapotranspiration (without stress)
       !     ---------------------------------------------

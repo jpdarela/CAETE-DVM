@@ -508,8 +508,19 @@ class soil:
         Args:
             data (Dict): _description_
         """
-        self.sp_csoil = np.zeros(shape=(4,), order='F') + 0.001
-        self.sp_snc = np.zeros(shape=(8,), order='F') + 0.0001
+        self.sp_csoil = np.zeros(shape=(4,), order='F')
+        self.sp_snc = np.zeros(shape=(8,), order='F')
+        # N:C ratios (first 4 elements) - typically ranges from 0.1 to 0.05
+        self.sp_snc[0] = 0.1    # Fast N pool (litter) ~C:N = 10:1
+        self.sp_snc[1] = 0.08   # Intermediate N pool ~C:N = 12.5:1
+        self.sp_snc[2] = 0.067  # Slow N pool ~C:N = 15:1 
+        self.sp_snc[3] = 0.05   # Passive N pool ~C:N = 20:1
+
+        # P:C ratios (last 4 elements) - typically ranges from 0.008 to 0.002
+        self.sp_snc[4] = 0.008  # Fast P pool (litter) ~C:P = 125:1
+        self.sp_snc[5] = 0.005  # Intermediate P pool ~C:P = 200:1
+        self.sp_snc[6] = 0.003  # Slow P pool ~C:P = 333:1
+        self.sp_snc[7] = 0.002  # Passive P pool ~C:P = 500:1
         self.input_nut = []
         self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
         for nut in self.nutlist:
@@ -520,8 +531,8 @@ class soil:
         self.sp_available_n = 0.2 * self.soil_dict['tn']
         self.sp_in_n = 0.4 * self.soil_dict['tn']
         self.sp_so_n = 0.2 * self.soil_dict['tn']
-        self.sp_so_p = self.soil_dict['tp'] - sum(self.input_nut[2:])
-        self.sp_in_p = self.soil_dict['ip'] * 1.0
+        self.sp_so_p = self.soil_dict['tp'] - (self.soil_dict['ap'] + self.soil_dict['op'] + self.soil_dict['ip'])
+        self.sp_in_p = self.soil_dict['ip'] * 1.0 
         self.sp_organic_n = 0.1 * self.soil_dict['tn']
         self.sp_sorganic_n = 0.1 * self.soil_dict['tn']
         self.sp_organic_p = 0.5 * self.soil_dict['op']
@@ -1480,7 +1491,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 self.nupt[:, step] = masked_mean_2D(self.metacomm.mask, nupt)
                 self.pupt[:, step] = masked_mean_2D(self.metacomm.mask, pupt)
                 
-                # TODO: Isolate this if branch into a separate method/class
+                # TODO: Soil nutrient dynamics. Isolate this if branch into a separate method/class/function
                 # Critical part of soil nutrient dynamics and availability for plants
                 # IF NUTRICYCLE
                 if nutri_cycle:
@@ -1505,7 +1516,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                     # Inorganic P
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
-                    # Sorbed P is the occluded P in the inorganic pool
+                    # sp_so_p is the occluded P in the inorganic pool
                     self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
                     # THe fraction that can be dissolved in soil solution (passive uptake uses transpiration 
                     # to estimate the amount of P that can be taken up from the soil solution pool)
@@ -1743,14 +1754,17 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             assert period[0] < period[1], "Period must be a tuple with the start and end spins" # type: ignore
             spins = range(period[0], period[1] + 1) # type: ignore
             files = tuple((f"spin{x}" for x in spins))
+        
         elif period is None:
             files:Tuple[str, ...] = tuple(path_str for path_str in self.outputs.values())
             spins = range(1, len(files) + 1)
+        
         else:
             raise ValueError("Invalid period argument, period must be an integer, tuple of integers, or None")
 
         with ThreadPoolExecutor(max_workers=len(files)) as executor:
             futures = [executor.submit(self.__fetch_spin_data, spin) for spin in spins]
+        
         return futures
 
 

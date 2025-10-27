@@ -102,7 +102,7 @@ def get_var_metadata(var):
             'wsoil': ['Soil_water_content-wsoil', 'kg m-2', 'mrso', '2'],
             'f5': ['empirical factor of GPP penalization by soil water', '1', 'f5', '6'],
             'evapm': ['Evapotranspiration', 'kg m-2 day-1', 'et', '3'],
-            'emaxm': ['Potent. evapotrasnpiration', 'kg m-2 day-1', 'etpot', '2'],
+            'emaxm': ['Potentential evapotranspiration', 'kg m-2 day-1', 'etpot', '2'],
             'runom': ['Total_runoff', 'kg m-2 day-1', 'mrro', '4'],
             'photo': ['Gross primary productivity', 'kg m-2 year-1', 'gpp', '3'],
             'npp': ['Net primary productivity = GPP - AR', 'kg m-2 year-1', 'npp', '3'],
@@ -1995,9 +1995,9 @@ class output_manager:
 
         reg:region = worker.load_state_zstd(output_file)
 
-        # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
 
-        variables_to_read = "evapm"
+        # variables_to_read = "evapm"
 
         a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (10,13)))
 
