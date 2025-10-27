@@ -27,7 +27,7 @@
 import os
 import sys
 import argparse
-from math import ceil, floor
+from math import ceil
 import csv
 import tomllib as tl
 from pathlib import Path
@@ -100,7 +100,7 @@ def check_viability(trait_values, awood=False):
     #TODO: the model is sensitive to the biomass values used to set (initial condition) the PLSs in the community class. 
     # The leaf pool is particularly sensitive. We need to find a better way to set these initial biomass values.
     data = get_parameters()
-    lim = gp.cmin * 10  # 1e-3 Minimum carbon (kg m⁻²)
+    lim = gp.cmin  # 1e-3 Minimum carbon (kg m⁻²)
     npp = data["parameters"]["base_npp"]
 
     if awood:

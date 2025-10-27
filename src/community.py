@@ -78,9 +78,9 @@ class community:
         self.vp_croot: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
         self.vp_cwood: NDArray[np.float64] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, self.npls).astype(np.float64)
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
-        self.vp_sto[0,:] = np.random.uniform(0.0, 0.01, self.npls)
-        self.vp_sto[1,:] = np.random.uniform(0.0, 0.0001, self.npls)
-        self.vp_sto[2,:] = np.random.uniform(0.0, 0.00001, self.npls)
+        self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
+        self.vp_sto[1,:] = np.random.uniform(0.0, 0.01, self.npls)
+        self.vp_sto[2,:] = np.random.uniform(0.0, 0.001, self.npls)
 
         # Set the wood biomass of the plants that are not woody to zero
         self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
@@ -124,7 +124,7 @@ class community:
 
     def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
         #TODO: Move thhese initial biomass values to a configuration file (caete.toml) or parameterize a better way to set them.
-        # These initial values are important to set the initial conditions of the PLSs in the community.
+        # These initial values set the initial conditions of the PLSs in the community.
         # They can have a significant impact on the model behavior during the first years of simulation.
         # They should be set based on empirical data or sensitivity analysis.
 
@@ -139,7 +139,7 @@ class community:
         # Call spinup3 with the allocation and residence time values of each PLS in the community to get a more realistic initial biomass.
         # Or Add cleaf cwood and croot initial biomass values based on the output of spinup3 in a lookup table during community initialization.
         # Use the table at runtime to set the initial biomass values of the PLSs in the community.
-        self.bm_lr0 = 0.125 # Initial leaf and root biomass (kg m⁻²)
+        self.bm_lr0 = 0.2 # Initial leaf and root biomass (kg m⁻²)
         self.bm_w0 = 0.250 # Initial wood biomass (kg m⁻²)
 
         self._reset(pls_data)

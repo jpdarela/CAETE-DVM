@@ -508,7 +508,12 @@ class soil:
         Args:
             data (Dict): _description_
         """
-        self.sp_csoil = np.zeros(shape=(4,), order='F') + 300.0  # g C m-2
+        self.sp_csoil = np.zeros(shape=(4,), order='F') # g C m-2
+        self.sp_csoil[0] = 28.155628 # Fast pool (litter)
+        self.sp_csoil[1] = 315.31412 # Intermediate pool
+        self.sp_csoil[2] = 771.3141  # Slow pool
+        self.sp_csoil[3] = 6690.124  # Passive pool
+
         self.sp_snc = np.zeros(shape=(8,), order='F')
         # N:C ratios (first 4 elements) - typically ranges from 0.1 to 0.05
         self.sp_snc[0] = 0.1    # Fast N pool (litter) ~C:N = 10:1
@@ -521,6 +526,7 @@ class soil:
         self.sp_snc[5] = 0.005  # Intermediate P pool ~C:P = 200:1
         self.sp_snc[6] = 0.003  # Slow P pool ~C:P = 333:1
         self.sp_snc[7] = 0.002  # Passive P pool ~C:P = 500:1
+
         self.input_nut = []
         self.nutlist = ['tn', 'tp', 'ap', 'ip', 'op']
         for nut in self.nutlist:
@@ -1016,7 +1022,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
             start_date (str): Start date for model execution in "yyyymmdd" format.
             end_date (str): End date for model execution in "yyyymmdd" format.
             spinup (int, optional): Number of repetitions in spinup. Set to 0 for a transient run between start_date and end_date. Default is 0.
-            fixed_co2_atm_conc (Optional[Union[str, int, float]]): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels from a predefined file. Default is None.
+            fixed_co2_atm_conc (Optional[Union[str, int, float]]): Fixed atmospheric CO2 concentration. If None, use dynamic CO2 levels from a predefined file. If a string with a year (e.g., "1987") That year's value in the provided file will be used. Use a float to set a fixed level in ppm. Default is None.
             save (bool, optional): Whether to save the results. Default is True.
             nutri_cycle (bool, optional): Whether to include nutrient cycling in the model. Default is True.
             afex (bool, optional): Whether to apply nutrient addition to soil in the model. Default is False.
@@ -1035,7 +1041,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
               kill_and_reset  arguments are not mutually exclusive. You can use both as true at the same time.
             - The env_filter argument is used to define if new unique PLSs from the main table will be
               seed in the communities that have free slots (PLSs that are not producing). At the moment, the
-              interval for the env_filter to add a new PLS to the community is set to  ~30 days.
+              interval for the env_filter to add a new PLS to the community is set to  ~15 days.
               If env filter argument is true, then the reset_community argument will have a very low
               probability to trigger a reset because the communities will be constantly filled with new PLS.
               Nonetheless, the reset_community argument will still be able to trigger a reset if the community loses all PLSs.

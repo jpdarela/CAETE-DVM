@@ -40,7 +40,7 @@ module global_par
    real(r_4),parameter,public :: ks = 0.25                       ! P Sorption
    integer(i_4),parameter,public :: npls = 1000                ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: ntraits = 17          ! Number of traits for each PLS
-   integer(i_4),parameter,public :: omp_nthreads = 1 ! Number of OpenMP threads
+   integer(i_4),parameter,public :: omp_nthreads = 2 ! Number of OpenMP threads
 
 end module global_par
 

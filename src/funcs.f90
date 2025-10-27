@@ -717,7 +717,7 @@ contains
       plim = alpha_p + nu_p * dlog10(pdw)  + (sigma_p * dlog10(sla))
 
       vcmax_dw = min(10**nlim, 10**plim) ! log10(vcmax_dw) in µmol g⁻¹ s⁻¹
-      vcmaxd = vcmax_dw * lma
+      vcmaxd = vcmax_dw * lma * 1.0D-6 ! Multiply by LMA to have area values and 1d-6 to mol m-2 s-1
 
    end function vcmax_a1
 

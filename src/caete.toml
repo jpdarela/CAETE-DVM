@@ -1,9 +1,9 @@
 # Configuration file for CAETE model
 
 # Fisrt day of each month (Only used to set env. filtering)
-# doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
 # doy_months = [32, 91, 152, 213, 274, 335]
-doy_months = [1, 16, 31, 46, 61, 76, 91, 106, 121, 136, 151, 166, 181, 196, 211, 226, 241, 256, 271, 286, 301, 316, 331, 346, 361]
+# doy_months = [1, 16, 31, 46, 61, 76, 91, 106, 121, 136, 151, 166, 181, 196, 211, 226, 241, 256, 271, 286, 301, 316, 331, 346, 361]
 
 [output]
 output_dir = "../outputs" # Directory where the output files will be saved.
@@ -56,9 +56,10 @@ max_processes = 16 # e.g., for sombrero
 # If you are running a number of gridcells smaller than the number of logical cores,
 # you can set max_processes to the number of gridcells and omp_num_threads to >1.
 # This will make the model run a little faster.
-omp_num_threads = 1
+omp_num_threads = 2
 
 # Conversion factors used to convert units of input data
+# Used only to convert .pbz2 input files using the legacy input method (netCDF input is already converted).
 [conversion_factors_isimip]
 tas = 273.15  # K to degC (sub) [input(K) to model(°C)]
 pr = 86400.0  # kg m-2 s-1 to mm day-1 (mult) [input(kg m-2 s-1) to model(mm day-1)]

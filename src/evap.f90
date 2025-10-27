@@ -143,8 +143,8 @@ module water
       if ((delta_e.lt.(1./h5)-0.5).or.(rc2.lt.rcmax)) then
          !     Gama and gama2
          !     --------------
-         gama  = spre*(1004.)/(2.45e6*0.622)
-         gama2 = gama*(ra + rc2)/ra
+         gama  = spre*(1004.)/(2.45e6*0.622) ! Psycometric constant
+         gama2 = gama*(ra + rc2)/ra ! Incorporate resistance
 
          !     Real evapotranspiration
          !     -----------------------
