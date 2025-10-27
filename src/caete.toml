@@ -30,7 +30,7 @@ input_type = "netcdf" # Type of input data. The options are "netcdf" & "bz2"
 
 # The netcdf files used are chunked in an optimal way for reading.
 # The sequential reading is faster than the parallel reading. Only have effect if input_type is "netcdf" and input_method is "ih".
-mp = true # Use MPI for reading netcdf files.
+mp = false # Use MPI for reading netcdf files.
 
 
 # Configs for parallelization
@@ -40,7 +40,7 @@ nprocs= 128 # Threads used to post process the output. Not used by the model its
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of available logical cores.
 # max_processes = 16 # Number of python processes used to run the model.
-max_processes = 16 # e.g., for sombrero
+max_processes = 128 # e.g., for sombrero
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect.

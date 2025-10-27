@@ -1582,9 +1582,9 @@ if __name__ == "__main__":
 
     # Creating input handlers for NetCDF files
     cfg.input_handler.input_type = 'netcdf'  # Set input type to netcdf for testing
-    cfg.input_handler.mp = True 
+    cfg.input_handler.mp = False 
     nc_file_path = '../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc'
-    gridlist_path = '../grd/gridlist_dry.csv'
+    gridlist_path = '../grd/gridlist_pa.csv'
     gridlist_df = pl.read_csv(gridlist_path)
     t2 = time.perf_counter()
     ih2 = input_handler(nc_file_path, gridlist_df, batch_size=cfg.multiprocessing.max_processes) 
