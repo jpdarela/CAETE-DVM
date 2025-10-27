@@ -508,7 +508,7 @@ class soil:
         Args:
             data (Dict): _description_
         """
-        self.sp_csoil = np.zeros(shape=(4,), order='F')
+        self.sp_csoil = np.zeros(shape=(4,), order='F') + 300.0  # g C m-2
         self.sp_snc = np.zeros(shape=(8,), order='F')
         # N:C ratios (first 4 elements) - typically ranges from 0.1 to 0.05
         self.sp_snc[0] = 0.1    # Fast N pool (litter) ~C:N = 10:1
