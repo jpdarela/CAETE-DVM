@@ -1,7 +1,7 @@
 library(ggtern)
 
 
-data <- read.csv("./src/PLS_MAIN/pls_attrs-5000.csv", header = TRUE)
+data <- read.csv("./src/PLS_MAIN/pls_attrs-500.csv", header = TRUE)
 
 # Create the plot
 ggtern(data, aes(x = aleaf, y = awood, z = aroot)) +
@@ -16,7 +16,7 @@ ggtern(data, aes(x = aleaf, y = awood, z = aroot)) +
 
 # Save the plot
 ggsave(
-  filename = "./src/PLS_MAIN/ternary_plot_allocation1000.png",
+  filename = "./src/PLS_MAIN/ternary_plot_allocation500.png",
   width = 8,
   height = 6,
   dpi = 300
