@@ -320,8 +320,8 @@ class state_zero:
 
         Args:
 
-        y: int | float -> index in the 0 axis [zero-indexed] or geographic latitude coordinate [degrees North]
-        x: int | float -> index in the 1 axis [zero-indexed] or geographic longitude coordinate [degrees East]
+        y: int | float -> index in the 0 axis [zero-indexed] or geographic latitude coordinate [degrees North]  89.75 (center of northernmost cell) to -89.75 (center of southernmost cell)
+        x: int | float -> index in the 1 axis [zero-indexed] or geographic longitude coordinate [degrees East] -179.75 (centrer of westernmost cell) to 179.75 (center of easternmost cell) to 179.75 
         output_dump_folder: str -> a string with a valid name to an output folder. This will be used to create a
         child directory in the output location for the region that contains this gridcell.
 
@@ -329,6 +329,15 @@ class state_zero:
 
         assert type(y) == type(x), "x and y must be of the same type"
 
+
+        # TODO: Check grid data from the caete.toml file
+        # Center of eg. easternmost cell is -179.75 degrees East at 0.5 degree resolution
+        # Center of westernmost cell is 179.75 degrees East ...
+        # the same for the latitudes
+        # Center of northernmost cell is 89.75 degrees North
+        # Center of southernmost cell is -89.75 degrees North
+        # TODO: Test the model in a different config (res_x, res_y)
+        # defined in the config file (caete.toml)
 
         # Configuration data
         self.config:Config = fetch_config()
@@ -394,7 +403,7 @@ class climate:
     def __init__(self):
         """_summary_
         """
-        self.pr: NDArray[np.float32]
+        self.pr: NDArray[np.float32] # precipitation kg m-2 s-1
         self.ps: NDArray[np.float32]
         self.rsds: NDArray[np.float32]
         self.tas: NDArray[np.float32]
@@ -1246,7 +1255,8 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     community.ls = community.vp_lsid.size
                     # # Restore or seed PLS TODO: Error here need to be fixed ()
                     if env_filter and (community.ls < self.metacomm.comm_npls) and not save:
-                        if julian_day in self.doy_months:
+                        # if julian_day in self.doy_months:
+                        if julian_day % 2 == 0:  # For testing purposes we add a new PLS every 2 days
                             new_id, new_PLS = community.get_unique_pls(self.get_from_main_array)
                             community.seed_pls(new_id, new_PLS, daily_output.cleafavg_pft,
                                                daily_output.cfrootavg_pft, daily_output.cawoodavg_pft)
@@ -1469,8 +1479,10 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                 # <- Out of the community loop
                 self.nupt[:, step] = masked_mean_2D(self.metacomm.mask, nupt)
                 self.pupt[:, step] = masked_mean_2D(self.metacomm.mask, pupt)
-                # IF NUTRICYCLE:
-
+                
+                # TODO: Isolate this if branch into a separate method/class
+                # Critical part of soil nutrient dynamics and availability for plants
+                # IF NUTRICYCLE
                 if nutri_cycle:
                     # UPDATE ORGANIC POOLS
                     self.sp_organic_n = self.sp_snc[:2].sum()
@@ -1493,8 +1505,12 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                     # Inorganic P
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
+                    # Sorbed P is the occluded P in the inorganic pool
                     self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
+                    # THe fraction that can be dissolved in soil solution (passive uptake uses transpiration 
+                    # to estimate the amount of P that can be taken up from the soil solution pool)
                     self.sp_available_p = soil_dec.solution_p_equil(self.sp_in_p)
+                    # Inorganic pool that is adsorbed
                     self.sp_in_p -= (self.sp_so_p + self.sp_available_p)
 
                     self.sp_so_p -= self.pupt[1, step]
