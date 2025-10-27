@@ -75,7 +75,7 @@ objects = $(src_obj) $(basename $(MAIN_SUB)).obj
 all: caete_lib
 
 # Targets
-caete_lib: clean_py clean_so modules so
+caete_lib: clean_py clean_so modules so_parallel
 
 # python setup
 setup:

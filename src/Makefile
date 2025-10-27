@@ -82,7 +82,7 @@ objects = $(src_obj) $(basename $(MAIN_SUB)).o debug_caete.o
 # Targets
 .PHONY: setup interface so so_parallel clean clean_so modules
 
-all: ext_mod_legacy
+all: ext_mod_meson_parallel #ext_mod_legacy
 
 # Python setup
 setup:

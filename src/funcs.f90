@@ -300,8 +300,8 @@ contains
       rcmin_aux = real(rcmin, kind=r_8)
       ep_aux = real(ep, kind=r_8)
       ! if (rc .gt. rcmax) rc_aux = real(rcmax, r_8)
-
-      pt = csru*(cfroot*1000.0D0) * wa  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
+      ! CRSU: Specific root water uptake mm/g/day (g(C) of fine roots) = 0.5
+      pt = csru*(cfroot * 1000) * wa  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
       gc = max((1.0D0/rc_aux * 1000.0D0), gm) ! Canopy conductance (mm s-1)-> s m-1 to mm s-1
 
       !d =(ep * alfm) / (1. + gm/gc) !(based in Gerten et al. 2004)
@@ -316,7 +316,7 @@ contains
 
       f5 = f5_64
       if (f5 .lt. wa) f5 = wa
-      if (f5 .gt. 0.8D0) f5 = 1.0D0
+      if (f5 .gt. 0.999D0) f5 = 1.0D0
    end function water_stress_modifier
 
    ! =============================================================

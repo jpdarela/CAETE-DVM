@@ -123,8 +123,24 @@ class community:
 
 
     def __init__(self, pls_data:Tuple[NDArray[np.int32], NDArray[np.float32]]) -> None:
-        self.bm_lr0 = 0.08
-        self.bm_w0 = 0.7
+        #TODO: Move thhese initial biomass values to a configuration file (caete.toml) or parameterize a better way to set them.
+        # These initial values are important to set the initial conditions of the PLSs in the community.
+        # They can have a significant impact on the model behavior during the first years of simulation.
+        # They should be set based on empirical data or sensitivity analysis.
+
+        # These values are currently hardcoded in that way to allow the model to run without crashing during the first years.
+        # We set leaves and roots initial biomass to 0.125 kg m⁻² and wood to 0.01 kg m⁻².
+
+        # This enable the PLSs to have enough biomass to survive the first years of simulation.
+        # However, this is not a realistic representation of the initial biomass of PLSs in a community.
+        #
+
+        # One idea: use spinup3 and a NPP value based on remote sensing data (NTSG) to set these initial biomass values.
+        # Call spinup3 with the allocation and residence time values of each PLS in the community to get a more realistic initial biomass.
+        # Or Add cleaf cwood and croot initial biomass values based on the output of spinup3 in a lookup table during community initialization.
+        # Use the table at runtime to set the initial biomass values of the PLSs in the community.
+        self.bm_lr0 = 0.125 # Initial leaf and root biomass (kg m⁻²)
+        self.bm_w0 = 0.250 # Initial wood biomass (kg m⁻²)
 
         self._reset(pls_data)
         return None
