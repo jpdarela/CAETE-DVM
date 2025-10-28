@@ -1212,14 +1212,17 @@ class table_data:
             executor.map(worker, range(periods))
 
     @staticmethod
-    def write_metacomm_output(grd:grd_mt) -> None:
+    def write_metacomm_output(grd:grd_mt, year=None) -> None:
         """Writes the metacommunity biomass output (C in vegetation and abundance) to a csv file
 
         Args:
             grd (grd_mt): gridcell object
         """
         all_df_list = []
-        years = grd._get_years()
+        if year is None:
+            years = grd._get_years() # get all available years
+        else:
+            years = get_args(year)
 
         # Process each year in parallel when there are multiple years
         if len(years) > 1:
@@ -1637,7 +1640,8 @@ class table_data:
     @staticmethod
     def consolidate_annual_biomass(experiment_dir: Path,
                                  output_format: str = "parquet",
-                                 chunk_size: int = 100) -> None:
+                                 chunk_size: int = 100,
+                                 name_aux:str = "") -> None:
         """
         Consolidate annual biomass CSV outputs from multiple gridcells into a single file.
 
@@ -1690,7 +1694,7 @@ class table_data:
         final_df = final_df.sort(["grid_y", "grid_x", "year", "pls_id"])
 
         # Write consolidated file based on format
-        output_file = experiment_dir / f"{experiment_dir.name}_biomass"
+        output_file = experiment_dir.parent / f"{experiment_dir.name}_biomass{name_aux}"
 
         if output_format.lower() == "parquet":
             final_df.write_parquet(
@@ -1813,7 +1817,8 @@ class table_data:
     @staticmethod
     def consolidate_all_annual_outputs(experiment_dir: Path,
                                      output_types: List[str] = None,
-                                     output_format: str = "parquet") -> None:
+                                     output_format: str = "parquet",
+                                     name_aux:str = "") -> None:
         """
         Consolidate all types of annual outputs (biomass, productivity, etc.)
 
@@ -1829,7 +1834,7 @@ class table_data:
 
         for output_type in output_types:
             if output_type == 'biomass':
-                table_data.consolidate_annual_biomass(experiment_dir, output_format)
+                table_data.consolidate_annual_biomass(experiment_dir, output_format, name_aux=name_aux)
             else:
                 print(f"Output type '{output_type}' not yet implemented")
 
@@ -1900,6 +1905,7 @@ class output_manager:
 
         return None
 
+
     @staticmethod
     def test_output():
         """
@@ -1954,20 +1960,24 @@ class output_manager:
 
 
     @staticmethod
-    def table_ouptuts(filename:Union[Path, str]):
+    def table_outputs(filename:Union[Path, str], year:None | int = None):
         """
         Process biomass files and output them as a parquet table.
 
         Args:
             result (Union[Path, str]): Path to the state file with model results.
+        
+        Raises:
+            ValueError: If the year argument is neither an integer nor None.
         """
         results = get_args(filename)
         available_cpus = os.cpu_count() or 4
 
+        #TODO: Add checks for year validity and file existence
 
         # Define grid cell processing function
-        def process_gridcell(grd):
-            table_data.write_metacomm_output(grd)
+        def process_gridcell(grd, year_arg=None):
+            table_data.write_metacomm_output(grd, year_arg)
 
         # Use joblib's Parallel for efficient multiprocessing
         # Set verbose=1 to show progress during longer operations
@@ -1975,19 +1985,25 @@ class output_manager:
         for fname in results:
             reg = worker.load_state_zstd(fname)
             nprocs = min(len(reg), available_cpus)
-            Parallel(n_jobs=nprocs, verbose=1, prefer="processes")(delayed(process_gridcell)(grd) for grd in reg)
+            if year is not None:
+                Parallel(n_jobs=nprocs, verbose=1, prefer="processes")(delayed(process_gridcell)(grd, year) for grd in reg)
+            elif year is None:
+                Parallel(n_jobs=nprocs, verbose=1, prefer="processes")(delayed(process_gridcell)(grd) for grd in reg)
+            else:
+                raise ValueError("Year argument must be an integer or None")
 
             res = reg.output_path
             table_data.consolidate_all_annual_outputs(
                 res,
                 output_types=['biomass'],
-                output_format="parquet"
+                output_format="parquet",
+                name_aux=f"_{year}" if year is not None else ""
             )
 
 
     @staticmethod
     def pan_amazon_output():
-
+        """Example function to process Pan-Amazon historical output and save as netCDF daily files and parquet biomass files (per year)."""
         from time import perf_counter
         start = perf_counter()
 
@@ -1997,8 +2013,6 @@ class output_manager:
 
         variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
 
-        # variables_to_read = "evapm"
-
         a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
 
         gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
@@ -2006,8 +2020,9 @@ class output_manager:
         end = perf_counter()
 
         print(f"Elapsed time: {end - start:.2f} seconds")
-        output_manager.table_ouptuts(output_file)
-
+        output_manager.table_outputs(output_file, year=1901)
+        output_manager.table_outputs(output_file, year=1961)
+        output_manager.table_outputs(output_file, year=2024)
 
 
 

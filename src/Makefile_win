@@ -205,3 +205,6 @@ clean_outputs:
 
 clean_all: clean clean_outputs
 	@echo "All files cleaned."
+
+clean_dfs:
+	del /s /q .\\__pycache__\\dataframes.cpython*.pyc

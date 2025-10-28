@@ -15,13 +15,13 @@ output_dir = "../outputs" # Directory where the output files will be saved.
 # State files based on Intermediate files with cleaned gridcells
 # are used to manage post processing of output data
 [compression]
-# Compressor to use for joblib.dump.
+# Compressor to use for joblib.dump. For model output serialization and saving intermediate (state) files.
 # Note that "lz4" requires the lz4 package installed (Faster/low compression).
 compressor = "lz4" # compressors for joblib.dump ["lzma", "bz2", "lz4", "gzip", "xz"]
 rate = 2 # compression rate for joblib.dump. 0-9, where 0 is no compression and 9 is maximum compression.
 
-[input_handler]
 # Input handler configuration. Used to read input data.
+[input_handler]
 
 # "ih" uses the new input handler which is more flexible and allows for different input formats
 input_method = "ih" # "legacy" or "ih". Legacy uses the old method of passing filepaths to the gridcells. If legacy is defined, input_type has no effect.
@@ -35,15 +35,15 @@ mp = false # Use MPI for reading netcdf files.
 
 # Configs for parallelization
 [multiprocessing]
-nprocs= 128 # Threads used to post process the output. Not used by the model itself.
+nprocs= 64 # Threads/processes used to post process the **Output**. Not used by the model itself.
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of available logical cores.
 # max_processes = 16 # Number of python processes used to run the model.
-max_processes = 128 # e.g., for sombrero
+max_processes = 16 # e.g., for sombrero
 
 # Number of threads used by OpenMP which each python process can use.
-# Must compile the extension module with OpenMP support to have any effect.
+# Must compile the extension module with OpenMP support to have any effect. See the Makefile(_win)
 # If you set this to 0, OpenMP will not be used. Even if the extension
 # module is compiled with OpenMP support.
 # If the value is more than 1, make sure that max_processes is not larger
