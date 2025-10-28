@@ -1999,7 +1999,7 @@ class output_manager:
 
         # variables_to_read = "evapm"
 
-        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (10,13)))
+        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
 
         gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
 
