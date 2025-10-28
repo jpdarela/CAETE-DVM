@@ -54,6 +54,9 @@ from caete import get_args, grd_mt, str_or_path
 from region import region
 from worker import worker
 
+import multiprocessing as mp
+mp.set_start_method('spawn', force=True)
+
 #TODO: implement region configuration
 if pan_amazon_region is None:
     raise ValueError("pan_amazon_region is not defined or imported correctly")
@@ -1715,6 +1718,80 @@ class table_data:
 
         print(f"Successfully consolidated {len(biomass_files)} biomass files into {output_file}.{output_format.lower()}")
 
+
+    @staticmethod
+    def consolidate_annual_biomass_new(experiment_dir: Path,
+                                output_format: str = "parquet",
+                                chunk_size: int = 100,
+                                name_aux: str = "") -> None:
+        """
+        Consolidate annual biomass CSV outputs from multiple gridcells into a single file.
+        """
+        print(f"Consolidating annual biomass outputs in {experiment_dir.name}")
+
+        # Find all biomass CSV files
+        biomass_files = list(experiment_dir.rglob("metacomunity_biomass_*.csv"))
+
+        if not biomass_files:
+            print(f"No biomass CSV files found in {experiment_dir}")
+            return
+
+        print(f"Found {len(biomass_files)} biomass CSV files")
+
+        # Use ThreadPoolExecutor instead of ProcessPoolExecutor to avoid conflicts
+        # Limit workers to prevent resource exhaustion
+        max_workers = min(os.cpu_count() or 4, 16)  # Cap at 16 workers
+        all_dfs = []
+
+        for i in range(0, len(biomass_files), chunk_size):
+            chunk = biomass_files[i:i + chunk_size]
+            print(f"Processing chunk {i//chunk_size + 1}/{(len(biomass_files)-1)//chunk_size + 1}")
+
+            # Use ThreadPoolExecutor instead of ProcessPoolExecutor
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                chunk_dfs = list(executor.map(table_data._process_single_biomass_csv, chunk))
+
+            # Filter out empty DataFrames and concatenate
+            valid_dfs = [df for df in chunk_dfs if len(df) > 0]
+            if valid_dfs:
+                chunk_combined = pl.concat(valid_dfs, rechunk=True)
+                all_dfs.append(chunk_combined)
+
+            # Force garbage collection between chunks
+            gc.collect()
+
+        # Rest of the method remains the same...
+        if not all_dfs:
+            print(f"No valid biomass data found in {experiment_dir}")
+            return
+
+        print("Combining all chunks...")
+        final_df = pl.concat(all_dfs, rechunk=True)
+        final_df = final_df.sort(["grid_y", "grid_x", "year", "pls_id"])
+
+        output_file = experiment_dir.parent / f"{experiment_dir.name}_biomass{name_aux}"
+
+        if output_format.lower() == "parquet":
+            final_df.write_parquet(
+                output_file.with_suffix('.parquet'),
+                compression="snappy"
+            )
+        elif output_format.lower() == "feather":
+            final_df.write_ipc(
+                output_file.with_suffix('.feather'),
+                compression="zstd"
+            )
+        elif output_format.lower() == "hdf5":
+            table_data._write_hdf5_biomass_consolidated(final_df, output_file.with_suffix('.h5'))
+        elif output_format.lower() == "csv":
+            final_df.write_csv(output_file.with_suffix('.csv'))
+        else:
+            raise ValueError(f"Unsupported output format: {output_format}")
+
+        print(f"Successfully consolidated {len(biomass_files)} biomass files into {output_file}.{output_format.lower()}")
+
+
+
     @staticmethod
     def _extract_coordinates_from_biomass_filename(csv_path: Path) -> Tuple[int, int]:
         """Extract y, x coordinates from metacomunity_biomass_y-x.csv filename"""
@@ -1834,7 +1911,7 @@ class table_data:
 
         for output_type in output_types:
             if output_type == 'biomass':
-                table_data.consolidate_annual_biomass(experiment_dir, output_format, name_aux=name_aux)
+                table_data.consolidate_annual_biomass_new(experiment_dir, output_format, name_aux=name_aux)
             else:
                 print(f"Output type '{output_type}' not yet implemented")
 
@@ -1971,7 +2048,7 @@ class output_manager:
             ValueError: If the year argument is neither an integer nor None.
         """
         results = get_args(filename)
-        available_cpus = os.cpu_count() or 4
+        available_cpus = 64
 
         #TODO: Add checks for year validity and file existence
 
@@ -1986,9 +2063,44 @@ class output_manager:
             reg = worker.load_state_zstd(fname)
             nprocs = min(len(reg), available_cpus)
             if year is not None:
-                Parallel(n_jobs=nprocs, verbose=1, prefer="processes")(delayed(process_gridcell)(grd, year) for grd in reg)
+                Parallel(n_jobs=nprocs, verbose=3, prefer="threads")(delayed(process_gridcell)(grd, year) for grd in reg)
             elif year is None:
-                Parallel(n_jobs=nprocs, verbose=1, prefer="processes")(delayed(process_gridcell)(grd) for grd in reg)
+                Parallel(n_jobs=nprocs, verbose=3, prefer="threads")(delayed(process_gridcell)(grd) for grd in reg)
+            else:
+                raise ValueError("Year argument must be an integer or None")
+
+            res = reg.output_path
+            table_data.consolidate_all_annual_outputs(
+                res,
+                output_types=['biomass'],
+                output_format="parquet",
+                name_aux=f"_{year}" if year is not None else ""
+            )
+
+
+    @staticmethod
+    def table_outputs_new(filename: Union[Path, str], year: None | int = None):
+        """Process biomass files and output them as a parquet table."""
+        results = get_args(filename)
+        # Limit workers to prevent conflicts
+        available_cpus = min(os.cpu_count() or 4, 32)  # Cap at 32 workers
+
+        def process_gridcell(grd, year_arg=None):
+            table_data.write_metacomm_output(grd, year_arg)
+
+        for fname in results:
+            reg = worker.load_state_zstd(fname)
+            nprocs = min(len(reg), available_cpus)
+            
+            if year is not None:
+                # Use "threads" backend instead of "processes" for better compatibility
+                Parallel(n_jobs=nprocs, verbose=1, prefer="threads")(
+                    delayed(process_gridcell)(grd, year) for grd in reg
+                )
+            elif year is None:
+                Parallel(n_jobs=nprocs, verbose=1, prefer="threads")(
+                    delayed(process_gridcell)(grd) for grd in reg
+                )
             else:
                 raise ValueError("Year argument must be an integer or None")
 
@@ -2004,25 +2116,23 @@ class output_manager:
     @staticmethod
     def pan_amazon_output():
         """Example function to process Pan-Amazon historical output and save as netCDF daily files and parquet biomass files (per year)."""
-        from time import perf_counter
-        start = perf_counter()
 
         output_file = Path("../outputs/pan_amazon_hist_result.psz")
 
-        reg:region = worker.load_state_zstd(output_file)
+        ## NetCDF daily outputs
+        # from time import perf_counter
+        # start = perf_counter()
+        # reg:region = worker.load_state_zstd(output_file)
+        # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+        # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
+        # gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
+        # end = perf_counter()
+        # print(f"Elapsed time: {end - start:.2f} seconds")
 
-        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
-
-        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
-
-        gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
-
-        end = perf_counter()
-
-        print(f"Elapsed time: {end - start:.2f} seconds")
-        output_manager.table_outputs(output_file, year=1901)
-        output_manager.table_outputs(output_file, year=1961)
-        output_manager.table_outputs(output_file, year=2024)
+        # Biomass outputs per year
+        output_manager.table_outputs_new(output_file, year=1901)
+        output_manager.table_outputs_new(output_file, year=1961)
+        output_manager.table_outputs_new(output_file, year=2021)
 
 
 

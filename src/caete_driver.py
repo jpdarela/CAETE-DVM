@@ -174,8 +174,8 @@ if __name__ == "__main__":
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
     
     # # Generate outputs
-    # from dataframes import output_manager
-    # output_manager.pan_amazon_output()
+    from dataframes import output_manager
+    output_manager.pan_amazon_output()
 
     if PROFILING:
         # Disable profiling
