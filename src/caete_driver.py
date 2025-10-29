@@ -101,7 +101,8 @@ if __name__ == "__main__":
                gridlist=gridlist)
 
     # print(f"Region {region_name} created with {len(r.gridcells)} gridcells")
-    # r.set_gridcells()
+    # r.set_gridcells() # This function create all gridcell objects in the region.
+    # Not recommended to use it, as the region class already does that. 
 
     # Spinup and run
     print("START soil pools spinup")
@@ -111,13 +112,12 @@ if __name__ == "__main__":
     print(f"Spinup time: {(e1 - s1) // 60 :.0f}:{(e1 - s1) % 60:.0f}")
 
     # # # # Change input source to transclim files 1851-1900
-    # ## tr4anclim is identical to the last 50 years of the spinclim files. No need to update the input source.
+    # ## transclim is identical to the last 50 years of the spinclim files. No need to update the input source.
     # print("\nSTART transclim run, updating input")
     # s2 = time.perf_counter()
     # r.update_input(transclim_files)
     # e2 = time.perf_counter()
     # print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
-
 
     # Run the model
     s3 = time.perf_counter()
