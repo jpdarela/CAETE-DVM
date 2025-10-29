@@ -2118,21 +2118,26 @@ class output_manager:
 
         output_file = Path("../outputs/pan_amazon_hist_result.psz")
 
+        # Select the variables to be written
+        # Daily outputs
+        variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
+        
+        # Years to output biomass tables
+        years_to_output = [1901, 1961, 1971, 1981, 1991, 2001, 2011, 2021, 2024]
+
+
         ## NetCDF daily outputs
-        # from time import perf_counter
-        # start = perf_counter()
-        # reg:region = worker.load_state_zstd(output_file)
-        # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
-        # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
-        # gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
-        # end = perf_counter()
-        # print(f"Elapsed time: {end - start:.2f} seconds")
+        from time import perf_counter
+        start = perf_counter()
+        reg:region = worker.load_state_zstd(output_file)
+        a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
+        gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
+        end = perf_counter()
+        print(f"Elapsed time: {end - start:.2f} seconds")
 
         # Biomass outputs per year
-        output_manager.table_outputs_new(output_file, year=1901)
-        output_manager.table_outputs_new(output_file, year=1961)
-        output_manager.table_outputs_new(output_file, year=2021)
-
+        for year in years_to_output:
+            ouptut_manager.table_outputs(output_file, year=year)
 
 
 if __name__ == "__main__":

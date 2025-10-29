@@ -86,7 +86,8 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-200000.csv"))
+    PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-200000.csv")   
+    main_table = pls_table.read_pls_table(PLS_TABLE_PATH)
 
     # Create the region using the spinup climate files
     print("creating region with spinclim files")
@@ -176,6 +177,12 @@ if __name__ == "__main__":
     # # Generate outputs
     from dataframes import output_manager
     output_manager.pan_amazon_output()
+    
+    # Copy the PLS table used in the run to the output folder
+    from shutil import copy2
+    output_folder = Path(f"../outputs")
+    copy2(PLS_TABLE_PATH, output_folder / PLS_TABLE_PATH.name)
+
 
     if PROFILING:
         # Disable profiling
