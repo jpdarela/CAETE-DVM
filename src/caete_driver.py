@@ -86,7 +86,9 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-200000.csv")   
+    PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-200000.csv")
+    assert PLS_TABLE_PATH.exists(), f"PLS table not found at {PLS_TABLE_PATH.resolve()}"
+     
     main_table = pls_table.read_pls_table(PLS_TABLE_PATH)
 
     # Create the region using the spinup climate files

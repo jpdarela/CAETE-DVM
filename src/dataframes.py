@@ -2114,9 +2114,11 @@ class output_manager:
 
     @staticmethod
     def pan_amazon_output():
-        """Example function to process Pan-Amazon historical output and save as netCDF daily files and parquet biomass files (per year)."""
-
+        """Function to process Pan-Amazon historical output and save as netCDF daily files and parquet biomass files (per year)."""
+        
+        # Load region result file
         output_file = Path("../outputs/pan_amazon_hist_result.psz")
+        reg:region = worker.load_state_zstd(output_file)
 
         # Select the variables to be written
         # Daily outputs
@@ -2125,11 +2127,9 @@ class output_manager:
         # Years to output biomass tables
         years_to_output = [1901, 1961, 1971, 1981, 1991, 2001, 2011, 2021, 2024]
 
-
         ## NetCDF daily outputs
         from time import perf_counter
         start = perf_counter()
-        reg:region = worker.load_state_zstd(output_file)
         a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, (3,5)))
         gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
         end = perf_counter()
@@ -2137,7 +2137,7 @@ class output_manager:
 
         # Biomass outputs per year
         for year in years_to_output:
-            ouptut_manager.table_outputs(output_file, year=year)
+            output_manager.table_outputs_new(output_file, year=year)
 
 
 if __name__ == "__main__":
