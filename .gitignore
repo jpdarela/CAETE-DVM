@@ -33,6 +33,7 @@ outputs/
 
 .Rhistory
 *.Rproj
+*.Rdata
 .Rproj.user
 
 input/20CRv3-ERA5/*.nc
