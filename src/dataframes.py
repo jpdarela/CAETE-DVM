@@ -175,7 +175,6 @@ def write_metadata_to_csv(variable_names:Tuple[str,...], output_path:Path | str)
     for var_name, values in metadata.items():
         data.append([var_name] + values)
 
-    # Use orient="row" to avoid the warning
     df = pl.DataFrame(data, schema=["variable_name"] + header, orient="row")
     df.write_csv(str_or_path(output_path) / "output_metadata.csv")
     return df
@@ -715,6 +714,8 @@ class gridded_data:
 
         return arrays, time, array_names
 
+    ## TODO Annual gridded data ------> The creation of masked arrays for annual data is
+    # not mature (to be saved in netCDF files). We only output annual biomass data in table format for now.
 
     @staticmethod
     def create_annual_masked_arrays(data: dict, data_type: str = "biomass"):
@@ -912,11 +913,11 @@ class gridded_data:
             # gridded_data.save_annual_netcdf(arrays, years_array, array_names, output_path, file_name)
 
         return arrays, years_array, array_names
-
+    # End of annual gridded data methods ------
 
     @staticmethod
     def save_netcdf_daily(data: List, run_name="caete_run"):
-        """Saves gridded data to a NetCDF file.
+        """Saves gridded data to a NetCDF file. Only implemented for daily data so far.
 
         Args:
             data (List): List of masked arrays to save.
@@ -948,10 +949,8 @@ class gridded_data:
         # FIXED: Longitude INCREASES from west to east (negative to positive for Americas)
         lons = np.arange(lon_west, lon_east, config.crs.res, dtype=np.float32)
 
-
         # CRS information
         crs_metadata = pyproj.CRS(config.crs.datum).to_cf()
-
 
         # Loop through variables and save each to its own NetCDF file
         for i, var in enumerate(vnames):
