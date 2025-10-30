@@ -36,6 +36,7 @@ outputs/
 .Rproj.user
 
 input/20CRv3-ERA5/*.nc
+input/20CRv3-ERA5/**raw
 input/20CRv3-ERA5/*clim
 input/20CRv3-ERA5/*clim_random
 input/MPI-ESM1-2-HR/**raw
