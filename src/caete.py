@@ -74,7 +74,7 @@
 #     Right after this soil spinup, it is possible to seed new PLS in the communities while runing the
 #     model. This is useful to simulate the filtering of the gridcell "environment"
 #     along time while adding new PLS to the communities.
-#     Given that our sample space is cursed 17 times (17 traits), these strategies are important do start
+#     Given that our sample space has 17 traits, these strategies are important do start
 #     the model (spin it up) and to keep it running while simulating the filtering of the
 #     gridcell "environment". The grd_mt.run_gridcell method has several parameters to control
 #     the simulation. You can have a look at the method signature and docstring to understand the options.
@@ -101,6 +101,13 @@
 #   The old implementation of the model is in a separate branch in this repositopy: CAETE-DVM-v0.1.
 #   I started to code the new implementation in the master branch while keeping the old implementation along
 #   the way (Working). Several parts of the old implementation were used here.
+#
+# Last but not least:
+#  The model uses a shared library coded in Fortran. This shared library is compiled
+#  using gnu-make (Linux/MacOS) or nmake (Windows). There is a Makefile, for gnu-make, and Makefile_win for nmake.
+# The main subroutine that runs the daily processes is called budget and is in the caete_module module.
+# There are also other modules in the shared library: soil_dec (soil decomposition processes) and water (soil water processes).
+
 # """
 
 import bz2
@@ -1954,7 +1961,7 @@ if __name__ == '__main__':
                     main_table,
                     gridlist)
 
-        # Set gridcell in RAM
+        # Set gridcells in memory
         r.set_gridcells()
 
         gridcell = r[0]

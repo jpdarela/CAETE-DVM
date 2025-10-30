@@ -69,8 +69,9 @@ if __name__ == "__main__":
     counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
     obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
+    gridlist = read_csv("../grd/gridlist_test.csv")
     # gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
-    gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv")
+    # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
     soil_tuple = tsoil, ssoil, hsoil
@@ -85,7 +86,10 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-200000.csv"))
+    PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-200000.csv")
+    assert PLS_TABLE_PATH.exists(), f"PLS table not found at {PLS_TABLE_PATH.resolve()}"
+     
+    main_table = pls_table.read_pls_table(PLS_TABLE_PATH)
 
     # Create the region using the spinup climate files
     print("creating region with spinclim files")
@@ -97,7 +101,8 @@ if __name__ == "__main__":
                gridlist=gridlist)
 
     # print(f"Region {region_name} created with {len(r.gridcells)} gridcells")
-    # r.set_gridcells()
+    # r.set_gridcells() # This function create all gridcell objects in the region.
+    # Not recommended to use it, as the region class already does that. 
 
     # Spinup and run
     print("START soil pools spinup")
@@ -107,13 +112,12 @@ if __name__ == "__main__":
     print(f"Spinup time: {(e1 - s1) // 60 :.0f}:{(e1 - s1) % 60:.0f}")
 
     # # # # Change input source to transclim files 1851-1900
-    # ## tr4anclim is identical to the last 50 years of the spinclim files. No need to update the input source.
+    # ## transclim is identical to the last 50 years of the spinclim files. No need to update the input source.
     # print("\nSTART transclim run, updating input")
     # s2 = time.perf_counter()
     # r.update_input(transclim_files)
     # e2 = time.perf_counter()
     # print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
-
 
     # Run the model
     s3 = time.perf_counter()
@@ -145,7 +149,7 @@ if __name__ == "__main__":
     print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
 
     print("\n\nSTART transient run")
-    run_breaks = fn.create_run_breaks(1901, 2021, 40)
+    run_breaks = fn.create_run_breaks(1901, 2024, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
         r.run_region_starmap(fn.transient_run_brk, period)
@@ -173,8 +177,14 @@ if __name__ == "__main__":
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
     
     # # Generate outputs
-    # from dataframes import output_manager
-    # output_manager.pan_amazon_output()
+    from dataframes import output_manager
+    output_manager.pan_amazon_output()
+    
+    # Copy the PLS table used in the run to the output folder
+    from shutil import copy2
+    output_folder = Path(f"../outputs")
+    copy2(PLS_TABLE_PATH, output_folder / PLS_TABLE_PATH.name)
+
 
     if PROFILING:
         # Disable profiling

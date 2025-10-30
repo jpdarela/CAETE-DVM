@@ -90,8 +90,8 @@ def check_viability(trait_values, awood=False):
 
     """ Check the viability of allocation & residence time combinations.
         Some PLS combinations of allocation coefficients and residence times
-        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) and
-        do not have enough mass of carbon (< 0.001 kg m⁻²) in all CVEG compartments
+        are not 'biomass acumulators' at a given level of NPP (e.g. 0.1 kg m⁻² year⁻¹) and
+        do not have enough mass of carbon (0.001 kg m⁻²) in all CVEG compartments
         input:
         trait_values: np.array(shape=(6,), dtype=f64) allocation and residence time combination (possible PLS)
         wood: bool  Is this a woody PLS?
@@ -125,8 +125,12 @@ def assert_data_size(dsize):
     return diffg, diffw
 
 def allocation_combinations():
-    """ Generate allocation combinations for woody and grass plants based on Dirichlet distribution
-
+    """ Generate allocation combinations for woody and grass plants based on the Dirichlet distribution
+        **
+      * ** *
+    * * ** * * 
+  * * * ** * * *
+* * * * ** * * * *
     Returns:
         _type_: Tuple[np.ndarray, np.ndarray]
     """
@@ -267,7 +271,7 @@ def nutrient_ratios_combinations_reich(NPLS, alloc):
     return N_leaf_g_g, awood_n2c, froot_n2c, P_leaf_g_g, awood_p2c, froot_p2c
 
 def nutrient_ratios_combinations(NPLS, alloc):
-    # # Nitrogen and Phosphorus content in carbon pools
+    # # Nitrogen and Phosphorus content in carbon pools (NO C:N:P restrictions) Do not use it. Kept for reference
     # # C : N : P
 
     # Value for C == 1.0

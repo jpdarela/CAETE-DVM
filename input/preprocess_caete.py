@@ -669,7 +669,7 @@ def main():
     print()
 
     # Climate variables to process
-    climate_vars = ['tas', 'pr', 'ps', 'hurs', 'rsds', 'sfcwind']
+    climate_vars = ['tas', 'pr', 'ps', 'hurs', 'rsds']
     soil_vars = ['tn', 'tp', 'ap', 'ip', 'op']
 
     # Create station coordinates

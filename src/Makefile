@@ -40,27 +40,36 @@ HFLAG = -h
 CFLAG = -c
 OVRTFLAG = --overwrite-signature
 
-# # gfortran compiler - libgomp
-# FC = gfortran
-# OMP_LIB = -lgomp
-# EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+# Compiler and flags. Choose one of the options below. 
 
-# AMD Optimizing C/C++ and Fortran Compilers. We use flang here. Not tested with other versions of flang. 
-# flang compiler uses libomp 
-FC = flang
-OMP_LIB = -lomp
-EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN
+# GNU Fortran compiler with libgomp. Set FC to gfortran and OMP_LIB to -lgomp (Default) 
+# Ext flags for gfortran: EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+
+# gfortran compiler - libgomp
+FC = gfortran
+OMP_LIB = -lgomp
+EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -fsignaling-nans
+
+# # AMD Optimizing C/C++ and Fortran Compilers. Not tested with other versions of flang.
+## Faster in AMD hardware 
+# # flang compiler uses libomp 
+# FC = flang
+# OMP_LIB = -lomp
+# EXT_FLAGS = -fno-unsafe-math-optimizations -frounding-math -DPREPEND_FORTRAN -DNO_APPEND_FORTRAN -DUPPERCASE_FORTRAN
 
 # f2py debugging flag: --debug
 # Add this flag to the f2py command to enable debugging information in the extension module.
 DEBUG = 
 
 
-# gfrotran FLAGS for debugging
+# gfrotran FLAGS for debugging (not used in the extension module build)
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
-# gfrotran FLAGS for f2py
 
+# Choose the main source file for the budget module
+# There is a maintenance problem here, as there are two versions of the budget module:
+# one that uses stack allocation (budget_fixed.F90) and another that uses heap allocation (budget.F90).
+# With time these functions can diverge if not maintained properly. Put both in one module in the future. 
 
 # Use budget_fixed.F90 for stack allocation (faster)
 MAIN_SUB = budget_fixed.F90
@@ -82,7 +91,7 @@ objects = $(src_obj) $(basename $(MAIN_SUB)).o debug_caete.o
 # Targets
 .PHONY: setup interface so so_parallel clean clean_so modules
 
-all: ext_mod_meson #ext_mod_legacy
+all: ext_mod_meson_parallel #ext_mod_legacy
 
 # Python setup
 setup:

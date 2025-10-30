@@ -263,14 +263,10 @@ contains
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================make it parallel=========================
 #ifdef _OPENMP
-      call OMP_SET_NUM_THREADS(omp_nthreads)
-   ! if (nlen .gt. 20) then
-   !    call OMP_SET_NUM_THREADS(4)
-   ! elseif (nlen .gt. 50) then
-   !    call OMP_SET_NUM_THREADS(8)
-   ! else
-   !    call OMP_SET_NUM_THREADS()
-   ! endif
+   call OMP_SET_NUM_THREADS(omp_nthreads)
+   ! Set to 1 thread if nliving < 200 to avoid overhead
+   ! Not benchmarked yet. N of PLS must be optimized
+   if (nliving .lt. 100) call OMP_SET_NUM_THREADS(1)
 #endif
 
       construction = rnpp ! construction (Real NPP) of the plant tissues in the previous day. To calculate growth respiration

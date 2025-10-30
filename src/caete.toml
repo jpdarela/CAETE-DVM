@@ -15,13 +15,13 @@ output_dir = "../outputs" # Directory where the output files will be saved.
 # State files based on Intermediate files with cleaned gridcells
 # are used to manage post processing of output data
 [compression]
-# Compressor to use for joblib.dump.
+# Compressor to use for joblib.dump. For model output serialization and saving intermediate (state) files.
 # Note that "lz4" requires the lz4 package installed (Faster/low compression).
 compressor = "lz4" # compressors for joblib.dump ["lzma", "bz2", "lz4", "gzip", "xz"]
 rate = 2 # compression rate for joblib.dump. 0-9, where 0 is no compression and 9 is maximum compression.
 
-[input_handler]
 # Input handler configuration. Used to read input data.
+[input_handler]
 
 # "ih" uses the new input handler which is more flexible and allows for different input formats
 input_method = "ih" # "legacy" or "ih". Legacy uses the old method of passing filepaths to the gridcells. If legacy is defined, input_type has no effect.
@@ -35,7 +35,8 @@ mp = false # Use MPI for reading netcdf files.
 
 # Configs for parallelization
 [multiprocessing]
-nprocs= 128 # Threads used to post process the output. Not used by the model itself.
+# TODO: Look at where this one is used. I forgot completely. Should be something in dataframes.py
+nprocs= 64 # Threads/processes used to post process the **Output**. Not used by the model itself.
 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of available logical cores.
@@ -43,7 +44,7 @@ nprocs= 128 # Threads used to post process the output. Not used by the model its
 max_processes = 128 # e.g., for sombrero
 
 # Number of threads used by OpenMP which each python process can use.
-# Must compile the extension module with OpenMP support to have any effect.
+# Must compile the extension module with OpenMP support to have any effect. See the Makefile(_win)
 # If you set this to 0, OpenMP will not be used. Even if the extension
 # module is compiled with OpenMP support.
 # If the value is more than 1, make sure that max_processes is not larger
@@ -56,10 +57,12 @@ max_processes = 128 # e.g., for sombrero
 # If you are running a number of gridcells smaller than the number of logical cores,
 # you can set max_processes to the number of gridcells and omp_num_threads to >1.
 # This will make the model run a little faster.
+# Currently this is helping when the batches of gridcells have uneven computational time. 
+# It helps to spend more computational power on the gridcells that take longer to run.  
 omp_num_threads = 2
 
 # Conversion factors used to convert units of input data
-# Used only to convert .pbz2 input files using the legacy input method (netCDF input is already converted).
+# Used only to convert .pbz2 input files when used as input method (netCDF input is already converted).
 [conversion_factors_isimip]
 tas = 273.15  # K to degC (sub) [input(K) to model(°C)]
 pr = 86400.0  # kg m-2 s-1 to mm day-1 (mult) [input(kg m-2 s-1) to model(mm day-1)]
@@ -108,7 +111,7 @@ rsds = 0.198
 # Set to 1 to run the model in single community mode.
 # You shouldn't set this to a value larger than 30 as it will
 # increase the memory usage and the time to run the model.
-n = 1 # Effects only in runtime, recompilatio not needed.
+n = 1 # Effects only in runtime, recompilation not needed.
 
 # Maximum number of PLS to be considered in each community.
 # Very large values CAN cause (>3000) stack overflow errors.

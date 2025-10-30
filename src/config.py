@@ -27,25 +27,30 @@ import tomllib
 
 import os
 import sys
-import tomllib
+import tomllib #TODO: this lib only available in the standard library in python 3.11 and later.
 
 
 """This file contains some parameters that are used in the code.
    There is a class that read parameters stored in a toml file.
    The configurations can be accessed using the fetch_config function."""
 
+# TODO: add handling for gfortran/gcc runtime assistance in windows systems.
+# To do that I installed gfortran using the mingw64 distribution from WinLibs.
+# Add the bin folder (where gcc/gfortran are) to the PATH environment variable.
+# In windows, the fortran-python extension module (.pyd) needs the gfortran 
+# runtime dlls to be in the same folder as the .pyd file.  
+# See the build_caete.bat file for more information.
 
 # Path to the configuration file
 # This is the default path to the caete.toml file.
 config_file = Path(__file__).parent / "caete.toml"
 
-# C:\Program Files (x86)\Intel\oneAPI\compiler\latest\bin\compiler
-
 # Path to the fortran runtime
 # This is used to import the caete_module in windows systems.
 fortran_runtime: Path | None = None
-# IN windows systems, the fortran runtime is needed to import the caete_module.
+# IN windows systems, the fortran runtime (OneAPI) is needed to import the caete_module.
 # Find path to the fortran compiler root, used in windows systems.
+# With gfortran/gcc in windows, you will need to transfer the libraries to the src folder. 
 if sys.platform == "win32":
     ifort_compilers_env = [ "CMPLR_ROOT",
                             "ONEAPI_ROOT",
@@ -94,7 +99,7 @@ if sys.platform == "win32":
 if sys.platform == "win32":
     # Check if the fortran runtime path exists
     if not fortran_runtime.exists():
-        print(f"Path to fortran runtime dll does not exist. Please set the environment variable FC_RUNTIME to the path of the fortran compiler dlls.")
+        print(f"Path to OneAPI fortran runtime dll does not exist. Please set the environment variable FC_RUNTIME to the path of the fortran compiler dlls.")
         print(f"\n HINT: the fortran runtime path is set to a path like:\n {fortran_runtime}.\n Please check if this is correct.")
         sys.exit(1)
 

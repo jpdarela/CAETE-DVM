@@ -61,7 +61,7 @@ ifx.exe - Intel fortran compiler:
 
 #### Python and Python dependencies
 
-[Python 3.11](https://www.python.org/downloads/windows/) and [windows requirements](./src/requirements_311_windows.txt).
+[Python 3.11](https://www.python.org/downloads/windows/) and [python requirements](./src/requirements_3xx_last.txt).
 
 See the [windows Makefile](./src/Makefile_win) for instructions on how to build the python extension module.
 
