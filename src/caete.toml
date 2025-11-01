@@ -57,8 +57,8 @@ max_processes = 128 # e.g., for sombrero
 # If you are running a number of gridcells smaller than the number of logical cores,
 # you can set max_processes to the number of gridcells and omp_num_threads to >1.
 # This will make the model run a little faster.
-# Currently this is helping when the batches of gridcells have uneven computational time. 
-# It helps to spend more computational power on the gridcells that take longer to run.  
+# Currently this is helping when the batches of gridcells have uneven computational time.
+# It helps to spend more computational power on the gridcells that take longer to run.
 omp_num_threads = 2
 
 # Conversion factors used to convert units of input data
@@ -76,7 +76,7 @@ rhs = 0.01  # % to kg kg-1  (mult) [input(%) to model(kg kg-1)]
 
 # Joules per mol photons:
 # The value 218,000 J/mol corresponds to photons at approximately
-# 550 nm, which is near the middle of the PAR spectrum. 
+# 550 nm, which is near the middle of the PAR spectrum.
 # The energy of 1 mol photons in PAR is about 218,000 J (2.18e5 J).
 
 # Fraction of PAR:
@@ -99,7 +99,7 @@ rhs = 0.01  # % to kg kg-1  (mult) [input(%) to model(kg kg-1)]
 # In [5]: 1 * 86400 * 0.48 / 218000
 # Out[5]: 0.19023853211009173
 
-#Using 0.5 as conversion factor. 
+#Using 0.5 as conversion factor.
 # (photons) m⁻² day⁻¹ = (W m⁻²) * 86400 * 0.5 / 218000
 # = (W m⁻²) * 0.198
 rsds = 0.198

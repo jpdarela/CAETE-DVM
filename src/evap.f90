@@ -30,11 +30,11 @@ module water
       ! Buck AL (1981) New Equations for Computing Vapor Pressure and Enhancement Factor.
       !      J. Appl. Meteorol. 20:1527–1532.
 
-      use types, only: r_4
+      use types, only: r_8
       !implicit none
 
-      real(r_4),intent( in) :: t
-      real(r_4) :: es
+      real(r_8),intent( in) :: t
+      real(r_8) :: es
 
       if (t .ge. 0.) then
           es = 6.1121 * exp((18.729-(t/227.5))*(t/(257.87+t))) ! Arden Buck
@@ -62,14 +62,14 @@ module water
       !implicit none
       integer(i_4),parameter :: m = 1095
 
-      real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
-      real(r_4), intent(out) :: tsoil
+      real(r_8),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
+      real(r_8), intent(out) :: tsoil
 
       ! internal vars
 
       integer(i_4) :: n, k
-      real(r_4) :: t0 = 0.0
-      real(r_4) :: t1 = 0.0
+      real(r_8) :: t0 = 0.0
+      real(r_8) :: t1 = 0.0
 
       tsoil = -9999.0
 
@@ -90,11 +90,11 @@ module water
       use global_par, only: h, tau, diffu
       !implicit none
 
-      real(r_4),intent( in) :: temp
-      real(r_4),intent( in) :: t0
-      real(r_4) :: tsoil
+      real(r_8),intent( in) :: temp
+      real(r_8),intent( in) :: t0
+      real(r_8) :: tsoil
 
-      real(r_4) :: t1 = 0.0
+      real(r_8) :: t1 = 0.0
 
       t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp
       tsoil = (t0 + t1)/2.0
@@ -104,22 +104,22 @@ module water
     !=================================================================
 
     function penman (spre,temp,ur,rn,rc2) result(evap)
-      use types, only: r_4
+      use types, only: r_8
       use global_par, only: rcmin, rcmax
       !implicit none
 
 
-      real(r_4),intent(in) :: spre                 !Surface pressure (mbar)
-      real(r_4),intent(in) :: temp                 !Temperature (°C)
-      real(r_4),intent(in) :: ur                   !Relative humidity (0-1)
-      real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
-      real(r_4),intent(in) :: rc2                  !Canopy resistance (s/m)
+      real(r_8),intent(in) :: spre                 !Surface pressure (mbar)
+      real(r_8),intent(in) :: temp                 !Temperature (°C)
+      real(r_8),intent(in) :: ur                   !Relative humidity (0-1)
+      real(r_8),intent(in) :: rn                   !Radiation balance (W/m2)
+      real(r_8),intent(in) :: rc2                  !Canopy resistance (s/m)
 
-      real(r_4) :: evap                            !Evapotranspiration (mm/day)
+      real(r_8) :: evap                            !Evapotranspiration (mm/day)
       !     Parameters
       !     ----------
-      real(r_4) :: ra, h5, t1, t2, es, es1, es2, delta_e, delta
-      real(r_4) :: gama, gama2
+      real(r_8) :: ra, h5, t1, t2, es, es1, es2, delta_e, delta
+      real(r_8) :: gama, gama2
 
 
       ra = rcmin
@@ -152,7 +152,7 @@ module water
          evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
          ! H2O MASS
          evap = evap*(86400./2.45e6) !mm/day
-         evap = amax1(evap,0.)  !Eliminates condensation
+         evap = max(evap,0.)  !Eliminates condensation
       endif
     end function penman
 
@@ -160,11 +160,11 @@ module water
     !=================================================================
 
     function available_energy(temp) result(ae)
-      use types, only: r_4
+      use types, only: r_8
       !implicit none
 
-      real(r_4),intent(in) :: temp
-      real(r_4) :: ae
+      real(r_8),intent(in) :: temp
+      real(r_8) :: ae
 
       ae = 2.895 * temp + 52.326 !from NCEP-NCAR Reanalysis data
     end function  available_energy
@@ -173,11 +173,11 @@ module water
     !=================================================================
 
     function runoff(wa) result(roff)
-      use types, only: r_4
+      use types, only: r_8
       !implicit none
 
-      real(r_4),intent(in) :: wa
-      real(r_4):: roff
+      real(r_8),intent(in) :: wa
+      real(r_8):: roff
 
       !  roff = 38.*((w/wmax)**11.) ! [Eq. 10]
       roff = 11.5*((wa)**6.6) !from NCEP-NCAR Reanalysis data
@@ -187,7 +187,7 @@ module water
     !=================================================================
 
     function evpot2 (spre,temp,ur,rn) result(evap)
-      use types, only: r_4
+      use types, only: r_8
       use global_par, only: rcmin, rcmax
       !implicit none
 
@@ -205,18 +205,18 @@ module water
 
         !     Inputs
 
-      real(r_4),intent(in) :: spre                 !Surface pressure (mb)
-      real(r_4),intent(in) :: temp                 !Temperature (oC)
-      real(r_4),intent(in) :: ur                   !Relative humidity (0-1,dimensionless)
-      real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
+      real(r_8),intent(in) :: spre                 !Surface pressure (mb)
+      real(r_8),intent(in) :: temp                 !Temperature (oC)
+      real(r_8),intent(in) :: ur                   !Relative humidity (0-1,dimensionless)
+      real(r_8),intent(in) :: rn                   !Radiation balance (W/m2)
       !     Output
       !     ------
       !
-      real(r_4) :: evap                 !Evapotranspiration (mm/day)
+      real(r_8) :: evap                 !Evapotranspiration (mm/day)
       !     Parameters
       !     ----------
-      real(r_4) :: ra, t1, t2, es, es1, es2, delta_e, delta
-      real(r_4) :: gama, gama2, rc
+      real(r_8) :: ra, t1, t2, es, es1, es2, delta_e, delta
+      real(r_8) :: gama, gama2, rc
 
       ra = rcmin            !s/m
 
@@ -250,7 +250,7 @@ module water
 
       evap =(delta*rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
       evap = evap*(86400./2.45e6) !mm/day
-      evap = amax1(evap,0.)     !Eliminates condensation
+      evap = max(evap,0.)     !Eliminates condensation
     end function evpot2
 
     !=================================================================

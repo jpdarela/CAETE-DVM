@@ -22,7 +22,7 @@
 module types
    implicit none
    private
-
+   ! tested in gfortran, ifx, and AOCC-flang
    integer,parameter,public :: l_1 = 2  ! standard Logical type
    integer,parameter,public :: i_2 = 2  ! 16 bits integer
    integer,parameter,public :: i_4 = 4  ! 32 bits integer
@@ -40,7 +40,7 @@ end module types
 !    integer,parameter,public :: l_1 = kind(.true.)  ! standard Logical type
 !    integer,parameter,public :: i_2 = int16         ! 16 bits integer
 !    integer,parameter,public :: i_4 = kind(0)       ! 32 bits integer
-!    integer,parameter,public :: r_4 = kind(0.0)     ! 32 bits float
+!    integer,parameter,public :: r_8 = kind(0.0)     ! 32 bits float
 !    integer,parameter,public :: r_8 = kind(0.0D0)   ! 64 bits float
 
 ! end module types

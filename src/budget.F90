@@ -50,15 +50,15 @@ contains
       !     ----------------------------INPUTS-------------------------------
       real(r_8),dimension(ntraits,npls),intent(in) :: dt
       real(r_8),intent(in) :: w1, w2   !Initial (previous month last day) soil moisture storage (mm)
-      ! real(r_4),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
-      ! real(r_4),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
-      real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
-      real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
-      real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
-      real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
-      real(r_4),intent(in) :: rh                   ! Relative humidity
-      real(r_4),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
-      real(r_4),intent(in) :: labile_p             ! solution P O4P  gm-2
+      ! real(r_8),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
+      ! real(r_8),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
+      real(r_8),intent(in) :: ts                   ! Soil temperature (oC)
+      real(r_8),intent(in) :: temp                 ! Surface air temperature (oC)
+      real(r_8),intent(in) :: p0                   ! Surface pressure (mb)
+      real(r_8),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_8),intent(in) :: rh                   ! Relative humidity
+      real(r_8),intent(in) :: mineral_n            ! Solution N NOx/NaOH gm-2
+      real(r_8),intent(in) :: labile_p             ! solution P O4P  gm-2
       real(r_8),intent(in) :: on, sop, op          ! Organic N, isoluble inorganic P, Organic P g m-2
       real(r_8),intent(in) :: catm, wmax_in        ! ATM CO2 concentration ppm
 
@@ -72,7 +72,7 @@ contains
 
 
       !     ----------------------------OUTPUTS------------------------------
-      real(r_4),intent(out) :: epavg          !Maximum evapotranspiration (mm/day)
+      real(r_8),intent(out) :: epavg          !Maximum evapotranspiration (mm/day)
       real(r_8),intent(out) :: evavg          !Actual evapotranspiration Daily average (mm/day)
       real(r_8),intent(out) :: phavg          !Daily photosynthesis (Kg m-2 y-1)
       real(r_8),intent(out) :: aravg          !Daily autotrophic respiration (Kg m-2 y-1)
@@ -119,27 +119,27 @@ contains
 
 
       real(r_8),dimension(npls) :: cl1_pft, cf1_pft, ca1_pft ! Initial carbon pools kg m-2
-      real(r_4) :: soil_temp ! Soil temperature (oC)
-      real(r_4) :: emax ! Maximum evapotranspiration (mm/day)
+      real(r_8) :: soil_temp ! Soil temperature (oC)
+      real(r_8) :: emax ! Maximum evapotranspiration (mm/day)
       real(r_8) :: w ! Soil moisture storage (mm)
       real(r_8),dimension(npls) :: construction ! Allocated NPP
 
       real(r_8),dimension(:),allocatable :: ocp_coeffs ! Occupation coefficients Biomass baseed abundance (Biomas-Ratio hypothesis)
 
-      real(r_4),dimension(:),allocatable :: evap   !Actual evapotranspiration (mm/day)
+      real(r_8),dimension(:),allocatable :: evap   !Actual evapotranspiration (mm/day)
       !c     Carbon Cycle
-      real(r_4),dimension(:),allocatable :: ph     !Canopy gross photosynthesis (kgC/m2/yr)
-      real(r_4),dimension(:),allocatable :: ar     !Autotrophic respiration (kgC/m2/yr)
-      real(r_4),dimension(:),allocatable :: nppa   !Net primary productivity / auxiliar
+      real(r_8),dimension(:),allocatable :: ph     !Canopy gross photosynthesis (kgC/m2/yr)
+      real(r_8),dimension(:),allocatable :: ar     !Autotrophic respiration (kgC/m2/yr)
+      real(r_8),dimension(:),allocatable :: nppa   !Net primary productivity / auxiliar
       real(r_8),dimension(:),allocatable :: laia   !Leaf area index (m2 leaf/m2 area)
-      real(r_4),dimension(:),allocatable :: rc2    !Canopy resistence (s/m)
+      real(r_8),dimension(:),allocatable :: rc2    !Canopy resistence (s/m)
       real(r_8),dimension(:),allocatable :: f5     !Photosynthesis (mol/m2/s)
-      real(r_4),dimension(:),allocatable :: vpd    !Vapor Pressure deficit
-      real(r_4),dimension(:),allocatable :: rm     !maintenance & growth a.resp
-      real(r_4),dimension(:),allocatable :: rg     !maintenance & growth a.resp
-      real(r_4),dimension(:),allocatable :: wue    !Water use efficiency
-      real(r_4),dimension(:),allocatable :: cue    !Carbon use efficiency
-      real(r_4),dimension(:),allocatable :: c_def  !Carbon deficit due to negative NPP - i.e. ph < ar
+      real(r_8),dimension(:),allocatable :: vpd    !Vapor Pressure deficit
+      real(r_8),dimension(:),allocatable :: rm     !maintenance & growth a.resp
+      real(r_8),dimension(:),allocatable :: rg     !maintenance & growth a.resp
+      real(r_8),dimension(:),allocatable :: wue    !Water use efficiency
+      real(r_8),dimension(:),allocatable :: cue    !Carbon use efficiency
+      real(r_8),dimension(:),allocatable :: c_def  !Carbon deficit due to negative NPP - i.e. ph < ar
       real(r_8),dimension(:),allocatable :: cl1_int ! carbon auxiliar allocation
       real(r_8),dimension(:),allocatable :: cf1_int ! carbon auxiliar allocation
       real(r_8),dimension(:),allocatable :: ca1_int ! carbon auxiliar allocation
@@ -356,7 +356,7 @@ contains
                c_def(p) = 0.0D0
             else
                storage_out_bdgt(1, p) = 0.0D0
-               c_def(p) = real(testcdef, kind=r_4)       ! testcdef is zero or positive
+               c_def(p) = real(testcdef, kind=r_8)       ! testcdef is zero or positive
             endif
          endif
          carbon_in_storage = 0.0D0
@@ -397,7 +397,7 @@ contains
          ! Calculate storage GROWTH respiration
          sr = 0.25D0 * growth_stoc ! g m-2
          if(sr .gt. 1.0D2) sr = 0.0D0
-         ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_4) ! Convert g m-2 day-1 in kg m-2 year-1
+         ar(p) = ar(p) + real(((sr + mr_sto) * 0.365242), kind=r_8) ! Convert g m-2 day-1 in kg m-2 year-1
          storage_out_bdgt(1, p) = storage_out_bdgt(1, p) - sr
          ! print *, "STO in: ", storage_out_bdgt(:,p)
          ! print *, "STO out: ", day_storage(:,p)

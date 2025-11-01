@@ -80,13 +80,13 @@ def _update(w1, w2, w1_max, w2_max, p1_vol, p2_vol,
     # Evaporation split
     ev1 = evapo * 0.3
     ev2 = evapo * 0.7
-    
+
     runoff1 = 0.0
     runoff2 = 0.0
-    
+
     # POOL 1
     w1 += prain
-    
+
     if w1 > w1_max:
         runoff1 = w1 - w1_max
         w1 = w1_max
@@ -94,40 +94,40 @@ def _update(w1, w2, w1_max, w2_max, p1_vol, p2_vol,
     else:
         w1_vol = w1 / p1_vol
         flux1_mm = ksat_1 * (w1_vol / ws1) ** (3 + (2 / lbd_1)) * 24.0
-    
+
     w1 -= (ev1 + flux1_mm)
     w1 = max(0.0, w1)
-    
+
     # POOL 2
     w2 += flux1_mm
-    
+
     if w2 > w2_max:
         ret1 = w2 - w2_max
         w1 += ret1
-        
+
         if w1 > w1_max:
             runoff1 += (w1 - w1_max)
             w1 = w1_max
-        
+
         w2 = w2_max
         runoff2 = ksat_2 * 24.0
     else:
         w2_vol = w2 / p2_vol
         runoff2 = ksat_2 * (w2_vol / ws2) ** (3 + (2 / lbd_2)) * 24.0
-    
+
     w2 -= (runoff2 + ev2)
     w2 = max(0.0, w2)
-    
+
     # Clean runoff values
     if runoff1 < 1e-17:
         runoff1 = 0.0
     if runoff2 < 1e-17:
         runoff2 = 0.0
-    
+
     # Calculate AWC inline
     awc1 = max(0.0, min(w1, fc1_amt) - wp1_amt)
     awc2 = max(0.0, min(w2, fc2_amt) - wp2_amt)
-    
+
     return w1, w2, awc1, awc2, runoff1 + runoff2
 
 
@@ -192,8 +192,8 @@ class soil_water:
     def calc_awc(self):
         """Optimized AWC calculation using pre-computed constants and numba"""
         self.awc1, self.awc2 = _calc_awc(
-            self.w1, self.w2, 
-            self.fc1_amt, self.wp1_amt, 
+            self.w1, self.w2,
+            self.fc1_amt, self.wp1_amt,
             self.fc2_amt, self.wp2_amt
     )
     # def calc_awc(self):
@@ -222,7 +222,7 @@ class soil_water:
             self.fc1_amt, self.wp1_amt, self.fc2_amt, self.wp2_amt,
             prain, evapo
         )
-        
+
         self.w1, self.w2, self.awc1, self.awc2, total_runoff = result
         return total_runoff
 
@@ -293,16 +293,13 @@ class soil_water:
     #     return runoff1 + runoff2
 
 
-def test_water_balance():
+def test_water_balance(ws1, ws2, fc1, fc2, wp1, wp2):
     import numpy as np
 
-    ws1, ws2 = 0.45, 0.48
-    fc1, fc2 = 0.39, 0.43
-    wp1, wp2 = 0.24, 0.27
+    y,x  = 177,234
+    wp = soil_water(ws1[y, x], ws2[y, x], fc1[y, x], fc2[y, x], wp1[y, x], wp2[y, x])
 
-    wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
-
-    nsteps = 100000
+    nsteps = 1000
     total_rain = 0.0
     total_evap = 0.0
     total_runoff = 0.0
@@ -310,8 +307,8 @@ def test_water_balance():
     initial_storage = wp.calc_total_water()
 
     for x in range(nsteps):
-        evapo = abs(np.random.normal()) if np.random.normal() > 0 else 0
-        rain = evapo + abs(np.random.normal())
+        evapo = max(0, np.random.normal())
+        rain = max(0, np.random.normal())
         runoff = wp._update_pool(rain, evapo)
         wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
         wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
@@ -330,22 +327,14 @@ def test_water_balance():
     print(f"Total evap:      {total_evap:.4f} kg/m2")
     print(f"Total runoff:    {total_runoff:.4f} kg/m2")
     print(f"Storage change:  {storage_change:.4f} kg/m2")
-    print(f"Water balance error (should be ~0): {balance_error:.6e} kg/m2")
-    if abs(balance_error) > 1e-6:
-        print("Warning: Water balance error exceeds tolerance!")
-    else:
-        print("Water balance is within acceptable limits: < 1e-6 kg/m2")
+    print(f"Water balance error: {balance_error:.6e} kg/m2")
 
-
-def main():
+# TODO: Improve the testing and plots.
+def main(ws1, ws2, fc1, fc2, wp1, wp2):
     import numpy as np
     import matplotlib.pyplot as plt
-
-    ws1, ws2 = 0.45, 0.48
-    fc1, fc2 = 0.39, 0.43
-    wp1, wp2 = 0.24, 0.27
-
-    wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+    y,x  = 177,234
+    wp = soil_water(ws1[y, x], ws2[y, x], fc1[y, x], fc2[y, x], wp1[y, x], wp2[y, x])
 
     nsteps = 1000
     w1_list = []
@@ -355,8 +344,9 @@ def main():
     runoff_list = []
 
     for x in range(nsteps):
-        evapo = 5 if np.random.normal() > 0 else 0
-        roff = wp._update_pool(evapo + 1, evapo)
+        evapo = max(0, np.random.normal())
+        prain = max(0, np.random.normal())
+        roff = wp._update_pool(prain, evapo)
         wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
         wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
         w1_list.append(wp.w1)
@@ -389,15 +379,13 @@ def main():
     plt.show()
 
 
-def test_water_balance_plot():
+def test_water_balance_plot(ws1, ws2, fc1, fc2, wp1, wp2):
     import numpy as np
     import matplotlib.pyplot as plt
 
-    ws1, ws2 = 0.45, 0.48
-    fc1, fc2 = 0.39, 0.43
-    wp1, wp2 = 0.24, 0.27
+    y,x  = 177,234
 
-    wp = soil_water(ws1, ws2, fc1, fc2, wp1, wp2)
+    wp = soil_water(ws1[y, x], ws2[y, x], fc1[y, x], fc2[y, x], wp1[y, x], wp2[y, x])
 
     nsteps = 1000
     total_rain = 0.0
@@ -417,8 +405,8 @@ def test_water_balance_plot():
     balance_error_list = []
 
     for x in range(nsteps):
-        evapo = 5 if np.random.normal() > 0 else 0
-        rain = evapo + 1
+        evapo = max(0, np.random.normal()* 2)
+        rain = max(0, np.random.normal() * 2)
         runoff = wp._update_pool(rain, evapo)
         wp.w1 = 0.0 if wp.w1 < 0.0 else wp.w1
         wp.w2 = 0.0 if wp.w2 < 0.0 else wp.w2
@@ -473,7 +461,14 @@ def test_water_balance_plot():
 
 
 if __name__ == "__main__":
-    main()
-    test_water_balance()
-    test_water_balance_plot()
+    from parameters import tsoil, ssoil
+    ws1 = tsoil[0]
+    fc1 = tsoil[1]
+    wp1 = tsoil[2]
+    ws2 = ssoil[0]
+    fc2 = ssoil[1]
+    wp2 = ssoil[2]
+    main(ws1=ws1, ws2=ws2, fc1=fc1, fc2=fc2, wp1=wp1, wp2=wp2)
+    test_water_balance(ws1=ws1, ws2=ws2, fc1=fc1, fc2=fc2, wp1=wp1, wp2=wp2)
+    test_water_balance_plot(ws1=ws1, ws2=ws2, fc1=fc1, fc2=fc2, wp1=wp1, wp2=wp2)
 

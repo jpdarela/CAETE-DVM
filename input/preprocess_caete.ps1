@@ -8,8 +8,8 @@ $SCRIPT_NAME = "preprocess_caete.py"   # Options: "preprocess_caete.py" or "prep
 
 # Define all preprocessing tasks
 $tasks = @(
-    # @{dataset = "20CRv3-ERA5"; mode = "obsclim"},
-    # @{dataset = "20CRv3-ERA5"; mode = "spinclim"},
+    @{dataset = "20CRv3-ERA5"; mode = "obsclim"},
+    @{dataset = "20CRv3-ERA5"; mode = "spinclim"},
     # @{dataset = "20CRv3-ERA5"; mode = "transclim"},
     # @{dataset = "20CRv3-ERA5"; mode = "counterclim"},
     @{dataset = "MPI-ESM1-2-HR"; mode = "historical"},

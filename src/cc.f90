@@ -300,7 +300,7 @@ module carbon_costs
 
 
    function cc_fix(ts) result (c_fix)
-      real(r_4), intent(in) :: ts ! soil temp °C
+      real(r_8), intent(in) :: ts ! soil temp °C
       real(r_8) :: c_fix ! C Cost of Nitrogen M(N) M(C)⁻¹
       c_fix = -6.25D0 * (exp(-3.62D0 + (0.27D0 * ts) &
       &       * (1.0D0 - (0.5D0 * (ts / 25.15D0)))) - 2.0D0)
@@ -310,7 +310,7 @@ module carbon_costs
    function fixed_n(c, ts) result(fn)
       ! Given the C available calculate the fixed N
       real(r_8), intent(in) :: c ! g m-2 day-1 % of NPP destinated to diazotroph partners
-      real(r_4), intent(in) :: ts ! soil tem °C
+      real(r_8), intent(in) :: ts ! soil tem °C
       real(r_8) :: fn
 
       fn = c / cc_fix(ts)

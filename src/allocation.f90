@@ -22,7 +22,7 @@ module alloc
                           & prep_out_n, prep_out_p,&
                           & retran_nutri_cost, select_active_strategy
     use global_par, only: ntraits, sapwood, cmin
-    use photo, only: f_four, spec_leaf_area, realized_npp
+    use photo, only: spec_leaf_area, realized_npp
     use ieee_arithmetic, only: ieee_is_normal, ieee_is_negative, ieee_is_nan
 
     implicit none
@@ -79,16 +79,16 @@ module alloc
 
       ! variables I/O
       real(r_8),dimension(ntraits),intent(in) :: dt  ! PLS attributes
-      real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
+      real(r_8),intent(in) :: npp  ! npp (KgC/m2/yr) gpp (µmol m-2 s)
       real(r_8),intent(in) :: npp_costs ! Carbon costs of Nutrient active uptake and retranslocation
-      real(r_4),intent(in) :: ts   ! soil temp °C
+      real(r_8),intent(in) :: ts   ! soil temp °C
       real(r_8),intent(in) :: wsoil! soil water depth (mm)
       real(r_8),intent(in) :: te   ! plant transpiration (mm/s)
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8),intent(in) :: scf1 ! previous day carbon content on fine roots compartment (KgC/m2)
-      real(r_4),intent(in) :: nmin ! N in mineral N pool(g m-2) SOLUTION
-      real(r_4),intent(in) :: plab ! P in labile pool (g m-2)   SOLUTION
+      real(r_8),intent(in) :: nmin ! N in mineral N pool(g m-2) SOLUTION
+      real(r_8),intent(in) :: plab ! P in labile pool (g m-2)   SOLUTION
       real(r_8),intent(in) :: on,sop,op ! Organic N, Sorbed P, Organic P
       real(r_8),dimension(3),intent(in) :: storage ! Three element array- storage pool([C,N,P]) g m-2
       ! O

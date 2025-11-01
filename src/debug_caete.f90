@@ -25,7 +25,7 @@ program test_caete
    subroutine test_c3()
 
       integer(i_4) :: index
-      real(r_4) :: soilt=25.0, water_s=0.9
+      real(r_8) :: soilt=25.0, water_s=0.9
       real(r_8) :: ll=5.5, lf=5.5, lw=5.5
       real(r_8), dimension(6) :: lnc = (/2.5461449101567262D-002, 1.2789730913937092D-002, 4.1226762905716891D-002,&
                                         & 3.2206000294536350D-003, 3.1807350460439920D-003, 4.0366222383454442D-003/)
@@ -59,12 +59,12 @@ program test_caete
    !    integer(i_4), parameter :: ntraits = 20, npls = 5
    !    real(r_8) :: dt(ntraits, npls)
    !    real(r_8) :: w1, w2, mineral_n, labile_p, on, sop, op, catm, wmax_in
-   !    real(r_4) :: ts, temp, p0, ipar, rh
+   !    real(r_8) :: ts, temp, p0, ipar, rh
    !    real(r_8) :: cl1_in(npls), ca1_in(npls), cf1_in(npls)
    !    real(r_8) :: uptk_costs_in(npls), rnpp(npls)
    !    real(r_8) :: sto_budg_in(3, npls)
    !    ! Outputs
-   !    real(r_4) :: epavg
+   !    real(r_8) :: epavg
    !    real(r_8) :: evavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg, rmavg, rgavg
    !    real(r_8) :: cleafavg_pft(npls), cawoodavg_pft(npls), cfrootavg_pft(npls)
    !    real(r_8) :: storage_out_bdgt_1(3, npls), ocpavg(npls), wueavg, cueavg, c_defavg

@@ -52,7 +52,7 @@ contains
 
       !     Inputs
       !     ------
-      real(r_4),intent(in) :: tsoil, water_sat   ! soil temperature (°C); soil water relative content (dimensionless)
+      real(r_8),intent(in) :: tsoil, water_sat   ! soil temperature (°C); soil water relative content (dimensionless)
 
       real(r_8),intent(in) :: leaf_litter  ! Mass of C comming from living pools g(C)m⁻²
       real(r_8),intent(in) :: coarse_wd
@@ -81,7 +81,7 @@ contains
       real(r_8) :: wood_p
       real(r_8),dimension(8) :: snr_in
 
-      real(r_4) :: water_modifier ! Multiplicator for water influence on C decay
+      real(r_8) :: water_modifier ! Multiplicator for water influence on C decay
       real(r_8) :: frac1,frac2    ! Constants for litter partitioning
       real(r_8) :: c_next_pool, n_next_pool, p_next_pool
       real(r_8) :: n_min_resp_lit, p_min_resp_lit
@@ -385,17 +385,17 @@ contains
 
    function carbon_decay(q10_in,tsoil,c,residence_time) result(decay)
    !Based on carbon decay implemented in JeDi and JSBACH - Pavlick et al. 2012
-      real(r_4),intent(in) :: q10_in           ! constant ~1.4
-      real(r_4),intent(in) :: tsoil            ! Soil temperature °C
+      real(r_8),intent(in) :: q10_in           ! constant ~1.4
+      real(r_8),intent(in) :: tsoil            ! Soil temperature °C
       real(r_8),intent(in) :: c                ! Carbon content per area g(C)m-2
       real(r_8),intent(in) :: residence_time   ! Pool turnover rate
-      real(r_4) :: decay                       ! ML⁻²
-      real(r_4) :: coeff12
+      real(r_8) :: decay                       ! ML⁻²
+      real(r_8) :: coeff12
       if(c .le. 0.0D0) then
          decay = 0.0
          return
       endif
-      coeff12 = real(( c / residence_time), kind=r_4)
+      coeff12 = real(( c / residence_time), kind=r_8)
       decay = (q10_in ** ((tsoil - 20.0) / 10.0)) * (coeff12)
    end function carbon_decay
 
@@ -405,9 +405,9 @@ contains
       ! Based on the implementation of Sierra et al. 2012 (SoilR)
       ! This fucntion is ideal and was parametrized for low carbon soils
 
-      real(r_4),intent(in) :: theta  ! Volumetric soil water content (cm³ cm⁻³)
-      real(r_4),parameter :: k_a = 3.11, k_b = 2.42
-      real(r_4) :: inter, retval, aux
+      real(r_8),intent(in) :: theta  ! Volumetric soil water content (cm³ cm⁻³)
+      real(r_8),parameter :: k_a = 3.11, k_b = 2.42
+      real(r_8) :: inter, retval, aux
 
       aux = theta
       if (theta < 0.0) aux = 0.0
@@ -422,8 +422,8 @@ contains
    function sorbed_p_equil(arg) result(retval)
       ! Linear equilibrium between inorganic P and available P pool
 
-      real(r_4), intent(in) :: arg
-      real(r_4) :: retval
+      real(r_8), intent(in) :: arg
+      real(r_8) :: retval
 
       retval = arg * ks
    end function sorbed_p_equil
@@ -431,8 +431,8 @@ contains
 
    function solution_p_equil(arg) result(retval)
 
-      real(r_4), intent(in) :: arg
-      real(r_4) :: retval
+      real(r_8), intent(in) :: arg
+      real(r_8) :: retval
 
       retval = arg * 0.03
    end function solution_p_equil
@@ -441,8 +441,8 @@ contains
    function sorbed_n_equil(arg) result(retval)
       ! Linear equilibrium between inorganic N and available N pool
 
-      real(r_4), intent(in) :: arg
-      real(r_4) :: retval
+      real(r_8), intent(in) :: arg
+      real(r_8) :: retval
 
       retval = arg * ks
    end function sorbed_n_equil
@@ -450,8 +450,8 @@ contains
 
    function solution_n_equil(arg) result(retval)
 
-      real(r_4), intent(in) :: arg
-      real(r_4) :: retval
+      real(r_8), intent(in) :: arg
+      real(r_8) :: retval
 
       retval = arg * 0.1
    end function solution_n_equil
@@ -459,8 +459,8 @@ contains
 
    function leaching(n_amount, w) result(leached)
 
-      real(r_4), intent(in) :: n_amount, w
-      real(r_4) :: leached
+      real(r_8), intent(in) :: n_amount, w
+      real(r_8) :: leached
 
       leached = n_amount/w ! DO SOME ALGEBRA * w)
 
@@ -482,21 +482,21 @@ contains
 
    ! Leaching loss for N and P (proportional to available pool and drainage)
    function leaching_n(n_avail, drainage, k_leach) result(leached_n)
-      real(r_4), intent(in) :: n_avail, drainage, k_leach
-      real(r_4) :: leached_n
+      real(r_8), intent(in) :: n_avail, drainage, k_leach
+      real(r_8) :: leached_n
       leached_n = min(n_avail, k_leach * n_avail * drainage)
    end function leaching_n
 
    function leaching_p(p_avail, drainage, k_leach) result(leached_p)
-      real(r_4), intent(in) :: p_avail, drainage, k_leach
-      real(r_4) :: leached_p
+      real(r_8), intent(in) :: p_avail, drainage, k_leach
+      real(r_8) :: leached_p
       leached_p = min(p_avail, k_leach * p_avail * drainage)
    end function leaching_p
 
    ! Denitrification loss for N (proportional to available pool, moisture, and temperature)
    function denitrification_n(n_avail, soil_moist, temp, k_deni) result(denit_n)
-      real(r_4), intent(in) :: n_avail, soil_moist, temp, k_deni
-      real(r_4) :: denit_n, moisture_factor, temp_factor
+      real(r_8), intent(in) :: n_avail, soil_moist, temp, k_deni
+      real(r_8) :: denit_n, moisture_factor, temp_factor
       moisture_factor = min(1.0, soil_moist / 0.6)
       temp_factor = max(0.0, (temp - 5.0) / 25.0)
       denit_n = min(n_avail, k_deni * n_avail * moisture_factor * temp_factor)
@@ -504,8 +504,8 @@ contains
 
    ! N deposition (external input, e.g. atmospheric)
    function n_deposition(deposition_rate) result(dep_n)
-      real(r_4), intent(in) :: deposition_rate
-      real(r_4) :: dep_n
+      real(r_8), intent(in) :: deposition_rate
+      real(r_8) :: dep_n
       dep_n = deposition_rate
    end function n_deposition
 

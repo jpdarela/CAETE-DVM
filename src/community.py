@@ -75,7 +75,7 @@ class community:
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
         self.vp_cleaf: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
-        self.vp_croot: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
+        self.vp_croot: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.2, self.npls).astype(np.float64)
         self.vp_cwood: NDArray[np.float64] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, self.npls).astype(np.float64)
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
         self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
@@ -139,8 +139,8 @@ class community:
         # Call spinup3 with the allocation and residence time values of each PLS in the community to get a more realistic initial biomass.
         # Or Add cleaf cwood and croot initial biomass values based on the output of spinup3 in a lookup table during community initialization.
         # Use the table at runtime to set the initial biomass values of the PLSs in the community.
-        self.bm_lr0 = 0.2 # Initial leaf and root biomass (kg m⁻²)
-        self.bm_w0 = 0.250 # Initial wood biomass (kg m⁻²)
+        self.bm_lr0 = 0.13 # Initial leaf and root biomass (kg m⁻²)
+        self.bm_w0  = 0.15 # Initial wood biomass (kg m⁻²)
 
         self._reset(pls_data)
         return None
@@ -253,8 +253,8 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        cleaf[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.01, None)
-        croot[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.01, None)
+        cleaf[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, None)
+        croot[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.2, None)
         cwood[pos] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.01, None)
         if pls[3] == 0.0:
             cwood[pos] = 0.0

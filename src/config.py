@@ -37,8 +37,8 @@ import tomllib #TODO: this lib only available in the standard library in python 
 # TODO: add handling for gfortran/gcc runtime assistance in windows systems.
 # To do that I installed gfortran using the mingw64 distribution from WinLibs.
 # Add the bin folder (where gcc/gfortran are) to the PATH environment variable.
-# In windows, the fortran-python extension module (.pyd) needs the gfortran 
-# runtime dlls to be in the same folder as the .pyd file.  
+# In windows, the fortran-python extension module (.pyd) needs the gfortran
+# runtime dlls to be in the same folder as the .pyd file.
 # See the build_caete.bat file for more information.
 
 # Path to the configuration file
@@ -50,7 +50,7 @@ config_file = Path(__file__).parent / "caete.toml"
 fortran_runtime: Path | None = None
 # IN windows systems, the fortran runtime (OneAPI) is needed to import the caete_module.
 # Find path to the fortran compiler root, used in windows systems.
-# With gfortran/gcc in windows, you will need to transfer the libraries to the src folder. 
+# With gfortran/gcc in windows, you will need to transfer the libraries to the src folder.
 if sys.platform == "win32":
     ifort_compilers_env = [ "CMPLR_ROOT",
                             "ONEAPI_ROOT",
@@ -210,71 +210,71 @@ class InputHandlerConfig(BaseModel):
     )
 
     input_type: Literal["netcdf", "bz2"] = Field(
-        "netcdf", 
+        "netcdf",
         description="Type of input data. Options: 'netcdf' or 'bz2'"
     )
     mp: bool = Field(
-        False, 
+        False,
         description="Use MPI for reading netcdf files"
     )
 
 class MultiprocessingConfig(BaseModel):
     """Configuration for multiprocessing and parallelization."""
     nprocs: int = Field(
-        16, 
-        gt=0, 
+        16,
+        gt=0,
         description="Threads used to post process the output. Not used by the model itself"
     )
     max_processes: int = Field(
-        128, 
-        gt=0, 
+        128,
+        gt=0,
         description="Number of python processes used to run the model"
     )
     omp_num_threads: int = Field(
-        1, 
-        ge=0, 
+        1,
+        ge=0,
         description="Number of threads used by OpenMP"
     )
 
 class ConversionFactorsIsimipConfig(BaseModel):
     """Unit conversion factors for ISIMIP input data."""
     tas: float = Field(
-        273.15, 
+        273.15,
         description="K to degC (sub) [input(K) to model(°C)]"
     )
     pr: float = Field(
-        86400.0, 
+        86400.0,
         description="kg m-2 s-1 to mm day-1 (mult) [input(kg m-2 s-1) to model(mm day-1)]"
     )
     ps: float = Field(
-        0.01, 
+        0.01,
         description="Pa to hPa (mult) [input(Pa) to model(hPa)]"
     )
     rhs: float = Field(
-        0.01, 
+        0.01,
         description="% to kg kg-1 (mult) [input(%) to model(kg kg-1)]"
     )
     rsds: float = Field(
-        0.198, 
+        0.198,
         description="W m-2 to mol(photons) m-2 day-1 conversion factor"
     )
 
 class MetacommConfig(BaseModel):
     """Metacommunity configuration parameters."""
     n: int = Field(
-        1, 
-        ge=1, 
-        le=30, 
+        1,
+        ge=1,
+        le=30,
         description="Number of communities in the metacommunity"
     )
     npls_max: int = Field(
-        50, 
-        gt=0, 
+        50,
+        gt=0,
         description="Maximum number of PLS per community"
     )
     ntraits: int = Field(
-        17, 
-        gt=0, 
+        17,
+        gt=0,
         description="Number of traits in a PLS"
     )
 
@@ -288,11 +288,11 @@ class CrsConfig(BaseModel):
     epsg_id: int = Field(4326, description="EPSG code")
     datum: str = Field("WGS84", description="Geodetic datum")
     proj4: str = Field(
-        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs", 
+        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         description="PROJ4 string"
     )
     epsg_long_name: str = Field(
-        "World Geodetic System 1984", 
+        "World Geodetic System 1984",
         description="Full EPSG name"
     )
     lat_units: str = Field("degrees_north", description="Latitude units")
@@ -303,34 +303,34 @@ class CrsConfig(BaseModel):
 class FertilizationConfig(BaseModel):
     """Fertilization experiment configuration."""
     afex_mode: Literal["N", "P", "NP"] = Field(
-        "N", 
+        "N",
         description="Fertilization mode: Nitrogen, Phosphorus, or both"
     )
     n: float = Field(
-        12.5, 
-        ge=0, 
+        12.5,
+        ge=0,
         description="Nitrogen fertilization rate (g m-2 y-1)"
     )
     p: float = Field(
-        5.0, 
-        ge=0, 
+        5.0,
+        ge=0,
         description="Phosphorus fertilization rate (g m-2 y-1)"
     )
 
 class Config(BaseModel):
     """
     Main CAETE model configuration.
-    
+
     This class replaces the original dynamic Config class with a typed Pydantic model
     that provides compile-time type checking and runtime validation.
     """
-    
+
     model_config = ConfigDict(
         extra='forbid',  # Prevent unknown fields
         validate_assignment=True,  # Validate on assignment
         use_enum_values=True  # Use enum values in serialization
     )
-    
+
     # Day of year for pls sampling
     doy_months: List[int] = Field(
         [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335],
@@ -372,7 +372,7 @@ class Config(BaseModel):
         default_factory=FertilizationConfig, # type: ignore
         description="Fertilization experiment configuration"
     )
-    
+
     @field_validator('doy_months')
     @classmethod
     def validate_doy_months(cls, v):
@@ -384,7 +384,7 @@ class Config(BaseModel):
         if v != sorted(v):
             raise ValueError("Day of year values must be in ascending order")
         return v
-    
+
     @field_validator('multiprocessing')
     @classmethod
     def validate_multiprocessing(cls, v):
@@ -392,11 +392,11 @@ class Config(BaseModel):
         if v.omp_num_threads > 3:
             import warnings
             warnings.warn(
-                "Setting omp_num_threads > 1 may degrade performance due to thread creation overhead",
+                "Setting omp_num_threads > 2 may degrade performance due to thread creation overhead",
                 UserWarning
             )
         return v
-    
+
     # def __repr__(self) -> str:
     #     """Maintain compatibility with original Config.__repr__."""
     #     return f"Config(\n{pformat(self.model_dump())})\n"
@@ -417,15 +417,15 @@ def _fetch_config_parameters(config: Union[str, Path]) -> dict:
 def fetch_config(config: Union[str, Path] = config_file) -> Config:
     """
     Get parameters from the caete.toml file.
-    
+
     Returns a validated Config object with full type support.
-    
+
     Args:
         config: Path to the TOML configuration file
-        
+
     Returns:
         Config: Validated configuration object
-        
+
     Raises:
         ValidationError: If configuration is invalid
         FileNotFoundError: If configuration file doesn't exist
