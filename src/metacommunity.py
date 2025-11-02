@@ -140,7 +140,7 @@ class metacommunity:
 
         # Communities
         self.communities:Dict[int, community] = {}
-        self.get_table = get_from_main_table # Function defined in the region class [region.py L ~209]
+        self.get_table = get_from_main_table # Function defined in the region class [region.py]
         self.comm_npls = copy.deepcopy(npls)
         self.mask: NDArray[np.int8] = np.zeros(community_count, dtype=np.int8)
 
@@ -268,7 +268,7 @@ class metacommunity:
 
 def main():
     # Toy example to test the classes functionality
-    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-9999.csv"))
+    main_table = pls_table.read_pls_table(Path("./PLS_MAIN/pls_attrs-5000.csv"))
 
     # this function mimics the behavior of the get_from_main_table function in the region class
     # Only for testing purposes
@@ -289,18 +289,9 @@ def main():
         return idx, table[:, idx]
 
     # Create a metacommunity with 99 communities. the number of PLSs in each community is set in the caete.toml file
-    mt = metacommunity(99, __get_from_main_table)
+    mt = metacommunity(1, __get_from_main_table)
     print(f"Number of communities: {len(mt)}")
     print(f"Number of PLSs in each community: {mt.comm_npls}")
-
-    # # Kill the PLS in the posiion 233 in the first community
-    # mt[0].kill_pls(233)
-
-    # # Get a unique PLS from the main table (i.e. a PLS that is not in the community)
-    # ident, func_id = mt[0].get_unique_pls(__get_from_main_table)
-
-    # # Seed the unique PLS in a free slot
-    # mt[0].seed_pls(ident, func_id)
 
     mt2 = metacommunity(1, None)
     return mt

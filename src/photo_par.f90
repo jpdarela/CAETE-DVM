@@ -51,6 +51,6 @@ module photo_par
         r_vpm = 8.314D0      ,&          ! Arrhenius eq. constant
         e_vpm = 60592.0D0    ,&          ! Arrhenius eq. constant
         kp25 = 82.0D0        ,&          !µmol mol-1 (ppm)
-        gap_fraction = 0.15D0             !Fraction of gap in the canopy
+        gap_fraction = 0.25D0             !Fraction of gap in the canopy
 
 end module photo_par

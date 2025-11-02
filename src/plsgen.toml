@@ -5,8 +5,8 @@ dirichlet_alpha = 1.0
 
 [parameters]
 grass_pls_fraction = 0.07
-minimum_allocation = 0.01
-base_npp = 0.7 # Base NPP in kg C m-2 yr-1
+minimum_allocation = 0.10 # Minimum allocation to any pool
+base_npp = 0.5 # Base NPP in kg C m-2 yr-1
 
 [residence_time]
 woody = {leaf_min = 0.083333, leaf_max = 8.33, wood_min = 0.08338, wood_max = 100.0, root_min = 0.083333, root_max = 8.33}

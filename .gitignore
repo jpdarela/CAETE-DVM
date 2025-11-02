@@ -1,5 +1,6 @@
 src/*.o
 src/*.c
+src/caete_module*
 src/PLS_MAIN
 src/*.obj
 src/*.i90
@@ -22,12 +23,14 @@ src/profiling/__pycache__
 src/.python-version
 src/execution.log
 src/build
-src/out_data
+src/bbdir
+src/builddir
 src/tests/__pycache__
 src/tests/*.csv
 src/tests/*.txt
 src/.vscode
 src/temp_*
+input/temp*
 
 outputs/
 

@@ -591,13 +591,13 @@ contains
 
       ! Check for NaN/Inf inputs
       if (ieee_is_nan(pot_npp_pool) .or. ieee_is_nan(nupt_pot) .or. ieee_is_nan(available_n)) then
-         write(*,*) "realized_npp: NaN detected in inputs!"
+         ! write(*,*) "realized_npp: NaN detected in inputs!"
          return
       endif
 
       ! Check for negative inputs (invalid case)
       if (pot_npp_pool < ZERO .or. nupt_pot < ZERO .or. available_n < ZERO) then
-         write(*,*) "realized_npp: Negative inputs not allowed!"
+         ! write(*,*) "realized_npp: Negative inputs not allowed!"
          return
       endif
 
@@ -627,7 +627,7 @@ contains
 
       ! Final NaN check (should not happen, but just in case)
       if (ieee_is_nan(rnpp)) then
-         write(*,*) "realized_npp: NaN in rnpp calculation!"
+         ! write(*,*) "realized_npp: NaN in rnpp calculation!"
          rnpp = ZERO
          nl = .false.
       endif
@@ -1255,7 +1255,7 @@ contains
       real(r_8) :: csa, rm64, rml64
       real(r_8) :: rmf64, rms64
       real(r_8), parameter :: k=0.095218D0
-      real(r_8), parameter :: rcoeff_leaf = 3.2D0, rcoeff_wood = 1.0D0, rcoeff_froot = 3.0D0
+      real(r_8), parameter :: rcoeff_leaf = 3.2D0, rcoeff_wood = 3.0D0, rcoeff_froot = 3.0D0
 
       !   Autothrophic respiration
       !   ========================

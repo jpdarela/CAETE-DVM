@@ -22,10 +22,19 @@
 # """
 
 from typing import Any, Callable, List, Tuple
+import sys
 import numpy as np
 from numpy.typing import NDArray
 from numba import njit
 
+if sys.platform == "win32":
+    from config import update_runtime_gcc_gfortran, update_runtime_oneapi
+    update_runtime_gcc_gfortran()
+    update_runtime_oneapi()
+
+from caete_module import photo as m
+
+UNIFORM_INIT_BIOMASS = False
 
 @njit(cache=True)
 def _update_living_status(occupation: NDArray[np.float64],
@@ -74,13 +83,27 @@ class community:
         self.shape: Tuple[int, ...] = self.pls_array.shape
 
         # BIOMASS_STATE - we add some biomass to the PLSs in the community to start the simulation
-        self.vp_cleaf: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
-        self.vp_croot: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.2, self.npls).astype(np.float64)
-        self.vp_cwood: NDArray[np.float64] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, self.npls).astype(np.float64)
+        # Add initial biomass values to the PLSs in the community using a fixed value plus some random noise
+        if UNIFORM_INIT_BIOMASS:
+            self.vp_cleaf: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, self.npls).astype(np.float64)
+            self.vp_croot: NDArray[np.float64] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.2, self.npls).astype(np.float64)
+            self.vp_cwood: NDArray[np.float64] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.1, self.npls).astype(np.float64)
+        else:
+            self.vp_cleaf: NDArray[np.float64] = np.zeros((self.npls,), dtype=np.float64)
+            self.vp_croot: NDArray[np.float64] = np.zeros((self.npls,), dtype=np.float64)
+            self.vp_cwood: NDArray[np.float64] = np.zeros((self.npls,), dtype=np.float64)
+            for i in range(self.npls):
+                cl, cr, cw = m.spinup3(self.npp_init, self.pls_array[2:8, i])
+                # print(f"Initial biomass from spinup3 - cleaf: {cl}, croot: {cr}, cwood: {cw}")
+                self.vp_cleaf[i] = cl
+                self.vp_croot[i] = cr
+                self.vp_cwood[i] = cw
+
+        # Storage biomass initialized to small random values
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
-        self.vp_sto[0,:] = np.random.uniform(0.0, 0.1, self.npls)
-        self.vp_sto[1,:] = np.random.uniform(0.0, 0.01, self.npls)
-        self.vp_sto[2,:] = np.random.uniform(0.0, 0.001, self.npls)
+        self.vp_sto[0,:] = np.random.uniform(0.05, 0.1, self.npls)
+        self.vp_sto[1,:] = np.random.uniform(0.005, 0.01, self.npls)
+        self.vp_sto[2,:] = np.random.uniform(0.0005, 0.001, self.npls)
 
         # Set the wood biomass of the plants that are not woody to zero
         self.vp_cwood[self.pls_array[6,:] == 0.0] = 0.0
@@ -139,8 +162,9 @@ class community:
         # Call spinup3 with the allocation and residence time values of each PLS in the community to get a more realistic initial biomass.
         # Or Add cleaf cwood and croot initial biomass values based on the output of spinup3 in a lookup table during community initialization.
         # Use the table at runtime to set the initial biomass values of the PLSs in the community.
-        self.bm_lr0 = 0.13 # Initial leaf and root biomass (kg m⁻²)
-        self.bm_w0  = 0.15 # Initial wood biomass (kg m⁻²)
+        self.bm_lr0 = 0.2 # Initial leaf and root biomass (kg m⁻²)
+        self.bm_w0  = 0.2 # Initial wood biomass (kg m⁻²)
+        self.npp_init = 0.1 # kg/m2/year - Initial NPP value to use in spinup3 to set initial biomass values.
 
         self._reset(pls_data)
         return None
@@ -253,28 +277,12 @@ class community:
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls
-        cleaf[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.1, None)
-        croot[pos] = np.random.uniform(self.bm_lr0, self.bm_lr0 + 0.2, None)
-        cwood[pos] = np.random.uniform(self.bm_w0,  self.bm_w0  + 0.01, None)
-        if pls[3] == 0.0:
+        cl, cr, cw = m.spinup3(self.npp_init, pls[2:8])
+        cleaf[pos] = cl  
+        croot[pos] = cr 
+        cwood[pos] = cw 
+        if pls[3] == 0:
             cwood[pos] = 0.0
-
-    #TODO: This method should be removed. It is only for testing purposes.
-    # def kill_pls(self, pos: int) -> None:
-    #     """Kills a PLS in the community. This should not be used in the code. It is only for testing purposes.
-
-    #     Args:
-    #         pls_id (int): ID of the PLS to kill
-    #     """
-    #     self.vp_cleaf[pos] = 0.0
-    #     self.vp_croot[pos] = 0.0
-    #     self.vp_cwood[pos] = 0.0
-    #     self.vp_sto[0, pos] = 0.0
-    #     self.vp_sto[1, pos] = 0.0
-    #     self.vp_sto[2, pos] = 0.0
-    #     self.vp_ocp, _, _, _ = m.pft_area_frac(self.vp_cleaf, self.vp_croot,
-    #                                             self.vp_cwood, self.pls_array[6, :])
-    #     self.update_lsid(self.vp_ocp)
 
 
     def get_unique_pls(self, pls_selector: Callable[[int], Tuple[int, np.ndarray]]) -> Tuple[int, np.ndarray]:

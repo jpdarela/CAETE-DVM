@@ -37,8 +37,9 @@ sys.path.append("../")
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 if sys.platform == "win32":
-    from config import update_sys_pathlib, fortran_runtime
+    from config import update_sys_pathlib, fortran_runtime, update_runtime_gcc_gfortran
     update_sys_pathlib(fortran_runtime)
+    update_runtime_gcc_gfortran()
 
 
 from caete_module import photo as model
@@ -100,16 +101,16 @@ def check_viability(trait_values, awood=False):
     #TODO: the model is sensitive to the biomass values used to set (initial condition) the PLSs in the community class. 
     # The leaf pool is particularly sensitive. We need to find a better way to set these initial biomass values.
     data = get_parameters()
-    lim = gp.cmin  # 1e-3 Minimum carbon (kg m⁻²)
+    lim = gp.cmin * 10  # 1e-3 Minimum carbon (kg m⁻²)
     npp = data["parameters"]["base_npp"]
 
-    if awood:
-        rtur = np.array(model.spinup3(npp, trait_values))
-        if rtur[0] >= lim and rtur[1] >= lim and rtur[2] >= lim:
-            return True
-        return False
+    # if awood:
+    #     rtur = np.array(model.spinup3(npp, trait_values))
+    #     if rtur[0] >= lim and rtur[1] >= lim:
+    #         return True
+    #     return False
 
-    # Grasses
+    # # Grasses
     rtur = np.array(model.spinup3(npp, trait_values))
     if rtur[0] >= lim and rtur[1] >= lim:
         return True
