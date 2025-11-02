@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CAETÊ</title>
+  <style>
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">CAETÊ</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#caetê" id="toc-caetê"><span class="toc-section-number">1</span> CAETÊ</a>
+<ul>
+<li><a href="#help" id="toc-help"><span class="toc-section-number">1.1</span> Help</a></li>
+<li><a href="#contributors" id="toc-contributors"><span class="toc-section-number">1.2</span>
+<strong>CONTRIBUTORS</strong></a></li>
+</ul></li>
+<li><a href="#system-configuration" id="toc-system-configuration"><span class="toc-section-number">2</span> System Configuration</a>
+<ul>
+<li><a href="#windows-setup" id="toc-windows-setup"><span class="toc-section-number">2.1</span> Windows setup</a>
+<ul>
+<li><a href="#system-encoding" id="toc-system-encoding"><span class="toc-section-number">2.1.1</span> System Encoding</a></li>
+<li><a href="#c-compiler-and-build-tools" id="toc-c-compiler-and-build-tools"><span class="toc-section-number">2.1.2</span> C compiler and build
+tools</a></li>
+<li><a href="#fortran-compiler" id="toc-fortran-compiler"><span class="toc-section-number">2.1.3</span> Fortran compiler</a></li>
+<li><a href="#python-and-python-dependencies" id="toc-python-and-python-dependencies"><span class="toc-section-number">2.1.4</span> Python and Python
+dependencies</a></li>
+</ul></li>
+<li><a href="#linuxmacos-setup" id="toc-linuxmacos-setup"><span class="toc-section-number">2.2</span> Linux/MacOS setup</a></li>
+</ul></li>
+<li><a href="#building-the-caete-source-code" id="toc-building-the-caete-source-code"><span class="toc-section-number">3</span> Building the CAETE Source Code</a>
+<ul>
+<li><a href="#requirements" id="toc-requirements"><span class="toc-section-number">3.0.1</span> Requirements</a></li>
+<li><a href="#python-environment-management" id="toc-python-environment-management"><span class="toc-section-number">3.0.2</span> Python environment
+management</a></li>
+<li><a href="#caveats" id="toc-caveats"><span class="toc-section-number">3.0.3</span> Caveats</a></li>
+</ul></li>
+<li><a href="#dangers-of-using-system-python-in-linux" id="toc-dangers-of-using-system-python-in-linux"><span class="toc-section-number">4</span> Dangers of Using System Python in
+Linux</a>
+<ul>
+<li><a href="#risks" id="toc-risks"><span class="toc-section-number">4.0.1</span> Risks</a></li>
+<li><a href="#safer-alternatives" id="toc-safer-alternatives"><span class="toc-section-number">4.0.2</span> Safer Alternatives</a></li>
+</ul></li>
+<li><a href="#double-check-your-python-version" id="toc-double-check-your-python-version"><span class="toc-section-number">5</span> Double-Check Your Python
+Version</a></li>
+<li><a href="#makefile-usage" id="toc-makefile-usage"><span class="toc-section-number">6</span> Makefile Usage</a></li>
+<li><a href="#running-the-model" id="toc-running-the-model"><span class="toc-section-number">7</span> Running the Model</a></li>
+<li><a href="#input-data" id="toc-input-data"><span class="toc-section-number">8</span> Input Data</a>
+<ul>
+<li><a href="#input-sources" id="toc-input-sources"><span class="toc-section-number">8.0.1</span> Input Sources</a></li>
+<li><a href="#download-links" id="toc-download-links"><span class="toc-section-number">8.0.2</span> Download Links</a></li>
+</ul></li>
+<li><a href="#caete-dvm-model-codebase-overview-needs-update" id="toc-caete-dvm-model-codebase-overview-needs-update"><span class="toc-section-number">9</span> CAETE-DVM Model Codebase Overview
+(Needs update)</a>
+<ul>
+<li><a href="#model-architecture-and-core-functionality" id="toc-model-architecture-and-core-functionality"><span class="toc-section-number">9.1</span> Model Architecture and Core
+Functionality</a></li>
+<li><a href="#core-design-principles" id="toc-core-design-principles"><span class="toc-section-number">9.2</span> Core Design Principles</a></li>
+<li><a href="#main-components-and-file-structure" id="toc-main-components-and-file-structure"><span class="toc-section-number">9.3</span> Main Components and File
+Structure</a>
+<ul>
+<li><a href="#core-model-classes-caete.py" id="toc-core-model-classes-caete.py"><span class="toc-section-number">9.3.1</span> 1. Core Model Classes
+(<code>caete.py</code>)</a></li>
+<li><a href="#community-structure-metacommunity.py-community.py" id="toc-community-structure-metacommunity.py-community.py"><span class="toc-section-number">9.3.2</span> 2. Community Structure
+(<code>metacommunity.py</code>, <code>community.py</code>)</a></li>
+<li><a href="#regional-management-region.py" id="toc-regional-management-region.py"><span class="toc-section-number">9.3.3</span> 3. Regional Management
+(<code>region.py</code>)</a></li>
+<li><a href="#numerical-core-fortran-modules" id="toc-numerical-core-fortran-modules"><span class="toc-section-number">9.3.4</span> 4. Numerical Core (Fortran
+Modules)</a></li>
+<li><a href="#configuration-and-parameters" id="toc-configuration-and-parameters"><span class="toc-section-number">9.3.5</span> 5. Configuration and
+Parameters</a></li>
+<li><a href="#execution-and-workflow-caete_driver.py-worker.py" id="toc-execution-and-workflow-caete_driver.py-worker.py"><span class="toc-section-number">9.3.6</span> 6. Execution and Workflow
+(<code>caete_driver.py</code>, <code>worker.py</code>)</a></li>
+<li><a href="#supporting-modules" id="toc-supporting-modules"><span class="toc-section-number">9.3.7</span> 7. Supporting Modules</a></li>
+<li><a href="#plant-life-strategy-generation-plsgen.py" id="toc-plant-life-strategy-generation-plsgen.py"><span class="toc-section-number">9.3.8</span> 8. Plant Life Strategy
+Generation (<code>plsgen.py</code>)</a></li>
+</ul></li>
+<li><a href="#model-execution-flow" id="toc-model-execution-flow"><span class="toc-section-number">9.4</span> Model Execution Flow</a>
+<ul>
+<li><a href="#initialization-phase" id="toc-initialization-phase"><span class="toc-section-number">9.4.1</span> 1. Initialization Phase</a></li>
+<li><a href="#simulation-loop-daily-time-step" id="toc-simulation-loop-daily-time-step"><span class="toc-section-number">9.4.2</span> 2. Simulation Loop (Daily Time
+Step)</a></li>
+<li><a href="#community-dynamics" id="toc-community-dynamics"><span class="toc-section-number">9.4.3</span> 3. Community Dynamics</a></li>
+</ul></li>
+<li><a href="#key-model-features" id="toc-key-model-features"><span class="toc-section-number">9.5</span> Key Model Features</a>
+<ul>
+<li><a href="#trait-based-vegetation" id="toc-trait-based-vegetation"><span class="toc-section-number">9.5.1</span> 1. Trait-Based
+Vegetation</a></li>
+<li><a href="#biogeochemical-cycling" id="toc-biogeochemical-cycling"><span class="toc-section-number">9.5.2</span> 2. Biogeochemical
+Cycling</a></li>
+<li><a href="#water-cycle" id="toc-water-cycle"><span class="toc-section-number">9.5.3</span> 3. Water Cycle</a></li>
+<li><a href="#spatial-and-temporal-scales" id="toc-spatial-and-temporal-scales"><span class="toc-section-number">9.5.4</span> 4. Spatial and Temporal
+Scales</a></li>
+</ul></li>
+<li><a href="#technical-implementation" id="toc-technical-implementation"><span class="toc-section-number">9.6</span> Technical Implementation</a>
+<ul>
+<li><a href="#performance-optimization" id="toc-performance-optimization"><span class="toc-section-number">9.6.1</span> 1. Performance
+Optimization</a></li>
+<li><a href="#data-management" id="toc-data-management"><span class="toc-section-number">9.6.2</span> 2. Data Management</a></li>
+<li><a href="#model-validation-and-testing" id="toc-model-validation-and-testing"><span class="toc-section-number">9.6.3</span> 3. Model Validation and
+Testing</a></li>
+</ul></li>
+<li><a href="#configuration-and-customization" id="toc-configuration-and-customization"><span class="toc-section-number">9.7</span> Configuration and
+Customization</a>
+<ul>
+<li><a href="#model-parameters-caete.toml" id="toc-model-parameters-caete.toml"><span class="toc-section-number">9.7.1</span> 1. Model Parameters
+(<code>caete.toml</code>)</a></li>
+<li><a href="#experimental-design" id="toc-experimental-design"><span class="toc-section-number">9.7.2</span> 2. Experimental Design</a></li>
+</ul></li>
+<li><a href="#applications-and-use-cases" id="toc-applications-and-use-cases"><span class="toc-section-number">9.8</span> Applications and Use Cases</a>
+<ul>
+<li><a href="#climate-change-research" id="toc-climate-change-research"><span class="toc-section-number">9.8.1</span> 1. Climate Change
+Research</a></li>
+<li><a href="#biogeochemical-studies" id="toc-biogeochemical-studies"><span class="toc-section-number">9.8.2</span> 2. Biogeochemical
+Studies</a></li>
+<li><a href="#biodiversity-research" id="toc-biodiversity-research"><span class="toc-section-number">9.8.3</span> 3. Biodiversity
+Research</a></li>
+</ul></li>
+<li><a href="#additional-core-components-complete-analysis" id="toc-additional-core-components-complete-analysis"><span class="toc-section-number">9.9</span> Additional Core Components
+(Complete Analysis)</a>
+<ul>
+<li><a href="#worker-functions-and-execution-control-worker.py" id="toc-worker-functions-and-execution-control-worker.py"><span class="toc-section-number">9.9.1</span> 9. Worker Functions and
+Execution Control (<code>worker.py</code>)</a></li>
+<li><a href="#jit-compiled-performance-functions-caete_jit.py" id="toc-jit-compiled-performance-functions-caete_jit.py"><span class="toc-section-number">9.9.2</span> 10. JIT-Compiled Performance
+Functions (<code>caete_jit.py</code>)</a></li>
+<li><a href="#plant-life-strategy-generation-plsgen.py-1" id="toc-plant-life-strategy-generation-plsgen.py-1"><span class="toc-section-number">9.9.3</span> 11. Plant Life Strategy
+Generation (<code>plsgen.py</code>)</a></li>
+<li><a href="#data-processing-and-output-dataframes.py" id="toc-data-processing-and-output-dataframes.py"><span class="toc-section-number">9.9.4</span> 12. Data Processing and Output
+(<code>dataframes.py</code>)</a></li>
+<li><a href="#geospatial-functions-_geos.py" id="toc-geospatial-functions-_geos.py"><span class="toc-section-number">9.9.5</span> 13. Geospatial Functions
+(<code>_geos.py</code>)</a></li>
+<li><a href="#hydrological-processes-hydro_caete.py-1" id="toc-hydrological-processes-hydro_caete.py-1"><span class="toc-section-number">9.9.6</span> 14. Hydrological Processes
+(<code>hydro_caete.py</code>)</a></li>
+<li><a href="#complete-fortran-module-analysis" id="toc-complete-fortran-module-analysis"><span class="toc-section-number">9.9.7</span> 15. Complete Fortran Module
+Analysis</a></li>
+<li><a href="#configuration-and-parameter-management" id="toc-configuration-and-parameter-management"><span class="toc-section-number">9.9.8</span> 16. Configuration and Parameter
+Management</a></li>
+<li><a href="#testing-and-validation-framework" id="toc-testing-and-validation-framework"><span class="toc-section-number">9.9.9</span> 17. Testing and Validation
+Framework</a></li>
+<li><a href="#utilities-and-support-modules" id="toc-utilities-and-support-modules"><span class="toc-section-number">9.9.10</span> 18. Utilities and Support
+Modules</a></li>
+<li><a href="#model-architecture-summary" id="toc-model-architecture-summary"><span class="toc-section-number">9.9.11</span> 19. Model Architecture
+Summary</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 data-number="1" id="caetê"><span class="header-section-number">1</span> CAETÊ</h1>
+<p>The prototype version of the model is stored in the branch
+CAETE-DVM-v0.1</p>
+<p>This is the implementation of the Dynamic Vegetation Model CAETÊ
+(CArbon and Ecosystem Trait-based Evaluation model) - including Nitrogen
+and Phosphorus cycling.</p>
+<p><a href="system_config.md">System requirements, building, and
+running</a></p>
+<p><a href="input_data.md">Input data</a></p>
+<p><a href="./caete_architecture.md">Model architecture</a></p>
+<h2 data-number="1.1" id="help"><span class="header-section-number">1.1</span> Help</h2>
+<p>If you need help configuring your development environment, installing
+python, installing CAETÊ dependencies or setting up a debug enviornment
+in vscode, open an issue in this repository. Check the <a href="https://github.com/fmammoli/CAETE-Tutorials">CAETÊ starting pack
+tutorial</a> (Outdated content).</p>
+<h2 data-number="1.2" id="contributors"><span class="header-section-number">1.2</span>
+<strong>CONTRIBUTORS</strong></h2>
+<ul>
+<li>Anja Rammig</li>
+<li>Bárbara R. Cardeli</li>
+<li>Bianca Rius</li>
+<li>Caio Fascina</li>
+<li>Carlos A. Quesada</li>
+<li>David Lapola</li>
+<li>Felipe Mammoli</li>
+<li>Gabriela M. Sophia</li>
+<li>Gabriel Marandola</li>
+<li>Helena Alves</li>
+<li>Katrin Fleischer</li>
+<li>Phillip PAPAstefanou</li>
+<li>Tatiana Reichert</li>
+</ul>
+<h1 data-number="2" id="system-configuration"><span class="header-section-number">2</span> System Configuration</h1>
+<p><a href="./README.md">⇦ Back</a></p>
+<p>Before building the CAETE source code, ensure your system is properly
+configured. read the <a href="./build_instructions.md">build_instructions</a> file for more
+information about setting up the development environment in different
+operating systems.</p>
+<p>#Table of Contents - <a href="#windows-setup">Windows setup</a> - <a href="#linuxmacos-setup">Linux/MacOS setup</a></p>
+<hr />
+<h2 data-number="2.1" id="windows-setup"><span class="header-section-number">2.1</span> Windows setup</h2>
+<p>PowerShell 7 can be used to run script utilities and makefiles in
+windows. You can install it with winget:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>winget install <span class="op">--</span>id<span class="op">=</span>Microsoft<span class="op">.</span><span class="fu">PowerShell</span></span></code></pre></div>
+<h3 data-number="2.1.1" id="system-encoding"><span class="header-section-number">2.1.1</span> System Encoding</h3>
+<p>In windows you will probably need to modify the System encoding to
+UTF-8. This can be done in the</p>
+<p>Control Panel -&gt; Region -&gt; Administrative -&gt; Change system
+locale -&gt; check the box “Beta: Use Unicode UTF-8 for worldwide
+language support”. After that, restart the computer. This is needed to
+run the model in windows.</p>
+<p>Why? Default windows terminals use legacy code pages (e.g., cp1252)
+that can’t handle Unicode characters in Fortran files. However f2py
+expects UTF-8 by default</p>
+<p>Check the current system encoding in powershell (“PS&gt;” is the
+powershell prompt):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PS</span><span class="op">&gt;</span> <span class="op">[</span>System<span class="op">.</span><span class="fu">Text</span><span class="op">.</span><span class="fu">Encoding</span><span class="op">]::</span>Default</span></code></pre></div>
+<p>It will return something like:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>Preamble          <span class="op">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>BodyName          <span class="op">:</span> utf-8</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>EncodingName      <span class="op">:</span> Unicode <span class="op">(</span>UTF-8<span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>HeaderName        <span class="op">:</span> utf-8</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>WebName           <span class="op">:</span> utf-8</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>WindowsCodePage   <span class="op">:</span> <span class="dv">1200</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="dt">IsBrowserDisplay</span>  <span class="op">:</span> True</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>IsBrowserSave     <span class="op">:</span> True</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>IsMailNewsDisplay <span class="op">:</span> True</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>IsMailNewsSave    <span class="op">:</span> True</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>IsSingleByte      <span class="op">:</span> False</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>EncoderFallback   <span class="op">:</span> System<span class="op">.</span><span class="fu">Text</span><span class="op">.</span><span class="fu">EncoderReplacementFallback</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>DecoderFallback   <span class="op">:</span> System<span class="op">.</span><span class="fu">Text</span><span class="op">.</span><span class="fu">DecoderReplacementFallback</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>IsReadOnly        <span class="op">:</span> True</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>CodePage          <span class="op">:</span> <span class="dv">65001</span></span></code></pre></div>
+<p>If the encoding name is not Unicode (UTF-8), you will need to change
+it as described above.</p>
+<h3 data-number="2.1.2" id="c-compiler-and-build-tools"><span class="header-section-number">2.1.2</span> C compiler and build
+tools</h3>
+<p>cl.exe, link.exe, nmake.exe - Microsoft build with C/C++ workload.
+Optionally, you can install the full visual studio IDE, but it is not
+necessary to run the model. The C/C++ workload is required to compile
+the C code generated by the numpy f2py module. You can download the
+Visual Studio/build <a href="https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022">tools
+Installer from here</a>.</p>
+<h3 data-number="2.1.3" id="fortran-compiler"><span class="header-section-number">2.1.3</span> Fortran compiler</h3>
+<p>ifx.exe - Intel fortran compiler:</p>
+<p><a href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit-download.html?packages=fortran-essentials&amp;fortran-essentials-os=windows&amp;fortran-essentials-win=offline">Download
+the fortran essentials</a>.</p>
+<h3 data-number="2.1.4" id="python-and-python-dependencies"><span class="header-section-number">2.1.4</span> Python and Python
+dependencies</h3>
+<p><a href="https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe">Python
+3.11</a> and <a href="./src/requirements_3xx_last.txt">python
+requirements</a> for windows.</p>
+<p>See the <a href="./src/Makefile_win">windows Makefile</a> for
+instructions on how to build the python extension module.</p>
+<p>In the windows Makefile the ifx.exe compiler is called. The Makefile
+must be executed in a <a href="https://www.intel.com/content/www/us/en/docs/oneapi/programming-guide/2023-0/use-the-setvars-script-with-windows.html#GUID-D22D6A5C-25BC-46EE-B8D9-3530184ADCD6">shell
+with the proper environment</a></p>
+<p>To build in windows:</p>
+<p>Assuming that the Intel OneAPI setvars.bat script is in C:Files
+(x86).bat.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>cmd<span class="op">.</span><span class="fu">exe</span> <span class="st">&quot;/K&quot;</span> <span class="st">&#39;&quot;C:\Program Files (x86)\Intel\oneAPI\setvars.bat&quot; &amp;&amp; powershell&#39;</span></span></code></pre></div>
+<p>After that, navigate to the src folder and run the following to
+install python deps and build the extension module with python 3.11 in
+windows:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>nmake <span class="op">-</span>f Makefile_win setup</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>nmake <span class="op">-</span>f Makefile_win</span></code></pre></div>
+<hr />
+<h2 data-number="2.2" id="linuxmacos-setup"><span class="header-section-number">2.2</span> Linux/MacOS setup</h2>
+<ul>
+<li><p>gnu-make</p></li>
+<li><p>gcc</p></li>
+<li><p>gfortran</p></li>
+<li><p>python &gt;= 3.11 + pip</p></li>
+</ul>
+<p>In linux it is possible to run the model in python 3.11, 3.12 and
+3.13. However, the building system used to compile the fortran/python
+extension module differs between python versions. In python 3.12 the
+numpy distutils was removed from numpy. See: <a href="https://numpy.org/doc/stable/reference/distutils_status_migration.html#distutils-status-migration">Numpy
+distutils status</a>. The new (candidate) build method is based on
+meson. So, if you are using python &gt;=3.12 you will need also:</p>
+<ul>
+<li>meson</li>
+<li>ninja</li>
+</ul>
+<p>Note: At the current time, the new building (meson) system was only
+working on linux. If you are using windows, you will need to use python
+3.11.</p>
+<p>Python Dependencies: see the <a href="./src/requirements_3xx_last.txt">requirements</a>.</p>
+<p>Edit the PYEXEC variable in the <a href="./src/Makefile">linux
+Makefile</a> to match the python that you will use to run the model.</p>
+<p>Use the make target setup to install python libraries.</p>
+<p>To build the extension module in linux, navigate to the src folder
+and run:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> setup</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span></span></code></pre></div>
+<p><a href="./README.md">⇦ Back</a></p>
+<h1 data-number="3" id="building-the-caete-source-code"><span class="header-section-number">3</span> Building the CAETE Source
+Code</h1>
+<p><a href="./system_config.md">⇦ Back</a></p>
+<p>Before running the model, you need to compile the Python extension
+module (Fortran backend). You will need:</p>
+<h3 data-number="3.0.1" id="requirements"><span class="header-section-number">3.0.1</span> Requirements</h3>
+<ol type="1">
+<li><strong>C Compiler</strong>
+<ul>
+<li>Windows: MSVC (mandatory)</li>
+<li>Linux/macOS: <code>gcc</code></li>
+</ul></li>
+<li><strong>Fortran Compiler</strong>
+<ul>
+<li>Windows: Intel OneAPI (install after MSVC)</li>
+<li>The gfortan from WinLibs (GCC 14.2.0 (with MCF threads) + MinGW-w64
+12.0.0 (UCRT) - release 1) can also be used in windows along with
+MSVC.</li>
+<li>Linux/macOS: <code>gfortran</code> (also usable on Windows)</li>
+<li>The flang <a href="https://docs.amd.com/r/en-US/57222-AOCC-user-guide/Introduction">AOCC</a>
+compiler is supported in linux. You will need to set some variables in
+the Makefile to use it.</li>
+</ul></li>
+<li><strong>Python Environment</strong>
+<ul>
+<li>Windows: <code>python == 3.11</code></li>
+<li>Linux/macOS: <code>python &gt;= 3.11 &lt;= 3.13</code></li>
+<li>Must support:
+<ul>
+<li><code>pip</code> for package installation</li>
+<li><code>numpy.f2py</code> for compiling Fortran modules</li>
+</ul></li>
+</ul></li>
+</ol>
+<p>Refer to the <a href="https://numpy.org/doc/stable/f2py/getting-started.html">NumPy v2.3
+Manual – Three Ways to Wrap</a> and try to reproduce the “quick way”. If
+the “quick way” works in your machine, you will likely be able to
+compile CAETE’s Python C/API extension and run the model locally.</p>
+<h3 data-number="3.0.2" id="python-environment-management"><span class="header-section-number">3.0.2</span> Python environment
+management</h3>
+<p>There are several options to install and manage multiple Python
+versions in all platforms. For our purposes, we need a python
+installation that meets the platform requirements above. Additionally,
+the python installation must be reachable from the terminal/shell where
+you will run the Makefile to build the Fortran/Python extension module.
+This means that the python executable must be in the PATH environment
+variable or can be launched via an environment manager like pyenv, uv,
+PIM, and et cetera. Below are some suggestions for managing python
+versions in different platforms. Another very important aspect is that
+this python installation must be compatible with the C compiler
+installed in your system. More specifically, the python installation
+must be compiled with the same C runtime library as the C compiler used
+to build the Fortran/Python extension module. In windows, this usually
+means that you should use the official python installer from python.org,
+since it is compiled with MSVC. Other python distributions like Anaconda
+may use different C runtimes and may lead to issues when building the
+extension module with MSVC.</p>
+<h4 data-number="3.0.2.1" id="windows"><span class="header-section-number">3.0.2.1</span> Windows</h4>
+<p>To run CAETE, it is important that you have a python version that
+meets the platform requirements (see above). The Python install Manager
+<a href="https://www.python.org/downloads/release/pymanager-250/">PIM</a>
+is a windows tool to help install and manage multiple Python versions
+easily. The current windows python manager (for python &lt;=3.13) is
+also an option for windows users.</p>
+<h4 data-number="3.0.2.2" id="linuxmacos"><span class="header-section-number">3.0.2.2</span> Linux/MacOS</h4>
+<p>In linux/macOS, <code>pyenv</code> is a popular python version
+manager. You can find installation instructions in the <a href="https://github.com/pyenv/pyenv">pyenv github repository</a></p>
+<h3 data-number="3.0.3" id="caveats"><span class="header-section-number">3.0.3</span> Caveats</h3>
+<ul>
+<li>On Windows, install MSVC first, then OneAPI.</li>
+<li>Ensure <code>pip</code> is available to install additional Python
+packages.</li>
+<li>On Linux, use <code>pyenv</code> to manage Python versions.</li>
+<li>On Windows, use the official Python 3.11 installer.</li>
+<li>Other tools like <code>conda</code> or <code>uv</code> may work but
+are not guaranteed.</li>
+<li>In windows, gfortran from <a href="https://winlibs.com/#download-release">WinLibs</a> can do the job:
+Tested with: GCC 14.2.0 (with MCF threads) + MinGW-w64 12.0.0 (UCRT) -
+release 1</li>
+</ul>
+<hr />
+<h1 data-number="4" id="dangers-of-using-system-python-in-linux"><span class="header-section-number">4</span> Dangers of Using System Python in
+Linux</h1>
+<p>Using the system Python for development can compromise stability,
+security, and reproducibility.</p>
+<h3 data-number="4.0.1" id="risks"><span class="header-section-number">4.0.1</span> Risks</h3>
+<ul>
+<li><strong>System Dependency Conflicts</strong>
+<ul>
+<li>System Python is used by core utilities and package managers.</li>
+<li>Modifying it can break your system.</li>
+</ul></li>
+<li><strong>Permission and Security Issues</strong>
+<ul>
+<li>Global installs require <code>sudo</code>, increasing risk.</li>
+<li>Vulnerable to shell injection if user input is unsanitized.</li>
+</ul></li>
+<li><strong>Version Lock-In</strong>
+<ul>
+<li>You are stuck with the distribution’s Python version.</li>
+<li>Limits access to newer features and packages.</li>
+</ul></li>
+<li><strong>Reproducibility Problems</strong>
+<ul>
+<li>Code may behave differently across systems.</li>
+<li>Pre-installed packages vary by distribution.</li>
+</ul></li>
+<li><strong>Shell Injection Risks</strong>
+<ul>
+<li>Avoid <code>subprocess.call(..., shell=True)</code> with user
+input.</li>
+<li>Example: <code>call(&quot;cat &quot; + filename, shell=True)</code> is
+dangerous.</li>
+</ul></li>
+</ul>
+<h3 data-number="4.0.2" id="safer-alternatives"><span class="header-section-number">4.0.2</span> Safer Alternatives</h3>
+<ul>
+<li>Use <strong><code>pyenv</code></strong>,
+<strong><code>conda</code></strong>, or <strong><code>uv</code></strong>
+to manage Python versions in linux/mac.</li>
+</ul>
+<hr />
+<h1 data-number="5" id="double-check-your-python-version"><span class="header-section-number">5</span> Double-Check Your Python
+Version</h1>
+<p>Ensure your Python version matches the platform requirements before
+compiling or running CAETE.</p>
+<hr />
+<h1 data-number="6" id="makefile-usage"><span class="header-section-number">6</span> Makefile Usage</h1>
+<ul>
+<li><strong>Linux/macOS</strong>: Use <code>Makefile</code> with GNU
+Make</li>
+<li><strong>Windows</strong>: Use <code>Makefile_win</code> with NMake
+(adapted for MSVC and OneAPI)</li>
+</ul>
+<hr />
+<h1 data-number="7" id="running-the-model"><span class="header-section-number">7</span> Running the Model</h1>
+<p>Once compiled and configured, you can proceed to run CAETE using the
+prepared input files and gridlists.</p>
+<p><a href="./README.md">⇦ Back</a></p>
+<h1 data-number="8" id="input-data"><span class="header-section-number">8</span> Input Data</h1>
+<p><a href="./README.md">⇦ Back</a></p>
+<p>Input data were downloaded from the <strong>ISIMIP
+repository</strong>.</p>
+<p>More information about the input data structure and preprocessing
+scripts can be found <a href="./input/README.md">here</a>.</p>
+<p>In this repository there is a folder called <code>input</code>
+containing:</p>
+<ul>
+<li><code>preprocess_caete.py</code>: Reads ISIMIP netCDFs and creates
+netCDF input files for CAETE.</li>
+<li><code>preprocess_caete_pbz2.py</code>: Converts ISIMIP netCDFs into
+legacy <code>.pbz2</code> input files.</li>
+<li>The new input handler supports both formats (configured via
+<code>caete.toml</code>).</li>
+</ul>
+<p>The execution of gridcells depends on a <strong>gridlist</strong>
+table. Preprocessing scripts should save gridlists alongside input
+files.</p>
+<p>In <code>input_handler.py</code>, the class
+<code>input_handler</code> includes a static method that can generate a
+gridlist from a properly formatted netCDF file (but not necessarily from
+a folder of <code>.pbz2</code> files). This feature was also integrated
+into the <code>bz2_handler</code> module, although it has not been used
+recently.</p>
+<h3 data-number="8.0.1" id="input-sources"><span class="header-section-number">8.0.1</span> Input Sources</h3>
+<ul>
+<li><strong>Protocols</strong>: ISIMIP3a and ISIMIP3b</li>
+<li><strong>Bias-corrected data</strong>: Stored in folders with
+<code>_raw</code> suffix (downloaded from ISIMIP)</li>
+<li><strong>Input folders</strong>: <code>spinclim</code>,
+<code>obsclim</code>, <code>historical</code>, etc.</li>
+</ul>
+<h3 data-number="8.0.2" id="download-links"><span class="header-section-number">8.0.2</span> Download Links</h3>
+<ul>
+<li><strong>20CRv3-ERA5</strong> (<code>spinclim</code> &amp;
+<code>obsclim</code>): <a href="https://1drv.ms/f/c/16d3a2cfff38aeca/EsquOP_PotMggBaPxwMAAAABjdx1IH1OuwQ8THwZcD8izw?e=lDgnH4">Download</a></li>
+<li><strong>MPI-ESM1-2-HR</strong> (<code>piControl</code>,
+<code>historical</code>, <code>ssp370</code>, <code>ssp585</code>): <a href="https://1drv.ms/f/c/16d3a2cfff38aeca/EsquOP_PotMggBaOHwQAAAABcpwkuYUk34IHwz9sxJIWnw?e=AGnyYC">Download</a></li>
+<li><strong>Grid lists</strong>: <a href="./grd/"><code>CAETE-DVM/grd</code></a></li>
+</ul>
+<hr />
+<p><a href="./README.md">⇦ Back</a></p>
+<h1 data-number="9" id="caete-dvm-model-codebase-overview-needs-update"><span class="header-section-number">9</span> CAETE-DVM Model Codebase Overview
+(Needs update)</h1>
+<p><a href="./README.md">⇦ Back</a></p>
+<h2 data-number="9.1" id="model-architecture-and-core-functionality"><span class="header-section-number">9.1</span> Model Architecture and Core
+Functionality</h2>
+<p>The CAETE-DVM (Carbon and Ecosystem Trait-based Evaluation - Dynamic
+Vegetation Model) is a ecosystem model that simulates vegetation
+dynamics, carbon cycling, and nutrient cycling at the ecosystem level.
+The model uses a trait-based approach where plant communities are
+represented by collections of Plant Life Strategies (PLS).</p>
+<h2 data-number="9.2" id="core-design-principles"><span class="header-section-number">9.2</span> Core Design Principles</h2>
+<ol type="1">
+<li><strong>Trait-Based Approach</strong>: The model represents
+vegetation through Plant Life Strategies (PLS) - virtual plant
+prototypes defined by 17 functional traits</li>
+<li><strong>Metacommunity Structure</strong>: Each gridcell can contain
+a metacommunity composed of one or more plant communities</li>
+<li><strong>Environmental Filtering</strong>: The model simulates how
+environmental conditions filter which PLS can survive and thrive</li>
+<li><strong>Hybrid Architecture</strong>: Combines Python for data
+management and control flow with Fortran for numerical computations</li>
+</ol>
+<h2 data-number="9.3" id="main-components-and-file-structure"><span class="header-section-number">9.3</span> Main Components and File
+Structure</h2>
+<h3 data-number="9.3.1" id="core-model-classes-caete.py"><span class="header-section-number">9.3.1</span> 1. Core Model Classes
+(<code>caete.py</code>)</h3>
+<h4 data-number="9.3.1.1" id="base-classes-inheritance-hierarchy"><span class="header-section-number">9.3.1.1</span> Base Classes (Inheritance
+Hierarchy)</h4>
+<ul>
+<li><strong><code>state_zero</code></strong>: Base class handling
+input/output, file paths, and basic gridcell setup</li>
+<li><strong><code>climate</code></strong>: Manages climate data
+(temperature, precipitation, radiation, humidity, atmospheric
+pressure)</li>
+<li><strong><code>time</code></strong>: Handles temporal data, calendar
+operations, and time indexing</li>
+<li><strong><code>soil</code></strong>: Manages soil properties
+including:
+<ul>
+<li>Carbon pools (4 pools: litter 1&amp;2, soil 1&amp;2)</li>
+<li>Nutrient pools (8 pools for N and P)</li>
+<li>Water content and hydraulic properties</li>
+</ul></li>
+<li><strong><code>gridcell_output</code></strong>: Manages model output
+allocation and data flushing</li>
+</ul>
+<h4 data-number="9.3.1.2" id="main-gridcell-class"><span class="header-section-number">9.3.1.2</span> Main Gridcell Class</h4>
+<ul>
+<li><strong><code>grd_mt</code></strong>: The primary gridcell class
+that inherits from all base classes
+<ul>
+<li>Represents a single simulation unit in the model</li>
+<li>Contains one metacommunity with one or more plant communities</li>
+<li>Handles daily ecosystem processes and biogeochemical cycling</li>
+</ul></li>
+</ul>
+<h3 data-number="9.3.2" id="community-structure-metacommunity.py-community.py"><span class="header-section-number">9.3.2</span> 2. Community Structure
+(<code>metacommunity.py</code>, <code>community.py</code>)</h3>
+<h4 data-number="9.3.2.1" id="plant-life-strategy-pls-management"><span class="header-section-number">9.3.2.1</span> Plant Life Strategy (PLS)
+Management</h4>
+<ul>
+<li><strong><code>pls_table</code></strong>: Interface for the global
+table of plant prototypes
+<ul>
+<li>Stores ~20,000+ virtual plant prototypes</li>
+<li>Each PLS defined by 17 functional traits</li>
+<li>Provides subsampling methods for community creation</li>
+</ul></li>
+</ul>
+<h4 data-number="9.3.2.2" id="community-hierarchy"><span class="header-section-number">9.3.2.2</span> Community Hierarchy</h4>
+<ul>
+<li><strong><code>community</code></strong>: Represents a collection of
+PLS within a gridcell
+<ul>
+<li>Contains biomass state variables (leaf, wood, root carbon)</li>
+<li>Tracks plant functional diversity metrics</li>
+<li>Manages PLS survival and mortality</li>
+<li>Handles nutrient uptake strategies</li>
+</ul></li>
+<li><strong><code>metacommunity</code></strong>: Collection of
+communities within a gridcell
+<ul>
+<li>Enables spatial heterogeneity within a gridcell</li>
+<li>Manages community-level processes</li>
+<li>Tracks functional diversity and composition</li>
+</ul></li>
+</ul>
+<h3 data-number="9.3.3" id="regional-management-region.py"><span class="header-section-number">9.3.3</span> 3. Regional Management
+(<code>region.py</code>)</h3>
+<h4 data-number="9.3.3.1" id="region-class"><span class="header-section-number">9.3.3.1</span> Region Class</h4>
+<ul>
+<li><strong><code>region</code></strong>: Manages collections of
+gridcells
+<ul>
+<li>Handles parallel processing of multiple gridcells</li>
+<li>Manages input/output operations</li>
+<li>Coordinates multiprocessing execution</li>
+<li>Provides methods for saving/loading model states</li>
+</ul></li>
+</ul>
+<h3 data-number="9.3.4" id="numerical-core-fortran-modules"><span class="header-section-number">9.3.4</span> 4. Numerical Core (Fortran
+Modules)</h3>
+<h4 data-number="9.3.4.1" id="daily-budget-calculation-budget.f90"><span class="header-section-number">9.3.4.1</span> Daily Budget Calculation
+(<code>budget.F90</code>)</h4>
+<ul>
+<li><strong><code>daily_budget</code></strong>: Core subroutine that
+calculates daily ecosystem processes
+<ul>
+<li>Photosynthesis and respiration</li>
+<li>Carbon allocation</li>
+<li>Nutrient cycling</li>
+<li>Water balance</li>
+<li>Growth and mortality</li>
+</ul></li>
+</ul>
+<h4 data-number="9.3.4.2" id="photosynthesis-photo_par.f90"><span class="header-section-number">9.3.4.2</span> Photosynthesis
+(<code>photo_par.f90</code>)</h4>
+<ul>
+<li>Contains photosynthesis parameters and constants</li>
+<li>Implements C3 and C4 photosynthesis models</li>
+<li>Handles light limitation and CO₂ response</li>
+</ul>
+<h4 data-number="9.3.4.3" id="additional-fortran-modules"><span class="header-section-number">9.3.4.3</span> Additional Fortran
+Modules</h4>
+<ul>
+<li><strong><code>allocation.f90</code></strong>: Carbon and nutrient
+allocation algorithms</li>
+<li><strong><code>productivity.f90</code></strong>: NPP calculation and
+growth processes</li>
+<li><strong><code>soil_dec.f90</code></strong>: Soil decomposition and
+nutrient mineralization</li>
+<li><strong><code>water.mod</code></strong>: Water cycle and
+evapotranspiration</li>
+<li><strong><code>evap.f90</code></strong>: Evaporation and
+transpiration calculations</li>
+</ul>
+<h3 data-number="9.3.5" id="configuration-and-parameters"><span class="header-section-number">9.3.5</span> 5. Configuration and
+Parameters</h3>
+<h4 data-number="9.3.5.1" id="configuration-system-config.py"><span class="header-section-number">9.3.5.1</span> Configuration System
+(<code>config.py</code>)</h4>
+<ul>
+<li><strong><code>Config</code></strong>: Reads parameters from
+<code>caete.toml</code></li>
+<li>Manages model configuration including:
+<ul>
+<li>Grid resolution and coordinate reference system</li>
+<li>Community size and number of communities</li>
+<li>Conversion factors for input data</li>
+<li>Multiprocessing settings</li>
+</ul></li>
+</ul>
+<h4 data-number="9.3.5.2" id="parameter-files"><span class="header-section-number">9.3.5.2</span> Parameter Files</h4>
+<ul>
+<li><strong><code>parameters.py</code></strong>: Global parameters</li>
+<li><strong><code>caete.toml</code></strong>: Main configuration
+file</li>
+</ul>
+<h3 data-number="9.3.6" id="execution-and-workflow-caete_driver.py-worker.py"><span class="header-section-number">9.3.6</span> 6. Execution and Workflow
+(<code>caete_driver.py</code>, <code>worker.py</code>)</h3>
+<h4 data-number="9.3.6.1" id="driver-scripts"><span class="header-section-number">9.3.6.1</span> Driver Scripts</h4>
+<ul>
+<li><strong><code>caete_driver.py</code></strong>: Example execution
+script showing typical workflow</li>
+<li><strong><code>caete_driver_CMIP6.py</code></strong>: CMIP6-specific
+execution script</li>
+</ul>
+<h4 data-number="9.3.6.2" id="worker-functions-worker.py"><span class="header-section-number">9.3.6.2</span> Worker Functions
+(<code>worker.py</code>)</h4>
+<ul>
+<li><strong><code>worker</code></strong>: Static methods for different
+simulation phases
+<ul>
+<li>Spinup procedures</li>
+<li>Transient runs</li>
+<li>State saving/loading</li>
+<li>Parallel execution management</li>
+</ul></li>
+</ul>
+<h3 data-number="9.3.7" id="supporting-modules"><span class="header-section-number">9.3.7</span> 7. Supporting Modules</h3>
+<h4 data-number="9.3.7.1" id="hydrological-processes-hydro_caete.py"><span class="header-section-number">9.3.7.1</span> Hydrological Processes
+(<code>hydro_caete.py</code>)</h4>
+<ul>
+<li><strong><code>soil_water</code></strong>: Soil water dynamics</li>
+<li>Hydraulic conductivity calculations</li>
+<li>Water retention curves</li>
+<li>Field capacity and wilting point management</li>
+</ul>
+<h4 data-number="9.3.7.2" id="jit-compiled-functions-caete_jit.py"><span class="header-section-number">9.3.7.2</span> JIT-Compiled Functions
+(<code>caete_jit.py</code>)</h4>
+<ul>
+<li>Performance-critical functions using Numba</li>
+<li>Array manipulation utilities</li>
+<li>Statistical calculations (Shannon diversity, etc.)</li>
+<li>Community-weighted means</li>
+</ul>
+<h4 data-number="9.3.7.3" id="data-processing"><span class="header-section-number">9.3.7.3</span> Data Processing</h4>
+<ul>
+<li><strong><code>dataframes.py</code></strong>: Data processing
+utilities</li>
+<li><strong><code>output.py</code></strong>: Output data structures and
+management</li>
+<li><strong><code>precompilation_data.py</code></strong>: Data
+preparation utilities</li>
+</ul>
+<h3 data-number="9.3.8" id="plant-life-strategy-generation-plsgen.py"><span class="header-section-number">9.3.8</span> 8. Plant Life Strategy
+Generation (<code>plsgen.py</code>)</h3>
+<h4 data-number="9.3.8.1" id="pls-table-creation"><span class="header-section-number">9.3.8.1</span> PLS Table Creation</h4>
+<ul>
+<li>Generates quasi-random plant prototypes</li>
+<li>Based on literature-derived trait relationships</li>
+<li>Creates functional trait combinations</li>
+<li>Saves tables in standardized format</li>
+</ul>
+<h2 data-number="9.4" id="model-execution-flow"><span class="header-section-number">9.4</span> Model Execution Flow</h2>
+<h3 data-number="9.4.1" id="initialization-phase"><span class="header-section-number">9.4.1</span> 1. Initialization Phase</h3>
+<ol type="1">
+<li>Load configuration from <code>caete.toml</code></li>
+<li>Create region object with climate and soil data</li>
+<li>Load PLS table (global plant prototypes)</li>
+<li>Initialize gridcells with metacommunities</li>
+<li>Assign initial PLS to communities</li>
+</ol>
+<h3 data-number="9.4.2" id="simulation-loop-daily-time-step"><span class="header-section-number">9.4.2</span> 2. Simulation Loop (Daily
+Time Step)</h3>
+<ol type="1">
+<li><strong>Climate Forcing</strong>: Read daily weather data</li>
+<li><strong>Community Loop</strong>: For each community in the
+metacommunity:
+<ul>
+<li>Calculate photosynthesis and respiration</li>
+<li>Determine nutrient availability and uptake</li>
+<li>Apply environmental filtering</li>
+<li>Update biomass pools</li>
+<li>Handle PLS mortality and recruitment</li>
+</ul></li>
+<li><strong>Soil Processes</strong>: Update soil carbon and nutrient
+pools</li>
+<li><strong>Water Balance</strong>: Calculate evapotranspiration and
+soil moisture</li>
+<li><strong>Output</strong>: Store daily results</li>
+</ol>
+<h3 data-number="9.4.3" id="community-dynamics"><span class="header-section-number">9.4.3</span> 3. Community Dynamics</h3>
+<ul>
+<li><strong>Environmental Filtering</strong>: Remove PLS that cannot
+survive current conditions</li>
+<li><strong>Recruitment</strong>: Add new PLS from global table based on
+environmental suitability</li>
+<li><strong>Competition</strong>: PLS compete for resources based on
+their traits</li>
+<li><strong>Succession</strong>: Community composition changes over
+time</li>
+</ul>
+<h2 data-number="9.5" id="key-model-features"><span class="header-section-number">9.5</span> Key Model Features</h2>
+<h3 data-number="9.5.1" id="trait-based-vegetation"><span class="header-section-number">9.5.1</span> 1. Trait-Based
+Vegetation</h3>
+<ul>
+<li>17 functional traits per PLS including:
+<ul>
+<li>Photosynthetic parameters (Vcmax, specific leaf area)</li>
+<li>Allocation patterns (leaf:wood:root ratios)</li>
+<li>Nutrient acquisition strategies</li>
+<li>Phenological characteristics</li>
+<li>Stress tolerance parameters</li>
+</ul></li>
+</ul>
+<h3 data-number="9.5.2" id="biogeochemical-cycling"><span class="header-section-number">9.5.2</span> 2. Biogeochemical
+Cycling</h3>
+<ul>
+<li><strong>Carbon Cycle</strong>:
+<ul>
+<li>Photosynthesis (C3/C4 pathways)</li>
+<li>Plant respiration (maintenance + growth)</li>
+<li>Soil decomposition (4 carbon pools)</li>
+<li>Litter production and turnover</li>
+</ul></li>
+<li><strong>Nitrogen Cycle</strong>:
+<ul>
+<li>Multiple N pools (organic, inorganic, available)</li>
+<li>N fixation and mineralization</li>
+<li>Plant N uptake strategies</li>
+<li>N limitation on growth</li>
+</ul></li>
+<li><strong>Phosphorus Cycle</strong>:
+<ul>
+<li>P weathering and sorption</li>
+<li>Organic P mineralization</li>
+<li>P uptake mechanisms</li>
+<li>P limitation effects</li>
+</ul></li>
+</ul>
+<h3 data-number="9.5.3" id="water-cycle"><span class="header-section-number">9.5.3</span> 3. Water Cycle</h3>
+<ul>
+<li>Soil water dynamics (2 soil layers)</li>
+<li>Evapotranspiration modeling</li>
+<li>Water stress effects on photosynthesis</li>
+<li>Hydraulic redistribution</li>
+</ul>
+<h3 data-number="9.5.4" id="spatial-and-temporal-scales"><span class="header-section-number">9.5.4</span> 4. Spatial and Temporal
+Scales</h3>
+<ul>
+<li><strong>Spatial</strong>: Gridcell-based (typically 0.5°
+resolution)</li>
+<li><strong>Temporal</strong>: Daily time step for processes, annual for
+community dynamics</li>
+<li><strong>Extent</strong>: Regional to global scales</li>
+</ul>
+<h2 data-number="9.6" id="technical-implementation"><span class="header-section-number">9.6</span> Technical Implementation</h2>
+<h3 data-number="9.6.1" id="performance-optimization"><span class="header-section-number">9.6.1</span> 1. Performance
+Optimization</h3>
+<ul>
+<li><strong>Fortran Core</strong>: Numerical computations in optimized
+Fortran</li>
+<li><strong>Parallel Processing</strong>: Multiprocessing for
+gridcell-level parallelization</li>
+<li><strong>JIT Compilation</strong>: Numba for Python performance
+bottlenecks</li>
+<li><strong>Memory Management</strong>: Efficient array operations and
+data structures</li>
+</ul>
+<h3 data-number="9.6.2" id="data-management"><span class="header-section-number">9.6.2</span> 2. Data Management</h3>
+<ul>
+<li><strong>Compressed Storage</strong>: BZ2 compression for
+input/output files</li>
+<li><strong>State Persistence</strong>: Complete model state can be
+saved/restored</li>
+<li><strong>Flexible I/O</strong>: Multiple input formats supported</li>
+<li><strong>Metadata Tracking</strong>: Comprehensive provenance
+information</li>
+</ul>
+<h3 data-number="9.6.3" id="model-validation-and-testing"><span class="header-section-number">9.6.3</span> 3. Model Validation and
+Testing</h3>
+<ul>
+<li><strong>Unit Tests</strong>: Individual component testing</li>
+<li><strong>Integration Tests</strong>: Full model execution
+validation</li>
+<li><strong>Benchmarking</strong>: Performance profiling
+capabilities</li>
+<li><strong>Debugging Tools</strong>: Extensive logging and error
+handling</li>
+</ul>
+<h2 data-number="9.7" id="configuration-and-customization"><span class="header-section-number">9.7</span> Configuration and
+Customization</h2>
+<h3 data-number="9.7.1" id="model-parameters-caete.toml"><span class="header-section-number">9.7.1</span> 1. Model Parameters
+(<code>caete.toml</code>)</h3>
+<ul>
+<li>Adjustable community size and number</li>
+<li>Configurable trait ranges and distributions</li>
+<li>Flexible time periods and forcing scenarios</li>
+<li>Customizable output variables and frequencies</li>
+</ul>
+<h3 data-number="9.7.2" id="experimental-design"><span class="header-section-number">9.7.2</span> 2. Experimental Design</h3>
+<ul>
+<li><strong>Spinup Protocols</strong>: Equilibration procedures</li>
+<li><strong>Scenario Analysis</strong>: Climate change, land use,
+fertilization</li>
+<li><strong>Sensitivity Analysis</strong>: Parameter perturbation
+studies</li>
+<li><strong>Factorial Experiments</strong>: Multiple factor
+interactions</li>
+</ul>
+<h2 data-number="9.8" id="applications-and-use-cases"><span class="header-section-number">9.8</span> Applications and Use Cases</h2>
+<h3 data-number="9.8.1" id="climate-change-research"><span class="header-section-number">9.8.1</span> 1. Climate Change
+Research</h3>
+<ul>
+<li>Vegetation response to warming</li>
+<li>CO₂ fertilization effects</li>
+<li>Ecosystem adaptation and migration</li>
+<li>Tipping point identification</li>
+</ul>
+<h3 data-number="9.8.2" id="biogeochemical-studies"><span class="header-section-number">9.8.2</span> 2. Biogeochemical
+Studies</h3>
+<ul>
+<li>Carbon-climate feedbacks</li>
+<li>Nutrient limitation patterns</li>
+<li>Ecosystem productivity trends</li>
+<li>Soil carbon dynamics</li>
+</ul>
+<h3 data-number="9.8.3" id="biodiversity-research"><span class="header-section-number">9.8.3</span> 3. Biodiversity Research</h3>
+<ul>
+<li>Functional diversity patterns</li>
+<li>Community assembly rules</li>
+<li>Environmental filtering mechanisms</li>
+<li>Trait-environment relationships</li>
+</ul>
+<h2 data-number="9.9" id="additional-core-components-complete-analysis"><span class="header-section-number">9.9</span> Additional Core Components
+(Complete Analysis)</h2>
+<h3 data-number="9.9.1" id="worker-functions-and-execution-control-worker.py"><span class="header-section-number">9.9.1</span> 9. Worker Functions and
+Execution Control (<code>worker.py</code>)</h3>
+<h4 data-number="9.9.1.1" id="worker-class"><span class="header-section-number">9.9.1.1</span> Worker Class</h4>
+<ul>
+<li><strong><code>worker</code></strong>: Static methods for different
+execution phases
+<ul>
+<li><strong><code>create_run_breaks()</code></strong>: Creates temporal
+intervals for model runs</li>
+<li><strong><code>spinup()</code></strong>: Main spinup procedure with
+glacial/interglacial cycles</li>
+<li><strong><code>spinup_cmip6()</code></strong>: CMIP6-specific spinup
+procedure</li>
+<li><strong><code>soil_pools_spinup()</code></strong>: Soil
+equilibration procedures</li>
+<li><strong><code>soil_pools_spinup_glacial()</code></strong>: Glacial
+period soil spinup</li>
+<li><strong><code>soil_pools_spinup_interglacial()</code></strong>:
+Interglacial period soil spinup</li>
+<li><strong><code>quit_spinup()</code></strong>: Final spinup phase
+without PLS recruitment</li>
+<li><strong><code>run_spinup_transfer()</code></strong>: Transfer from
+spinup to transient phase</li>
+<li><strong><code>transclim_run()</code></strong>: Transient climate
+simulation</li>
+<li><strong><code>transient_run_brk()</code></strong>: Transient run
+with time breaks</li>
+<li><strong><code>transient_piControl_brk()</code></strong>:
+Pre-industrial control run</li>
+<li><strong><code>save_state_zstd()</code></strong>: Save model state
+with ZSTD compression</li>
+<li><strong><code>load_state_zstd()</code></strong>: Load compressed
+model state</li>
+</ul></li>
+</ul>
+<h3 data-number="9.9.2" id="jit-compiled-performance-functions-caete_jit.py"><span class="header-section-number">9.9.2</span> 10. JIT-Compiled Performance
+Functions (<code>caete_jit.py</code>)</h3>
+<h4 data-number="9.9.2.1" id="numba-optimized-functions"><span class="header-section-number">9.9.2.1</span> Numba-Optimized
+Functions</h4>
+<ul>
+<li><strong><code>process_tuple()</code></strong>: Process limitation
+status tuples</li>
+<li><strong><code>process_tuples()</code></strong>: Batch processing of
+limitation data</li>
+<li><strong><code>pft_area_frac()</code></strong>: Calculate PFT area
+fractions (32-bit)</li>
+<li><strong><code>pft_area_frac64()</code></strong>: Calculate PFT area
+fractions (64-bit)</li>
+<li><strong><code>neighbours_index()</code></strong>: Find neighboring
+cells in grid</li>
+<li><strong><code>inflate_array()</code></strong>: Expand partial arrays
+to full size</li>
+<li><strong><code>linear_func()</code></strong>: Linear coupling
+function for atmosphere-surface</li>
+<li><strong><code>atm_canopy_coupling()</code></strong>:
+Atmosphere-canopy coupling calculation</li>
+<li><strong><code>masked_mean()</code></strong>: Calculate means with
+masked values</li>
+<li><strong><code>masked_mean_2D()</code></strong>: 2D array masked mean
+calculation</li>
+<li><strong><code>cw_mean()</code></strong>: Community-weighted mean
+calculation</li>
+<li><strong><code>cw_variance()</code></strong>: Community-weighted
+variance calculation</li>
+<li><strong><code>shannon_entropy()</code></strong>: Shannon entropy for
+diversity</li>
+<li><strong><code>shannon_evenness()</code></strong>: Shannon evenness
+index</li>
+<li><strong><code>shannon_diversity()</code></strong>: Shannon diversity
+index</li>
+</ul>
+<h3 data-number="9.9.3" id="plant-life-strategy-generation-plsgen.py-1"><span class="header-section-number">9.9.3</span> 11. Plant Life Strategy
+Generation (<code>plsgen.py</code>)</h3>
+<h4 data-number="9.9.3.1" id="pls-table-generation-system"><span class="header-section-number">9.9.3.1</span> PLS Table Generation
+System</h4>
+<ul>
+<li><strong><code>get_parameters()</code></strong>: Read parameters from
+plsgen.toml</li>
+<li><strong><code>check_viability()</code></strong>: Validate PLS trait
+combinations</li>
+<li><strong><code>assert_data_size()</code></strong>: Check dataset size
+requirements</li>
+<li><strong><code>allocation_combinations()</code></strong>: Generate
+allocation patterns using Dirichlet distribution</li>
+<li><strong><code>nutrient_ratios()</code></strong>: Generate N:C and
+P:C ratios</li>
+<li><strong><code>carbon_coefficients()</code></strong>: Create carbon
+allocation and residence time combinations</li>
+<li><strong><code>table_gen()</code></strong>: Main function to generate
+complete PLS table</li>
+<li><strong>Constants</strong>: Grass/woody ratios, minimum allocations,
+residence times</li>
+</ul>
+<h3 data-number="9.9.4" id="data-processing-and-output-dataframes.py"><span class="header-section-number">9.9.4</span> 12. Data Processing and
+Output (<code>dataframes.py</code>)</h3>
+<h4 data-number="9.9.4.1" id="output-management-system"><span class="header-section-number">9.9.4.1</span> Output Management
+System</h4>
+<ul>
+<li><strong><code>get_spins()</code></strong>: List available model
+output periods</li>
+<li><strong><code>print_variables()</code></strong>: Display available
+output variables</li>
+<li><strong><code>get_var_metadata()</code></strong>: Retrieve variable
+metadata (units, descriptions)</li>
+<li><strong><code>output_manager</code></strong>: Class with methods
+for:
+<ul>
+<li><strong><code>generic_text_output_grd()</code></strong>: Generic
+gridded text output</li>
+<li><strong><code>cities_output()</code></strong>: City-specific output
+processing</li>
+<li><strong><code>region_grid_output()</code></strong>: Regional gridded
+output</li>
+<li><strong><code>process_multiple_regions()</code></strong>:
+Multi-region processing</li>
+<li><strong>Variable definitions</strong>: Complete metadata for 50+
+output variables</li>
+</ul></li>
+</ul>
+<h3 data-number="9.9.5" id="geospatial-functions-_geos.py"><span class="header-section-number">9.9.5</span> 13. Geospatial Functions
+(<code>_geos.py</code>)</h3>
+<h4 data-number="9.9.5.1" id="geographic-utilities"><span class="header-section-number">9.9.5.1</span> Geographic Utilities</h4>
+<ul>
+<li><strong><code>calculate_area()</code></strong>: Calculate grid cell
+area using geodesic calculations</li>
+<li><strong><code>find_indices_xy()</code></strong>: Convert lat/lon to
+grid indices</li>
+<li><strong><code>find_coordinates_xy()</code></strong>: Convert grid
+indices to lat/lon</li>
+<li><strong><code>get_region()</code></strong>: Extract regional
+boundaries</li>
+<li><strong><code>pan_amazon_region</code></strong>: Predefined Amazon
+region coordinates</li>
+<li><strong>Unit test classes</strong>: Comprehensive testing for
+geographic functions</li>
+</ul>
+<h3 data-number="9.9.6" id="hydrological-processes-hydro_caete.py-1"><span class="header-section-number">9.9.6</span> 14. Hydrological Processes
+(<code>hydro_caete.py</code>)</h3>
+<h4 data-number="9.9.6.1" id="soil-water-dynamics"><span class="header-section-number">9.9.6.1</span> Soil Water Dynamics</h4>
+<ul>
+<li><strong><code>B_func()</code></strong>: Moisture-tension coefficient
+calculation</li>
+<li><strong><code>ksat_func()</code></strong>: Saturated hydraulic
+conductivity</li>
+<li><strong><code>kth_func()</code></strong>: Unsaturated hydraulic
+conductivity</li>
+<li><strong><code>soil_water</code></strong>: Class managing soil water
+dynamics
+<ul>
+<li><strong>Water retention parameters</strong>: Wilting point, field
+capacity, saturation</li>
+<li><strong>Water pool management</strong>: Upper and lower soil
+layers</li>
+<li><strong>Available water capacity</strong>: Calculations for plant
+uptake</li>
+</ul></li>
+</ul>
+<h3 data-number="9.9.7" id="complete-fortran-module-analysis"><span class="header-section-number">9.9.7</span> 15. Complete Fortran Module
+Analysis</h3>
+<h4 data-number="9.9.7.1" id="core-fortran-modules-.f90"><span class="header-section-number">9.9.7.1</span> Core Fortran Modules
+(<code>*.f90</code>)</h4>
+<ul>
+<li><strong><code>types.f90</code></strong>: Precision definitions
+(2/4/8 byte integers/floats)</li>
+<li><strong><code>global_par.f90</code></strong>: Global parameters and
+constants
+<ul>
+<li>Q10 temperature response (1.4)</li>
+<li>Soil thermal properties</li>
+<li>Stomatal resistance limits</li>
+<li>Number of PLS (200) and traits (17)</li>
+<li>OpenMP thread settings</li>
+</ul></li>
+</ul>
+<h4 data-number="9.9.7.2" id="carbon-costs-module-cc.f90"><span class="header-section-number">9.9.7.2</span> Carbon Costs Module
+(<code>cc.f90</code>)</h4>
+<ul>
+<li><strong><code>calc_passive_uptk1()</code></strong>: Passive nutrient
+uptake via transpiration</li>
+<li><strong><code>passive_uptake()</code></strong>: Estimate passive N
+and P uptake</li>
+<li><strong><code>cc_active()</code></strong>: Carbon costs of active
+uptake</li>
+<li><strong><code>active_costN()</code></strong>: Nitrogen active uptake
+costs</li>
+<li><strong><code>active_costP()</code></strong>: Phosphorus active
+uptake costs</li>
+<li><strong><code>cc_fix()</code></strong>: Carbon costs of N
+fixation</li>
+<li><strong><code>fixed_n()</code></strong>: N fixation
+calculations</li>
+<li><strong><code>cc_retran()</code></strong>: Retranslocation
+costs</li>
+<li><strong><code>retran_nutri_cost()</code></strong>: Nutrient
+retranslocation</li>
+<li><strong><code>select_active_strategy()</code></strong>: Choose
+optimal uptake strategy</li>
+<li><strong>8 uptake strategies</strong>: Different pathways for N and P
+acquisition</li>
+</ul>
+<h4 data-number="9.9.7.3" id="photosynthesis-functions-funcs.f90"><span class="header-section-number">9.9.7.3</span> Photosynthesis Functions
+(<code>funcs.f90</code>)</h4>
+<ul>
+<li><strong><code>gross_ph()</code></strong>: Gross photosynthesis
+calculation</li>
+<li><strong><code>leaf_area_index()</code></strong>: LAI
+calculation</li>
+<li><strong><code>f_four()</code></strong>: Auxiliary function for light
+calculations</li>
+<li><strong><code>spec_leaf_area()</code></strong>: Specific leaf
+area</li>
+<li><strong><code>sla_reich()</code></strong>: SLA based on Reich et
+al.</li>
+<li><strong><code>leaf_nitrogen_concentration()</code></strong>: Leaf N
+concentration</li>
+<li><strong><code>water_stress_modifier()</code></strong>: F5 water
+stress function</li>
+<li><strong><code>photosynthesis_rate()</code></strong>: Leaf-level CO2
+assimilation</li>
+<li><strong><code>vcmax_a()</code></strong>: Vcmax from Domingues et
+al. (2010)</li>
+<li><strong><code>stomatal_resistance()</code></strong>: Canopy
+resistance (Medlyn et al. 2011)</li>
+<li><strong><code>vapor_p_deficit()</code></strong>: Vapor pressure
+deficit</li>
+<li><strong><code>transpiration()</code></strong>: Plant
+transpiration</li>
+<li><strong><code>tetens()</code></strong>: Saturation vapor
+pressure</li>
+<li><strong><code>m_resp()</code></strong>: Maintenance respiration</li>
+<li><strong><code>g_resp()</code></strong>: Growth respiration</li>
+<li><strong><code>realized_npp()</code></strong>: NPP after
+limitations</li>
+<li><strong><code>spinup2()</code></strong>: Vegetation pool spinup</li>
+<li><strong><code>spinup3()</code></strong>: Viability check for trait
+combinations</li>
+<li><strong><code>water_ue()</code></strong>: Water use efficiency</li>
+<li><strong><code>leap()</code></strong>: Leap year detection</li>
+</ul>
+<h3 data-number="9.9.8" id="configuration-and-parameter-management"><span class="header-section-number">9.9.8</span> 16. Configuration and
+Parameter Management</h3>
+<h4 data-number="9.9.8.1" id="configuration-system-config.py-1"><span class="header-section-number">9.9.8.1</span> Configuration System
+(<code>config.py</code>)</h4>
+<ul>
+<li><strong><code>Config</code></strong>: Nested configuration class
+with attribute access</li>
+<li><strong><code>fetch_config()</code></strong>: Load configuration
+from TOML file</li>
+<li><strong><code>get_fortran_runtime()</code></strong>:
+Windows-specific Fortran runtime path</li>
+<li><strong><code>update_sys_pathlib()</code></strong>: DLL path
+management for Windows</li>
+</ul>
+<h4 data-number="9.9.8.2" id="main-configuration-caete.toml"><span class="header-section-number">9.9.8.2</span> Main Configuration
+(<code>caete.toml</code>)</h4>
+<ul>
+<li><strong>Multiprocessing settings</strong>: Number of processes and
+threads</li>
+<li><strong>Conversion factors</strong>: Unit conversions for ISIMIP
+data</li>
+<li><strong>Metacommunity configuration</strong>: Number of communities
+and PLS</li>
+<li><strong>Trait ranges</strong>: Maximum values for PLS traits</li>
+<li><strong>Fertilization experiments</strong>: N and P addition
+amounts</li>
+<li><strong>Output settings</strong>: Variables and frequencies</li>
+<li><strong>Day-of-year settings</strong>: Monthly environmental
+filtering dates</li>
+</ul>
+<h4 data-number="9.9.8.3" id="parameter-definitions-parameters.py"><span class="header-section-number">9.9.8.3</span> Parameter Definitions
+(<code>parameters.py</code>)</h4>
+<ul>
+<li><strong>File paths</strong>: Input data locations and output
+directories</li>
+<li><strong>Soil parameters</strong>: Water retention curves for global
+grids
+<ul>
+<li><code>tsoil</code>: Topsoil properties (saturation, field capacity,
+wilting point)</li>
+<li><code>ssoil</code>: Subsoil properties</li>
+<li><code>hsoil</code>: Hydraulic properties (porosity, water potential,
+texture)</li>
+</ul></li>
+<li><strong>Regional masks</strong>: Pan-Amazon forest masks</li>
+<li><strong>Standard filenames</strong>: PLS tables, state files, run
+identifiers</li>
+</ul>
+<h3 data-number="9.9.9" id="testing-and-validation-framework"><span class="header-section-number">9.9.9</span> 17. Testing and Validation
+Framework</h3>
+<h4 data-number="9.9.9.1" id="test-modules-tests"><span class="header-section-number">9.9.9.1</span> Test Modules
+(<code>tests/</code>)</h4>
+<ul>
+<li><strong><code>caete_import.py</code></strong>: Module import
+tests</li>
+<li><strong><code>canopy_resistance.py</code></strong>: Stomatal
+resistance testing</li>
+<li><strong><code>cc_test.py</code></strong>: Carbon cost function
+tests</li>
+<li><strong><code>century_daily.py</code></strong>: Daily soil carbon
+model tests</li>
+<li><strong><code>ncycle.py</code></strong>: Nitrogen cycle testing</li>
+<li><strong><code>test_atm_canopy_coupling.py</code></strong>:
+Atmosphere-canopy coupling tests</li>
+<li><strong><code>test_carbon3.py</code></strong>: Soil decomposition
+tests</li>
+<li><strong><code>test_f4.py</code></strong>: Light function tests</li>
+<li><strong><code>test_n_conc.py</code></strong>: Nitrogen concentration
+tests</li>
+<li><strong><code>test_sla.py</code></strong>: Specific leaf area
+tests</li>
+<li><strong><code>test_spinup3.py</code></strong>: Spinup viability
+tests</li>
+<li><strong><code>test_vcmax.py</code></strong>: Vcmax function
+tests</li>
+<li><strong><code>water_stress_modifier.py</code></strong>: Water stress
+tests</li>
+</ul>
+<h3 data-number="9.9.10" id="utilities-and-support-modules"><span class="header-section-number">9.9.10</span> 18. Utilities and Support
+Modules</h3>
+<h4 data-number="9.9.10.1" id="execution-scripts"><span class="header-section-number">9.9.10.1</span> Execution Scripts</h4>
+<ul>
+<li><strong><code>from_state.py</code></strong>: Resume simulations from
+saved states</li>
+<li><strong><code>time_output_manager.py</code></strong>: Time execution
+performance</li>
+<li><strong><code>k34_experiment.py</code></strong>: Site-specific
+experiments</li>
+<li><strong><code>sandbox.py</code></strong>: Development and testing
+script</li>
+</ul>
+<h4 data-number="9.9.10.2" id="profiling-and-performance"><span class="header-section-number">9.9.10.2</span> Profiling and
+Performance</h4>
+<ul>
+<li><strong><code>profiling/</code></strong>: Performance profiling
+tools</li>
+<li><strong><code>profile_dataframes.py</code></strong>: Output
+processing performance</li>
+<li><strong>Memory profiling</strong>: Integration with
+memory_profiler</li>
+</ul>
+<h4 data-number="9.9.10.3" id="debug-and-development"><span class="header-section-number">9.9.10.3</span> Debug and Development</h4>
+<ul>
+<li><strong><code>debug_aux/</code></strong>: Debugging utilities and
+helper functions</li>
+<li><strong><code>equations/</code></strong>: Mathematical equation
+implementations</li>
+<li><strong><code>windows_utils/</code></strong>: Windows-specific
+utilities</li>
+</ul>
+<h3 data-number="9.9.11" id="model-architecture-summary"><span class="header-section-number">9.9.11</span> 19. Model Architecture
+Summary</h3>
+<h4 data-number="9.9.11.1" id="data-flow-architecture"><span class="header-section-number">9.9.11.1</span> Data Flow
+Architecture</h4>
+<ol type="1">
+<li><strong>Initialization</strong>: Load PLS table → Create region →
+Initialize gridcells → Setup metacommunities</li>
+<li><strong>Daily Loop</strong>: Climate forcing → Community processes →
+Soil processes → Water balance → Output</li>
+<li><strong>Community Dynamics</strong>: Environmental filtering → PLS
+recruitment → Competition → Succession</li>
+<li><strong>Annual Processing</strong>: Diversity calculations → State
+saving → Community reset options</li>
+</ol>
+<h4 data-number="9.9.11.2" id="process-integration"><span class="header-section-number">9.9.11.2</span> Process Integration</h4>
+<ul>
+<li><strong>Photosynthesis-Allocation-Growth</strong>: Coupled C-N-P
+cycling with trait-based constraints</li>
+<li><strong>Water-Carbon-Nutrients</strong>: Integrated limitation
+effects on all processes</li>
+<li><strong>Competition-Succession</strong>: Trait-based environmental
+filtering and community assembly</li>
+<li><strong>Spatial-Temporal</strong>: Hierarchical organization from
+PLS to communities to metacommunities to regions</li>
+</ul>
+<h4 data-number="9.9.11.3" id="performance-optimization-1"><span class="header-section-number">9.9.11.3</span> Performance
+Optimization</h4>
+<ul>
+<li><strong>Fortran Core</strong>: All numerically intensive
+calculations</li>
+<li><strong>Python Management</strong>: Data handling, I/O,
+multiprocessing</li>
+<li><strong>JIT Compilation</strong>: Critical Python functions
+optimized with Numba</li>
+<li><strong>Memory Management</strong>: Efficient array operations and
+compressed storage</li>
+<li><strong>Parallel Processing</strong>: Gridcell-level parallelization
+with OpenMP threads</li>
+</ul>
+<p><a href="./README.md">⇦ Back</a></p>
+</body>
+</html>

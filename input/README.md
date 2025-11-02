@@ -1,11 +1,13 @@
 # Input data for CAETÊ
 
+[⇦ Back](../input_data.md)
+
 This folder contains the input data used to run the CAETE model. These data are divided into
 folders:
 
-[mask]("./mask/"), [co2]("./co2/"), [hydra]("./hydra/"), and [soil]("./soil/") contains some boolean masks used to preprocess input data and configure model execution. There are also files with soil hydraulic parameters and nutrient content (N & P). The co2 folder has timeseries of annual ATM CO2 concentration. Observed and projected.
+[mask](./mask/), [co2](./co2/), [hydra](./hydra/), and [soil](./soil/) contains some boolean masks used to preprocess input data and configure model execution. There are also files with soil hydraulic parameters and nutrient content (N & P). The co2 folder has timeseries of annual ATM CO2 concentration. Observed and projected.
 
-[20CRv3-ERA5]("./20CRv3-ERA5/") and [MPI-ESM1-2-HR](./MPI-ESM1-2-HR/) store climatic drivers. Both folders should contain data downloaded from the ISIMIP data repository. The netCDF files with climatic variables (e.g., tas, hurs) must be organized into a subfolder, like in the following way:
+[20CRv3-ERA5](./20CRv3-ERA5/) and [MPI-ESM1-2-HR](./MPI-ESM1-2-HR/) store climatic drivers. Both folders should contain data downloaded from the ISIMIP repository. The netCDF files with climatic variables (e.g., tas, hurs) must be organized into a subfolder, like in the following way:
 
 ```./MPI-ESM1-2-HR/ssp585_raw```
 
@@ -25,7 +27,7 @@ If these assumptions are met then you can use the pre_processing.py script to pr
 
 For example, to process the netCDF files in the example above you can run:
 
-```$ python pre_processing.py --dataset MPI-ESM1-2-HR --mode ssp585```
+```$ python preprocess_caete.py --dataset MPI-ESM1-2-HR --mode ssp585```
 
 * Note that you use only the identification of the dataset: ```ssp585``` for the flag ```--mode```. The first flag, ```--dataset``` indicates the climatic dataset that is used: ```MPI-ESM1-2-HR```.
 
@@ -33,7 +35,7 @@ This program will create a folder called ```ssp585``` like:
 
 ```./MPI-ESM1-2-HR/ssp585/```
 
-This folder contains the data in another format. Each file for a different gridcell. Each file contains also data on soil nutrients and hydraulic parameters needed by the model in order to execute the processes for a given gridcell.
+This folder contains the data (meteorological series and soil data) in a different format suitable for CAETE execution. 
 
 Climatic data: ISIMIP3a/b
 
@@ -53,16 +55,13 @@ The raw input climatic data was downloaded from the [ISIMIP REPOSITORY](https://
 
 ### Soil data
 
-HWSD:
 Wieder, W.R., J. Boehnert, G.B. Bonan, and M. Langseth. 2014. Regridded Harmonized World Soil Database v1.2. Data set. Available on-line \[[http://daac.ornl.gov](http://daac.ornl.gov)\] from Oak Ridge National Laboratory Distributed Active Archive Center, Oak Ridge, Tennessee, USA. [http://dx.doi.org/10.3334/ORNLDAAC/1247](http://dx.doi.org/10.3334/ORNLDAAC/1247)
 
-IGBP: Global Soil Data Task. (2000). Global Gridded Surfaces of Selected Soil Characteristics (IGBP-DIS). Data set. Available on-line \[[http://daac.ornl.gov](http://daac.ornl.gov)\] from Oak Ridge National Laboratory Distributed Active Archive Center, Oak Ridge, Tennessee, USA. [https://doi.org/10.3334/ORNLDAAC/569](https://doi.org/10.3334/ORNLDAAC/569).
+Poggio, L., L. M. de Sousa, N. H. Batjes, G. B. M. Heuvelink, B. Kempen, E. Ribeiro, and D. Rossiter. "Soilgrids 2.0: Producing Soil Information for the Globe with Quantified Spatial Uncertainty." SOIL 7, no. 1 (2021): 217-40. [https://doi.org/10.5194/soil-7-217-2021](https://doi.org/10.5194/soil-7-217-2021)
 
-## Usage of `pre_processing.py`
-
-The `pre_processing.py` script is designed to prepare the necessary input files for the CAETÊ model by processing raw climatic and soil data. Below are the steps and examples to use this script effectively.
+Darela-Filho, João Paulo, Anja Rammig, Katrin Fleischer, Tatiana Reichert, Laynara Figueiredo Lugli, Carlos Alberto Quesada, Luis Carlos Colocho Hurtarte, Mateus Dantas de Paula, and David M. Lapola. "Reference Maps of Soil Phosphorus for the Pan-Amazon Region." Earth System Science Data 16, no. 1 (2024): 715-29. [https://doi.org/10.5194/essd-16-715-2024](https://doi.org/10.5194/essd-16-715-2024).
 
 ### Prerequisites
 
 * Ensure you have Python installed on your system.
-* Install the required dependencies by running
+* 

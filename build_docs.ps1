@@ -1,0 +1,1 @@
+pandoc README.md system_config.md build_instructions.md input_data.md caete_architecture.md -s --embed-resources --standalone --toc --number-sections --metadata title="CAETÊ" -o caete_docs.html
