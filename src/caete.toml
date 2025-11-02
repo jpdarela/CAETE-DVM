@@ -41,7 +41,7 @@ nprocs= 64 # Threads/processes used to post process the **Output**. Not used by 
 # max_processes limit the number of python processes used to run the model.
 # Should not be larger than the number of available logical cores.
 # max_processes = 16 # Number of python processes used to run the model.
-max_processes = 128 # e.g., for sombrero
+max_processes = 16 # e.g., for sombrero
 
 # Number of threads used by OpenMP which each python process can use.
 # Must compile the extension module with OpenMP support to have any effect. See the Makefile(_win)
@@ -125,7 +125,7 @@ n = 1 # Effects only in runtime, recompilation not needed.
 # unless you recompile it. THe model will not run if you compile
 # it with a value and then run it with a different value.
 
-npls_max = 1000
+npls_max = 500
  # number of traits in a PLS
 ntraits = 17
 

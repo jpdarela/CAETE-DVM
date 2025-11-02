@@ -208,3 +208,6 @@ clean_all: clean clean_outputs
 
 clean_dfs:
 	del /s /q .\\__pycache__\\dataframes.cpython*.pyc
+
+clean_community:
+	del /s /q .\\__pycache__\\community.cpython*.pyc

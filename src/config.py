@@ -45,6 +45,11 @@ import tomllib #TODO: this lib only available in the standard library in python 
 # This is the default path to the caete.toml file.
 config_file = Path(__file__).parent / "caete.toml"
 
+# Path to the caete_module/.libs folder (when using gfortran in windows systems)
+caete_libs_path = Path(__file__).parent / "caete_module" / ".libs"
+if sys.platform != "win32":
+    caete_libs_path = None
+
 # Path to the fortran runtime
 # This is used to import the caete_module in windows systems.
 fortran_runtime: Path | None = None
@@ -122,7 +127,6 @@ def update_sys_pathlib(lib) -> None:
     if sys.platform != "win32":
         # On non-Windows systems, we don't need to add DLL directories
         return
-
     if isinstance(lib, str):
         lib_path = lib
     elif isinstance(lib, Path):
@@ -140,7 +144,8 @@ def update_sys_pathlib(lib) -> None:
     if lib_path in _added_dll_directories:
         # print(f"Directory {lib_path} already added to the PATH.")
         return  # Already added, skip
-
+    if not Path(lib_path).exists():
+        return  # Path does not exist, skip
     try:
         os.add_dll_directory(lib_path)
         _added_dll_directories.add(lib_path)
@@ -153,10 +158,36 @@ def update_sys_pathlib(lib) -> None:
             raise ImportError(f"Could not add the DLL directory to the PATH: {e}")
 
 
+
+
 if sys.platform == "win32":
-    # Add the fortran runtime path to the system path
-    # This is needed to import the caete_module in windows systems
-    update_sys_pathlib(get_fortran_runtime())
+    def update_runtime_gcc_gfortran(dll_path="caete_module/.libs"):
+        """Update the system path to include the gfortran/gcc runtime libraries."""
+        
+        # Example path where gfortran/gcc dlls are located
+        # You need to adjust this path according to your f2py wrapper build setup
+        # We assume that the dlls are in the .libs folder inside the caete_module folder
+        if caete_libs_path is None:
+            return
+        dll_src = Path(dll_path).resolve()
+        dll_exists = False
+        if dll_src.exists():
+            dll_exists = True
+        if dll_exists and caete_libs_path.exists():
+            update_sys_pathlib(caete_libs_path.resolve())
+    
+    def update_runtime_oneapi():
+        """Update the system path to include the OneAPI fortran runtime libraries."""
+        update_sys_pathlib(get_fortran_runtime())
+
+    
+    update_runtime_oneapi()
+    update_runtime_gcc_gfortran()
+
+
+
+# CONFIG class using Pydantic ----
+
 
 class OutputConfig(BaseModel):
     """Configuration for output settings."""

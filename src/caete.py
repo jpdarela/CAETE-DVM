@@ -146,8 +146,9 @@ from caete_jit import pft_area_frac64
 # so the shared library can find the fortran runtime libraries of the intel one API compiler (ifx)
 # Note: This is only necessary in Windows systems
 if sys.platform == "win32":
-    from config import fortran_runtime, update_sys_pathlib
+    from config import fortran_runtime, update_sys_pathlib, caete_libs_path
     update_sys_pathlib(fortran_runtime)
+    update_sys_pathlib(caete_libs_path)
 
 # shared library
 from caete_module import budget as model # type: ignore
@@ -377,7 +378,7 @@ class state_zero:
         # It is a child from ../outputs - defined in caete.toml
 
         # Plant life strategies table
-        self.get_from_main_array = get_main_table
+        self.get_from_main_array = get_main_table # function to get PLS from the main table. A method of the region object is passed here at creation time.
         self.ncomms = None
         self.metacomm = None
 
@@ -392,7 +393,6 @@ class state_zero:
         self.parent_dir = self.out_dir.parent # region output folder
         self.main_outdir = self.parent_dir.parent # main output folder
 
-
         os.makedirs(self.out_dir, exist_ok=True)
         self.flush_data = None
         self.plot_name = self.out_dir.name
@@ -402,6 +402,7 @@ class state_zero:
         self.metacomm_output = {}
 
         # counts the execution of a time slice (a call of self.run_spinup)
+        # TODO: check if this is still necessary. It seems to be unused now. 
         self.run_counter = 0
 
 class climate:

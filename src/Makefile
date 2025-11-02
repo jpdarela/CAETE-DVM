@@ -20,9 +20,7 @@
 # It also can build a fortran executable for debugging purposes.
 # This is not implemented in the windows version.
 
-# Doesn't work with python 3.13
-
-# Requires python 3.12 or lower (because of numba)
+# Requires python 3.13 or lower (because of numba)
 # If using python 3.12, use the ext_mod_meson target
 # If using python 3.11, use the ext_mod_legacy target
 
@@ -92,6 +90,11 @@ objects = $(src_obj) $(basename $(MAIN_SUB)).o debug_caete.o
 .PHONY: setup interface so so_parallel clean clean_so modules
 
 all: ext_mod_meson_parallel #ext_mod_legacy
+
+# Bypass the makefile. To be used with gnu-make in windows
+mingw64_build:
+	cmd /c build_caete.bat
+	
 
 # Python setup
 setup:
@@ -215,11 +218,11 @@ debug_caete.o: debug_caete.f90
 
 
 # CLEAN targets
-clean:
-	rm -rf *.s *.o pls_ex.txt __pycache__ run_debug execution.log
+clean: 
+	rm -rf *.s *.o *.obj *. pls_ex.txt __pycache__ run_debug execution.log ./caete_module/ temp_annual_*/
 
 clean_so: clean
-	rm -rf *.so *.pyf *.mod *.psz 
+	rm -rf *.so *.pyf *.mod *.psz *.pyd 
 	rm -rf build
 	clear
 

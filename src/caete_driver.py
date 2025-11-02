@@ -66,11 +66,12 @@ if __name__ == "__main__":
     # Name of the region. This name will be used to create the output folder.
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
     
-    counterclim_files = "../input/20CRv3-ERA5/counterclim/caete_input_20CRv3-ERA5_counterclim.nc"
+    # Paths to input data
     obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
-    gridlist = read_csv("../grd/gridlist_test.csv")
-    # gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
+    
+    # gridlist = read_csv("../grd/gridlist_test.csv")
+    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
     # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv")
 
     # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
@@ -93,35 +94,31 @@ if __name__ == "__main__":
 
     # Create the region using the spinup climate files
     print("creating region with spinclim files")
-    r = region(region_name,
-               spinclim_files,
-               soil_tuple,
-               co2_path,
-               main_table,
-               gridlist=gridlist)
+    pan_amazon = region(region_name,
+                        spinclim_files,
+                        soil_tuple,
+                        co2_path,
+                        main_table,
+                        gridlist=gridlist)
 
     # print(f"Region {region_name} created with {len(r.gridcells)} gridcells")
-    # r.set_gridcells() # This function create all gridcell objects in the region.
-    # Not recommended to use it, as the region class already does that. 
-
     # Spinup and run
     print("START soil pools spinup")
     s1 = time.perf_counter()
-    r.run_region_map(fn.spinup)
+    
+    # Run the spinup
+    pan_amazon.run_region_map(fn.spinup)
+
     e1 = time.perf_counter()
     print(f"Spinup time: {(e1 - s1) // 60 :.0f}:{(e1 - s1) % 60:.0f}")
 
-    # # # # Change input source to transclim files 1851-1900
-    # ## transclim is identical to the last 50 years of the spinclim files. No need to update the input source.
-    # print("\nSTART transclim run, updating input")
-    # s2 = time.perf_counter()
-    # r.update_input(transclim_files)
-    # e2 = time.perf_counter()
-    # print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
-
     # Run the model
     s3 = time.perf_counter()
-    r.run_region_map(fn.transclim_run)
+    
+    # run transclim
+    print("\n\nSTART transclim run")
+    pan_amazon.run_region_map(fn.transclim_run)
+    
     e3 = time.perf_counter()
     print(f"Transclim run: {(e3 - s3) // 60 :.0f}:{(e3 - s3) % 60:.0f}")
 
@@ -130,21 +127,21 @@ if __name__ == "__main__":
     state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
     print(f"\n\nSaving state file as {state_file}")
     s4 = time.perf_counter()
-    r.save_state(state_file)
+    pan_amazon.save_state(state_file)
     e4 = time.perf_counter()
     print(f"State file save time: {(e4 - s4) // 60 :.0f}:{(e4 - s4) % 60 :.0f}")
 
     print(f"\n\nExecution time so far: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
     print("setting new state")
     s5 = time.perf_counter()
-    r.set_new_state()
+    pan_amazon.set_new_state()
     e5 = time.perf_counter()
     print(f"Set new state time: {(e5 - s5) // 60 :.0f}:{(e5 - s5) % 60 :.0f}")
 
     # # Update the input source to the transient run - obsclim files
     print("Uodating input to obsclim files")
     s2 = time.perf_counter()
-    r.update_input(obsclim_files)
+    pan_amazon.update_input(obsclim_files)
     e2 = time.perf_counter()
     print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
 
@@ -152,7 +149,7 @@ if __name__ == "__main__":
     run_breaks = fn.create_run_breaks(1901, 2024, 30)
     for period in run_breaks:
         print(f"Running period {period[0]} - {period[1]}")
-        r.run_region_starmap(fn.transient_run_brk, period)
+        pan_amazon.run_region_starmap(fn.transient_run_brk, period)
 
     # final_state:
     # We clean the state of the gridcells to save the final state of the region
@@ -162,7 +159,7 @@ if __name__ == "__main__":
     # r.set_new_state()
     print("\nCleaning model state and saving final state file")
     s6 = time.perf_counter()
-    r.clean_model_state_fast()
+    pan_amazon.clean_model_state_fast()
     # r.clean_model_state()
     e6 = time.perf_counter()
     print("Time in seconds: " + str(e6 - s6))
@@ -170,7 +167,7 @@ if __name__ == "__main__":
 
     print(f"\n\nSaving final state file as ./{region_name}_result.psz")
     s7 = time.perf_counter()
-    r.save_state(Path(f"./{region_name}_result.psz"))
+    pan_amazon.save_state(Path(f"./{region_name}_result.psz"))
     e7 = time.perf_counter()
     print(f"Final state file save time: {(e7 - s7) // 60 :.0f}:{(e7 - s7) % 60 :.0f}")
 
