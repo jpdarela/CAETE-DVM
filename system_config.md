@@ -145,6 +145,25 @@ make
 
 ## Running the model
 
+### Generating the PLS table
+
+The PLS (Plant Life Strategy) table is required for running the CAETÊ model. You can generate the PLS table using the `plsgen.py` script located in the `src` folder. This script creates a PLS table based on the specified parameters and saves it as a CSV file.
+
+Navigate to the `src` folder and run the following command to see the available options for the `plsgen.py` script:
+
+```bash
+python plsgen.py -h
+```
+
+This will display the help message with the available options. To generate a PLS table with 10,000 entries and save it to a file named  pls_attrs-10000.csv inside the `PLS_MAIN` folder in the src directory, run the following command:
+
+```bash
+python plsgen.py -n 10000 -f PLS_MAIN
+
+```
+
+After generating the PLS table, you can use it to run the CAETÊ model by specifying the path to the generated CSV file in the model driver script.
+
 ### Model configuration
 
 Model configuration parameters are set in the ```caete.toml``` file located in the src folder. You can edit this file to change model parameters before running the model. The config.py script has a class that reads the ```caete.toml``` file and makes the parameters available to the model after a validation step. To include new parameters in the ```caete.toml``` file, you will need to edit the config.py script to include the new parameters in the validation step.
