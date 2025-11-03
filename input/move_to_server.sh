@@ -6,7 +6,7 @@ REMOTE1="sombrero:~/CAETE-DVM/input/20CRv3-ERA5"
 REMOTE2="sombrero:~/CAETE-DVM/input/MPI-ESM1-2-HR"
 
 # Rsync for 20CRv3-ERA5 subfolders
-folders1=(counterclim obsclim spinclim)
+folders1=(obsclim spinclim)
 for folder in "${folders1[@]}"; do
     echo "Transferring 20CRv3-ERA5/$folder to $REMOTE1/$folder ..."
     rsync -avz --progress 20CRv3-ERA5/$folder/ "$REMOTE1/$folder/"

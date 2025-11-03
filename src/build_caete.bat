@@ -1,12 +1,12 @@
 @REM Building CAETE using gfortran and gcc in Windows
 
-@REM Working with python 3.13 and meson already. However, the .dll file is not being saved. The extension module cannot find the dll. 
+@REM Working with python 3.13 and meson already. However, the .dll file is not being saved. The extension module cannot find the dll (me neither).
 
 REM Configuration
 set MODULE_NAME=caete_module
 
-REM Adjust the path to your Python installation. 
-REM This points to the folder containing Python.h header file.  
+REM Adjust the path to your Python installation.
+REM This points to the folder containing Python.h header file.
 set PYTHON_INCLUDE=C:\Users\darel\opt\Python-3.13.5\PCbuild\amd64
 
 REM MinGW paths
@@ -26,5 +26,5 @@ set RANLIB=%MINGW_BIN%\ranlib.exe
 REM Source files
 set SOURCE_FILES=types.f90 global.f90 photo_par.f90 funcs.f90 evap.f90 soil_dec.f90 cc.f90 allocation.f90 productivity.f90 .\budget_fixed.F90
 
-REM Build using MinGW (use gnu95 Fortran and MinGW compiler)
-py -3.13 -m numpy.f2py -m %MODULE_NAME%  --build-dir ./build -c %SOURCE_FILES% -I%PYTHON_INCLUDE% -L%MINGW_LIB% -lgfortran -lquadmath --fcompiler=gnu95 --compiler=mingw32
+REM Build using MinGW (use gnu95 Fortran and MinGW compiler) Adapt the python version as needed
+py -3.11 -m numpy.f2py -m %MODULE_NAME%  --build-dir ./build -c %SOURCE_FILES% -I%PYTHON_INCLUDE% -L%MINGW_LIB% -lgfortran -lquadmath --fcompiler=gnu95 --compiler=mingw32

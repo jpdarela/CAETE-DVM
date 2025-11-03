@@ -57,11 +57,6 @@ if __name__ == "__main__":
     input_path = Path("../input/").resolve()
 
     # Input files. The model will look for the input files in these folders.
-    # piControl_files = input_path / "MPI-ESM1-2-HR/piControl_cities/"
-    # hist_files = input_path / "MPI-ESM1-2-HR/historical_cities/"
-    # ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370_cities/"
-    # ssp585_files = input_path / "MPI-ESM1-2-HR/ssp585_cities/"
-
     piControl_files = input_path / "MPI-ESM1-2-HR/piControl/caete_input_MPI-ESM1-2-HR_piControl.nc"
     hist_files = input_path / "MPI-ESM1-2-HR/historical/caete_input_MPI-ESM1-2-HR_historical.nc"
     ssp370_files = input_path / "MPI-ESM1-2-HR/ssp370/caete_input_MPI-ESM1-2-HR_ssp370.nc"
@@ -76,8 +71,10 @@ if __name__ == "__main__":
     co2_path_ssp370 = input_path / "co2/ssp370_CO2_annual_2015-2100.csv"
     co2_path_ssp585 = input_path / "co2/ssp585_CO2_annual_2015-2100.csv"
 
-
-    # Soil hydraulic parameters e.g., wilting point(RWC), field capacity(RWC), water saturation(RWC), etc.
+    # Soil hydraulic parameters, e.g.,  wilting point(RWC), field capacity(RWC) and water saturation(RWC) for soil layers
+    # tsoil = # Top soil
+    # ssoil = # Sub soil
+    # hsoil = # Parameter used in Gabriela's model
     soil_tuple = tsoil, ssoil, hsoil
 
     # Read PLS table. The model expects csv file created with the table_gen defined in

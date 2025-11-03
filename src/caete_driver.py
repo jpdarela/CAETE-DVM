@@ -32,6 +32,11 @@ from polars import read_csv
 # Please refer to the Python multiprocessing library documentation for more information.
 
 # Profiling is enabled by default if the environment variable CAETE_PROFILING is set to True.
+# The results of the profiling at this level are not very useful because most of the time is spent
+# in the region and worker methods. However, it can be useful to identify bottlenecks in the
+# overall execution of the model. Most of the activity captured in this profiling is related waiting time of parallel processes and threads.
+# In the end of the caete.py module there is another profiling implementation that provides more detailed information about
+# the execution of the model at the gridcell level. It may be outdated. Please refer to the comments there for more information.
 PROFILING = False or os.environ.get("CAETE_PROFILING", "False").lower() in ("true", "1", "yes")
 
 if PROFILING:
@@ -53,7 +58,6 @@ if __name__ == "__main__":
     from parameters import hsoil, ssoil, tsoil
     from region import region
     from worker import worker
-    # from dataframes import output_manager
 
 
     time_start = time.time()
@@ -76,7 +80,7 @@ if __name__ == "__main__":
     # are some examples of gridlists that can be used to run the model in different regions or
     # with different number of gridcells.
     # gridlist = read_csv("../grd/gridlist_test.csv") # Small test gridlist n=16
-    gridlist = read_csv("../grd/gridlist_pa.csv") # Pan-Amazon gridlist n=2726
+    # gridlist = read_csv("../grd/gridlist_pa.csv") # Pan-Amazon gridlist n=2726
     gridlist = read_csv("../grd/gridlist_random_cells_pa.csv") # Random sample of 128 gridcells in the Pan-Amazon region
     # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv") # Pan-Amazon gridlist with only tropical forest cells n=2080
 
@@ -84,7 +88,6 @@ if __name__ == "__main__":
     # tsoil = # Top soil
     # ssoil = # Sub soil
     # hsoil = # Parameter used in Gabriela's model
-
     soil_tuple = tsoil, ssoil, hsoil
 
     #CO2 atmospheric data. The model expects a formated table in a text file with
@@ -116,7 +119,7 @@ if __name__ == "__main__":
     print("START soil pools spinup")
     s1 = time.perf_counter()
 
-    # Run the spinup
+    # Run the spinup. run_region_map maps the function fn.spinup to all gridcells in the region.
     pan_amazon.run_region_map(fn.spinup)
 
     e1 = time.perf_counter()

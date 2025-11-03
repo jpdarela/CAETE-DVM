@@ -114,8 +114,7 @@ nmake -f Makefile_win
 - In this case gfortran is used in conjunction with the MS Visual Compiler (cl.exe). Make sure that both compilers are in your PATH environment variable,
   for example, by running from the Visual Studio Developer Command Prompt.
 
-- Use the script build_caete.bat to build the model with gfortran in windows. This script just applies the numpy.f2py script to build the fortran/python extension module searching for the gfortran and c compilers in the PATH.
-
+- Use the script build_caete.bat to build the model with gfortran in windows. This script just applies the numpy.f2py script to build the fortran/python extension module searching for the gfortran and c compilers in the PATH. This combination is pretty raw. I recommend using the Intel fortran compiler if possible. Be aware that using gfortran in windows may lead to unexpected issues, specially issues related to linking the fortran runtime libraries. I tested this in one machine only, with windows 11 pro and mingw64 from winlibs. I used a python 3.11.13 installation built localy from source with the MS Visual compiler.
 
 ## Linux/MacOS setup
 
