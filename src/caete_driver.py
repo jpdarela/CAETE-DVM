@@ -61,20 +61,30 @@ if __name__ == "__main__":
     # This statement is always necessary when running the model. Specifically, it needs to be
     # always after the if __name__ == "__main__": statement. This is a Python requirement.
     mp.set_start_method('spawn', force=True)
+
+    # Create a worker instance to access the gridcell-wise functions and other utilities
     fn: worker = worker()
 
     # Name of the region. This name will be used to create the output folder.
     region_name = "pan_amazon_hist" # Name of the run (the outputs of this region will be saved in this folder). Look at caete.toml
-    
+
     # Paths to input data
     obsclim_files = "../input/20CRv3-ERA5/obsclim/caete_input_20CRv3-ERA5_obsclim.nc"
     spinclim_files = "../input/20CRv3-ERA5/spinclim/caete_input_20CRv3-ERA5_spinclim.nc"
-    
-    # gridlist = read_csv("../grd/gridlist_test.csv")
-    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv")
-    # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv")
 
-    # Soil hydraulic parameters wilting point(RWC), field capacity(RWC) and water saturation(RWC)
+    # Gridlists control which gridcells will be used in the simulation. In the grd folder there
+    # are some examples of gridlists that can be used to run the model in different regions or
+    # with different number of gridcells.
+    # gridlist = read_csv("../grd/gridlist_test.csv") # Small test gridlist n=16
+    gridlist = read_csv("../grd/gridlist_pa.csv") # Pan-Amazon gridlist n=2726
+    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv") # Random sample of 128 gridcells in the Pan-Amazon region
+    # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv") # Pan-Amazon gridlist with only tropical forest cells n=2080
+
+    # Soil hydraulic parameters, e.g.,  wilting point(RWC), field capacity(RWC) and water saturation(RWC) for soil layers
+    # tsoil = # Top soil
+    # ssoil = # Sub soil
+    # hsoil = # Parameter used in Gabriela's model
+
     soil_tuple = tsoil, ssoil, hsoil
 
     #CO2 atmospheric data. The model expects a formated table in a text file with
@@ -89,7 +99,7 @@ if __name__ == "__main__":
     # the metacommunities. Everthing is everywhere, but the environment selects.
     PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-200000.csv")
     assert PLS_TABLE_PATH.exists(), f"PLS table not found at {PLS_TABLE_PATH.resolve()}"
-     
+
     main_table = pls_table.read_pls_table(PLS_TABLE_PATH)
 
     # Create the region using the spinup climate files
@@ -105,7 +115,7 @@ if __name__ == "__main__":
     # Spinup and run
     print("START soil pools spinup")
     s1 = time.perf_counter()
-    
+
     # Run the spinup
     pan_amazon.run_region_map(fn.spinup)
 
@@ -114,11 +124,11 @@ if __name__ == "__main__":
 
     # Run the model
     s3 = time.perf_counter()
-    
+
     # run transclim
     print("\n\nSTART transclim run")
     pan_amazon.run_region_map(fn.transclim_run)
-    
+
     e3 = time.perf_counter()
     print(f"Transclim run: {(e3 - s3) // 60 :.0f}:{(e3 - s3) % 60:.0f}")
 
@@ -127,21 +137,31 @@ if __name__ == "__main__":
     state_file = Path(f"./{region_name}_after_spinup_state_file.psz")
     print(f"\n\nSaving state file as {state_file}")
     s4 = time.perf_counter()
+
     pan_amazon.save_state(state_file)
+
     e4 = time.perf_counter()
     print(f"State file save time: {(e4 - s4) // 60 :.0f}:{(e4 - s4) % 60 :.0f}")
 
+    # Set a new state for the pan_amazon region. This is necessary to
+    # update the model state with the new input data (obsclim file).
+    # If this step is ommited, the model will continue to use the old state, modifying it with the new input data.
+    # This is not desired, as we would like to use that state after the spinup to start other transient runs with different forcings.
     print(f"\n\nExecution time so far: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
     print("setting new state")
     s5 = time.perf_counter()
+
     pan_amazon.set_new_state()
+
     e5 = time.perf_counter()
     print(f"Set new state time: {(e5 - s5) // 60 :.0f}:{(e5 - s5) % 60 :.0f}")
 
-    # # Update the input source to the transient run - obsclim files
+    # # Update the input source to the transient run - we now use the obsclim file
     print("Uodating input to obsclim files")
     s2 = time.perf_counter()
+
     pan_amazon.update_input(obsclim_files)
+
     e2 = time.perf_counter()
     print(f"Update input time: {(e2 - s2) // 60 :.0f}:{(e2 - s2) % 60:.0f}")
 
@@ -172,11 +192,11 @@ if __name__ == "__main__":
     print(f"Final state file save time: {(e7 - s7) // 60 :.0f}:{(e7 - s7) % 60 :.0f}")
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
-    
+
     # # Generate outputs
     from dataframes import output_manager
     output_manager.pan_amazon_output()
-    
+
     # Copy the PLS table used in the run to the output folder
     from shutil import copy2
     output_folder = Path(f"../outputs")

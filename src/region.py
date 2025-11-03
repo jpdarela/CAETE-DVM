@@ -100,7 +100,7 @@ class region:
                                                batch_size=self.nchunks)
         else:
             self.input_handler = None
-           
+
         self.soil_data = copy.deepcopy(soil_data)
         self.pls_table = mc.pls_table(pls_table)
         self.file_objects = []
@@ -117,7 +117,7 @@ class region:
 
         # Number of PLS in the main table (global table)
         self.npls_main_table = self.pls_table.npls
-        
+
         # Read the metadata from the climate files
         if self.input_method == "legacy":
             # Legacy input method
@@ -141,7 +141,7 @@ class region:
         else:
             raise ValueError(f"Unknown input method: {self.config.input_handler.input_method}. "
                              "Please use 'legacy' or 'ih' as input method.")
-        
+
         if self.config.input_handler.input_method == "legacy":
             for file_path in sorted(list(self.input_data.glob("input_data_*-*.pbz2"))):
                 self.climate_files.append(file_path)
@@ -150,7 +150,7 @@ class region:
         elif self.config.input_handler.input_method == "ih" and self.input_handler.input_type == "netcdf":
             st_names = self.input_handler._handler.gridlist.get_column("station_name").to_list()
             self.climate_files = list(map(Path, st_names))
-        
+
         self.region_size = len(self.climate_files)
 
         # Define grid structure
@@ -227,7 +227,7 @@ class region:
             except Exception as e:
                 print(f"Error loading file {f}: {e}")
                 raise
-        
+
         # Submit all jobs and keep their order
         with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
             results = list(executor.map(load_file, self.file_objects))
@@ -314,7 +314,7 @@ class region:
         Args:
             state_file (Union[str, Path]): Path to the file where the state will be saved
         """
-        from worker import worker 
+        from worker import worker
         worker.save_state_zstd(self, self.output_root / state_file)
         if new_state:
             self.set_new_state()
@@ -328,12 +328,12 @@ class region:
         """
         self.name = Path(f"{new_name}")
         self.output_path = self.output_root / self.name # Update region output folder path
-        
+
         os.makedirs(self.output_path, exist_ok=True)
 
         if not self.file_objects and not self.gridcells:
             raise ValueError("No file objects found. Cannot read intermediate files. No gridcells found. Cannot update output directory")
-        
+
         if self.file_objects:
             def process_file(f):
                 gridcells = load(f)
@@ -353,7 +353,7 @@ class region:
 
             with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
                 executor.map(process_file, self.file_objects)
-        
+
         elif self.gridcells:
             for gridcell in self.gridcells:
                 # Update the output folder for each gridcell
@@ -369,7 +369,7 @@ class region:
         """Update the input data for the region
 
         Args:
-            input_file (str | Path, optional): Folder with input data to be used. Defaults to None.
+            input_data (str | Path, optional): Folder with input data or netCDF file to be used. Defaults to None.
             co2 (str | Path, optional): Text file (tsv/csv) with annual co2 concentration. Defaults to None.
             Attributes are updated if valid values are provided
 
@@ -405,12 +405,12 @@ class region:
                                                     self.gridlist,
                                                     batch_size=self.nchunks)
                 self.metadata = self.input_handler.get_metadata
-            
+
             self.stime = copy.deepcopy(self.metadata[0])
         else:
             if co2 is None:
                 raise ValueError("Input data must be provided to update the region input")
-        
+
         if not self.file_objects and not self.gridcells:
             raise ValueError("No file objects found. Cannot read intermediate files. No gridcells found. Cannot update input data")
         if self.input_method == "ih":
@@ -449,7 +449,7 @@ class region:
             with ThreadPoolExecutor(max_workers=len(self.file_objects)) as executor:
                 # Submit all tasks
                 futures = [executor.submit(process_file, f) for f in self.file_objects]
-                
+
                 # Process results and update progress
                 for future in futures:
                     try:
@@ -513,12 +513,12 @@ class region:
                                                     self.gridlist,
                                                     batch_size=self.nchunks)
                 self.metadata = self.input_handler.get_metadata
-            
+
             self.stime = copy.deepcopy(self.metadata[0])
         else:
             if co2 is None:
                 raise ValueError("Input data must be provided to update the region input")
-        
+
         if not self.file_objects and not self.gridcells:
             raise ValueError("No file objects found. Cannot read intermediate files. No gridcells found. Cannot update input data")
         if self.input_method == "ih":
@@ -554,8 +554,8 @@ class region:
                     raise e
 
             # Replace ThreadPoolExecutor with joblib.Parallel
-            Parallel(n_jobs=min(len(self.file_objects), self.config.multiprocessing.max_processes), 
-                    backend='multiprocessing', 
+            Parallel(n_jobs=min(len(self.file_objects), self.config.multiprocessing.max_processes),
+                    backend='multiprocessing',
                     verbose=1)(delayed(process_file)(f) for f in self.file_objects)
 
 
@@ -629,28 +629,28 @@ class region:
 
     def run_region_map(self, func: Callable):
         """Run a function across all gridcells using multiprocessing.Pool with async I/O"""
-        
+
         result = []
-    
+
         if self.file_objects:
             j = 0
             i = 0
             pending_writes = []  # Track pending write operations
-            
+
             print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
             self.gridcell_address_file_objects = {}
             # Create a dedicated executor for I/O operations
             with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
-                
+
                 for f in self.file_objects:
                     # Load and process current chunk
                     with open(f, 'rb') as fh:
                         new_chunk = load(fh)
-                    
+
                     for k, _ in enumerate(new_chunk):
                         self.gridcell_address_file_objects[i] = (k, f)
                         i += 1
-                    
+
                     # Process chunk with multiprocessing
                     num_workers = min(self.config.multiprocessing.max_processes, len(new_chunk))
                     with mp.Pool(processes=num_workers) as pool:
@@ -663,7 +663,7 @@ class region:
                         finally:
                             pool.close()
                             pool.join()
-                    
+
                     # Submit async write operation
                     def write_chunk_to_file(filename, data):
                         """Write chunk data to file with compression."""
@@ -672,11 +672,11 @@ class region:
                             fh.flush()
                         # gc.collect()
                         return filename
-                    
+
                     # Submit write task to I/O executor (non-blocking)
                     write_future = io_executor.submit(write_chunk_to_file, f, result)
                     pending_writes.append(write_future)
-                    
+
                     # Limit concurrent writes to prevent memory buildup
                     if len(pending_writes) > 3:  # Keep max 3 pending writes
                         oldest_write = pending_writes.pop(0)
@@ -685,11 +685,11 @@ class region:
                         except Exception as e:
                             print(f"Error during async write: {e}")
                             raise
-                    
+
                     result = []  # Clear result for next iteration
                     print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
                     j += 1
-                
+
                 # Wait for all remaining writes to complete
                 for future in pending_writes:
                     try:
@@ -698,7 +698,7 @@ class region:
                     except Exception as e:
                         print(f"Error during final async write: {e}")
                         raise
-    
+
         else:
             # First run -> no file objects
             is_netcdf_input = self.input_type == "netcdf" and self.input_method == "ih"
@@ -710,9 +710,9 @@ class region:
             j = 0
             pending_writes = []
             self.gridcell_address_file_objects = {}
-            
+
             print_progress(j, len(chunks), prefix='Progress:', suffix='Complete')
-            
+
             # Create executor for first run
             with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
                 current_batch = 0
@@ -731,7 +731,7 @@ class region:
                     fname = self.state_path / Path(f"region_file_{uuid4()}.z")
                     k = 0
                     result = []
-                    
+
                     for f, pos in chunk:
                         y, x = pos
                         gridcell_dump_directory = self.output_path / Path(f"grd_{y}-{x}")
@@ -752,10 +752,10 @@ class region:
                         k += 1
                     current_batch += 1
                     self.file_objects.append(fname)
-                    
+
                     # Process with multiprocessing
                     if is_netcdf_input:
-                        self.input_handler = None  # Set to none because netCDF4 Dataset is not pickable 
+                        self.input_handler = None  # Set to none because netCDF4 Dataset is not pickable
                     num_workers = min(self.config.multiprocessing.max_processes, len(result))
                     with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
                         try:
@@ -767,7 +767,7 @@ class region:
                         finally:
                             pool.close()
                             pool.join()
-                    
+
                     # Submit async write operation
                     def write_chunk_to_file(filename, data):
                         """Write chunk data to file with compression."""
@@ -776,10 +776,10 @@ class region:
                             f.flush()
                         # gc.collect()
                         return filename
-                    
+
                     write_future = io_executor.submit(write_chunk_to_file, fname, processed_result)
                     pending_writes.append(write_future)
-                    
+
                     # Limit concurrent writes
                     if len(pending_writes) > 3:
                         oldest_write = pending_writes.pop(0)
@@ -788,11 +788,11 @@ class region:
                         except Exception as e:
                             print(f"Error during async write: {e}")
                             raise
-                    
+
                     result = []
                     print_progress(j+1, len(chunks), prefix='Progress:', suffix='Complete')
                     j += 1
-                
+
                 # Wait for all remaining writes to complete
                 for future in pending_writes:
                     try:
@@ -801,32 +801,32 @@ class region:
                         print(f"Error during final async write: {e}")
                         raise
 
-    
+
     def run_region_starmap(self, func: Callable, args):
         """Run a function with arguments across all gridcells using multiprocessing.Pool with async I/O"""
-        
+
         if not self.file_objects:
             raise ValueError("No file objects found. Cannot run starmap without file objects")
-        
+
         j = 0
         i = 0
         pending_writes = []  # Track pending write operations
-        
+
         print_progress(j, len(self.file_objects), prefix='Progress:', suffix='Complete')
         self.gridcell_address_file_objects = {}
-        
+
         # Create a dedicated executor for I/O operations
         with ThreadPoolExecutor(max_workers=3, thread_name_prefix="FileWriter") as io_executor:
-            
+
             for f in self.file_objects:
                 # Load current chunk
                 with open(f, 'rb') as fh:
                     new_chunk = load(fh)
-                
+
                 for k, _ in enumerate(new_chunk):
                     self.gridcell_address_file_objects[i] = (k, f)
                     i += 1
-                
+
                 # Process chunk with multiprocessing starmap
                 num_workers = min(self.config.multiprocessing.max_processes, len(new_chunk))
                 with mp.Pool(processes=num_workers, maxtasksperchild=1) as pool:
@@ -839,7 +839,7 @@ class region:
                     finally:
                         pool.close()
                         pool.join()
-                
+
                 # Submit async write operation
                 def write_chunk_to_file(filename, data):
                     """Write chunk data to file with compression."""
@@ -848,11 +848,11 @@ class region:
                         fh.flush()
                     # gc.collect()
                     return filename
-                
+
                 # Submit write task to I/O executor (non-blocking)
                 write_future = io_executor.submit(write_chunk_to_file, f, result)
                 pending_writes.append(write_future)
-                
+
                 # Optional: limit concurrent writes to prevent memory buildup
                 if len(pending_writes) > 3:  # Keep max 3 pending writes
                     oldest_write = pending_writes.pop(0)
@@ -861,10 +861,10 @@ class region:
                     except Exception as e:
                         print(f"Error during async write: {e}")
                         raise
-                
+
                 print_progress(j+1, len(self.file_objects), prefix='Progress:', suffix='Complete')
                 j += 1
-            
+
             # Wait for all remaining writes to complete
             for future in pending_writes:
                 try:
@@ -886,7 +886,7 @@ class region:
         It renders the current model state unusable for further model runs.
         Raises:
             ValueError: If no file objects are found.
-        
+
         """
         attributes_to_keep = {'calendar',
                               'time_unit',
@@ -955,7 +955,7 @@ class region:
                 all_attributes = set(gridcell.__dict__.keys())
                 for attr in all_attributes - attributes_to_keep:
                     delattr(gridcell, attr)
-            
+
             # Save cleaned gridcells
             with open(f, 'wb') as file:
                 dump(gridcells, file, compress=self.compression)
@@ -963,7 +963,7 @@ class region:
 
         # Process files in parallel using joblib
         # Use multiprocessing backend for CPU-bound attribute deletion
-        Parallel(n_jobs=min(len(self.file_objects), mp.cpu_count()), 
+        Parallel(n_jobs=min(len(self.file_objects), mp.cpu_count()),
                 backend='loky',
                 verbose=10)(delayed(process_file_mp)(f) for f in self.file_objects)
 
@@ -1028,11 +1028,11 @@ class region:
             # Use memory-conservative approach: load gridcells one at a time
             if not self.file_objects:
                 raise ValueError("No file objects found. Cannot iterate over gridcells")
-            
+
             # Build the gridcell address mapping if it doesn't exist
             if not self.gridcell_address_file_objects:
                 self._build_gridcell_address_mapping()
-            
+
             # Group gridcells by file to minimize file I/O
             for f in self.file_objects:
                 # Open each file only once and yield all gridcells from it
@@ -1046,10 +1046,10 @@ class region:
         """Build the mapping of gridcell indices to file objects and positions."""
         if self.gridcell_address_file_objects:
             return  # Already built
-        
+
         self.gridcell_address_file_objects = {}
         global_idx = 0
-        
+
         for f in self.file_objects:
             with open(f, 'rb') as fh:
                 gridcells_chunk = load(fh)
