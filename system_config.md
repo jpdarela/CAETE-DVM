@@ -181,8 +181,8 @@ $ python caete_driver_CMIP6.py
 
 The idea is that when you want to do a experiment with the model, you create a script that mimics the caete_driver.py script but with your own configuration (e.g., different input files, different output files, different spinup configurations).
 
-```caete_driver.py``` runs the model with a subset (n=128) of the gridcells in the input files.
+```caete_driver.py``` runs the model with a subset (n=16) of the gridcells in the input files.
 
-```caete_driver_CMIP6.py``` runs the model with CMIP6 forcing data for 4 gridcells . You need to edit the paths to the input data files in the ```caete_driver_CMIP6.py``` script before running it.
+```caete_driver_CMIP6.py``` runs the model with CMIP6 forcing data for 4 gridcells . You need to edit the paths to the input data files in the ```caete_driver_CMIP6.py``` and ```caete_driver.py``` scripts before running them.
 
 [⇦ Back](./README.md)

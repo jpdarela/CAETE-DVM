@@ -4,6 +4,8 @@ This repository contains the implementation of the CAETÊ (CArbon and Ecosystem 
 
 The `master` branch contains the current development version of the model. A prototype version of the model is available on the `CAETE-DVM-v0.1` branch.
 
+[Overview](build_instruction_slides.md)
+
 [System requirements, building, and running](system_config.md)
 
 [Input data](input_data.md)

@@ -36,14 +36,13 @@
     <div class="slides">
 
 
-<section>
-<section id="caete-dvm-build-instructions"
-class="title-slide slide level1">
-<h1>CAETE-DVM Build Instructions</h1>
-
+<section id="caete-dvm-build-and-use-overview" class="slide level1">
+<h1>CAETE-DVM Build and use Overview</h1>
+<p><a href="./README.md">⇦ Back</a></p>
 </section>
-<section id="introduction-to-caete-dvm" class="slide level2">
-<h2>Introduction to CAETE-DVM</h2>
+<section class="slide level1">
+
+<h2 id="introduction-to-caete-dvm">Introduction to CAETE-DVM</h2>
 <h3 id="caete-dynamic-vegetation-model">CAETE Dynamic Vegetation
 Model</h3>
 <ul>
@@ -56,8 +55,9 @@ Model</h3>
 <li>Cross-platform support (Windows, Linux, macOS)</li>
 </ul>
 </section>
-<section id="python-source-code" class="slide level2">
-<h2>Python source code</h2>
+<section class="slide level1">
+
+<h2 id="python-source-code">Python source code</h2>
 <h3 id="sources">Sources</h3>
 <ul>
 <li><strong>region.py</strong>: handles the execution over
@@ -72,8 +72,9 @@ handled here</li>
 preprocessing, jit compiled routines …</li>
 </ul>
 </section>
-<section id="fortran-source-code" class="slide level2">
-<h2>Fortran source code</h2>
+<section class="slide level1">
+
+<h2 id="fortran-source-code">Fortran source code</h2>
 <h3 id="core-library-files-src_lib">Core Library Files (src_lib)</h3>
 <ul>
 <li><strong>types.f90</strong>: numerical type definitions</li>
@@ -88,7 +89,7 @@ preprocessing, jit compiled routines …</li>
 calculations</li>
 </ul>
 </section>
-<section class="slide level2">
+<section class="slide level1">
 
 <h3 id="budget-module-options">Budget Module Options</h3>
 <h4 id="daily-time-step-budget-calculation-for-all-plss">Daily Time Step
@@ -100,16 +101,18 @@ default)</li>
 support)</li>
 </ul>
 </section>
-<section id="makefiles" class="slide level2">
-<h2>Makefiles</h2>
+<section class="slide level1">
+
+<h2 id="makefiles">Makefiles</h2>
 <ul>
 <li><strong>Makefile</strong>: For Linux and macOS builds</li>
 <li><strong>Makefile_win</strong>: For Windows builds (MSVC +
 OneAPI)</li>
 </ul>
 </section>
-<section id="software-requirements" class="slide level2">
-<h2>Software Requirements</h2>
+<section class="slide level1">
+
+<h2 id="software-requirements">Software Requirements</h2>
 <h3 id="compiler-requirements">Compiler Requirements</h3>
 <table>
 <thead>
@@ -133,7 +136,7 @@ OneAPI)</li>
 </tbody>
 </table>
 </section>
-<section class="slide level2">
+<section class="slide level1">
 
 <h3 id="python-requirements">Python Requirements</h3>
 <ul>
@@ -142,8 +145,9 @@ OneAPI)</li>
 <li>Required: <code>pip</code> and <code>numpy.f2py</code></li>
 </ul>
 </section>
-<section id="windows-specific-setup" class="slide level2">
-<h2>Windows-Specific Setup</h2>
+<section class="slide level1">
+
+<h2 id="windows-specific-setup">Windows-Specific Setup</h2>
 <h3 id="installation-order">Installation Order</h3>
 <ol type="1">
 <li><strong>First</strong>: Install MSVC</li>
@@ -155,8 +159,9 @@ OneAPI)</li>
 <li>Consider Python Install Manager (PIM) for multiple versions</li>
 </ul>
 </section>
-<section id="linuxmacos-setup" class="slide level2">
-<h2>Linux/macOS Setup</h2>
+<section class="slide level1">
+
+<h2 id="linuxmacos-setup">Linux/macOS Setup</h2>
 <h3 id="recommended-tools">Recommended Tools</h3>
 <ul>
 <li><strong>Python Version Management</strong>: <code>pyenv</code></li>
@@ -171,13 +176,14 @@ available</li>
 <li>Ensures reproducibility</li>
 </ul>
 </section>
-<section id="compilation-process" class="slide level2">
-<h2>Compilation Process</h2>
+<section class="slide level1">
+
+<h2 id="compilation-process">Compilation Process</h2>
 <h3 id="quick-test-method">Quick Test Method</h3>
 <ol type="1">
 <li>Follow <a
-href="https://numpy.org/doc/stable/f2py/getting-started.html">NumPy f2py
-“quick way”</a></li>
+href="https://numpy.org/doc/stable/f2py/f2py.getting-started.html#">NumPy
+f2py “quick way”</a></li>
 <li>If successful → CAETE compilation likely to work</li>
 <li>Use provided Makefiles for actual build</li>
 </ol>
@@ -188,8 +194,9 @@ href="https://numpy.org/doc/stable/f2py/getting-started.html">NumPy f2py
 OneAPI)</li>
 </ul>
 </section>
-<section id="critical-security-warnings" class="slide level2">
-<h2>Critical Security Warnings</h2>
+<section class="slide level1">
+
+<h2 id="critical-security-warnings">Critical Security Warnings</h2>
 <h3 id="system-python-risks-linux">System Python Risks (Linux)</h3>
 <ul>
 <li><strong>System Conflicts</strong>: Can break core utilities</li>
@@ -204,8 +211,9 @@ Python management</li>
 <li>Never modify system Python installation</li>
 </ul>
 </section>
-<section id="input-data-overview" class="slide level2">
-<h2>Input Data Overview</h2>
+<section class="slide level1">
+
+<h2 id="input-data-overview">Input Data Overview</h2>
 <h3 id="data-sources">Data Sources</h3>
 <ul>
 <li><strong>Source</strong>: ISIMIP repository (ISIMIP3a and ISIMIP3b
@@ -224,9 +232,10 @@ folders</li>
 <code>historical</code>, scenarios</li>
 </ul>
 </section>
-<section id="available-data-link-in-the-repos-readme"
-class="slide level2">
-<h2>Available Data (link in the repo’s readme)</h2>
+<section class="slide level1">
+
+<h2 id="available-data-link-in-the-repos-readme">Available Data (link in
+the repo’s readme)</h2>
 <h3 id="climate-data">Climate Data</h3>
 <ul>
 <li><strong>20CRv3-ERA5</strong>: Historical observational
@@ -236,8 +245,9 @@ class="slide level2">
 <code>ssp585</code>)</li>
 </ul>
 </section>
-<section id="data-processing-pipeline" class="slide level2">
-<h2>Data Processing Pipeline</h2>
+<section class="slide level1">
+
+<h2 id="data-processing-pipeline">Data Processing Pipeline</h2>
 <h3 id="preprocessing-scripts">Preprocessing Scripts</h3>
 <ul>
 <li><code>preprocess_caete.py</code>: ISIMIP → NetCDF for CAETE</li>
@@ -253,8 +263,9 @@ class="slide level2">
 <li>grd folder has some examples</li>
 </ul>
 </section>
-<section id="quick-start-summary" class="slide level2">
-<h2>Quick Start Summary</h2>
+<section class="slide level1">
+
+<h2 id="quick-start-summary">Quick Start Summary</h2>
 <h3 id="pre-flight-check">Pre-flight Check</h3>
 <ol type="1">
 <li>✅ Verify Python version compatibility</li>
@@ -269,11 +280,11 @@ class="slide level2">
 <li>Run model with prepared input files and gridlists</li>
 </ol>
 </section>
-<section class="slide level2">
+<section class="slide level1">
 
 <p><em>For detailed instructions, see the complete build_instructions.md
 file</em></p>
-</section></section>
+</section>
     </div>
   </div>
 
