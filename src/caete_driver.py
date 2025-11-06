@@ -79,9 +79,9 @@ if __name__ == "__main__":
     # Gridlists control which gridcells will be used in the simulation. In the grd folder there
     # are some examples of gridlists that can be used to run the model in different regions or
     # with different number of gridcells.
-    # gridlist = read_csv("../grd/gridlist_test.csv") # Small test gridlist n=16
+    gridlist = read_csv("../grd/gridlist_test.csv") # Small test gridlist n=16
     # gridlist = read_csv("../grd/gridlist_pa.csv") # Pan-Amazon gridlist n=2726
-    gridlist = read_csv("../grd/gridlist_random_cells_pa.csv") # Random sample of 128 gridcells in the Pan-Amazon region
+    # gridlist = read_csv("../grd/gridlist_random_cells_pa.csv") # Random sample of 128 gridcells in the Pan-Amazon region
     # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv") # Pan-Amazon gridlist with only tropical forest cells n=2080
 
     # Soil hydraulic parameters, e.g.,  wilting point(RWC), field capacity(RWC) and water saturation(RWC) for soil layers
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
     print("\n\nExecution time: ", (time.time() - time_start) / 60, " minutes", end="\n\n")
 
-    # # Generate outputs
+    # Generate outputs - Import here to avoid multiprocessing issues
     from dataframes import output_manager
     output_manager.pan_amazon_output()
 

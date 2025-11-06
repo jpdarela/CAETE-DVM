@@ -42,61 +42,75 @@ class="title-slide slide level1">
 <h1>CAETE-DVM Build Instructions</h1>
 
 </section>
-<section class="slide level3">
-
-</section>
-<section id="introduction-to-caete-dvm"
-class="title-slide slide level2">
+<section id="introduction-to-caete-dvm" class="slide level2">
 <h2>Introduction to CAETE-DVM</h2>
-
-</section>
-<section id="caete-dynamic-vegetation-model" class="slide level3">
-<h3>CAETE Dynamic Vegetation Model</h3>
+<h3 id="caete-dynamic-vegetation-model">CAETE Dynamic Vegetation
+Model</h3>
 <ul>
-<li>Scientific vegetation modeling framework</li>
+<li>Code is divided in two main parts:
+<ul>
+<li>Python interface for data handling and configuration</li>
+<li>Fortran backend for numerical computations</li>
+</ul></li>
 <li>Requires compilation of Python extension modules</li>
-<li>Uses Fortran backend for computational performance</li>
 <li>Cross-platform support (Windows, Linux, macOS)</li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="input-data-overview" class="title-slide slide level2">
-<h2>Input Data Overview</h2>
-
-</section>
-<section id="data-sources" class="slide level3">
-<h3>Data Sources</h3>
+<section id="python-source-code" class="slide level2">
+<h2>Python source code</h2>
+<h3 id="sources">Sources</h3>
 <ul>
-<li><strong>Source</strong>: ISIMIP repository (ISIMIP3a and ISIMIP3b
-protocols)</li>
-<li><strong>Format</strong>: NetCDF files and legacy <code>.pbz2</code>
-files</li>
-<li><strong>Processing</strong>: Custom preprocessing scripts
-included</li>
+<li><strong>region.py</strong>: handles the execution over
+gridcells</li>
+<li><strong>caete.py</strong>: Definition of the gridcell (grd_mt
+class)</li>
+<li><strong>metacommunity.py</strong>: metacommunity class, contains
+multiple communities</li>
+<li><strong>community.py</strong>: community class, plant biomass is
+handled here</li>
+<li><strong>other scripts</strong>: utility functions, input handling,
+preprocessing, jit compiled routines …</li>
 </ul>
 </section>
-<section id="key-components" class="slide level3">
-<h3>Key Components</h3>
+<section id="fortran-source-code" class="slide level2">
+<h2>Fortran source code</h2>
+<h3 id="core-library-files-src_lib">Core Library Files (src_lib)</h3>
 <ul>
-<li>Bias-corrected data in <code>_raw</code> folders</li>
-<li>Gridlist tables for execution control</li>
-<li>Input folders: <code>spinclim</code>, <code>obsclim</code>,
-<code>historical</code>, scenarios</li>
+<li><strong>types.f90</strong>: numerical type definitions</li>
+<li><strong>global.f90</strong>: Global parameters and constants</li>
+<li><strong>photo_par.f90</strong>: Photosynthesis parameters</li>
+<li><strong>funcs.f90</strong>: GPP related functions and utilities</li>
+<li><strong>evap.f90</strong>: Evapotranspiration calculations</li>
+<li><strong>soil_dec.f90</strong>: Soil decomposition processes</li>
+<li><strong>cc.f90</strong>: Carbon costs calculations</li>
+<li><strong>allocation.f90</strong>: Resource allocation algorithms</li>
+<li><strong>productivity.f90</strong>: Primary Productivity
+calculations</li>
 </ul>
 </section>
-<section class="slide level3">
+<section class="slide level2">
 
+<h3 id="budget-module-options">Budget Module Options</h3>
+<h4 id="daily-time-step-budget-calculation-for-all-plss">Daily Time Step
+Budget Calculation for all PLSs</h4>
+<ul>
+<li><strong>budget_fixed.F90</strong>: Stack allocation (faster,
+default)</li>
+<li><strong>budget.F90</strong>: Heap allocation (slower, larger PLS
+support)</li>
+</ul>
 </section>
-
-<section id="system-requirements" class="title-slide slide level2">
-<h2>System Requirements</h2>
-
+<section id="makefiles" class="slide level2">
+<h2>Makefiles</h2>
+<ul>
+<li><strong>Makefile</strong>: For Linux and macOS builds</li>
+<li><strong>Makefile_win</strong>: For Windows builds (MSVC +
+OneAPI)</li>
+</ul>
 </section>
-<section id="compiler-requirements" class="slide level3">
-<h3>Compiler Requirements</h3>
+<section id="software-requirements" class="slide level2">
+<h2>Software Requirements</h2>
+<h3 id="compiler-requirements">Compiler Requirements</h3>
 <table>
 <thead>
 <tr>
@@ -119,78 +133,47 @@ included</li>
 </tbody>
 </table>
 </section>
-<section id="python-requirements" class="slide level3">
-<h3>Python Requirements</h3>
+<section class="slide level2">
+
+<h3 id="python-requirements">Python Requirements</h3>
 <ul>
 <li><strong>Windows</strong>: Python == 3.11</li>
 <li><strong>Linux/macOS</strong>: Python &gt;= 3.11 &lt;= 3.13</li>
 <li>Required: <code>pip</code> and <code>numpy.f2py</code></li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="windows-specific-setup" class="title-slide slide level2">
+<section id="windows-specific-setup" class="slide level2">
 <h2>Windows-Specific Setup</h2>
-
-</section>
-<section id="installation-order" class="slide level3">
-<h3>Installation Order</h3>
+<h3 id="installation-order">Installation Order</h3>
 <ol type="1">
 <li><strong>First</strong>: Install MSVC</li>
 <li><strong>Second</strong>: Install Intel OneAPI</li>
 </ol>
-</section>
-<section id="alternative-option" class="slide level3">
-<h3>Alternative Option</h3>
-<ul>
-<li><strong>MSVC/gfortran</strong>: WinLibs distribution</li>
-<li>Tested: GCC 14.2.0 + MinGW-w64 12.0.0 (UCRT)</li>
-</ul>
-</section>
-<section id="python-management" class="slide level3">
-<h3>Python Management</h3>
+<h3 id="python-management">Python Management</h3>
 <ul>
 <li>Use official Python 3.11 installer</li>
 <li>Consider Python Install Manager (PIM) for multiple versions</li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="linuxmacos-setup" class="title-slide slide level2">
+<section id="linuxmacos-setup" class="slide level2">
 <h2>Linux/macOS Setup</h2>
-
-</section>
-<section id="recommended-tools" class="slide level3">
-<h3>Recommended Tools</h3>
+<h3 id="recommended-tools">Recommended Tools</h3>
 <ul>
 <li><strong>Python Version Management</strong>: <code>pyenv</code></li>
 <li><strong>Package Management</strong>: Standard <code>pip</code></li>
 <li><strong>Compilers</strong>: Usually pre-installed or easily
 available</li>
 </ul>
-</section>
-<section id="avoid-system-python" class="slide level3">
-<h3>Avoid System Python</h3>
+<h3 id="avoid-system-python">Avoid System Python</h3>
 <ul>
 <li>Use isolated Python environments</li>
 <li>Prevents system conflicts</li>
 <li>Ensures reproducibility</li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="compilation-process" class="title-slide slide level2">
+<section id="compilation-process" class="slide level2">
 <h2>Compilation Process</h2>
-
-</section>
-<section id="quick-test-method" class="slide level3">
-<h3>Quick Test Method</h3>
+<h3 id="quick-test-method">Quick Test Method</h3>
 <ol type="1">
 <li>Follow <a
 href="https://numpy.org/doc/stable/f2py/getting-started.html">NumPy f2py
@@ -198,77 +181,53 @@ href="https://numpy.org/doc/stable/f2py/getting-started.html">NumPy f2py
 <li>If successful → CAETE compilation likely to work</li>
 <li>Use provided Makefiles for actual build</li>
 </ol>
-</section>
-<section id="build-tools" class="slide level3">
-<h3>Build Tools</h3>
+<h3 id="build-tools">Build Tools</h3>
 <ul>
 <li><strong>Linux/macOS</strong>: Standard <code>Makefile</code></li>
 <li><strong>Windows</strong>: Adapted <code>Makefile_win</code> (MSVC +
 OneAPI)</li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="critical-security-warnings"
-class="title-slide slide level2">
+<section id="critical-security-warnings" class="slide level2">
 <h2>Critical Security Warnings</h2>
-
-</section>
-<section id="system-python-risks-linux" class="slide level3">
-<h3>System Python Risks (Linux)</h3>
+<h3 id="system-python-risks-linux">System Python Risks (Linux)</h3>
 <ul>
 <li><strong>System Conflicts</strong>: Can break core utilities</li>
 <li><strong>Security Issues</strong>: Global installs require sudo</li>
 <li><strong>Version Lock-in</strong>: Stuck with distribution
 version</li>
 </ul>
-</section>
-<section id="best-practices" class="slide level3">
-<h3>Best Practices</h3>
+<h3 id="best-practices">Best Practices</h3>
 <ul>
 <li>Use <code>pyenv</code>, <code>conda</code>, or <code>uv</code> for
 Python management</li>
 <li>Never modify system Python installation</li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="data-processing-pipeline" class="title-slide slide level2">
-<h2>Data Processing Pipeline</h2>
-
-</section>
-<section id="preprocessing-scripts" class="slide level3">
-<h3>Preprocessing Scripts</h3>
+<section id="input-data-overview" class="slide level2">
+<h2>Input Data Overview</h2>
+<h3 id="data-sources">Data Sources</h3>
 <ul>
-<li><code>preprocess_caete.py</code>: ISIMIP → NetCDF for CAETE</li>
-<li><code>preprocess_caete_pbz2.py</code>: ISIMIP → Legacy
-<code>.pbz2</code></li>
-<li>Configurable via <code>caete.toml</code></li>
+<li><strong>Source</strong>: ISIMIP repository (ISIMIP3a and ISIMIP3b
+protocols)</li>
+<li><strong>Format</strong>: NetCDF files and legacy <code>.pbz2</code>
+files</li>
+<li><strong>Processing</strong>: Custom preprocessing scripts
+included</li>
+</ul>
+<h3 id="key-components">Key Components</h3>
+<ul>
+<li>Bias-corrected data from ISIMIP repo in <code>_raw</code>
+folders</li>
+<li>Gridlist tables for execution control</li>
+<li>Input folders: <code>spinclim</code>, <code>obsclim</code>,
+<code>historical</code>, scenarios</li>
 </ul>
 </section>
-<section id="gridlist-generation" class="slide level3">
-<h3>Gridlist Generation</h3>
-<ul>
-<li>Generated by <code>input_handler</code> class</li>
-<li>Required for gridcell execution</li>
-<li>Saved alongside input files</li>
-</ul>
-</section>
-<section class="slide level3">
-
-</section>
-
-<section id="slide-9-available-data-downloads"
-class="title-slide slide level2">
-<h2>Slide 9: Available Data Downloads</h2>
-
-</section>
-<section id="climate-data" class="slide level3">
-<h3>Climate Data</h3>
+<section id="available-data-link-in-the-repos-readme"
+class="slide level2">
+<h2>Available Data (link in the repo’s readme)</h2>
+<h3 id="climate-data">Climate Data</h3>
 <ul>
 <li><strong>20CRv3-ERA5</strong>: Historical observational
 (<code>spinclim</code> &amp; <code>obsclim</code>)</li>
@@ -277,48 +236,44 @@ class="title-slide slide level2">
 <code>ssp585</code>)</li>
 </ul>
 </section>
-<section id="grid-configurations" class="slide level3">
-<h3>Grid Configurations</h3>
+<section id="data-processing-pipeline" class="slide level2">
+<h2>Data Processing Pipeline</h2>
+<h3 id="preprocessing-scripts">Preprocessing Scripts</h3>
 <ul>
-<li>Pre-configured gridlists available</li>
-<li>City-specific grids</li>
-<li>Pan-Amazon forest grids</li>
-<li>Custom grid generation supported</li>
+<li><code>preprocess_caete.py</code>: ISIMIP → NetCDF for CAETE</li>
+<li><code>preprocess_caete_pbz2.py</code>: ISIMIP → Legacy
+<code>.pbz2</code></li>
+<li>Configurable via <code>input/pre_processing.toml</code></li>
+</ul>
+<h3 id="gridlist-generation">Gridlist Generation</h3>
+<ul>
+<li>Generated by <code>input_handler</code> class</li>
+<li>Required for gridcell execution</li>
+<li>Saved alongside input files</li>
+<li>grd folder has some examples</li>
 </ul>
 </section>
-<section class="slide level3">
-
-</section>
-
-<section id="slide-10-quick-start-summary"
-class="title-slide slide level2">
-<h2>Slide 10: Quick Start Summary</h2>
-
-</section>
-<section id="pre-flight-check" class="slide level3">
-<h3>Pre-flight Check</h3>
+<section id="quick-start-summary" class="slide level2">
+<h2>Quick Start Summary</h2>
+<h3 id="pre-flight-check">Pre-flight Check</h3>
 <ol type="1">
 <li>✅ Verify Python version compatibility</li>
 <li>✅ Install compilers in correct order (Windows)</li>
 <li>✅ Test f2py “quick way”</li>
 <li>✅ Download required input data</li>
 </ol>
-</section>
-<section id="build-run" class="slide level3">
-<h3>Build &amp; Run</h3>
+<h3 id="build-run">Build &amp; Run</h3>
 <ol type="1">
 <li>Compile extension modules using Makefile</li>
 <li>Configure <code>caete.toml</code> for your setup</li>
 <li>Run model with prepared input files and gridlists</li>
 </ol>
-<p><strong>Ready to model vegetation dynamics! 🌱</strong></p>
 </section>
-<section class="slide level3">
+<section class="slide level2">
 
 <p><em>For detailed instructions, see the complete build_instructions.md
 file</em></p>
-</section>
-</section>
+</section></section>
     </div>
   </div>
 

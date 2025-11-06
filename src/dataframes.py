@@ -22,7 +22,7 @@
 # """
 
 # This script contains functions to read binary output
-# and create gridded and table outputs.
+# and create gridded and table outputs. The 
 
 import argparse
 import gc
@@ -2141,18 +2141,11 @@ class output_manager:
 
 
 if __name__ == "__main__":
+    print("This module is intended to be imported, not run directly.")
+    sys.exit(1)
     pass
-    # from time import perf_counter
-    # start = perf_counter()
-    # # output_file = Path("/home/amazonfaceme/joaofilho/CAETE-DVM/outputs/pan_amazon_hist_result.psz")
-    # output_file = ("../outputs/pan_amazon_hist_after_spinup_state_file.psz")
-    # reg:region = worker.load_state_zstd(output_file)
-    # variables_to_read = ("npp", "rnpp", "photo", "evapm", "wsoil", "csoil", "hresp", "aresp", "lai")
-    # a = gridded_data.create_masked_arrays(gridded_data.aggregate_region_data(reg, variables_to_read, 2))
-    # gridded_data.save_netcdf_daily(a, "pan_amazon_hist_da")
-    # end = perf_counter()
-    # print(f"Elapsed time: {end - start:.2f} seconds")
 
+    # Some old code for ddevelopment and profiling features
     # """
     # Usage examples:
 
@@ -2341,10 +2334,8 @@ if __name__ == "__main__":
     # print("\nDone.")
 
 
-
-
-
-##SANDBOX
+##SANDBOX - Old code that was excluded but might be useful some day. Probably not.
+## Old version of the aggregate_region_data with threading. It was faster but memory intensive.
 
     # @staticmethod
     # def aggregate_region_data(r: region,
@@ -2388,6 +2379,9 @@ if __name__ == "__main__":
     #         dim_names = ["time", "coord", "data"]
 
     #     return dict(zip(dim_names, (time, coord, data)))
+
+
+    # Vibe-coded version with memory-mapping and parallel reading for large regions
 
     # @staticmethod
     # def aggregate_region_data(r: region,
