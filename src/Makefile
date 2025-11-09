@@ -133,7 +133,7 @@ ext_mod_legacy: $(sources) modules
 # pyf interface
 interface: $(sources)
 	@echo "Creating fortran interfaces for the caete_module using f2py..."
-	@$(PYEXEC) precompilation_data.py ## Set the number of PLS in the global module
+	@$(PYEXEC) precompilation_data.py ## Set the number of PLS in the global module and validate config file
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 # Build the shared object (caete_module) from .F90 source

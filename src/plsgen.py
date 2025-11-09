@@ -272,6 +272,8 @@ def nutrient_ratios_combinations_reich(NPLS, alloc):
     return N_leaf_g_g, awood_n2c, froot_n2c, P_leaf_g_g, awood_p2c, froot_p2c
 
 def nutrient_ratios_combinations(NPLS, alloc):
+    # Deprecated function. Use nutrient_ratios_combinations_reich instead.
+    # This function is kept for reference. 
     # # Nitrogen and Phosphorus content in carbon pools (NO C:N:P restrictions) Do not use it. Kept for reference
     # # C : N : P
 
@@ -355,7 +357,7 @@ def table_gen(NPLS, fpath=None, ret=True):
 
     # Remaining traits
     test = alloc[:, 4] == 0.0 # type: ignore
-    pdia = np.random.uniform(0.01, 0.10, NPLS)
+    pdia = np.random.uniform(0.01, 0.20, NPLS)
     np.place(pdia, test, 0.0)
     woods = np.where(alloc[:, 4] > 0.0)[0] # type: ignore
     # return woods

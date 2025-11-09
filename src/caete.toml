@@ -1,4 +1,7 @@
 # Configuration file for CAETE model
+# This file is read by to model at compile-time and run-time.
+# THe class Config in config.py is used to read this file, validate parameters and expose the parameters to the model.
+# If an error occurs while reading this file, the model will not compile or run.
 
 # Fisrt day of each month (Only used to set env. filtering)
 doy_months = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
@@ -124,7 +127,7 @@ n = 1 # Effects only in runtime, recompilation not needed.
 # Changes here and in ntraits will not be applied to the model (fortran extension module)
 # unless you recompile it. THe model will not run if you compile
 # it with a value and then run it with a different value.
-npls_max = 500
+npls_max = 3000
  # number of traits in a PLS
 ntraits = 17
 

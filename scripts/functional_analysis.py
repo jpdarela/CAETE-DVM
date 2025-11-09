@@ -26,7 +26,7 @@ b2000 = pl.read_parquet("../outputs/pan_amazon_hist_biomass_1961.parquet")
 b0 = pl.read_parquet("../outputs/pan_amazon_hist_biomass_1901.parquet")
 
 # Read PLS_data
-pls_df = pl.read_csv("../outputs/pls_attrs-200000.csv")
+pls_df = pl.read_csv("../outputs/pls_attrs-30000.csv")
 
 
 def weighted_mean(df, value_col, weight_col):

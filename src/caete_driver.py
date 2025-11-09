@@ -79,15 +79,16 @@ if __name__ == "__main__":
     # Gridlists control which gridcells will be used in the simulation. In the grd folder there
     # are some examples of gridlists that can be used to run the model in different regions or
     # with different number of gridcells.
-    gridlist = read_csv("../grd/gridlist_test.csv") # Small test gridlist n=16
-    # gridlist = read_csv("../grd/gridlist_pa.csv") # Pan-Amazon gridlist n=2726
+    # gridlist = read_csv("../grd/gridlist_test.csv") # Small test gridlist n=16
+    gridlist = read_csv("../grd/gridlist_pa_test_empty.csv") # Pan-Amazon gridlist n=2726
     # gridlist = read_csv("../grd/gridlist_random_cells_pa.csv") # Random sample of 128 gridcells in the Pan-Amazon region
     # gridlist = read_csv("../grd/gridlist_pan_amazon_05d_FORESTS_MAPBIOMASS_2000.csv") # Pan-Amazon gridlist with only tropical forest cells n=2080
 
     # Soil hydraulic parameters, e.g.,  wilting point(RWC), field capacity(RWC) and water saturation(RWC) for soil layers
     # tsoil = # Top soil
     # ssoil = # Sub soil
-    # hsoil = # Parameter used in Gabriela's model
+    # hsoil = # Parameters used in Gabriela's model
+    # TDDO: Reconcile with the parameters from the soil hydrology model.
     soil_tuple = tsoil, ssoil, hsoil
 
     #CO2 atmospheric data. The model expects a formated table in a text file with
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     # this table as main table. it represents all possible plant functional types
     # that can be used in the model. The model will use this table to create (subsample)
     # the metacommunities. Everthing is everywhere, but the environment selects.
-    PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-200000.csv")
+    PLS_TABLE_PATH = Path("./PLS_MAIN/pls_attrs-30000.csv")
     assert PLS_TABLE_PATH.exists(), f"PLS table not found at {PLS_TABLE_PATH.resolve()}"
 
     main_table = pls_table.read_pls_table(PLS_TABLE_PATH)

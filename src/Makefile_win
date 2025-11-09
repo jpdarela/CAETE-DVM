@@ -85,7 +85,7 @@ setup:
 # pyf interfaces
 interface: $(sources)
 	@echo "Creating Fortran interfaces for the caete_module using f2py..."
-	@$(PYEXEC) precompilation_data.py
+	@$(PYEXEC) precompilation_data.py ## Set the number of PLS in the global module and validate config file
 	@$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG) --quiet
 
 # In windows we force the use of the deprecated distutils backend. Meson backend does not work with ifx compiler.

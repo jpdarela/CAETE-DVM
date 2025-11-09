@@ -99,7 +99,7 @@ class community:
                 self.vp_croot[i] = cr
                 self.vp_cwood[i] = cw
 
-        # Storage biomass initialized to small random values
+        # Plant storage CNP initialized to small random values
         self.vp_sto: NDArray[np.float32] = np.zeros(shape=(3, self.npls), order='F', dtype=np.float32)
         self.vp_sto[0,:] = np.random.uniform(0.05, 0.1, self.npls)
         self.vp_sto[1,:] = np.random.uniform(0.005, 0.01, self.npls)
@@ -119,7 +119,6 @@ class community:
         # nutrient Uptake costs that is subtracted from NPP
         self.sp_uptk_costs: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
         # Real NPP. I.e. NPP after nutrient uptake costs and allocation (incl. limitation)
-        # NOTE: This is not implemented
         self.construction_npp: NDArray[np.float32] = np.zeros(self.npls, order='F', dtype=np.float32)
 
         # These variables are used to output data once a year
@@ -262,9 +261,9 @@ class community:
         Args:
             pls_id (int): ID of the PLS.
             pls (np.ndarray): Array representing the PLS.
-            cleaf (NDArray[np.float64]): Leaf carbon allocation.
-            croot (NDArray[np.float64]): Root carbon allocation.
-            cwood (NDArray[np.float64]): Wood carbon allocation.
+            cleaf (NDArray[np.float64]): Leaf carbon allocation # Passed by reference. This will be updated.
+            croot (NDArray[np.float64]): Root carbon allocation # Passed by reference. This will be updated.
+            cwood (NDArray[np.float64]): Wood carbon allocation # Passed by reference. This will be updated.
         """
         # Assert that the PLS ID is not in the community
         free_slots = self.get_free_lsid()
@@ -273,7 +272,7 @@ class community:
         elif free_slots.size == 1:
             pos = free_slots[0]
         else:
-            pos = free_slots[np.random.randint(0, free_slots.size)]
+            pos = free_slots[np.random.randint(0, free_slots.size)] # Randomly select a free slot
 
         self.id[pos] = pls_id
         self.pls_array[:, pos] = pls

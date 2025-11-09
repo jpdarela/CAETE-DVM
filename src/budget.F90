@@ -22,12 +22,17 @@ module budget
    use global_par, only: ntraits, npls, omp_nthreads
    use alloc
    use productivity
+   use ieee_arithmetic
    implicit none
    private
 
    public :: daily_budget
 
 contains
+!> daily budget subroutine. To be called for each gridcell each day
+!> @param dt PLS traits array
+!
+
 
    subroutine daily_budget(dt, w1, w2, ts, temp, p0, ipar, rh&
         &, mineral_n, labile_p, on, sop, op, catm, sto_budg_in, cl1_in, ca1_in, cf1_in&
@@ -306,13 +311,8 @@ contains
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =====================make it parallel=========================
 #ifdef _OPENMP
-   if (nlen .gt. 500) then
-      call OMP_SET_NUM_THREADS(2)
-   elseif (nlen .gt. 1000) then
-      call OMP_SET_NUM_THREADS(4)
-   else
-      call OMP_SET_NUM_THREADS(1)
-   endif
+   call OMP_SET_NUM_THREADS(omp_nthreads)
+   if (nlen .lt. 200) call OMP_SET_NUM_THREADS(1)
 #endif
 
       construction = rnpp ! construction (Real NPP) of the plant tissues in the previous day. To calculate growth respiration
@@ -364,7 +364,7 @@ contains
 
          ! calculate maintanance respirarion of stored C
          mr_sto = sto_resp(temp, storage_out_bdgt(:,p))
-         if (isnan(mr_sto)) mr_sto = 0.0D0
+         if (ieee_is_nan(mr_sto)) mr_sto = 0.0D0
          if (mr_sto .gt. 0.1D2) mr_sto = 0.0D0
          storage_out_bdgt(1,p) = max(0.0D0, (storage_out_bdgt(1,p) - mr_sto))
 
@@ -390,7 +390,7 @@ contains
          ! Estimate growth of storage C pool
          ar_fix_hr(p) = ar_aux
          growth_stoc = max( 0.0D0, (day_storage(1,p) - storage_out_bdgt(1,p)))
-         if (isnan(growth_stoc)) growth_stoc = 0.0D0
+         if (ieee_is_nan(growth_stoc)) growth_stoc = 0.0D0
          if (growth_stoc .gt. 0.1D3) growth_stoc = 0.0D0
          storage_out_bdgt(:,p) = day_storage(:,p)
 
@@ -497,35 +497,34 @@ contains
 
       ! CALCULATE CWM FOR ECOSYSTEM PROCESSES
       ! clean NaN values in occupation coefficients
-      ! TODO: these checks are useful for model start periods
-      ! Will keep it here.
-      ! do p = 1, nlen
-      !    if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
-      ! enddo
+      ! These checks are useful for model start periods
+      do p = 1, nlen
+         if(ieee_is_nan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0D0
+      enddo
 
-      evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. isnan(evap))
-      phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. isnan(ph))
-      aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. isnan(ar))
-      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs, mask= .not. isnan(nppa))
-      laiavg = sum(laia * ocp_coeffs, mask= .not. isnan(laia))
-      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs, mask= .not. isnan(rc2))
-      f5avg = sum(f5 * ocp_coeffs, mask= .not. isnan(f5))
-      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs, mask= .not. isnan(rm))
-      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs, mask= .not. isnan(rg))
-      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs, mask= .not. isnan(wue))
-      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs, mask= .not. isnan(cue))
-      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs, mask= .not. isnan(c_def)) / 2.73791
-      vcmax_1 = sum(vcmax * ocp_coeffs, mask= .not. isnan(vcmax))
-      specific_la_1 = sum(specific_la * ocp_coeffs, mask= .not. isnan(specific_la))
-      litter_l_1 = sum(litter_l * ocp_coeffs, mask= .not. isnan(litter_l))
-      cwd_1 = sum(cwd * ocp_coeffs, mask= .not. isnan(cwd))
-      litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. isnan(litter_fr))
-      c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. isnan(npp2pay))
+      evavg = sum(real(evap, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(evap))
+      phavg = sum(real(ph, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(ph))
+      aravg = sum(real(ar, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(ar))
+      nppavg = sum(real(nppa, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(nppa))
+      laiavg = sum(laia * ocp_coeffs, mask= .not. ieee_is_nan(laia))
+      rcavg = sum(real(rc2, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(rc2))
+      f5avg = sum(f5 * ocp_coeffs, mask= .not. ieee_is_nan(f5))
+      rmavg = sum(real(rm, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(rm))
+      rgavg = sum(real(rg, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(rg))
+      wueavg = sum(real(wue, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(wue))
+      cueavg = sum(real(cue, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(cue))
+      c_defavg = sum(real(c_def, kind=r_8) * ocp_coeffs, mask= .not. ieee_is_nan(c_def)) / 2.73791
+      vcmax_1 = sum(vcmax * ocp_coeffs, mask= .not. ieee_is_nan(vcmax))
+      specific_la_1 = sum(specific_la * ocp_coeffs, mask= .not. ieee_is_nan(specific_la))
+      litter_l_1 = sum(litter_l * ocp_coeffs, mask= .not. ieee_is_nan(litter_l))
+      cwd_1 = sum(cwd * ocp_coeffs, mask= .not. ieee_is_nan(cwd))
+      litter_fr_1 = sum(litter_fr * ocp_coeffs, mask= .not. ieee_is_nan(litter_fr))
+      c_cost_cwm = sum(npp2pay * ocp_coeffs, mask= .not. ieee_is_nan(npp2pay))
 
-      cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. isnan(cl1_int))
-      cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. isnan(ca1_int))
-      cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. isnan(cf1_int))
-      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. isnan(ar_fix_hr))
+      cp(1) = sum(cl1_int * ocp_coeffs, mask= .not. ieee_is_nan(cl1_int))
+      cp(2) = sum(ca1_int * (ocp_coeffs * idx_grasses), mask= .not. ieee_is_nan(ca1_int))
+      cp(3) = sum(cf1_int * ocp_coeffs, mask= .not. ieee_is_nan(cf1_int))
+      cp(4) = sum(ar_fix_hr * (ocp_coeffs * idx_pdia), mask= .not. ieee_is_nan(ar_fix_hr))
 
       do p = 1,2
          nupt_1(p) = sum(nupt(p,:) * ocp_coeffs)

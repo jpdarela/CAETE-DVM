@@ -51,7 +51,8 @@ class DailyBudget:
         """Update all slots with values from tuple.
         
         Args:
-            out: Tuple containing values in the same order as defined in budget_output class
+            out: Tuple containing output values in the same order as defined in daily_budget 
+                 subroutine from the python extension caete_module.
                  Expected order: [evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, 
                  f5avg, rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft,
                  stodbg, ocpavg, wueavg, cueavg, c_defavg, vcmax, specific_la, 

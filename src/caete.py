@@ -1154,7 +1154,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
         # Define the time step
         time_step = timedelta(days=1)
 
-        # Define the object to store the outputs
+        # Define the object to store the outputs from daily_budget
         daily_output = DailyBudget()
 
         # Start loops
@@ -1522,13 +1522,36 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
                     self.sp_available_n -= self.nupt[0, step]
 
                     # NUTRIENT DINAMICS
+                    
                     # Inorganic N
+                    # TODO: NaNs are being sourced upstream , need to track the source and fix it
+
+                    if not np.isfinite(self.sp_in_n):
+                        # rwarn(f"Non-finite value detected in sp_in_n pool at step {step}. Resetting to zero.")
+                        self.sp_in_n = 0.0
+                    if not np.isfinite(self.sp_available_n):
+                        # rwarn(f"Non-finite value detected in sp_available_n pool at step {step}. Resetting to zero.")
+                        self.sp_available_n = 0.0
+                    if not np.isfinite(self.sp_so_n):
+                        # rwarn(f"Non-finite value detected in sp_so_n pool at step {step}. Resetting to zero.")
+                        self.sp_so_n = 0.0
+                    
                     self.sp_in_n += self.sp_available_n + self.sp_so_n
                     self.sp_so_n = soil_dec.sorbed_n_equil(self.sp_in_n)
                     self.sp_available_n = soil_dec.solution_n_equil(self.sp_in_n)
                     self.sp_in_n -= (self.sp_so_n + self.sp_available_n)
 
                     # Inorganic P
+                    if not np.isfinite(self.sp_in_p):
+                        # rwarn(f"Non-finite value detected in sp_in_p pool at step {step}. Resetting to zero.")
+                        self.sp_in_p = 0.0
+                    if not np.isfinite(self.sp_available_p):
+                        # rwarn(f"Non-finite value detected in sp_available_p pool at step {step}. Resetting to zero.")
+                        self.sp_available_p = 0.0
+                    if not np.isfinite(self.sp_so_p):
+                        # rwarn(f"Non-finite value detected in sp_so_p pool at step {step}. Resetting to zero.")
+                        self.sp_so_p = 0.0
+                    
                     self.sp_in_p += self.sp_available_p + self.sp_so_p
                     # sp_so_p is the occluded P in the inorganic pool
                     self.sp_so_p = soil_dec.sorbed_p_equil(self.sp_in_p)
@@ -1554,7 +1577,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                     # ORGANIC nutrients uptake
                     total_on = self.sp_snc[:4].sum()
-                    if total_on > 0.0:
+                    if total_on > 0.0 and np.isfinite(total_on):
                         frsn = [i / total_on for i in self.sp_snc[:4]]
                     else:
                         frsn = [0.0, 0.0, 0.0, 0.0]
@@ -1570,7 +1593,7 @@ class grd_mt(state_zero, climate, time, soil, gridcell_output):
 
                     # P
                     total_op = self.sp_snc[4:].sum()
-                    if total_op > 0.0:
+                    if total_op > 0.0 and np.isfinite(total_op):
                         frsp = [i / total_op for i in self.sp_snc[4:]]
                     else:
                         frsp = [0.0, 0.0, 0.0, 0.0]
