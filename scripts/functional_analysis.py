@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import polars as pl
-import altair as alt
+# import altair as alt
 
 
 sys.path.append("../src/")
@@ -26,7 +26,7 @@ b2000 = pl.read_parquet("../outputs/pan_amazon_hist_biomass_1961.parquet")
 b0 = pl.read_parquet("../outputs/pan_amazon_hist_biomass_1901.parquet")
 
 # Read PLS_data
-pls_df = pl.read_csv("../outputs/pls_attrs-30000.csv")
+pls_df = pl.read_csv("../outputs/pls_attrs-40000.csv")
 
 
 def weighted_mean(df, value_col, weight_col):
@@ -37,17 +37,17 @@ def weighted_mean(df, value_col, weight_col):
 
 def biomass_cwm(df, value_col, weight_col:str = "ocp"):
     # Select all gridcells iwith the same latitude and longitude
-    # weighted mean cveg poools by ocp 
+    # weighted mean cveg poools by ocp
     out = np.zeros((ylen, xlen), dtype=np.float64) + 1.0e20
     for y in range(bb_idx.ymin, bb_idx.ymax):
         for x in range(bb_idx.xmin, bb_idx.xmax):
             filt = df.filter(
                 (pl.col("grid_y") == y) &
                 (pl.col("grid_x") == x))
-            
+
             if filt.height == 0:
                 continue
-            
+
             wm_cveg = weighted_mean(filt, value_col= value_col, weight_col= weight_col)
             out[y, x] = wm_cveg
 
@@ -59,15 +59,15 @@ def biomass_cwm(df, value_col, weight_col:str = "ocp"):
 
 # def trait_cwm0(biomass_df, pls_df, trait_col, weight_col: str = "ocp"):
 #     # Select all gridcells iwith the same latitude and longitude
-#     # weighted mean of traits in the pls_table by ocp 
+#     # weighted mean of traits in the pls_table by ocp
 #     out = np.zeros((ylen, xlen), dtype=np.float64) + 1.0e20
-    
+
 #     for y in range(bb_idx.ymin, bb_idx.ymax):
 #         for x in range(bb_idx.xmin, bb_idx.xmax):
 #             filt = biomass_df.filter(
 #                 (pl.col("grid_y") == y) &
 #                 (pl.col("grid_x") == x))
-            
+
 #             nrows = filt.height
 #             if nrows == 0:
 #                 continue
@@ -85,10 +85,10 @@ def biomass_cwm(df, value_col, weight_col:str = "ocp"):
 #                 else:
 #                     # Handle missing PLS_id - you might want to skip or use a default value
 #                     trait_values.append(np.nan)
-            
+
 #             trait_values = np.array(trait_values)
 #             weights_array = weights.to_numpy()
-            
+
 #             # Calculate weighted mean, excluding NaN values
 #             valid_mask = ~np.isnan(trait_values)
 #             if valid_mask.sum() > 0:
@@ -104,30 +104,30 @@ def biomass_cwm(df, value_col, weight_col:str = "ocp"):
 def trait_cwm(biomass_df, pls_df, trait_col, weight_col: str = "ocp"):
     # Create a lookup dictionary for traits (much faster than repeated filtering)
     trait_lookup = dict(zip(pls_df["PLS_id"], pls_df[trait_col]))
-    
+
     # Group by grid coordinates to avoid repeated filtering
     grouped = biomass_df.group_by(["grid_y", "grid_x"]).agg([
         pl.col("pls_id"),
         pl.col(weight_col)
     ])
-    
+
     out = np.zeros((ylen, xlen), dtype=np.float64) + 1.0e20
-    
+
     # Process each group
     for row in grouped.iter_rows(named=True):
         y, x = row["grid_y"], row["grid_x"]
-        
+
         # Skip if outside bounding box
         if not (bb_idx.ymin <= y < bb_idx.ymax and bb_idx.xmin <= x < bb_idx.xmax):
             continue
-            
+
         pls_ids = row["pls_id"]
         weights = row[weight_col]
-        
+
         # Get trait values using dictionary lookup
         trait_values = np.array([trait_lookup.get(pls_id, np.nan) for pls_id in pls_ids])
         weights_array = np.array(weights)
-        
+
         # Calculate weighted mean, excluding NaN values
         valid_mask = ~np.isnan(trait_values)
         if valid_mask.sum() > 0:
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     plt.title("Root allocation Change (2021 - 1961)")
     plt.colorbar(im, label="Root Allocation Change")
     plt.show()
-    
+
 
 
     # cveg_wmean = biomass_cwm(df, value_col="cveg", weight_col="ocp")
