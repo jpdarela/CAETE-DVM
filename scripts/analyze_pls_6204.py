@@ -7,7 +7,7 @@ import numpy as np
 from pathlib import Path
 
 # Read the CSV file
-csv_path = Path("../outputs/pls_attrs-30000.csv")
+csv_path = Path("../outputs/pls_attrs-50000.csv")
 df = pd.read_csv(csv_path)
 
 # Get the trait columns (excluding PLS_id)
@@ -17,7 +17,7 @@ trait_columns = df.columns[1:].tolist()
 trait_means = df[trait_columns].mean()
 
 # Get PLS 6204 (row index 6204 since row 0 is PLS 0.0)
-pls_6204 = df[df['PLS_id'] == 6204.0].iloc[0]
+pls_6204 = df[df['PLS_id'] == 7625].iloc[0]
 
 # Calculate differences and percent differences
 print("="*80)
